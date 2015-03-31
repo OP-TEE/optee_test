@@ -113,8 +113,7 @@ ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1002, NULL)
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1003, NULL)
 ADBG_SUITE_DEFINE_END()
 
-static const char gdevname_tz[] = "opteearmtz00";
-char *_device = (char *)gdevname_tz;
+char *_device = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
 static const char gsuitename[] = "regression";
@@ -126,7 +125,7 @@ void usage(char *program)
 	printf("Usage: %s <options> <test_id>\n", program);
 	printf("\n");
 	printf("options:\n");
-	printf("\t-d <device>        default value = %s\n", gdevname_tz);
+	printf("\t-d <device-type>   default not set, use any\n");
 	printf("\t-l <level>         test suite level: [0-15]\n");
 	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
 	printf("\t                   default value = %s\n", gsuitename);
