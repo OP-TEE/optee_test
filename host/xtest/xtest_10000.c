@@ -751,7 +751,9 @@ static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 }
 
 #define CMD_ECC_GEN_KEY_SELF_TESTS	0
-static TEEC_Result ecc_self_test(TEEC_Session *sess, uint32_t algo)
+#define CMD_ECC_DSA_TESTS		1
+static TEEC_Result ecc_self_test(TEEC_Session *sess,
+				 uint32_t algo, uint32_t command)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
@@ -761,8 +763,7 @@ static TEEC_Result ecc_self_test(TEEC_Session *sess, uint32_t algo)
 	op.params[0].value.b = 0;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
-	res = TEEC_InvokeCommand(sess, CMD_ECC_GEN_KEY_SELF_TESTS,
-				 &op, &ret_orig);
+	res = TEEC_InvokeCommand(sess, command, &op, &ret_orig);
 	return res;
 }
 
@@ -826,18 +827,31 @@ static void xtest_tee_test_10003(ADBG_Case_t *c)
 		return;
 	}
 
+	/* ECC Key Generation */
 	for (algo = TEE_ECC_CURVE_NIST_P192;
 	     algo <=  TEE_ECC_CURVE_NIST_P521;
 	     algo++) {
 		Do_ADBG_BeginSubCase(c, "ECC Generate Key algo=0x%x", algo);
-		ADBG_EXPECT_TEEC_SUCCESS(c, ecc_self_test(&sess, algo));
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+			ecc_self_test(&sess, algo, CMD_ECC_GEN_KEY_SELF_TESTS));
 		Do_ADBG_EndSubCase(c, "ECC Generate Key algo=0x%x", algo);
 	}
 
 	algo = TEE_ECC_CURVE_NIST_P521+1;
 	Do_ADBG_BeginSubCase(c, "ECC Generate Key algo=0x%x", algo);
-	ADBG_EXPECT(c, TEE_ERROR_NOT_SUPPORTED, ecc_self_test(&sess, algo));
+	ADBG_EXPECT(c, TEE_ERROR_NOT_SUPPORTED,
+			ecc_self_test(&sess, algo, CMD_ECC_GEN_KEY_SELF_TESTS));
 	Do_ADBG_EndSubCase(c, "ECC Generate Key algo=0x%x", algo);
+
+	/* ECC Sign and Verify */
+	for (algo = TEE_ALG_ECDSA_P192;
+	     algo <=  TEE_ALG_ECDSA_P521;
+	     algo += 0x1000) {
+		Do_ADBG_BeginSubCase(c, "ECC Sign & Verify - algo=0x%x", algo);
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+				ecc_self_test(&sess, algo, CMD_ECC_DSA_TESTS));
+		Do_ADBG_EndSubCase(c, "ECC Sign & Verify - algo=0x%x", algo);
+	}
 
 	TEEC_CloseSession(&sess);
 }
