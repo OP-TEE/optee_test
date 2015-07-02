@@ -1,0 +1,11 @@
+--- TTA_Arithmetical.c.ori	2015-02-02 13:29:21.470683589 +0100
++++ TTA_Arithmetical.c	2015-02-02 13:29:27.390723092 +0100
+@@ -1374,7 +1374,7 @@
+ 
+    TEE_BigIntConvertFromS32(pBigInt, MAX_INT32_POSITIVE_VALUE);
+ 
+-   return TEE_BigIntConvertToOctetString (&nSingleChar, &nSize, pBigInt);
++   return TEE_BigIntConvertToOctetString ((void *)&nSingleChar, &nSize, pBigInt);
+ }
+ 
+ /**

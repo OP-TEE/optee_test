@@ -1,0 +1,10 @@
+--- TTA_answerErrorTo_OpenSession_protocol.h.ori	2015-02-02 14:41:54.423887162 +0100
++++ TTA_answerErrorTo_OpenSession_protocol.h	2015-02-02 14:42:06.919971456 +0100
+@@ -1,6 +1,6 @@
+ 
+ /** Trusted Application Identifier **/
+-#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x45, 0x52, 0x52, 0x54, 0x4F, 0x4F, 0x53 } }
++#define TA_TTA_ANSWERERRORTOOPENSESSION_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x45, 0x52, 0x52, 0x54, 0x4F, 0x4F, 0x53 } }
+ 
+ 
+ #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND       0x00000001

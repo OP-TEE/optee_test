@@ -1,0 +1,10 @@
+--- TTA_DS_protocol.h.ori	2015-02-02 14:09:02.722617469 +0100
++++ TTA_DS_protocol.h	2015-02-02 14:09:21.962746491 +0100
+@@ -1,6 +1,6 @@
+ 
+ /** Trusted Application Identifier **/
+-#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x44, 0x41, 0x54, 0x41, 0x53, 0x54, 0x31 } }
++#define TA_TTA_DS_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x44, 0x41, 0x54, 0x41, 0x53, 0x54, 0x31 } }
+ 
+ #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND                            0x00000001
+ #define TRUSTED_APP_ERROR_BAD_PARAMETERS                             0x00000002

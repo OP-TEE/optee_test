@@ -1,0 +1,21 @@
+--- TTA_Arithmetical_protocol.h.ori	2015-02-02 09:48:39.468950351 +0100
++++ TTA_Arithmetical_protocol.h	2015-02-03 13:23:56.514679306 +0100
+@@ -48,6 +48,18 @@
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4]);
++TEE_Result CmdTEEBigIntShiftRight(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
++TEE_Result CmdTEEBigIntBigIntGetBit(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
++TEE_Result CmdTEEBigIntBigIntGetBitCount(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
+ TEE_Result CmdTEEBigIntAdd(
+    void*       pSessionContext,
+    uint32_t    nParamTypes,

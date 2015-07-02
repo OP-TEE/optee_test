@@ -1,0 +1,41 @@
+--- tee_internal_api.h.orig	2012-09-21 14:05:02.000000000 +0200
++++ tee_internal_api.h	2015-04-03 12:42:57.296593142 +0200
+@@ -226,7 +226,6 @@
+ #define TEE_DATA_FLAG_ACCESS_WRITE_META   0x00000004
+ #define TEE_DATA_FLAG_SHARE_READ          0x00000010
+ #define TEE_DATA_FLAG_SHARE_WRITE         0x00000020
+-#define TEE_DATA_FLAG_CREATE              0x00000200
+ #define TEE_DATA_FLAG_EXCLUSIVE           0x00000400
+ 
+ /* Usage Constants */
+@@ -606,10 +605,10 @@
+ /******************************************************************************
+ Data Storage functions (27)
+ ******************************************************************************/
+-extern void TEE_GetObjectInfo(
++extern TEE_Result TEE_GetObjectInfo1(
+   TEE_ObjectHandle object,
+   TEE_ObjectInfo* objectInfo);
+-extern void TEE_RestrictObjectUsage(
++extern TEE_Result TEE_RestrictObjectUsage1(
+   TEE_ObjectHandle object,
+   uint32_t objectUsage);
+ extern TEE_Result TEE_GetObjectBufferAttribute(
+@@ -640,7 +639,7 @@
+   TEE_Attribute* attr,
+   uint32_t attributeID,
+   uint32_t a, uint32_t b);
+-extern void TEE_CopyObjectAttributes(
++extern TEE_Result TEE_CopyObjectAttributes1(
+   TEE_ObjectHandle destObject,
+   TEE_ObjectHandle srcObject);
+ extern TEE_Result TEE_GenerateKey(
+@@ -659,7 +658,7 @@
+   TEE_ObjectHandle attributes,
+   void* initialData, size_t initialDataLen,
+   TEE_ObjectHandle* object);
+-extern void TEE_CloseAndDeletePersistentObject(TEE_ObjectHandle object);
++extern TEE_Result TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object);
+ extern TEE_Result TEE_RenamePersistentObject(
+   TEE_ObjectHandle object,
+   void* newObjectID, size_t newObjectIDLen);

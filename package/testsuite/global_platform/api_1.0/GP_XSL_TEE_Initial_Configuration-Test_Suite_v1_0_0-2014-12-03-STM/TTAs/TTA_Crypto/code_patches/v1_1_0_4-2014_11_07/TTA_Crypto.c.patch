@@ -1,0 +1,29 @@
+--- TTA_Crypto.c.ori	2015-02-02 13:48:31.558369472 +0100
++++ TTA_Crypto.c	2015-02-02 13:48:36.666403656 +0100
+@@ -154,7 +154,7 @@
+ TEE_OperationHandle getOperation(uint32_t lopId)
+ {
+    TEE_CryptoData *pCryptoData;
+-   TEE_OperationHandle operation;
++   TEE_OperationHandle operation = TEE_HANDLE_NULL;
+    
+    pCryptoData = TEE_GetInstanceData();
+    if(lopId == 1)
+@@ -204,7 +204,7 @@
+ TEE_ObjectHandle getKey(uint32_t lkeyId)
+ {
+    TEE_CryptoData *pCryptoData;
+-   TEE_ObjectHandle key;
++   TEE_ObjectHandle key = TEE_HANDLE_NULL;
+    
+    pCryptoData = TEE_GetInstanceData();
+    if(lkeyId == 1)
+@@ -415,7 +415,7 @@
+ {
+    /* VARIABLES */
+    TEE_CryptoData *pCryptoData;
+-   TEE_Result nTempResult;
++   TEE_Result nTempResult = TEE_SUCCESS;
+    
+    /* CODE */
+    if((TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT) &&         /* .a &.b : [in] algorithm & mode */

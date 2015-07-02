@@ -1,0 +1,14 @@
+cscope.*
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+out/*
+ta/GP_*
+host/xtest/global_platform/
+host/xtest/xtest_7500.c
+host/xtest/xtest_8000.c
+host/xtest/xtest_8500.c
+host/xtest/xtest_9000.c
+package/testsuite/global_platform/api_1.0/TEE*
+scripts/.conf

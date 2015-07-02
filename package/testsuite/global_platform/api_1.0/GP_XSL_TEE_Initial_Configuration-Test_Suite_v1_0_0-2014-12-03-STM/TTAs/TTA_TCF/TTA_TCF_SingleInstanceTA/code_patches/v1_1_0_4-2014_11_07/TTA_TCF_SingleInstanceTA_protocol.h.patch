@@ -1,0 +1,37 @@
+--- TTA_TCF_SingleInstanceTA_protocol.h.ori	2015-02-02 14:32:58.496271848 +0100
++++ TTA_TCF_SingleInstanceTA_protocol.h	2015-02-02 14:34:54.189052352 +0100
+@@ -14,14 +14,14 @@
+ /** Types & Structures **/
+ 
+ /** Functions definition **/
+-TEE_Result TA_CreateEntryPoint(void);
+-void TA_DestroyEntryPoint(void);
+-TEE_Result TA_OpenSessionEntryPoint(
++/* TEE_Result TA_CreateEntryPoint(void); */
++/* void TA_DestroyEntryPoint(void); */
++/* TEE_Result TA_OpenSessionEntryPoint(
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4],
+-   void**      ppSessionContext );
+-void TA_CloseSessionEntryPoint(
+-   void* pSessionContext);
++   void**      ppSessionContext ); */
++/* void TA_CloseSessionEntryPoint(
++   void* pSessionContext); */
+ TEE_Result CmdTEESetInstanceData(
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+@@ -30,11 +30,11 @@
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4]);
+-TEE_Result TA_InvokeCommandEntryPoint(
++/* TEE_Result TA_InvokeCommandEntryPoint(
+    void*       pSessionContext,
+    uint32_t    nCommandID,
+    uint32_t    nParamTypes,
+-   TEE_Param   pParams[4]);
++   TEE_Param   pParams[4]); */
+ 
+ /** Command ids **/
+ #define CMD_TEE_GetInstanceData                             0x00000101

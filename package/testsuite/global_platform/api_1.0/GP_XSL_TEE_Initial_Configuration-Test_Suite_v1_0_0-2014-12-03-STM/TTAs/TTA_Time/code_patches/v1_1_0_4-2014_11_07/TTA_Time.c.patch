@@ -1,0 +1,67 @@
+--- TTA_Time.c.orig	2015-02-13 04:29:50.534030595 +0100
++++ TTA_Time.c	2015-02-13 04:30:51.422333265 +0100
+@@ -89,6 +89,17 @@
+    SLogTrace("TA_CloseSessionEntryPoint");
+ }
+ 
++static TEE_Result check_time(TEE_Time *nLocalTime1, TEE_Time *nLocalTime2,
++			     uint32_t min, uint32_t max)
++{
++	uint32_t e = ((nLocalTime2->seconds * 1000) + nLocalTime2->millis) -
++		     ((nLocalTime1->seconds * 1000) + nLocalTime1->millis);
++
++	if ((min <= e) && (e <= max))
++		return TEE_SUCCESS;
++	else
++		return TEE_ERROR_GENERIC;
++}
+ 
+ TEE_Result CmdTEEGetSystemTime(
+    void*       pSessionContext,
+@@ -103,15 +114,7 @@
+    TEE_Wait(1000);
+    TEE_GetSystemTime(&nLocalTime2);
+    
+-   if(nLocalTime2.seconds > nLocalTime1.seconds)
+-   {
+-      if((nLocalTime2.seconds - nLocalTime1.seconds) < (uint32_t) 2)
+-         return TEE_SUCCESS;
+-      else
+-         return TEE_ERROR_GENERIC;
+-   }
+-   else
+-      return TEE_ERROR_GENERIC;
++   return check_time(&nLocalTime1, &nLocalTime2, 990, 1300);
+ }
+ 
+ 
+@@ -174,11 +177,7 @@
+    TEE_SetTAPersistentTime(&nLocalTime1);
+    TEE_GetTAPersistentTime(&nLocalTime2);
+    
+-   if((nLocalTime1.seconds = nLocalTime2.seconds) && 
+-      (nLocalTime2.millis < 100))
+-      return TEE_SUCCESS;
+-   else
+-      return TEE_ERROR_GENERIC;
++   return check_time(&nLocalTime1, &nLocalTime2, 0, 100);
+ }
+ 
+ TEE_Result CmdTEESetTAPersistentTimeAndGetTAPersistentTimeOverflow(
+@@ -244,15 +243,7 @@
+    TEE_Wait(1000);
+    TEE_GetREETime(&nLocalTime2);
+    
+-   if(nLocalTime2.seconds > nLocalTime1.seconds)
+-   {
+-      if((nLocalTime2.seconds - nLocalTime1.seconds) < (uint32_t) 2)
+-         return TEE_SUCCESS;
+-      else
+-         return TEE_ERROR_GENERIC;
+-   }
+-   else
+-      return TEE_ERROR_GENERIC;
++   return check_time(&nLocalTime1, &nLocalTime2, 990, 1300);
+ }
+ 
+ /**

@@ -1,0 +1,707 @@
+--- TTA_DS.c.ori	2012-10-24 08:33:24.000000000 +0200
++++ TTA_DS.c	2015-04-22 23:06:41.520077876 +0200
+@@ -22,7 +22,7 @@
+  *       - updated persistent object management when using TEE_DATA_FLAG_ACCESS_WRITE_META (exclusive access)
+  *    18/09/2012 : v1.1
+  *       - updated all NULL pointers on objects with TEE_HANDLE_NULL
+- *       - removed a wrong TEE_CloseObject(nObject1) in function TEE_CloseAndDeletePersistentObject
++ *       - removed a wrong TEE_CloseObject(nObject1) in function TEE_CloseAndDeletePersistentObject1
+  *    24/09/2012 : v1.2
+  *       - some persistent objects are not cleared after panics so they are now wipped clean during the open session.
+  *    24/09/2012 : v1.3
+@@ -249,6 +249,8 @@
+             init = INITIAL_DATA_BUFFER_SIZE;    /* to check that 00 are inserted in the stream */
+          length = offset2 + buff_len;           /* to include the 00 in the out buffer */
+          break;
++      default:
++         break;
+    }
+    *start = init;
+    *len = length;
+@@ -266,7 +268,7 @@
+          &nObject1);
+ 
+    if(nTempResult != TEE_ERROR_ITEM_NOT_FOUND)
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+ }
+ 
+ TEE_Result CmdAllocateTransientChain(
+@@ -277,18 +279,18 @@
+    /* VARIABLES */
+    TEE_ObjectHandle pobject = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_ObjectInfo *pobjectInfo;
+-   uint32_t nObjectType, nMaxObjectSize, nObjectUsage;
++   uint32_t nObjectType, nMaxKeySize, nObjectUsage;
+    TEE_Result nTempResult;
+    bool nCheckResult;
+ 
+    /* CODE */
+-   if(TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT)          /* objectType (.a) & maxObjectSize (.b) */
++   if(TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT)          /* objectType (.a) & maxKeySize (.b) */
+    {
+       SLogError("CmdAllocateTransientChain: Bad expected parameter types");
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+    }
+    nObjectType = pParams[0].value.a;
+-   nMaxObjectSize = pParams[0].value.b;
++   nMaxKeySize = pParams[0].value.b;
+ 
+    /* Allocate TEE_ObjectHandle & TEE_ObjectInfo */
+    SLogTrace("CmdAllocateTransientChain: Before TEE_Malloc");
+@@ -298,21 +300,21 @@
+ 
+    /* Allocate a transient object */
+    SLogTrace("CmdAllocateTransientChain: Before TEE_AllocateTransientObject");
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &pobject);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &pobject);
+    if(nTempResult != TEE_SUCCESS)
+    {
+       TEE_Free(pobjectInfo);
+       return nTempResult;
+    }
+    /* Retrieve the information from the current transient object */
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_GetObjectInfo");
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_GetObjectInfo1");
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+ 
+    /* Perform the check on the object info */
+    nCheckResult = true;
+    if((*pobjectInfo).objectType != nObjectType) nCheckResult = false;
+-   if((*pobjectInfo).objectSize != 0) nCheckResult = false;
+-   if((*pobjectInfo).maxObjectSize != nMaxObjectSize) nCheckResult = false;
++   if((*pobjectInfo).keySize != 0) nCheckResult = false;
++   if((*pobjectInfo).maxKeySize != nMaxKeySize) nCheckResult = false;
+    if((*pobjectInfo).objectUsage != 0xFFFFFFFF) nCheckResult = false;
+    if((*pobjectInfo).dataSize != 0) nCheckResult = false;
+    if((*pobjectInfo).dataPosition != 0) nCheckResult = false;
+@@ -326,12 +328,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage but with all flags set
++   Perform a TEE_RestrictObjectUsage1 but with all flags set
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC | TEE_USAGE_SIGN | TEE_USAGE_VERIFY | TEE_USAGE_DERIVE;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (7F)");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (7F)");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x0000007F)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -340,12 +342,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_DERIVE
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_DERIVE
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC | TEE_USAGE_SIGN | TEE_USAGE_VERIFY;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (3F) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (3F) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x0000003F)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -354,12 +356,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_VERIFY
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_VERIFY
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC | TEE_USAGE_SIGN;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (1F) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (1F) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x0000001F)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -368,12 +370,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_SIGN
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_SIGN
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (0F) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (0F) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x0000000F)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -382,12 +384,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_MAC
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_MAC
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (07) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (07) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x00000007)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -396,12 +398,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_DECRYPT
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_DECRYPT
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE | TEE_USAGE_ENCRYPT;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (03) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (03) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x00000003)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -410,12 +412,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_ENCRYPT
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_ENCRYPT
+    ******************************************************************************/
+    nObjectUsage = TEE_USAGE_EXTRACTABLE;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (01) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (01) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x00000001)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -424,12 +426,12 @@
+    }
+ 
+    /******************************************************************************
+-   Perform a TEE_RestrictObjectUsage removing TEE_USAGE_EXTRACTABLE
++   Perform a TEE_RestrictObjectUsage1 removing TEE_USAGE_EXTRACTABLE
+    ******************************************************************************/
+    nObjectUsage = 0;
+-   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage (00) ");
+-   TEE_RestrictObjectUsage(pobject, nObjectUsage);
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   SLogTrace("CmdAllocateTransientChain: Before TEE_RestrictObjectUsage1 (00) ");
++   TEE_RestrictObjectUsage1(pobject, nObjectUsage);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if(((*pobjectInfo).objectUsage & OBJECT_USAGE_MASK) != 0x00000000)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -440,7 +442,7 @@
+    SLogTrace("CmdAllocateTransientChain: Before TEE_FreeTransientObject");
+    TEE_ResetTransientObject(pobject);
+    /* check that the usage has been reset */
+-   TEE_GetObjectInfo(pobject, pobjectInfo);
++   TEE_GetObjectInfo1(pobject, pobjectInfo);
+    if((*pobjectInfo).objectUsage != 0xFFFFFFFF)
+    {
+       TEE_FreeTransientObject(pobject);
+@@ -477,9 +479,9 @@
+    if(pobjectInfo == NULL)
+       return TRUSTED_APP_ERROR_MALLOC_FAILED;
+ 
+-   /* Perform the TEE_GetObjectInfo with uninitialized object handle */
+-   SLogTrace("CmdGetObjectInfoPanic: Before TEE_GetObjectInfo");
+-   TEE_GetObjectInfo(nobject, pobjectInfo);
++   /* Perform the TEE_GetObjectInfo1 with uninitialized object handle */
++   SLogTrace("CmdGetObjectInfoPanic: Before TEE_GetObjectInfo1");
++   TEE_GetObjectInfo1(nobject, pobjectInfo);
+ 
+    return TEE_ERROR_GENERIC;
+ }
+@@ -499,9 +501,9 @@
+    TEE_ObjectHandle nobject = (TEE_ObjectHandle)0xFFFFDEAD;
+ 
+    /* CODE */
+-   /* Perform the TEE_GetObjectInfo with uninitialized object handle */
+-   SLogTrace("CmdRestrictObjectUsagePanic: Before TEE_RestrictObjectUsage");
+-   TEE_RestrictObjectUsage(nobject, 0xFFFFFFFF);
++   /* Perform the TEE_GetObjectInfo1 with uninitialized object handle */
++   SLogTrace("CmdRestrictObjectUsagePanic: Before TEE_RestrictObjectUsage1");
++   TEE_RestrictObjectUsage1(nobject, 0xFFFFFFFF);
+ 
+    return TEE_ERROR_GENERIC;
+ }
+@@ -600,7 +602,7 @@
+  *  Function CmdStoreAndReadBufferAttribute:
+  *  Description:
+  *    The function is called with:
+- *    - Param#0.a &.b : ObjectType & ObjectSize (value_INPUT)
++ *    - Param#0.a &.b : ObjectType & KeySize (value_INPUT)
+  *    - Param#1.a : attributeID (value_INPUT)
+  *    - Param#2   : input Attribute (MEMREF_INPUT)
+  */
+@@ -613,10 +615,10 @@
+    TEE_ObjectHandle nobject = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Attribute  nattrib;
+    TEE_Result nTempResult;
+-   uint32_t nObjectType, nMaxObjectSize;
++   uint32_t nObjectType, nMaxKeySize;
+ 
+    /* CODE */
+-   if((TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT) &&         /* objectType (.a) & maxObjectSize (.b) */
++   if((TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT) &&         /* objectType (.a) & maxKeySize (.b) */
+       (TEE_PARAM_TYPE_GET(nParamTypes, 1) != TEE_PARAM_TYPE_VALUE_INPUT) &&         /* attributeID */
+       (TEE_PARAM_TYPE_GET(nParamTypes, 2) != TEE_PARAM_TYPE_MEMREF_INPUT))          /* attribute buffer */
+    {
+@@ -628,9 +630,9 @@
+ 
+    /* Allocate a transient object */
+    nObjectType = pParams[0].value.a;
+-   nMaxObjectSize = pParams[0].value.b;
++   nMaxKeySize = pParams[0].value.b;
+    SLogTrace("CmdStoreAndReadBufferAttribute: Before TEE_AllocateTransientObject");
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &nobject);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &nobject);
+    if(nTempResult != TEE_SUCCESS)
+       return nTempResult;
+ 
+@@ -668,7 +670,7 @@
+  *  Function CmdStoreAndReadBufferAttribute:
+  *  Description:
+  *    The function is called with:
+- *    - Param#0.a &.b : ObjectType & ObjectSize (value_INPUT)
++ *    - Param#0.a &.b : ObjectType & KeySize (value_INPUT)
+  *    - Param#1   : buffer of uint32_t that contains successively attributeID|buffer offset|length)
+  *    - Param#2   : buffer containing all the key values one after the other
+  *    - Param#3.a : option in the test for coverage
+@@ -686,8 +688,8 @@
+                      nobject_invalid = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nTargetObject = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
+-   uint32_t nObjectType, nMaxObjectSize, nNbAttributes = 0, nMaxNbAttributes = 0;
+-   uint32_t *pAttrVector;
++   uint32_t nObjectType, nMaxKeySize, nNbAttributes = 0, nMaxNbAttributes = 0;
++   uint32_t *pAttrVector = NULL;
+    uint32_t nAttribID, nAttribIDTemp;
+    uint32_t nOffset;
+    size_t nLength;
+@@ -774,13 +776,13 @@
+ 
+    /* Allocate a fresh transient object */
+    nObjectType = pParams[0].value.a;
+-   nMaxObjectSize = pParams[0].value.b;
++   nMaxKeySize = pParams[0].value.b;
+    SLogTrace("CmdInitObjectAndAttributes: Before TEE_AllocateTransientObject object1");
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &nobject1);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &nobject1);
+    if(nTempResult != TEE_SUCCESS)
+       return TRUSTED_APP_ERROR_ALLOCATE_TRANSIENT_OBJECT_FAILED;
+    SLogTrace("CmdInitObjectAndAttributes: Before TEE_AllocateTransientObject object2");
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &nobject2);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &nobject2);
+    if(nTempResult != TEE_SUCCESS)
+       return TRUSTED_APP_ERROR_ALLOCATE_TRANSIENT_OBJECT_FAILED;
+ 
+@@ -837,7 +839,7 @@
+       {
+          TEE_FreeTransientObject(nobject1);
+          TEE_FreeTransientObject(nobject2);
+-         TEE_CloseAndDeletePersistentObject(nTargetObject);
++         TEE_CloseAndDeletePersistentObject1(nTargetObject);
+          return nTempResult;
+       }
+    }
+@@ -870,7 +872,7 @@
+       {
+          case CASE_GET_OBJECT_BUFFER_ATTRIB_BIT28:
+             /* force the object to protect its protected attributes */
+-            TEE_RestrictObjectUsage(nTargetObject, TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC | TEE_USAGE_SIGN | TEE_USAGE_VERIFY | TEE_USAGE_DERIVE);
++            TEE_RestrictObjectUsage1(nTargetObject, TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT | TEE_USAGE_MAC | TEE_USAGE_SIGN | TEE_USAGE_VERIFY | TEE_USAGE_DERIVE);
+             break;
+          case CASE_GET_OBJECT_BUFFER_ATTRIB_BIT29:
+             nAttribIDTemp = nAttribIDTemp | 0x20000000;        /* force the attribute to be a value */
+@@ -948,7 +950,7 @@
+                return TRUSTED_APP_ERROR_POPULATE_TRANSIENT_OBJECT_FAILED;
+          }
+          /* then perform the copy */
+-         TEE_CopyObjectAttributes(nobject2, nobject1);
++         TEE_CopyObjectAttributes1(nobject2, nobject1);
+          break;
+       case CASE_COPY_OBJECT_ATTRIBUTE_SRC_DEST_NOT_COMPAT:
+          TEE_FreeTransientObject(nobject1);
+@@ -964,21 +966,21 @@
+             TEE_FreeTransientObject(nobject2);
+             return TRUSTED_APP_ERROR_GENERATE_KEY_FAILED;
+          }
+-         TEE_CopyObjectAttributes(nobject2, nobject1);   /* Expected to panic here !! */
++         TEE_CopyObjectAttributes1(nobject2, nobject1);   /* Expected to panic here !! */
+          break;
+       case CASE_COPY_OBJECT_ATTRIBUTE_SRC_IS_PERSISTENT:
+          nobjectTransient = createPersistentObject_FullAccess(pObjectID, nObjectIDSize, nobject1);
+          if(nobject1 == TEE_HANDLE_NULL)
+             return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+ 
+-         TEE_CopyObjectAttributes(nobject2, nobjectTransient);
+-         TEE_CloseAndDeletePersistentObject(nobjectTransient);
++         TEE_CopyObjectAttributes1(nobject2, nobjectTransient);
++         TEE_CloseAndDeletePersistentObject1(nobjectTransient);
+          break;
+       case CASE_COPY_OBJECT_ATTRIBUTE_SRC_NOT_INIT:
+          /* copy the unitialized into the initialized */
+-         TEE_CopyObjectAttributes(nobject1, nobject2);
++         TEE_CopyObjectAttributes1(nobject1, nobject2);
+       default:
+-         TEE_CopyObjectAttributes(nobject2, nobject1);
++         TEE_CopyObjectAttributes1(nobject2, nobject1);
+          break;
+    }
+ 
+@@ -1022,7 +1024,7 @@
+  *  Function CmdGenerateKey:
+  *  Description:
+  *    The function is called with:
+- *    - Param#0.a & .b : ObjectType & ObjectSize (value_INPUT)
++ *    - Param#0.a & .b : ObjectType & KeySize (value_INPUT)
+  *    - Param#1   : buffer of uint32_t that contains successively attributeID|buffer offset|length)
+  *    - Param#2   : buffer containing all the key values one after the other
+  *    - Param#3.a & .b : option in the test for coverage and GenerateKey keysize parameter
+@@ -1038,7 +1040,7 @@
+                      nobject2 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nTargetObject = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
+-   uint32_t nObjectType, nMaxObjectSize, nNbAttributes = 0, nMaxNbAttributes = 0;
++   uint32_t nObjectType, nMaxKeySize, nNbAttributes = 0, nMaxNbAttributes = 0;
+    uint32_t *pAttrVector;
+    uint32_t nAttribID;
+    uint32_t nOffset;
+@@ -1106,9 +1108,9 @@
+    }
+    /* Allocate a fresh transient object */
+    nObjectType = pParams[0].value.a;
+-   nMaxObjectSize = pParams[0].value.b;
++   nMaxKeySize = pParams[0].value.b;
+    SLogTrace("CmdGenerateKey: Before TEE_AllocateTransientObject object");
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &nobject1);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &nobject1);
+    if(nTempResult != TEE_SUCCESS)
+       return TRUSTED_APP_ERROR_ALLOCATE_TRANSIENT_OBJECT_FAILED;
+ 
+@@ -1145,7 +1147,7 @@
+       nTempResult = TEE_GenerateKey(nTargetObject, nKeySize, pattrib, nNbAttributes);  /* tries to generate a key on the object that has already been initialized --> should panic */
+ 
+    if(nTestOption == CASE_GENERATE_KEY_OBJECT_NOT_TRANSIENT)         /* TA should have already panicked */
+-      TEE_CloseAndDeletePersistentObject(nTargetObject);
++      TEE_CloseAndDeletePersistentObject1(nTargetObject);
+ 
+    TEE_FreeTransientObject(nobject1);
+    return nTempResult;
+@@ -1228,7 +1230,7 @@
+                            &nObject1);
+ 
+    if(nTempResult == TEE_SUCCESS)                        /* in case the creation was done ... */
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+    return nTempResult;
+@@ -1273,7 +1275,7 @@
+          &nObject1);
+ 
+    if(nTempResult == TEE_SUCCESS)                        /* in case the creation was done ... */
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1304,8 +1306,8 @@
+    /* CODE */
+    for(i = 0; i < INITIAL_DATA_BUFFER_SIZE; i++)
+       pInitialData[i] = 'B';
+-   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_EXCLUSIVE;
+-   /* create the first object with the attribute TEE_DATA_FLAG_EXCLUSIVE */
++   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
++   /* create the first object with the attribute TEE_DATA_FLAG_OVERWRITE */
+    nTempResult = TEE_CreatePersistentObject(
+          TEE_STORAGE_PRIVATE,
+          (void*) pObjectID, nObjectIDSize,
+@@ -1325,9 +1327,9 @@
+          &nObject2);
+ 
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+    if(nTempResult == TEE_SUCCESS)
+-      TEE_CloseAndDeletePersistentObject(nObject2);
++      TEE_CloseAndDeletePersistentObject1(nObject2);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1400,7 +1402,7 @@
+       if(nTempResult2 != TEE_SUCCESS)
+             return nTempResult;                 /* if there was an error when opening the object */
+ 
+-      TEE_CloseAndDeletePersistentObject(nObject2);
++      TEE_CloseAndDeletePersistentObject1(nObject2);
+    }
+ 
+    pInitialData = TEE_Malloc(INITIAL_DATA_BUFFER_SIZE, 0);
+@@ -1501,7 +1503,7 @@
+          return TEE_ERROR_GENERIC;
+    }
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1599,7 +1601,7 @@
+          &nObject1);
+    if(nTempResult2 != TEE_SUCCESS)
+       return TRUSTED_APP_ERROR_OPEN_PERSISTENT_OBJECT_FAILED;
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1681,7 +1683,7 @@
+                               (void*) pObjectID1, nObjectID1Size,
+                               TEE_DATA_FLAG_ACCESS_WRITE_META,
+                               &nObject1);
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1740,15 +1742,15 @@
+ 
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+    }
+ 
+    /* rename the object */
+    nTempResult = TEE_RenamePersistentObject(nObject1, (void*) pObjectID2, nObjectID2Size);
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
+-   TEE_CloseAndDeletePersistentObject(nObject2);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject2);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1799,7 +1801,7 @@
+    /* rename the object */
+    nTempResult = TEE_RenamePersistentObject(nObject1, (void*)pObjectID2, nObjectID2Size);
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    TEE_Free(pInitialData);
+ 
+@@ -1902,7 +1904,7 @@
+ 
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+    }
+ 
+@@ -1917,8 +1919,8 @@
+ 
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nObject1);
+-      TEE_CloseAndDeletePersistentObject(nObject2);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject2);
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+    }
+ 
+@@ -1948,9 +1950,9 @@
+ 
+    TEE_FreePersistentObjectEnumerator(nObjectEnumerator);
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
+-   TEE_CloseAndDeletePersistentObject(nObject2);
+-   TEE_CloseAndDeletePersistentObject(nObject3);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject2);
++   TEE_CloseAndDeletePersistentObject1(nObject3);
+ 
+   TEE_Free(pInitialData);
+ 
+@@ -1988,7 +1990,7 @@
+    }
+ 
+    if(pParams[0].value.a == CASE_CLOSE_N_DELETE_PERSISTENT_OBJ_HANDLE_NOT_VALID)
+-      TEE_CloseAndDeletePersistentObject(nObject1);
++      TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    if(pParams[0].value.a != CASE_CLOSE_N_DELETE_PERSISTENT_OBJ_WRITE_META)
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+@@ -2013,7 +2015,7 @@
+    if(nTempResult != TEE_SUCCESS)
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+ 
+-   TEE_CloseAndDeletePersistentObject(nObject1);
++   TEE_CloseAndDeletePersistentObject1(nObject1);
+ 
+    return TEE_ERROR_GENERIC;
+ 
+@@ -2028,7 +2030,7 @@
+ 
+    /* CODE */
+    TEE_FreePersistentObjectEnumerator(TEE_HANDLE_NULL);
+-   TEE_CloseAndDeletePersistentObject(TEE_HANDLE_NULL);
++   TEE_CloseAndDeletePersistentObject1(TEE_HANDLE_NULL);
+ 
+    return TEE_SUCCESS;
+ }
+@@ -2166,7 +2168,7 @@
+ {
+    /* VARIABLES */
+    TEE_ObjectHandle pobject = (TEE_ObjectHandle)0xFFFFDEAD;
+-   uint32_t nObjectType, nMaxObjectSize;
++   uint32_t nObjectType, nMaxKeySize;
+    void* pBuffer;
+    size_t nBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;
+    TEE_Result nTempResult;
+@@ -2176,16 +2178,16 @@
+ 	return TRUSTED_APP_ERROR_MALLOC_FAILED;
+ 
+    /* CODE */
+-   if(TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT)          /* objectType (.a) & maxObjectSize (.b) */
++   if(TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT)          /* objectType (.a) & maxKeySize (.b) */
+    {
+       SLogError("CmdGetBufferAttribute_object_uninitialized: Bad expected parameter types");
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+    }
+    nObjectType = pParams[0].value.a;
+-   nMaxObjectSize = pParams[0].value.b;
++   nMaxKeySize = pParams[0].value.b;
+ 
+    /* Allocate a transient object */
+-   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxObjectSize, &pobject);
++   nTempResult = TEE_AllocateTransientObject(nObjectType, nMaxKeySize, &pobject);
+    if(nTempResult != TEE_SUCCESS)
+       return nTempResult;
+ 
+@@ -2224,7 +2226,7 @@
+                                           nFlags,
+                                           &nobject2);
+ 
+-   TEE_CloseAndDeletePersistentObject(nobject1);
++   TEE_CloseAndDeletePersistentObject1(nobject1);
+ 
+    return nTempResult;
+ }
+@@ -2578,14 +2580,14 @@
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+    }
+ 
+-   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_EXCLUSIVE;
++   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+    nobject = createPersistentObject_SetAccess(pObjectID, nObjectIDSize, TEE_HANDLE_NULL, nFlags);
+    if(nobject == TEE_HANDLE_NULL)
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+ 
+    nTempResult = TEE_ReadObjectData(nobject, (void*)pParams[1].memref.buffer, pParams[0].value.a, &nSizeRead);
+    pParams[1].memref.size = nSizeRead;
+-   TEE_CloseAndDeletePersistentObject(nobject);
++   TEE_CloseAndDeletePersistentObject1(nobject);
+    return nTempResult;
+ }
+ 
+@@ -2611,7 +2613,7 @@
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+    }
+    /* create the persistent object to work on */
+-   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_EXCLUSIVE;
++   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+    nobject = createPersistentObject_SetAccess(pObjectID, nObjectIDSize, TEE_HANDLE_NULL, nFlags);
+    if(nobject == TEE_HANDLE_NULL)
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+@@ -2620,21 +2622,21 @@
+    nTempResult = TEE_SeekObjectData(nobject, pParams[1].value.a, TEE_DATA_SEEK_SET);
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nobject);
++      TEE_CloseAndDeletePersistentObject1(nobject);
+       return TRUSTED_APP_ERROR_SEEK_OBJECT_DATA_FAILED;
+    }
+    /* set the offset where required (depends on the SEEK mode specified) */
+    nTempResult = TEE_SeekObjectData(nobject, pParams[0].value.b, pParams[0].value.a);
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nobject);
++      TEE_CloseAndDeletePersistentObject1(nobject);
+       return TRUSTED_APP_ERROR_SEEK_OBJECT_DATA_FAILED;
+    }
+    /* write the input buffer somewhere in the stream */
+    nTempResult = TEE_WriteObjectData(nobject, pParams[2].memref.buffer, pParams[2].memref.size);
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nobject);
++      TEE_CloseAndDeletePersistentObject1(nobject);
+       return TRUSTED_APP_ERROR_WRITE_OBJECT_DATA_FAILED;
+    }
+ 
+@@ -2643,13 +2645,13 @@
+    nTempResult = TEE_SeekObjectData(nobject, nOffsetRead, TEE_DATA_SEEK_SET);
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nobject);
++      TEE_CloseAndDeletePersistentObject1(nobject);
+       return TRUSTED_APP_ERROR_SEEK_OBJECT_DATA_FAILED;
+    }
+ 
+    nTempResult = TEE_ReadObjectData(nobject, (void*)pParams[3].memref.buffer, nSizeRead, &nSizeFinalRead);
+    pParams[3].memref.size = nSizeFinalRead;
+-   TEE_CloseAndDeletePersistentObject(nobject);
++   TEE_CloseAndDeletePersistentObject1(nobject);
+ 
+    if(nSizeRead != nSizeFinalRead)
+       return TEE_ERROR_GENERIC;
+@@ -2676,7 +2678,7 @@
+       return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+    }
+    /* create the persistent object to work on */
+-   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_EXCLUSIVE;
++   nFlags = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE | TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ | TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+    nobject = createPersistentObject_SetAccess(pObjectID, nObjectIDSize, TEE_HANDLE_NULL, nFlags);
+    if(nobject == TEE_HANDLE_NULL)
+       return TRUSTED_APP_ERROR_CREATE_PERSISTENT_OBJECT_FAILED;
+@@ -2684,12 +2686,12 @@
+    nTempResult = TEE_TruncateObjectData(nobject, pParams[0].value.a);            /* shrink or extend the buffer */
+    if(nTempResult != TEE_SUCCESS)
+    {
+-      TEE_CloseAndDeletePersistentObject(nobject);
++      TEE_CloseAndDeletePersistentObject1(nobject);
+       return TRUSTED_APP_ERROR_TRUNCATE_OBJECT_DATA_FAILED;
+    }
+ 
+    nTempResult = TEE_ReadObjectData(nobject, pParams[3].memref.buffer, pParams[0].value.a, &pParams[3].memref.size);
+-   TEE_CloseAndDeletePersistentObject(nobject);
++   TEE_CloseAndDeletePersistentObject1(nobject);
+    return nTempResult;
+ }
+ 

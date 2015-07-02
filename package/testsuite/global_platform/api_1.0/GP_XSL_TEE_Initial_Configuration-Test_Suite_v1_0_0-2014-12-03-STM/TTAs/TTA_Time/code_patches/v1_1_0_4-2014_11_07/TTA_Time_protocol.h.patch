@@ -1,0 +1,10 @@
+--- TTA_Time_protocol.h.ori	2015-02-02 14:38:05.506342966 +0100
++++ TTA_Time_protocol.h	2015-02-02 14:38:18.890433256 +0100
+@@ -1,6 +1,6 @@
+ 
+ /** Trusted Application Identifier **/
+-#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x5F, 0x54, 0x49, 0x4D, 0x45, 0x41, 0x50, 0x49 } }
++#define TA_TTA_TIME_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x5F, 0x54, 0x49, 0x4D, 0x45, 0x41, 0x50, 0x49 } }
+ 
+ 
+ #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND       0x00000001

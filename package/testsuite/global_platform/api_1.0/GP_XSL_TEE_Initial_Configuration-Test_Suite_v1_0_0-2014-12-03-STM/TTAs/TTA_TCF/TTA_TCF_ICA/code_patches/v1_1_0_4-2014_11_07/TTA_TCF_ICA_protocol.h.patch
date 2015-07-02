@@ -1,0 +1,29 @@
+--- TTA_TCF_ICA_protocol.h.ori	2015-02-02 14:23:55.668618005 +0100
++++ TTA_TCF_ICA_protocol.h	2015-02-02 14:32:34.040106856 +0100
+@@ -13,18 +13,18 @@
+ /** Types & Structures **/
+ 
+ /** Functions definition **/
+-TEE_Result TA_CreateEntryPoint(void);
+-void TA_DestroyEntryPoint(void);
+-TEE_Result TA_OpenSessionEntryPoint(
++/* TEE_Result TA_CreateEntryPoint(void); */
++/* void TA_DestroyEntryPoint(void); */
++/* TEE_Result TA_OpenSessionEntryPoint(
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4],
+-   void**      ppSessionContext );
+-void TA_CloseSessionEntryPoint(
+-   void* pSessionContext);
+-TEE_Result TA_InvokeCommandEntryPoint(
++   void**      ppSessionContext ); */
++/* void TA_CloseSessionEntryPoint(
++   void* pSessionContext); */
++/* TEE_Result TA_InvokeCommandEntryPoint(
+    void*       pSessionContext,
+    uint32_t    nCommandID,
+    uint32_t    nParamTypes,
+-   TEE_Param   pParams[4]);
++   TEE_Param   pParams[4]); */
+ 
+ /** Command ids **/

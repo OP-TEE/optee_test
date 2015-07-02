@@ -1,0 +1,49 @@
+--- TTA_answerSuccessTo_OpenSession_Invoke_protocol.h.ori	2015-02-02 14:49:14.358854639 +0100
++++ TTA_answerSuccessTo_OpenSession_Invoke_protocol.h	2015-02-02 14:53:55.612751509 +0100
+@@ -0,0 +1,46 @@
++
++#define TRUSTED_APP_ERROR_UNKNOWN_COMMAND       0x00000001
++#define TRUSTED_APP_ERROR_BAD_PARAMETERS        0x00000002
++#define TRUSTED_APP_ERROR_UNEXPECTED_PROPERTY   0x0000FFFE
++#define TRUSTED_APP_ERROR_UNEXPECTED_RETURN     0x0000FFFF
++
++#define PROPERTY_NAME_MAX_SIZE               100
++#define PROPERTY_OUTPUT_STRING_MAX_SIZE      200
++
++/** Types and Structures **/
++enum propType {
++   undefined = 0,
++   string = 1,
++   boolean = 2,
++   integer = 3,
++   binaryblock = 4,
++   uuuid = 5,
++   identity = 6
++};
++
++typedef struct
++{
++   uint32_t param_types;
++   bool     set;
++   void*    pSessionContext;
++} TEE_STUB_INVOKE;
++
++typedef struct
++{
++   uint32_t param_type;       // the copy of the original parameter
++   int      param_nbr;        // input parameter number
++   bool     memref;           // false means value, true means memref   (bit 2)
++   bool     output;           // true means the parameter is an output  (bit 1)
++   bool     input;            // true means the parameter is an input   (bit 0)
++   // both input & output set means INOUT
++} PARAM;
++
++#define TEE_PARAM_TYPE_GET_INPUT(t, i) (((t) >> (i*4)) & 0x1)     // filter on bit 0
++#define TEE_PARAM_TYPE_GET_OUTPUT(t, i) (((t) >> (i*4)) & 0x2)    // filter on bit 1
++
++
++/** Functions definition **/
++
++
++/** Command ids and uuid **/
++#include <ta_answerSuccessTo_OpenSession_Invoke_test.h>

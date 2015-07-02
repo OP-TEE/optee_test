@@ -1,0 +1,17 @@
+--- TTA_testingClientAPI_protocol.h.ori	2015-02-02 15:06:30.689843665 +0100
++++ TTA_testingClientAPI_protocol.h	2015-02-02 15:06:52.153988367 +0100
+@@ -1,6 +1,6 @@
+ 
+ /** Trusted Application Identifier **/
+-#define TA_UUID  { 0x534D4152, 0x542D, 0x4353, { 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x54 } } 
++#define TA_TTA_TESTING_CLIENT_API_UUID { 0x534D4152, 0x542D, 0x4353, { 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x54 } } 
+ 
+ /** Definitions **/
+ #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND       0x00000001
+@@ -67,4 +67,4 @@
+ #define COMMAND_TTA_Remember_Expected_ParamTypes      0x00000002
+ #define COMMAND_TTA_Copy_ParamIn_to_ParamOut          0x00000001
+ #define COMMAND_TTA_Check_ParamTypes                  0x00000003
+-#define COMMAND_TTA_To_Be_Cancelled                   0x00000004
+\ No newline at end of file
++#define COMMAND_TTA_To_Be_Cancelled                   0x00000004

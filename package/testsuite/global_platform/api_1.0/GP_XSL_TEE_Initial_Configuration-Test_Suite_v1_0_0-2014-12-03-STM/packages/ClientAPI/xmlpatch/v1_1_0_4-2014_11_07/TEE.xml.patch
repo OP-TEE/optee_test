@@ -1,0 +1,77 @@
+--- TEE.xml.ori	2015-02-02 13:57:45.590079070 +0100
++++ TEE.xml	2015-02-03 13:23:03.634329563 +0100
+@@ -1962,7 +1962,7 @@
+                         <argument>
+                             <parameter name="IN_context" />
+                             <type name="ALL_CONTEXTS" />
+-                            <value name="CONTEXT02" />
++                            <value name="CONTEXT01" />
+                         </argument>
+                         <argument>
+                             <parameter name="OUT_expected_TEEC_result" />
+@@ -2096,7 +2096,10 @@
+                     </operation>
+                     <observations />
+                 </call>
+-                <call>
++                <!--To cover the cases when second thread needs to be involved.
++                There is only one case which needs to much effort for the benefit
++                of autogen -->
++                <!--call>
+                     <class name="TEE_Client_API" />
+                     <instance name="SUT" />
+                     <operation name="InitializeContext">
+@@ -2108,7 +2111,7 @@
+                         <argument>
+                             <parameter name="IN_context" />
+                             <type name="ALL_CONTEXTS" />
+-                            <value name="CONTEXT02" />
++                            <value name="CONTEXT01" />
+                         </argument>
+                         <argument>
+                             <parameter name="OUT_expected_TEEC_result" />
+@@ -2125,8 +2128,22 @@
+                         <argument>
+                             <parameter name="IN_context" />
+                             <type name="ALL_CONTEXTS" />
+-                            <value name="CONTEXT02" />
++                            <value name="CONTEXT01" />
++                        </argument>
++                    </operation>
++                    <observations />
++                </call-->
++                <call>
++                    <class name="TEE_Client_API" />
++                    <instance name="SUT" />
++                    <operation name="ctx_init_finalize">
++
++                        <argument>
++                            <parameter name="IN_context" />
++                            <type name="ALL_CONTEXTS" />
++                            <value name="thr2_ctx" />
+                         </argument>
++
+                     </operation>
+                     <observations />
+                 </call>
+@@ -8425,6 +8442,7 @@
+                             <value name="VALUE02" />
+                         </argument>
+                     </operation>
++
+                     <observations />
+                 </call>
+                 <call>
+@@ -8615,6 +8633,12 @@
+                             <value name="OPERATION01" />
+                         </argument>
+                         <argument>
++			<!-- ReturnOrigin was missing here. Added manually! -->
++                            <parameter name="OUT_expectedReturnOrigin" />
++                            <type name="ALL_RETURN_ORIGINS" />
++                            <value name="NULL" />
++                        </argument>
++                        <argument>
+                             <parameter name="OUT_expected_TEEC_result" />
+                             <type name="ALL_RETURN_CODES" />
+                             <value name="TEEC_ERROR_CANCEL" />

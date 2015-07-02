@@ -1,0 +1,46 @@
+--- TTA_TCF.h.ori	2015-02-02 14:15:06.009054399 +0100
++++ TTA_TCF.h	2015-02-02 14:20:46.799347192 +0100
+@@ -46,10 +46,12 @@
+ };
+ 
+ /** function protoypes **/
++bool isPropertySet (TEE_PropSetHandle propsetOrEnumerator);
+ bool areStringsIdentical(const char *string1, const char *string2);
+ bool areUUIDsIdentical(TEE_UUID *UUID1, TEE_UUID *UUID2);
+ bool areIdentitiesIdentical(TEE_Identity *Identity1, TEE_Identity *Identity2);
+ bool areBinaryBlocksIdentical(const char *BinaryBlock1, size_t nLength1, const char *BinaryBlock2, size_t nLength2);
++void getUUIDFromBuffer(TEE_UUID *pTargetUUID, char uuidvalue[16]);
+ enum propType getPropertyType(char *propString);
+ TEE_Result CmdTEEGetPropertyAsString_withoutEnum(
+    void*       pSessionContext,
+@@ -147,11 +149,19 @@
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4]);
++TEE_Result CmdInvokePayloadValue(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
+ TEE_Result SendInvokeAndCheck_ValueInOut(
+    TEE_TASessionHandle psession,
+    TEE_Param   pParams[4], 
+    uint32_t    lType, 
+    uint32_t    nvalue);
++TEE_Result CmdInvokePayloadMemref(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
+ TEE_Result CmdTEEGetNextPropertyEnumerator_notStarted(
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+@@ -160,6 +170,10 @@
+    TEE_TASessionHandle psession,
+    TEE_Param pParams[4], 
+    uint32_t lType);
++TEE_Result CmdInvokePayloadValue_In_Out(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
+ TEE_Result SendInvokeAndCheck_Value_In_Out(
+    TEE_TASessionHandle psession,
+    TEE_Param pParams[4], 

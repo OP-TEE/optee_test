@@ -1,0 +1,10 @@
+--- TTA_answerErrorTo_Invoke_protocol.h.ori	2015-02-02 14:40:43.531408959 +0100
++++ TTA_answerErrorTo_Invoke_protocol.h	2015-02-02 14:41:00.343522368 +0100
+@@ -1,6 +1,6 @@
+ 
+ /** Trusted Application Identifier **/
+-#define TA_UUID  { 0x534D4152, 0x542D, 0x4353, { 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x45, 0x52 } }
++#define TA_TTA_ANSWERERRORTOINVOKE_UUID  { 0x534D4152, 0x542D, 0x4353, { 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x45, 0x52 } }
+ 
+ 
+ #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND       0x00000001
