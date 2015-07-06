@@ -541,7 +541,7 @@ static TEEC_Result ta_crypt_cmd_ae_init(ADBG_Case_t *c, TEEC_Session *s,
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 					 TEEC_MEMREF_TEMP_INPUT,
-					 TEEC_VALUE_OUTPUT, TEEC_NONE);
+					 TEEC_VALUE_INPUT, TEEC_NONE);
 
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_AE_INIT, &op, &ret_orig);
 

@@ -551,7 +551,7 @@ TEE_Result ta_entry_ae_init(uint32_t param_type, TEE_Param params[4])
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
-			   TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE));
+			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE));
 	return TEE_AEInit((TEE_OperationHandle) params[0].value.a,
 			  params[1].memref.buffer, params[1].memref.size,
 			  params[0].value.b * 8, /* tag_len in bits */
