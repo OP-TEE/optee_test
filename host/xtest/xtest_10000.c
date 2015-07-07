@@ -752,6 +752,7 @@ static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 
 #define CMD_ECC_GEN_KEY_SELF_TESTS	0
 #define CMD_ECC_DSA_TESTS		1
+#define CMD_ECC_DH_TESTS		2
 static TEEC_Result ecc_self_test(TEEC_Session *sess,
 				 uint32_t algo, uint32_t command)
 {
@@ -851,6 +852,16 @@ static void xtest_tee_test_10003(ADBG_Case_t *c)
 		ADBG_EXPECT_TEEC_SUCCESS(c,
 				ecc_self_test(&sess, algo, CMD_ECC_DSA_TESTS));
 		Do_ADBG_EndSubCase(c, "ECC Sign & Verify - algo=0x%x", algo);
+	}
+
+	/* ECC DH */
+	for (algo = TEE_ALG_ECDH_P192;
+	     algo <=  TEE_ALG_ECDH_P521;
+	     algo += 0x1000) {
+		Do_ADBG_BeginSubCase(c, "ECC DH - algo=0x%x", algo);
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+				ecc_self_test(&sess, algo, CMD_ECC_DH_TESTS));
+		Do_ADBG_EndSubCase(c, "ECC DH - algo=0x%x", algo);
 	}
 
 	TEEC_CloseSession(&sess);
