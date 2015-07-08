@@ -3618,6 +3618,21 @@ static bool test_rsa_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 				      ARRAY_SIZE(attrs));
 }
 
+static bool test_ecc_key_pair(ADBG_Case_t *c, TEEC_Session *s,
+			      TEE_ObjectHandle key, uint32_t key_size)
+{
+	const struct key_attrs attrs[] = {
+		KEY_ATTR(TEE_ATTR_ECC_PRIVATE_VALUE, false),
+		KEY_ATTR(TEE_ATTR_ECC_PUBLIC_VALUE_X , false),
+		KEY_ATTR(TEE_ATTR_ECC_PUBLIC_VALUE_Y , false),
+		/* KEY_ATTR(TEE_ATTR_ECC_CURVE, false), - do not test */
+	};
+
+	return test_keygen_attributes(c, s, key, key_size,
+				      (struct key_attrs *)&attrs,
+				      ARRAY_SIZE(attrs));
+}
+
 static bool test_dh_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 			     uint32_t check_keysize,
 			     TEE_ObjectHandle key, uint32_t key_size)
@@ -3693,9 +3708,14 @@ static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 				test_rsa_key_pair(c, s, key, key_size));
 		break;
 
+	case TEE_TYPE_ECDSA_KEYPAIR:
+	case TEE_TYPE_ECDH_KEYPAIR:
+		ret_val = ADBG_EXPECT_TRUE(c,
+				test_ecc_key_pair(c, s, key, key_size));
+		break;
+
 	case TEE_TYPE_DH_KEYPAIR:
-		ret_val =
-			ADBG_EXPECT_TRUE(c,
+		ret_val = ADBG_EXPECT_TRUE(c,
 				test_dh_key_pair(c, s, check_keysize, key,
 						 key_size));
 		break;
@@ -3939,6 +3959,50 @@ static void xtest_test_keygen_dsa(ADBG_Case_t *c, TEEC_Session *session)
 	}
 }
 
+static void xtest_test_keygen_ecc(ADBG_Case_t *c, TEEC_Session *session)
+{
+	size_t n;
+	size_t param_count;
+	TEE_Attribute params[4];
+
+	static const struct {
+		const char *name;
+		uint32_t algo;
+		uint32_t curve;
+		uint32_t key_size;
+	} key_types[] = {
+	/* ECDSA */
+	{ "ECDSA-192", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P192, 192 },
+	{ "ECDSA-224", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P224, 224 },
+	{ "ECDSA-256", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P256, 256 },
+	{ "ECDSA-384", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P384, 384 },
+	{ "ECDSA-521", TEE_TYPE_ECDSA_KEYPAIR, TEE_ECC_CURVE_NIST_P521, 521 },
+
+	/* ECDH */
+	{ "ECDH-192", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P192, 192 },
+	{ "ECDH-224", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P224, 224 },
+	{ "ECDH-256", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P256, 256 },
+	{ "ECDH-384", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P384, 384 },
+	{ "ECDH-521", TEE_TYPE_ECDH_KEYPAIR, TEE_ECC_CURVE_NIST_P521, 521 },
+	};
+
+	for (n = 0; n < ARRAY_SIZE(key_types); n++) {
+		Do_ADBG_BeginSubCase(c, "Generate %s", key_types[n].name);
+		param_count = 0;
+
+		xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
+			             key_types[n].curve, 0);
+
+		if (!ADBG_EXPECT_TRUE(c,
+			generate_and_test_key(c, session, key_types[n].algo,
+				0, key_types[n].key_size, params,
+				param_count)))
+			break;
+
+		Do_ADBG_EndSubCase(c, "Generate %s", key_types[n].name);
+	}
+}
+
 static void xtest_tee_test_4007(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
@@ -3954,6 +4018,8 @@ static void xtest_tee_test_4007(ADBG_Case_t *c)
 	xtest_test_keygen_dh(c, &session);
 
 	xtest_test_keygen_dsa(c, &session);
+
+	xtest_test_keygen_ecc (c, &session);
 
 	TEEC_CloseSession(&session);
 }

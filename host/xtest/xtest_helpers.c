@@ -115,6 +115,15 @@ void xtest_add_attr(size_t *attr_count, TEE_Attribute *attrs, uint32_t attr_id,
 	(*attr_count)++;
 }
 
+void xtest_add_attr_value(size_t *attr_count, TEE_Attribute *attrs,
+			  uint32_t attr_id, uint32_t value_a, uint32_t value_b)
+{
+	attrs[*attr_count].attributeID = attr_id;
+	attrs[*attr_count].content.value.a = value_a;
+	attrs[*attr_count].content.value.b = value_b;
+	(*attr_count)++;
+}
+
 struct tee_attr_packed {
 	uint32_t attr_id;
 	uint32_t a;

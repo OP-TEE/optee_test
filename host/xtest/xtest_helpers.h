@@ -92,6 +92,8 @@ TEEC_Result ta_crypt_cmd_free_operation(ADBG_Case_t *c,
 
 void xtest_add_attr(size_t *attr_count, TEE_Attribute *attrs,
 			   uint32_t attr_id, const void *buf, size_t len);
+void xtest_add_attr_value(size_t *attr_count, TEE_Attribute *attrs,
+			  uint32_t attr_id, uint32_t value_a, uint32_t value_b);
 
 TEE_Result pack_attrs(const TEE_Attribute *attrs, uint32_t attr_count,
 			     uint8_t **buf, size_t *blen);
