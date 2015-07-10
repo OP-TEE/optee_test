@@ -12,31 +12,6 @@ echo -e " ERROR: .env must be at the same location as $0";
 exit 0;
 fi;
 
-if [ ${CFG_GP_TESTSUITE_ENABLE} == "y" ]; then
-	cd ${CDIR}
-	echo ${CDIR}
-	./enable_gp_testsuite.sh
-
-	# openssl .h file installation
-	if [ -d /usr/include/openssl ]; then
-		forgpdir=${CFG_DEV_PATH}/optee_test/host/xtest/for_gp/
-		mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
-		[ -d /usr/include/x86_64-linux-gnu/openssl ] && LCI_CPD /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include
-		for f in /usr/include/openssl/*.h ; do
-			LCI_CPF $f ${forgpdir}/include/openssl
-		done
-	else
-		LCI_PRINT_WARNING "ERROR: '/usr/include/openssl' NOT FOUND"
-		exit;
-	fi;
-
-	if [ "${CFG_ARM32}" = "y" ]; then
-		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv7/libcrypto.a ${forgpdir}/lib
-	else
-		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv8/libcrypto.a ${forgpdir}/lib
-	fi
-fi
-
 LCI_PRINT_SEPARATOR
 LCI_PRINT_HEADER "Running `basename $0`"
 LCI_PRINT_SEPARATOR
@@ -236,6 +211,31 @@ LCI_PATCH  ${ARRAY[FILE]} ${ARRAY[PATCH]}
 LCI_PRINT_SEPARATOR
 
 cd ${CDIR}
+
+if [ ${CFG_GP_TESTSUITE_ENABLE} == "y" ]; then
+	cd ${CDIR}
+	echo ${CDIR}
+	./enable_gp_testsuite.sh
+
+	# openssl .h file installation
+	if [ -d /usr/include/openssl ]; then
+		forgpdir=${CFG_DEV_PATH}/optee_test/host/xtest/for_gp/
+		mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
+		[ -d /usr/include/x86_64-linux-gnu/openssl ] && LCI_CPD /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include
+		for f in /usr/include/openssl/*.h ; do
+			LCI_CPF $f ${forgpdir}/include/openssl
+		done
+	else
+		LCI_PRINT_WARNING "ERROR: '/usr/include/openssl' NOT FOUND"
+		exit;
+	fi;
+
+	if [ "${CFG_ARM32}" = "y" ]; then
+		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv7/libcrypto.a ${forgpdir}/lib
+	else
+		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv8/libcrypto.a ${forgpdir}/lib
+	fi
+fi
 
 LCI_PRINT_SEPARATOR
 LCI_PRINT_HEADER "`basename $0` finished";
