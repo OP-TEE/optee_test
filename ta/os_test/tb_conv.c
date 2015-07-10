@@ -73,10 +73,10 @@ static void test_BigInt_getsetShort(void)
 
 static void test_BigInt_getsetOctetString(void)
 {
-	const uint8_t os1[] = { 1, 2, 3, 4 };
-	const uint8_t os2[] = { 1, 2, 3, 4, 5 };
-	const uint8_t os3[] = { 0, 1, 2, 3, 4 };
-	const uint8_t os4[] = { 0x11, 0x22, 0x44, 0x55, 0x66, 0x77, 0x88 };
+	uint8_t os1[] = { 1, 2, 3, 4 };
+	uint8_t os2[] = { 1, 2, 3, 4, 5 };
+	uint8_t os3[] = { 0, 1, 2, 3, 4 };
+	uint8_t os4[] = { 0x11, 0x22, 0x44, 0x55, 0x66, 0x77, 0x88 };
 	uint8_t os_res[10];
 	TEE_Result res;
 	size_t os_len;
