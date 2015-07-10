@@ -82,10 +82,10 @@ CFLAGS += -I../../ta/GP_TTA_testingClientAPI
 CFLAGS += -Ifor_gp/include
 
 # need more libraries: openssl
-ifneq ($(PLATFORM_FLAVOR),qemu_virt)
-LDFLAGS += for_gp/lib/libcrypto.a
+ifeq ($(CFG_ARM32),y)
+LDFLAGS += ../lib/armv7/libcrypto.a
 else
-LDFLAGS += -lcrypto
+LDFLAGS += ../lib/armv8/libcrypto.a
 endif
 
 # need more flags

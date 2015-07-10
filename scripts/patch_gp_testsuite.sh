@@ -229,12 +229,6 @@ if [ ${CFG_GP_TESTSUITE_ENABLE} == "y" ]; then
 		LCI_PRINT_WARNING "ERROR: '/usr/include/openssl' NOT FOUND"
 		exit;
 	fi;
-
-	if [ "${CFG_ARM32}" = "y" ]; then
-		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv7/libcrypto.a ${forgpdir}/lib
-	else
-		LCI_CPF ${CFG_DEV_PATH}/optee_test/host/lib/armv8/libcrypto.a ${forgpdir}/lib
-	fi
 fi
 
 LCI_PRINT_SEPARATOR
