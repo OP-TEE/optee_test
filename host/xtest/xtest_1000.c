@@ -29,6 +29,7 @@
 #include <ta_create_fail_test.h>
 #include <ta_rpc_test.h>
 #include <ta_sims_test.h>
+#include <ta_concurrent.h>
 
 static void xtest_tee_test_1001(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1004(ADBG_Case_t *Case_p);
@@ -40,6 +41,7 @@ static void xtest_tee_test_1009(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1010(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1011(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1012(ADBG_Case_t *Case_p);
+static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_1001, xtest_tee_test_1001,
 		/* Title */
@@ -143,6 +145,17 @@ ADBG_CASE_DEFINE(XTEST_TEE_1011, xtest_tee_test_1011,
 ADBG_CASE_DEFINE(XTEST_TEE_1012, xtest_tee_test_1012,
 		/* Title */
 		"Test Single Instance Multi Session features with SIMS TA",
+		/* Short description */
+		"Short description ...",
+		/* Requirement IDs */
+		"TEE-??",
+		/* How to implement */
+		"Description of how to implement ..."
+		 );
+
+ADBG_CASE_DEFINE(XTEST_TEE_1013, xtest_tee_test_1013,
+		/* Title */
+		"Test concurency with concurrent TA",
 		/* Short description */
 		"Short description ...",
 		/* Requirement IDs */
@@ -1016,4 +1029,158 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 
 		TEEC_CloseSession(&session1);
 	}
+}
+
+struct test_1013_thread_arg {
+	uint32_t cmd;
+	uint32_t repeat;
+	TEEC_SharedMemory *shm;
+	uint32_t error_orig;
+	TEEC_Result res;
+	uint32_t max_concurrency;
+	const uint8_t *in;
+	size_t in_len;
+	uint8_t *out;
+	size_t out_len;
+};
+
+static void *test_1013_thread(void *arg)
+{
+	struct test_1013_thread_arg *a = arg;
+	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint8_t p2 = TEEC_NONE;
+	uint8_t p3 = TEEC_NONE;
+
+	a->res = xtest_teec_open_session(&session, &concurrent_ta_uuid, NULL,
+					 &a->error_orig);
+	if (a->res != TEEC_SUCCESS)
+		return NULL;
+
+	op.params[0].memref.parent = a->shm;
+	op.params[0].memref.size = a->shm->size;
+	op.params[0].memref.offset = 0;
+	op.params[1].value.a = a->repeat;
+	op.params[1].value.b = 0;
+	op.params[2].tmpref.buffer = (void *)a->in;
+	op.params[2].tmpref.size = a->in_len;
+	op.params[3].tmpref.buffer = a->out;
+	op.params[3].tmpref.size = a->out_len;
+
+	if (a->in_len)
+		p2 = TEEC_MEMREF_TEMP_INPUT;
+	if (a->out_len)
+		p3 = TEEC_MEMREF_TEMP_OUTPUT;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INOUT,
+					 TEEC_VALUE_INOUT, p2, p3);
+
+	a->res = TEEC_InvokeCommand(&session, a->cmd, &op, &a->error_orig);
+	a->max_concurrency = op.params[1].value.b;
+	a->out_len = op.params[3].tmpref.size;
+	TEEC_CloseSession(&session);
+	return NULL;
+}
+
+static void xtest_tee_test_1013(ADBG_Case_t *c)
+{
+	size_t num_threads = 3;
+	size_t nt;
+	size_t n;
+	pthread_t thr[num_threads];
+	TEEC_SharedMemory shm;
+	size_t max_concurrency;
+	struct test_1013_thread_arg arg[num_threads];
+	static const uint8_t sha256_in[] = { 'a', 'b', 'c' };
+	static const uint8_t sha256_out[] = {
+		0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
+		0x41, 0x41, 0x40, 0xde, 0x5d, 0xae, 0x22, 0x23,
+		0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c,
+		0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad
+	};
+	uint8_t out[32] = { 0 };
+
+
+	memset(&shm, 0, sizeof(shm));
+	shm.size = sizeof(struct ta_concurrent_shm);
+	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Busy loop with %zu parallel threads",
+			     num_threads);
+
+	memset(shm.buffer, 0, shm.size);
+	memset(arg, 0, sizeof(arg));
+	max_concurrency = 0;
+	nt = num_threads;
+
+	for (n = 0; n < nt; n++) {
+		arg[n].cmd = TA_CONCURRENT_CMD_BUSY_LOOP;
+		arg[n].repeat = 10000;
+		arg[n].shm = &shm;
+		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
+						test_1013_thread, arg + n)))
+			nt = n; /* break loop and start cleanup */
+	}
+
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL));
+		ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res);
+		if (arg[n].max_concurrency > max_concurrency)
+			max_concurrency = arg[n].max_concurrency;
+	}
+
+	Do_ADBG_Log("Max concurrency %zu", max_concurrency);
+
+	/*
+	 * Concurrency can be limited by several factors, for instance in a
+	 * single CPU system it's dependent on the Preemtion Model used by
+	 * the kernel (Preemptible Kernel (Low-Latency Desktop) gives the
+	 * best result there).
+	 */
+	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, >, 0);
+	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, <=, num_threads);
+
+	Do_ADBG_EndSubCase(c, "Busy loop with %zu parallel threads",
+			   num_threads);
+
+
+	Do_ADBG_BeginSubCase(c, "Hashing with %zu parallel threads",
+			     num_threads);
+
+	memset(shm.buffer, 0, shm.size);
+	memset(arg, 0, sizeof(arg));
+	max_concurrency = 0;
+	nt = num_threads;
+
+	for (n = 0; n < nt; n++) {
+		arg[n].cmd = TA_CONCURRENT_CMD_SHA256;
+		arg[n].repeat = 1000;
+		arg[n].shm = &shm;
+		arg[n].in = sha256_in;
+		arg[n].in_len = sizeof(sha256_in);
+		arg[n].out = out;
+		arg[n].out_len = sizeof(out);
+		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
+						test_1013_thread, arg + n)))
+			nt = n; /* break loop and start cleanup */
+	}
+
+	for (n = 0; n < nt; n++) {
+		if (ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL)) &&
+		    ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
+			ADBG_EXPECT_BUFFER(c, sha256_out, sizeof(sha256_out),
+					   arg[n].out, arg[n].out_len);
+		if (arg[n].max_concurrency > max_concurrency)
+			max_concurrency = arg[n].max_concurrency;
+	}
+
+	Do_ADBG_Log("Max concurrency %zu", max_concurrency);
+
+	Do_ADBG_EndSubCase(c, "Hashing with %zu parallel threads",
+			   num_threads);
+
+	TEEC_ReleaseSharedMemory(&shm);
 }

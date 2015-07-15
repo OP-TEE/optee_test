@@ -19,6 +19,7 @@
 #include <ta_rpc_test.h>
 #include <ta_sims_test.h>
 #include <ta_storage.h>
+#include <ta_concurrent.h>
 #include <enc_fs_key_manager_test.h>
 #include <tee_api_defines.h>
 #ifdef WITH_GP_TESTS
@@ -78,6 +79,7 @@ const TEEC_UUID rpc_test_ta_uuid = TA_RPC_TEST_UUID;
 const TEEC_UUID sims_test_ta_uuid = TA_SIMS_TEST_UUID;
 const TEEC_UUID storage_ta_uuid = TA_STORAGE_UUID;
 const TEEC_UUID enc_fs_key_manager_test_ta_uuid = ENC_FS_KEY_MANAGER_TEST_UUID;
+const TEEC_UUID concurrent_ta_uuid = TA_CONCURRENT_UUID;
 #ifdef WITH_GP_TESTS
 const TEEC_UUID gp_tta_ds_uuid = TA_TTA_DS_UUID;
 #endif

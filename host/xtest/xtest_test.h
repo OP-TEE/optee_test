@@ -27,6 +27,7 @@ ADBG_CASE_DECLARE(XTEST_TEE_1009);
 ADBG_CASE_DECLARE(XTEST_TEE_1010);
 ADBG_CASE_DECLARE(XTEST_TEE_1011);
 ADBG_CASE_DECLARE(XTEST_TEE_1012);
+ADBG_CASE_DECLARE(XTEST_TEE_1013);
 
 ADBG_CASE_DECLARE(XTEST_TEE_2001);
 ADBG_CASE_DECLARE(XTEST_TEE_2002);
@@ -199,6 +200,7 @@ extern const TEEC_UUID storage_ta_uuid;
 extern const TEEC_UUID enc_fs_key_manager_test_ta_uuid;
 extern const TEEC_UUID ecc_test_ta_uuid;
 extern const TEEC_UUID gp_tta_time_uuid;
+extern const TEEC_UUID concurrent_ta_uuid;
 extern char *_device;
 
 #endif /*XTEST_TEST_H*/
