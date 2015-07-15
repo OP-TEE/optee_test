@@ -2850,6 +2850,14 @@ struct xtest_ac_case {
 			const uint8_t *priv_val;
 			size_t priv_val_len;
 		} dsa;
+		struct {
+			const uint8_t *private;
+			size_t private_len;
+			const uint8_t *public_x;
+			size_t public_x_len;
+			const uint8_t *public_y;
+			size_t public_y_len;
+		} ecdsa;
 	} params;
 
 	const uint8_t *ptx;
@@ -2896,6 +2904,16 @@ struct xtest_ac_case {
 
 #define XTEST_AC_DSA_CASE(algo, mode, vect) \
 	XTEST_AC_CASE(algo, mode, vect, XTEST_AC_DSA_UNION(vect))
+
+#define XTEST_AC_ECDSA_UNION(vect) \
+	{ .ecdsa = { \
+		  ARRAY(vect ## _private), \
+		  ARRAY(vect ## _public_x), \
+		  ARRAY(vect ## _public_y), \
+	  } }
+
+#define XTEST_AC_ECDSA_CASE(algo, mode, vect) \
+	XTEST_AC_CASE(algo, mode, vect, XTEST_AC_ECDSA_UNION(vect))
 
 static const struct xtest_ac_case xtest_ac_cases[] = {
 	/* RSA test without crt parameters */
@@ -3095,6 +3113,28 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_DSA_CASE(TEE_ALG_DSA_SHA1, TEE_MODE_SIGN, ac_dsa_vect1),
 	XTEST_AC_DSA_CASE(TEE_ALG_DSA_SHA1, TEE_MODE_VERIFY, ac_dsa_vect2),
 	XTEST_AC_DSA_CASE(TEE_ALG_DSA_SHA1, TEE_MODE_SIGN, ac_dsa_vect2),
+
+	/* ECDSA tests */
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P192, TEE_MODE_VERIFY,
+			    ac_ecdsa_vect192),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P192, TEE_MODE_SIGN,
+			    ac_ecdsa_vect192),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P224, TEE_MODE_VERIFY,
+			    ac_ecdsa_vect224),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P224, TEE_MODE_SIGN,
+			    ac_ecdsa_vect224),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P256, TEE_MODE_VERIFY,
+			    ac_ecdsa_vect256),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P256, TEE_MODE_SIGN,
+			    ac_ecdsa_vect256),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P384, TEE_MODE_VERIFY,
+			    ac_ecdsa_vect384),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P384, TEE_MODE_SIGN,
+			    ac_ecdsa_vect384),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P521, TEE_MODE_VERIFY,
+			    ac_ecdsa_vect521),
+	XTEST_AC_ECDSA_CASE(TEE_ALG_ECDSA_P521, TEE_MODE_SIGN,
+			    ac_ecdsa_vect521),
 };
 
 static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
@@ -3120,10 +3160,22 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
+
+		if (attrs[n].attributeID == TEE_ATTR_ECC_CURVE)
+			continue;
+
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_get_object_buffer_attribute(c, s, *handle,
 				attrs[n].attributeID, out, &out_size)))
 			return false;
+
+		if (out_size < attrs[n].content.ref.length) {
+			memmove(out + (attrs[n].content.ref.length - out_size),
+				out,
+				attrs[n].content.ref.length);
+			memset(out, 0, attrs[n].content.ref.length - out_size);
+			out_size = attrs[n].content.ref.length;
+		}
 
 		if (!ADBG_EXPECT_BUFFER(c, attrs[n].content.ref.buffer,
 			attrs[n].content.ref.length, out, out_size))
@@ -3152,6 +3204,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	size_t num_key_attrs;
 	uint32_t ret_orig;
 	size_t n;
+	uint32_t curve;
+	uint32_t hash_algo;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -3170,9 +3224,11 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		 * the payload.
 		 */
 		if (tv->mode == TEE_MODE_VERIFY || tv->mode == TEE_MODE_SIGN) {
-			uint32_t hash_algo = TEE_ALG_HASH_ALGO(
-						TEE_ALG_GET_DIGEST_HASH(
-							tv->algo));
+			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA)
+				hash_algo = TEE_ALG_SHA1;
+			else
+				hash_algo = TEE_ALG_HASH_ALGO(
+					TEE_ALG_GET_DIGEST_HASH(tv->algo));
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_allocate_operation(c, &session,
@@ -3312,6 +3368,62 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				goto out;
 			break;
 
+		case TEE_MAIN_ALGO_ECDSA:
+			switch (tv->algo) {
+			case TEE_ALG_ECDSA_P192:
+				curve = TEE_ECC_CURVE_NIST_P192;
+				break;
+			case TEE_ALG_ECDSA_P224:
+				curve = TEE_ECC_CURVE_NIST_P224;
+				break;
+			case TEE_ALG_ECDSA_P256:
+				curve = TEE_ECC_CURVE_NIST_P256;
+				break;
+			case TEE_ALG_ECDSA_P384:
+				curve = TEE_ECC_CURVE_NIST_P384;
+				break;
+			case TEE_ALG_ECDSA_P521:
+				curve = TEE_ECC_CURVE_NIST_P521;
+				break;
+			default:
+				curve = 0xFF;
+				break;
+			}
+
+			if (tv->algo == TEE_ALG_ECDSA_P521)
+				max_key_size = 521;
+			else
+				max_key_size = tv->params.ecdsa.private_len * 8;
+
+			xtest_add_attr_value(&num_key_attrs, key_attrs,
+					     TEE_ATTR_ECC_CURVE, curve, 0);
+			xtest_add_attr(&num_key_attrs, key_attrs,
+				       TEE_ATTR_ECC_PUBLIC_VALUE_X,
+				       tv->params.ecdsa.public_x,
+				       tv->params.ecdsa.public_x_len);
+			xtest_add_attr(&num_key_attrs, key_attrs,
+				       TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+				       tv->params.ecdsa.public_y,
+				       tv->params.ecdsa.public_y_len);
+
+			if (!ADBG_EXPECT_TRUE(c,
+				create_key(c, &session, max_key_size,
+					   TEE_TYPE_ECDSA_PUBLIC_KEY, key_attrs,
+					   num_key_attrs, &pub_key_handle)))
+				goto out;
+
+			xtest_add_attr(&num_key_attrs, key_attrs,
+				       TEE_ATTR_ECC_PRIVATE_VALUE,
+				       tv->params.ecdsa.private,
+				       tv->params.ecdsa.private_len);
+
+			if (!ADBG_EXPECT_TRUE(c,
+				create_key(c, &session, max_key_size,
+					   TEE_TYPE_ECDSA_KEYPAIR, key_attrs,
+					   num_key_attrs, &priv_key_handle)))
+				goto out;
+			break;
+
 		default:
 			ADBG_EXPECT_TRUE(c, false);
 			goto out;
@@ -3323,7 +3435,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		case TEE_MODE_ENCRYPT:
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_allocate_operation(c, &session,
-					&op, tv->algo, TEE_MODE_ENCRYPT, max_key_size)))
+					&op, tv->algo, TEE_MODE_ENCRYPT,
+					max_key_size)))
 				goto out;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -3465,7 +3578,9 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (TEE_ALG_GET_CHAIN_MODE(tv->algo) ==
 			    TEE_CHAIN_MODE_PKCS1_PSS_MGF1 ||
-			    tv->algo == TEE_ALG_DSA_SHA1) {
+			    tv->algo == TEE_ALG_DSA_SHA1 ||
+			    TEE_ALG_GET_MAIN_ALG(tv->algo) ==
+					    TEE_MAIN_ALGO_ECDSA) {
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_free_operation(c, &session,
 								    op)))
