@@ -37,6 +37,7 @@ static void xtest_tee_test_4005(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4006(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4007(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4008(ADBG_Case_t *Case_p);
+static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_4001, xtest_tee_test_4001,
 		/* Title */
@@ -129,6 +130,17 @@ ADBG_CASE_DEFINE(XTEST_TEE_4007, xtest_tee_test_4007,
 ADBG_CASE_DEFINE(XTEST_TEE_4008, xtest_tee_test_4008,
 		/* Title */
 		"Test TEE Internal API Derive key",
+		/* Short description */
+		"Short description ...",
+		/* Requirement IDs */
+		"TEE-??",
+		/* How to implement */
+		"Description of how to implement ..."
+		 );
+
+ADBG_CASE_DEFINE(XTEST_TEE_4009, xtest_tee_test_4009,
+		/* Title */
+		"Test TEE Internal API Derive key ECDH",
 		/* Short description */
 		"Short description ...",
 		/* Requirement IDs */
@@ -4201,7 +4213,7 @@ static void xtest_tee_test_4008(ADBG_Case_t *c)
 			&sv_handle)))
 		goto out;
 
-	/* resuse but reset params and param-count */
+	/* reuse but reset params and param-count */
 	param_count = 0;
 
 	xtest_add_attr(&param_count, params, TEE_ATTR_DH_PUBLIC_VALUE,
@@ -4233,5 +4245,131 @@ static void xtest_tee_test_4008(ADBG_Case_t *c)
 		goto out;
 out:
 	Do_ADBG_EndSubCase(c, "Derive DH key success");
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_4009(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+	TEE_OperationHandle op;
+	TEE_ObjectHandle key_handle;
+	TEE_ObjectHandle sv_handle;
+	TEE_Attribute params[4];
+	size_t param_count = 0;
+	uint8_t out[2048];
+	size_t out_size;
+	uint32_t size_bytes;
+	int i;
+	struct derive_key_ecdh_t *pt;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	for (i = 0; i < ARRAY_SIZE(derive_key_ecdh); i++) {
+		pt = &derive_key_ecdh[i];
+
+		Do_ADBG_BeginSubCase(c, "Derive ECDH key - algo = 0x%x",
+				     pt->algo);
+		size_bytes = (pt->keysize + 7) / 8;
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_operation(c, &session, &op,
+				pt->algo,
+				TEE_MODE_DERIVE, pt->keysize)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, & session,
+				TEE_TYPE_ECDH_KEYPAIR, pt->keysize,
+				&key_handle)))
+			goto out;
+
+		param_count = 0;
+		xtest_add_attr_value(&param_count, params,
+				     TEE_ATTR_ECC_CURVE, pt->curve, 0);
+		xtest_add_attr(&param_count, params,
+			       TEE_ATTR_ECC_PRIVATE_VALUE,
+			       pt->private, size_bytes);
+		/*
+		 * The public value is not used. This is why we provide
+		 * another buffer
+		 */
+		xtest_add_attr(&param_count, params,
+				TEE_ATTR_ECC_PUBLIC_VALUE_X,
+			       pt->private, size_bytes);
+		xtest_add_attr(&param_count, params,
+				TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+			       pt->private, size_bytes);
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_populate_transient_object(c,
+					&session,
+					key_handle, params, param_count)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_set_operation_key(c, &session, op,
+					key_handle)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_free_transient_object(c, & session,
+					key_handle)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, &session,
+				TEE_TYPE_GENERIC_SECRET, size_bytes * 8,
+				&sv_handle)))
+			goto out;
+
+		/* reuse but reset params and param-count */
+		param_count = 0;
+
+		xtest_add_attr(&param_count, params,
+			       TEE_ATTR_ECC_PUBLIC_VALUE_X,
+			       pt->public_x, size_bytes);
+		xtest_add_attr(&param_count, params,
+			       TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+			       pt->public_y, size_bytes);
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_derive_key(c, &session, op, sv_handle,
+					        params, param_count)))
+			goto out;
+
+		out_size = sizeof(out);
+		memset(out, 0, sizeof(out));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_get_object_buffer_attribute(c, &session,
+				sv_handle,
+				TEE_ATTR_SECRET_VALUE, out, &out_size)))
+			goto out;
+
+		if (!ADBG_EXPECT_BUFFER(c, pt->out, size_bytes,
+					out, out_size))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_operation(c, &session, op)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_transient_object(c, &session,
+							   sv_handle)))
+			goto out;
+
+		Do_ADBG_EndSubCase(c, "Derive ECDH key - algo = 0x%x",
+				   pt->algo);
+	}
+
+	goto noerror;
+
+out:
+	Do_ADBG_EndSubCase(c, "Derive ECDH key - algo = 0x%x", pt->algo);
+
+noerror:
 	TEEC_CloseSession(&session);
 }
