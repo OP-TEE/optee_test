@@ -166,7 +166,7 @@ mpa_scratch_mem mempool = (void *)&mempool_u32;
 
 void tb_main(void)
 {
-	mpa_init_scratch_mem(mempool, 10, 2048);
+	mpa_init_scratch_mem(mempool, sizeof(mempool_u32), 2048);
 
 	tb_var();
 	tb_conv();
