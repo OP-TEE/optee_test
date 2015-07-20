@@ -1,5 +1,5 @@
---- TTA_Crypto_protocol.h.ori	2015-02-02 13:31:07.727392684 +0100
-+++ TTA_Crypto_protocol.h	2015-02-03 13:24:24.166862339 +0100
+--- TTA_Crypto_protocol.h.orig	2012-09-17 20:58:33.000000000 +0200
++++ TTA_Crypto_protocol.h	2015-07-21 09:52:55.846555194 +0200
 @@ -73,6 +73,20 @@
  } TEE_CryptoData;
  
@@ -21,10 +21,22 @@
  TEE_Result CmdInitObjectWithKeys(
     void*       pSessionContext,
     uint32_t    nParamTypes,
-@@ -217,4 +231,4 @@
+@@ -109,6 +123,10 @@
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+    TEE_Param   pParams[4]);
++TEE_Result CmdGetOperationInfoMultiple(
++   void*       pSessionContext,
++   uint32_t    nParamTypes,
++   TEE_Param   pParams[4]);
+ TEE_Result CmdDigestUpdate(
+    void*       pSessionContext,
+    uint32_t    nParamTypes,
+@@ -217,4 +235,5 @@
  #define CMD_LoadAttributes                   0x0001001C
  #define CMD_DeriveKey                        0x0001001D
  #define CMD_GenerateRandom                   0x0001001E
 -                                                     
 \ No newline at end of file
++#define CMD_GetOperationInfoMultiple         0x0001001F
 +                                                     

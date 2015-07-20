@@ -231,6 +231,19 @@ if [ ${CFG_GP_TESTSUITE_ENABLE} == "y" ]; then
 	fi;
 fi
 
+cd ${CDIR}
+
+LCI_PRINT_L1 "Update test: 9238 (TEE_GetOperationInfoMultiple)"
+ARRAY=(["FILE"]="${CFG_OPTEE_TEST_PATH}/host/xtest/xtest_9000.c"
+	["PATCH"]="${CFG_GP_XSL_PACKAGE_PATH}/host/xtest/xtest_9000.c.patch")
+LCI_PATCH  ${ARRAY[FILE]} ${ARRAY[PATCH]}
+LCI_PRINT_SEPARATOR
+
+ARRAY=(["FILE"]="${CFG_OPTEE_TEST_PATH}/host/xtest/xml/include/xml_crypto_api.h"
+	["PATCH"]="${CFG_GP_XSL_PACKAGE_PATH}/host/xtest/xml_crypto_api.h.patch")
+LCI_PATCH  ${ARRAY[FILE]} ${ARRAY[PATCH]}
+LCI_PRINT_SEPARATOR
+
 LCI_PRINT_SEPARATOR
 LCI_PRINT_HEADER "`basename $0` finished";
 LCI_PRINT_SEPARATOR
