@@ -111,7 +111,7 @@ static void test_BigInt_getsetOctetString(void)
 	TB_ASSERT(TEE_BigIntCmp(a, b) == 0);
 
 	/* Test with static octet strings */
-	res = TEE_BigIntConvertFromOctetString(a, os1, sizeof(os1), 1);
+	res = TEE_BigIntConvertFromOctetString(a, (uint8_t *)os1, sizeof(os1), 1);
 	TB_ASSERT(res == TEE_SUCCESS);
 
 	os_len = sizeof(os_res);
@@ -120,7 +120,7 @@ static void test_BigInt_getsetOctetString(void)
 	TB_ASSERT(sizeof(os1) == os_len
 		  && TEE_MemCompare(os1, os_res, sizeof(os1)) == 0);
 
-	res = TEE_BigIntConvertFromOctetString(b, os3, sizeof(os3), 1);
+	res = TEE_BigIntConvertFromOctetString(b, (uint8_t *)os3, sizeof(os3), 1);
 	TB_ASSERT(res == TEE_SUCCESS);
 	TB_ASSERT(TEE_BigIntCmp(a, b) == 0);
 
