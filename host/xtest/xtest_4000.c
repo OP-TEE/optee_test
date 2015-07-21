@@ -4260,7 +4260,7 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 	uint8_t out[2048];
 	size_t out_size;
 	uint32_t size_bytes;
-	int i;
+	uint32_t i;
 	struct derive_key_ecdh_t *pt;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
