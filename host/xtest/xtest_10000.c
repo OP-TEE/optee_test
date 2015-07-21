@@ -25,7 +25,6 @@
 
 static void xtest_tee_test_10001(ADBG_Case_t *c);
 static void xtest_tee_test_10002(ADBG_Case_t *c);
-static void xtest_tee_test_10003(ADBG_Case_t *c);
 
 ADBG_CASE_DEFINE(XTEST_TEE_10001, xtest_tee_test_10001,
 		 /* Title */
@@ -47,17 +46,6 @@ ADBG_CASE_DEFINE(XTEST_TEE_10002, xtest_tee_test_10002,
 	"Linaro SWG-176",
 	/* How to implement */
 	"Invoke key manager self test function in test TA"
-	);
-
-ADBG_CASE_DEFINE(XTEST_TEE_10003, xtest_tee_test_10003,
-	/* Title */
-	"ECC Self Test",
-	/* Short description */
-	"Test ECC API",
-	/* Requirement IDs */
-	"",
-	/* How to implement */
-	"Invoke ECC self test function in test TA"
 	);
 
 /*
@@ -750,24 +738,6 @@ static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 	return res;
 }
 
-#define CMD_ECC_GEN_KEY_SELF_TESTS	0
-#define CMD_ECC_DSA_TESTS		1
-#define CMD_ECC_DH_TESTS		2
-static TEEC_Result ecc_self_test(TEEC_Session *sess,
-				 uint32_t algo, uint32_t command)
-{
-	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	TEEC_Result res;
-	uint32_t ret_orig;
-
-	op.params[0].value.a = algo;
-	op.params[0].value.b = 0;
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-	res = TEEC_InvokeCommand(sess, command, &op, &ret_orig);
-	return res;
-}
-
 static void xtest_tee_test_10001(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
@@ -811,58 +781,5 @@ static void xtest_tee_test_10002(ADBG_Case_t *c)
 		goto exit;
 
 exit:
-	TEEC_CloseSession(&sess);
-}
-
-/* ECC self test */
-static void xtest_tee_test_10003(ADBG_Case_t *c)
-{
-	TEEC_Result res;
-	TEEC_Session sess;
-	uint32_t orig;
-	uint32_t algo;
-
-	res = xtest_teec_open_session(&sess, &ecc_test_ta_uuid, NULL, &orig);
-	if (res != TEEC_SUCCESS) {
-		Do_ADBG_Log("Ignore test due to TA does not exist");
-		return;
-	}
-
-	/* ECC Key Generation */
-	for (algo = TEE_ECC_CURVE_NIST_P192;
-	     algo <=  TEE_ECC_CURVE_NIST_P521;
-	     algo++) {
-		Do_ADBG_BeginSubCase(c, "ECC Generate Key algo=0x%x", algo);
-		ADBG_EXPECT_TEEC_SUCCESS(c,
-			ecc_self_test(&sess, algo, CMD_ECC_GEN_KEY_SELF_TESTS));
-		Do_ADBG_EndSubCase(c, "ECC Generate Key algo=0x%x", algo);
-	}
-
-	algo = TEE_ECC_CURVE_NIST_P521+1;
-	Do_ADBG_BeginSubCase(c, "ECC Generate Key algo=0x%x", algo);
-	ADBG_EXPECT(c, TEE_ERROR_NOT_SUPPORTED,
-			ecc_self_test(&sess, algo, CMD_ECC_GEN_KEY_SELF_TESTS));
-	Do_ADBG_EndSubCase(c, "ECC Generate Key algo=0x%x", algo);
-
-	/* ECC Sign and Verify */
-	for (algo = TEE_ALG_ECDSA_P192;
-	     algo <=  TEE_ALG_ECDSA_P521;
-	     algo += 0x1000) {
-		Do_ADBG_BeginSubCase(c, "ECC Sign & Verify - algo=0x%x", algo);
-		ADBG_EXPECT_TEEC_SUCCESS(c,
-				ecc_self_test(&sess, algo, CMD_ECC_DSA_TESTS));
-		Do_ADBG_EndSubCase(c, "ECC Sign & Verify - algo=0x%x", algo);
-	}
-
-	/* ECC DH */
-	for (algo = TEE_ALG_ECDH_P192;
-	     algo <=  TEE_ALG_ECDH_P521;
-	     algo += 0x1000) {
-		Do_ADBG_BeginSubCase(c, "ECC DH - algo=0x%x", algo);
-		ADBG_EXPECT_TEEC_SUCCESS(c,
-				ecc_self_test(&sess, algo, CMD_ECC_DH_TESTS));
-		Do_ADBG_EndSubCase(c, "ECC DH - algo=0x%x", algo);
-	}
-
 	TEEC_CloseSession(&sess);
 }
