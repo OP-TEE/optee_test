@@ -32,7 +32,7 @@ do {                                                 \
 	TEE_BigIntConvertFromString(n, (s));         \
 	TEE_BigIntConvertFromString(d, (t));         \
 	TEE_BigIntDiv(q, r, n, d);                   \
-	TB_ASSERT_HEX_PRINT_VALUE(q, (out), 0);      \
+	TB_ASSERT_HEX_PRINT_VALUE(q, (out));         \
 	if (TEE_BigIntCmpS32(d, 0) > 0)              \
 			TB_ASSERT_BIGINT_LESS(r, d); \
 } while (0)

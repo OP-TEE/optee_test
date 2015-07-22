@@ -35,7 +35,7 @@ do {                                                                \
 	TEE_BigIntInitFMMContext(context, nLen, n);                 \
 	TEE_BigIntConvertFromString(x, xstr);                       \
 	TEE_BigIntConvertFromString(e, estr);                       \
-	TB_ASSERT_HEX_PRINT_VALUE(dest, resstr, 0);                 \
+	TB_ASSERT_HEX_PRINT_VALUE(dest, resstr);                    \
 	TEE_Free(context);                                          \
 } while (0)
 

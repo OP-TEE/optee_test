@@ -31,7 +31,7 @@ do {                                             \
 	TEE_BigIntConvertFromString(op, opstr);  \
 	TEE_BigIntConvertFromString(n, nstr);    \
 	TEE_BigIntMod(r, op, n);                 \
-	TB_ASSERT_HEX_PRINT_VALUE(r, resstr, 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(r, resstr);    \
 } while (0)
 
 static void test_modular_reduction(void)
@@ -197,7 +197,7 @@ static void test_modular_reduction(void)
 		TEE_BigIntConvertFromString(op2, op2str); \
 		TEE_BigIntConvertFromString(n, nstr);     \
 		TEE_BigIntAddMod(r, op1, op2, n);         \
-		TB_ASSERT_HEX_PRINT_VALUE(r, result, 0);  \
+		TB_ASSERT_HEX_PRINT_VALUE(r, result);     \
 		 TEE_BigIntSubMod(tmp1, r, op2, n);       \
 		TB_ASSERT_BIGINT_EQ(tmp1, op1);           \
 	} while (0)
@@ -318,7 +318,7 @@ do {                                              \
 	TEE_BigIntConvertFromString(op2, op2str); \
 	TEE_BigIntConvertFromString(n, nstr);     \
 	TEE_BigIntMulMod(r, op1, op2, n);         \
-	TB_ASSERT_HEX_PRINT_VALUE(r, result, 0);  \
+	TB_ASSERT_HEX_PRINT_VALUE(r, result);     \
 } while (0)
 
 static void test_modular_mul(void)
@@ -399,11 +399,11 @@ do {                                                \
 	TEE_BigIntConvertFromString(op1, op1str);   \
 	TEE_BigIntConvertFromString(n, nstr);       \
 	TEE_BigIntInvMod(r, op1, n);                \
-	TB_ASSERT_HEX_PRINT_VALUE(r, result, 0);    \
+	TB_ASSERT_HEX_PRINT_VALUE(r, result);       \
 	TEE_BigIntMulMod(tmp1, r, op1, n);          \
-	TB_ASSERT_HEX_PRINT_VALUE(tmp1, "1", 0);    \
+	TB_ASSERT_HEX_PRINT_VALUE(tmp1, "1");       \
 	TEE_BigIntInvMod(tmp1, r, n);               \
-	TB_ASSERT_HEX_PRINT_VALUE(tmp1, op1str, 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(tmp1, op1str);    \
 } while (0)
 
 static void test_modular_inv(void)

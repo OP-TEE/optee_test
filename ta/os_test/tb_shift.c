@@ -32,7 +32,7 @@
 {                                                       \
 	{                                               \
 		TEE_BigIntConvertFromString(a, (in));   \
-		TB_ASSERT_HEX_PRINT_VALUE(b, (out), 0); \
+		TB_ASSERT_HEX_PRINT_VALUE(b, (out));    \
 	} while (0);                                    \
 }
 
@@ -132,7 +132,7 @@ static void tb_shift_left(void)
 	{                                               \
 		TEE_BigIntConvertFromString(a, (in));   \
 		TEE_BigIntShiftRight(b, a, (s));        \
-		TB_ASSERT_HEX_PRINT_VALUE(b, (out), 0); \
+		TB_ASSERT_HEX_PRINT_VALUE(b, (out));    \
 	} while (0);                                    \
 }
 

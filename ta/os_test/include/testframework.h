@@ -65,7 +65,6 @@ void tb_prime(void);
 extern mpa_scratch_mem mempool;
 
 int TEE_BigIntConvertFromString(TEE_BigInt *dest, const char *src);
-char *TEE_BigIntConvertToString(char *dest, int mode, int groupsize,
-				const TEE_BigInt *src);
+char *TEE_BigIntConvertToString(char *dest, int mode, const TEE_BigInt *src);
 
 #endif /* include guard */

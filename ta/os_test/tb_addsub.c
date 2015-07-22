@@ -32,19 +32,19 @@ do {                                          \
 	TEE_BigIntConvertFromString(a, (s));  \
 	TEE_BigIntConvertFromString(b, (t));  \
 	TEE_BigIntAdd(c, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(c, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(c, (r));    \
 	TEE_BigIntAdd(a, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(a, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(a, (r));    \
 	TEE_BigIntSub(a, a, b);               \
 	TEE_BigIntAdd(b, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));    \
 } while (0)
 
 #define ADDWORD(s, t, r)                                \
 do {                                                    \
 	TEE_BigIntConvertFromString(a, (s));            \
 	mpa_add_word((mpanum)b, (mpanum)a, t, mempool); \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0);           \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));              \
 } while (0)
 
 #define SUB(r, t, s)                          \
@@ -52,29 +52,29 @@ do {                                          \
 	TEE_BigIntConvertFromString(a, (s));  \
 	TEE_BigIntConvertFromString(b, (t));  \
 	TEE_BigIntSub(c, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(c, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(c, (r));    \
 	TEE_BigIntSub(a, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(a, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(a, (r));    \
 	TEE_BigIntAdd(a, a, b);               \
 	TEE_BigIntSub(b, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));    \
 } while (0)
 
 #define SUBWORD(r, t, s)                                \
 do {                                                    \
 	TEE_BigIntConvertFromString(a, (s));            \
 	mpa_sub_word((mpanum)b, (mpanum)a, t, mempool); \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0);           \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));              \
 } while (0)
 
 #define NEG(s, r)                              \
 do {                                           \
 	TEE_BigIntConvertFromString(a, (s));   \
 	TEE_BigIntNeg(b, a);                   \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0);  \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));     \
 	TEE_BigIntConvertFromString(c, (r));   \
 	TEE_BigIntNeg(c, c);                   \
-	TB_ASSERT_HEX_PRINT_VALUE(c, (s), 0);  \
+	TB_ASSERT_HEX_PRINT_VALUE(c, (s));     \
 } while (0)
 
 void tb_addsub(void)

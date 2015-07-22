@@ -32,18 +32,18 @@ do {                                          \
 	TEE_BigIntConvertFromString(a, (s));  \
 	TEE_BigIntConvertFromString(b, (t));  \
 	TEE_BigIntMul(c, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(c, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(c, (r));    \
 	TEE_BigIntMul(a, a, b);               \
-	TB_ASSERT_HEX_PRINT_VALUE(a, (r), 0); \
+	TB_ASSERT_HEX_PRINT_VALUE(a, (r));    \
 } while (0)
 
 #define MULWORD(s, t, r)                                \
 do {                                                    \
 	TEE_BigIntConvertFromString(a, (s));            \
 	mpa_mul_word((mpanum)b, (mpanum)a, t, mempool); \
-	TB_ASSERT_HEX_PRINT_VALUE(b, (r), 0);           \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));              \
 	mpa_mul_word((mpanum)a, (mpanum)a, t, mempool); \
-	TB_ASSERT_HEX_PRINT_VALUE(a, (r), 0);           \
+	TB_ASSERT_HEX_PRINT_VALUE(a, (r));              \
 } while (0)
 
 void tb_mul(void)

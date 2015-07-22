@@ -55,16 +55,14 @@ int TEE_BigIntConvertFromString(TEE_BigInt *dest, const char *src)
  *
  * Prints a zero-terminated string representation of src into dest. The need
  * length of dest is the space needed to print src plus additional chars for the
- * minus sign and the terminating '\0' char. If grouping is used (!= 0), we pad
- * the number string with zeros to the left, up to the current group size.  A
- * pointer to str is returned. If something went wrong, we return 0.
+ * minus sign and the terminating '\0' char.  A pointer to str is returned.
+ * If something went wrong, we return 0.
  *
  * mode is one of the following:
  *     TEE_MATHAPI_PRINT_MODE_HEX_LC   : output in lower case hex
  *     TEE_MATHAPI_PRINT_MODE_DEC      : output in decimal
  */
-char *TEE_BigIntConvertToString(char *dest, int mode, int groupsize,
-				const TEE_BigInt *src)
+char *TEE_BigIntConvertToString(char *dest, int mode, const TEE_BigInt *src)
 {
 	mpanum mpa_src = (mpa_num_base *) src;
 
@@ -73,7 +71,7 @@ char *TEE_BigIntConvertToString(char *dest, int mode, int groupsize,
 		if (dest == 0)
 			return 0;
 	}
-	return mpa_get_str(dest, mode, groupsize, mpa_src);
+	return mpa_get_str(dest, mode, mpa_src);
 }
 
 static uint8_t myrand(void)
