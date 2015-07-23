@@ -1407,6 +1407,22 @@ static const uint8_t mac_cbc_vect9_out[] = {
 };
 
 /*
+ * DES3-CBC-MAC, with key size of 112bit
+ * out obtained with:
+ * echo -n "Cipher block chaining (CBC) is a common chaining mode in which the previous block's ciphertext is xored with the current block's plaintext before encryption...."|openssl enc  -iv 0 -des3 -K 303132333435363738394142434445463031323334353637 |xxd
+ */
+/* DES3-CBC-MAC PKCS#5 pad*/
+static const uint8_t mac_cbc_vect10_key[] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, /* 01234567 */
+	0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, /* 89ABCDEF */
+};
+#define mac_cbc_vect10_data mac_cbc_vect1_data
+static const uint8_t mac_cbc_vect10_out[] = {
+	0x30, 0x92, 0x60, 0x99, 0x66, 0xac, 0x8c, 0xa6,
+};
+
+
+/*
  * AES-CMAC
  * Test vectors from
  * http://csrc.nist.gov/publications/nistpubs/800-38B/SP_800-38B.pdf
@@ -1635,6 +1651,7 @@ static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CBC_CASE(TEE_ALG_DES_CBC_MAC_PKCS5, TEE_TYPE_DES, vect8, 23),
 	XTEST_MAC_CBC_CASE(TEE_ALG_DES3_CBC_MAC_PKCS5, TEE_TYPE_DES3, vect9,
 			   34),
+	XTEST_MAC_CBC_CASE(TEE_ALG_DES3_CBC_MAC_PKCS5, TEE_TYPE_DES3, vect10, 4),
 
 	{ TEE_ALG_AES_CMAC, TEE_TYPE_AES, mac_cmac_vect1_key,
 	  ARRAY_SIZE(mac_cmac_vect1_key), 0, NULL, 0, mac_cmac_vect1_out,
