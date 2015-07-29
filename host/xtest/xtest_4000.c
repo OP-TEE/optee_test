@@ -1114,6 +1114,22 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
 					 hash_cases[n].out_len, out, out_size);
 
+		/*
+		 * Invoke TEE_DigestDoFinal() a second time to check that state
+		 * was properly reset
+		 */
+		out_size = sizeof(out);
+		memset(out, 0, sizeof(out));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_digest_do_final(c, &session, op1,
+						     hash_cases[n].in,
+						     hash_cases[n].in_len, out,
+						     &out_size)))
+			goto out;
+
+		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
+					 hash_cases[n].out_len, out, out_size);
+
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op1)))
 			goto out;
