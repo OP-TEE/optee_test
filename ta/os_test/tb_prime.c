@@ -27,14 +27,6 @@
 
 #include "testframework.h"
 
-/*
- * Remove the #undef if you like debug print outs and assertions
- * for this file.
- */
-#undef DEBUG_ME
-#include "mpa_debug.h"
-#include "mpa_assert.h"
-
 #define COMPOSITE 0
 #define PRIME 1
 #define PROB_PRIME -1

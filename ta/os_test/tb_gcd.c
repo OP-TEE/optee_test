@@ -25,13 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include "testframework.h"
-
-/*
- * Remove the #undef if you like debug print outs and assertions for this file.
- */
-#undef DEBUG_ME
-#include "mpa_debug.h"
-#include "mpa_assert.h"
+#include <assert.h>
 
 #define TEST_GCD(stra, strb)                  \
 do {                                          \
@@ -135,17 +129,17 @@ static void test_relative_prime(void)
 	TEE_BigIntConvertFromString(x, "0x7B");
 	TEE_BigIntConvertFromString(y, "0x57677928C");
 	res = TEE_BigIntRelativePrime(x, y);
-	ASSERT(res == false, "Those numbers are not relatively prime");
+	assert(res == false);
 
 	TEE_BigIntConvertFromString(x, "0x157");
 	TEE_BigIntConvertFromString(y, "0x5F5E1");
 	res = TEE_BigIntRelativePrime(x, y);
-	ASSERT(res == true, "Those numbers are relatively prime");
+	assert(res == true);
 
 	TEE_BigIntConvertFromString(x, "0x2FD4ABD35311DC9884CFCBDC1");
 	TEE_BigIntConvertFromString(y, "0x12E0B94A7ED49AA36A982ADCBDE813");
 	res = TEE_BigIntRelativePrime(x, y);
-	ASSERT(res == true, "Those numbers are relatively prime");
+	assert(res == true);
 
 	DEL_BIGINT(x);
 	DEL_BIGINT(y);

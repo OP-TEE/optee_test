@@ -34,7 +34,7 @@
 
 #include "tb_macros.h"
 #include "tb_asserts.h"
-#include "mpa_debug.h"
+#include "mpa.h"
 
 /* define the max size of generated numbers */
 /* this is number of hex chars in the number */
