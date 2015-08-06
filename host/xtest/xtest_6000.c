@@ -59,7 +59,7 @@ static uint8_t data_01[] = {
 static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
 			   uint32_t flags, uint32_t *obj)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
 	uint32_t org;
 
@@ -84,7 +84,7 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 			     uint32_t flags, uint32_t attr, void *data,
 			     uint32_t data_size, uint32_t *obj)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
 	uint32_t org;
 
@@ -111,7 +111,7 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 
 static TEEC_Result fs_close(TEEC_Session *sess, uint32_t obj)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].value.a = obj;
@@ -126,7 +126,7 @@ static TEEC_Result fs_read(TEEC_Session *sess, uint32_t obj, void *data,
 			   uint32_t data_size, uint32_t *count)
 {
 	TEEC_Result res;
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].tmpref.buffer = data;
@@ -149,7 +149,7 @@ static TEEC_Result fs_read(TEEC_Session *sess, uint32_t obj, void *data,
 static TEEC_Result fs_write(TEEC_Session *sess, uint32_t obj, void *data,
 			    uint32_t data_size)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].tmpref.buffer = data;
@@ -167,7 +167,7 @@ static TEEC_Result fs_write(TEEC_Session *sess, uint32_t obj, void *data,
 static TEEC_Result fs_seek(TEEC_Session *sess, uint32_t obj, int32_t offset,
 			   int32_t whence)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].value.a = obj;
@@ -182,7 +182,7 @@ static TEEC_Result fs_seek(TEEC_Session *sess, uint32_t obj, int32_t offset,
 
 static TEEC_Result fs_unlink(TEEC_Session *sess, uint32_t obj)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].value.a = obj;
@@ -195,7 +195,7 @@ static TEEC_Result fs_unlink(TEEC_Session *sess, uint32_t obj)
 
 static TEEC_Result fs_trunc(TEEC_Session *sess, uint32_t obj, uint32_t len)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].value.a = obj;
@@ -210,7 +210,7 @@ static TEEC_Result fs_trunc(TEEC_Session *sess, uint32_t obj, uint32_t len)
 static TEEC_Result fs_rename(TEEC_Session *sess, uint32_t obj, void *id,
 			     uint32_t id_size)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.params[0].value.a = obj;
@@ -227,7 +227,7 @@ static TEEC_Result fs_rename(TEEC_Session *sess, uint32_t obj, void *id,
 static TEEC_Result fs_alloc_enum(TEEC_Session *sess, uint32_t *e)
 {
 	TEEC_Result res;
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
@@ -243,7 +243,7 @@ static TEEC_Result fs_alloc_enum(TEEC_Session *sess, uint32_t *e)
 
 static TEEC_Result fs_free_enum(TEEC_Session *sess, uint32_t e)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE,
@@ -256,7 +256,7 @@ static TEEC_Result fs_free_enum(TEEC_Session *sess, uint32_t e)
 
 static TEEC_Result fs_start_enum(TEEC_Session *sess, uint32_t e)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
@@ -270,7 +270,7 @@ static TEEC_Result fs_start_enum(TEEC_Session *sess, uint32_t e)
 static TEEC_Result fs_next_enum(TEEC_Session *sess, uint32_t e, void *obj_info,
 				size_t info_size, void *id, uint32_t id_size)
 {
-	TEEC_Operation op;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
