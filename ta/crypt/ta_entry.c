@@ -30,6 +30,7 @@
 #include <aes_taf.h>
 #include <sha2_taf.h>
 #include <cryp_taf.h>
+#include <trace.h>
 
 static TEE_Result set_global(uint32_t param_types, TEE_Param params[4]);
 static TEE_Result get_global(uint32_t param_types, TEE_Param params[4]);
@@ -67,19 +68,40 @@ void TA_CloseSessionEntryPoint(void *pSessionContext)
 	(void)pSessionContext;
 }
 
+/*
+ * To provoke the linker to produce R_ARM_ABS32 relocations we need to
+ * pre-initilize a pointer to the function and then also call the function
+ * directly.
+ */
+static TEE_Result (*ta_cmd_entries[])(uint32_t, TEE_Param *) = {
+	[TA_CRYPT_CMD_SHA224] = ta_entry_sha224,
+	[TA_CRYPT_CMD_SHA256] = ta_entry_sha256,
+};
+
 /* Called when a command is invoked */
 TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 				      uint32_t nCommandID, uint32_t nParamTypes,
 				      TEE_Param pParams[4])
 {
+	static bool use_fptr = false;
+
 	(void)pSessionContext;
+
 
 	switch (nCommandID) {
 	case TA_CRYPT_CMD_SHA224:
-		return ta_entry_sha224(nParamTypes, pParams);
+		use_fptr = !use_fptr;
+		if (use_fptr)
+			return ta_cmd_entries[nCommandID](nParamTypes, pParams);
+		else
+			return ta_entry_sha224(nParamTypes, pParams);
 
 	case TA_CRYPT_CMD_SHA256:
-		return ta_entry_sha256(nParamTypes, pParams);
+		use_fptr = !use_fptr;
+		if (use_fptr)
+			return ta_cmd_entries[nCommandID](nParamTypes, pParams);
+		else
+			return ta_entry_sha256(nParamTypes, pParams);
 
 	case TA_CRYPT_CMD_AES256ECB_ENC:
 		return ta_entry_aes256ecb_encrypt(nParamTypes, pParams);
