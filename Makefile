@@ -6,6 +6,8 @@ else
 	out-dir := $(CURDIR)/out
 endif
 
+include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+
 ifneq ($V,1)
 	q := @
 else

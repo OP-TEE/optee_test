@@ -5,6 +5,8 @@ ifeq ($O,)
 $(error output path should be specified when calling this makefile)
 endif
 
+include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+
 # By default we expect optee_client exported folder to be on a certain relative
 # path, but if the client specifies the OPTEE_CLIENT_EXPORT then that path will
 # be used instead.
@@ -29,6 +31,7 @@ srcs := xtest_1000.c \
 	xtest_6000.c \
 	xtest_7000$(GP).c \
 	xtest_10000.c \
+	xtest_20000.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
@@ -98,6 +101,9 @@ endif
 
 # FIXME: Check if and why we need this flag?
 CFLAGS += -DUSER_SPACE
+ifeq ($(CFG_ENC_FS),y)
+CFLAGS += -DCFG_ENC_FS
+endif
 
 ifndef CFG_GP_PACKAGE_PATH
 CFLAGS += -Wall -Wcast-align -Werror \
