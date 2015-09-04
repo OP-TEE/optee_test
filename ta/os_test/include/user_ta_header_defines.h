@@ -38,7 +38,7 @@
 		  TA_FLAG_UNSAFE_NW_PARAMS | \
 		  TA_FLAG_MULTI_SESSION)
 #define TA_STACK_SIZE (2 * 1024)
-#define TA_DATA_SIZE (32 * 1024)
+#define TA_DATA_SIZE (900 * 1024)
 
 #define TA_CURRENT_TA_EXT_PROPERTIES \
 	{ "myprop.true", USER_TA_PROP_TYPE_BOOL, &(const bool){ true } }, \
