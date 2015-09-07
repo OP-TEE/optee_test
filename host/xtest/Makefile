@@ -32,6 +32,7 @@ srcs := xtest_1000.c \
 	xtest_7000$(GP).c \
 	xtest_10000.c \
 	xtest_20000.c \
+	xtest_benchmark_1000.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
@@ -71,6 +72,7 @@ CFLAGS += -I../../ta/os_test/include
 CFLAGS += -I../../ta/rpc_test/include
 CFLAGS += -I../../ta/sims/include
 CFLAGS += -I../../ta/storage/include
+CFLAGS += -I../../ta/bonnie/include
 CFLAGS += -I../../ta/concurrent/include
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical

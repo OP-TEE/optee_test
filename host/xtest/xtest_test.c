@@ -21,6 +21,7 @@
 #include <ta_storage.h>
 #include <ta_concurrent.h>
 #include <enc_fs_key_manager_test.h>
+#include <ta_bonnie.h>
 #include <tee_api_defines.h>
 #ifdef WITH_GP_TESTS
 #include <tee_api_types.h>
@@ -80,6 +81,7 @@ const TEEC_UUID sims_test_ta_uuid = TA_SIMS_TEST_UUID;
 const TEEC_UUID storage_ta_uuid = TA_STORAGE_UUID;
 const TEEC_UUID enc_fs_key_manager_test_ta_uuid = ENC_FS_KEY_MANAGER_TEST_UUID;
 const TEEC_UUID concurrent_ta_uuid = TA_CONCURRENT_UUID;
+const TEEC_UUID bonnie_ta_uuid = TA_BONNIE_UUID;
 #ifdef WITH_GP_TESTS
 const TEEC_UUID gp_tta_ds_uuid = TA_TTA_DS_UUID;
 #endif
