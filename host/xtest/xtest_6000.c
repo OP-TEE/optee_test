@@ -286,6 +286,158 @@ static TEEC_Result fs_next_enum(TEEC_Session *sess, uint32_t e, void *obj_info,
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_NEXT_ENUM, &op, &org);
 }
 
+/* trunc */
+static void test_truncate_file_length(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t obj;
+	uint8_t out[10] = { 0 };
+	uint32_t count;
+	uint32_t orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	/* create */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_READ |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
+			  sizeof(data_00), &obj)))
+		goto exit;
+
+	/* trunc */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_trunc(&sess, obj, 10)))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 5, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	(void)ADBG_EXPECT_BUFFER(c, &data_00[5], 5, out, count);
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
+/* extend */
+static void test_extend_file_length(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t obj;
+	uint8_t out[10] = { 0 };
+	uint8_t expect[10] = { 0 };
+	uint32_t count;
+	uint32_t orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	/* create */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_READ |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
+			  sizeof(data_00), &obj)))
+		goto exit;
+
+	/* extend */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_trunc(&sess, obj, 40)))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 30, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	expect[0] = data_00[30];
+	expect[1] = data_00[31];
+	(void)ADBG_EXPECT_BUFFER(c, &expect[0], 10, out, count);
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
+/* file hole */
+static void test_file_hole(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t obj;
+	uint8_t out[10] = { 0 };
+	uint8_t expect[10] = { 0 };
+	uint32_t count;
+	uint32_t orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	/* create */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_READ |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
+			  sizeof(data_00), &obj)))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 80, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* write */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_write(&sess, obj, data_00,
+			sizeof(data_00))))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 74, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	expect[6] = data_00[0];
+	expect[7] = data_00[1];
+	expect[8] = data_00[2];
+	expect[9] = data_00[3];
+	(void)ADBG_EXPECT_BUFFER(c, &expect[0], 10, out, count);
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
 /* create */
 static void xtest_tee_test_6001(ADBG_Case_t *c)
 {
@@ -523,50 +675,19 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
-/* trunc */
 static void xtest_tee_test_6007(ADBG_Case_t *c)
 {
-	TEEC_Session sess;
-	uint32_t obj;
-	uint8_t out[10] = { 0 };
-	uint32_t count;
-	uint32_t orig;
+	Do_ADBG_BeginSubCase(c, "Test truncate file length");
+	test_truncate_file_length(c);
+	Do_ADBG_EndSubCase(c, "Test truncate file length");
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
-		return;
+	Do_ADBG_BeginSubCase(c, "Test extend file length");
+	test_extend_file_length(c);
+	Do_ADBG_EndSubCase(c, "Test extend file length");
 
-	/* create */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_create(&sess, file_01, sizeof(file_01),
-			  TEE_DATA_FLAG_ACCESS_WRITE |
-			  TEE_DATA_FLAG_ACCESS_READ |
-			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
-		goto exit;
-
-	/* trunc */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_trunc(&sess, obj, 10)))
-		goto exit;
-
-	/* seek */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(
-		    c, fs_seek(&sess, obj, 5, TEE_DATA_SEEK_SET)))
-		goto exit;
-
-	/* verify */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
-		goto exit;
-
-	/* check buffer */
-	(void)ADBG_EXPECT_BUFFER(c, &data_00[5], 5, out, count);
-
-	/* clean */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
-		goto exit;
-
-exit:
-	TEEC_CloseSession(&sess);
+	Do_ADBG_BeginSubCase(c, "Test file hole");
+	test_file_hole(c);
+	Do_ADBG_EndSubCase(c, "Test file hole");
 }
 
 static void xtest_tee_test_6008(ADBG_Case_t *c)
