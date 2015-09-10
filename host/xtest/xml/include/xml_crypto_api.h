@@ -739,11 +739,12 @@ static TEEC_Result Invoke_Crypto_GetOperationInfo(
 	const size_t dgst_length, const size_t obj1_size,
 	const size_t obj2_size,
 	const size_t key_size, uint32_t key_usage,
-	bool two_keys, bool key_set, bool initialized)
+	bool flag_two_keys, bool flag_key_set, bool flag_initialized)
 {
 	TEEC_Result res;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
+	uint32_t mask_handle_state = 0;
 
 	op.params[0].value.a = (uint32_t)*oph;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_VALUE_OUTPUT,
@@ -760,23 +761,98 @@ static TEEC_Result Invoke_Crypto_GetOperationInfo(
 		ADBG_EXPECT(c, op.params[2].value.b, key_size);
 		ADBG_EXPECT(c, op.params[3].value.a, key_usage);
 
-		if (two_keys && key_set && initialized) {
-			ADBG_EXPECT(c, op.params[3].value.b,
-				    0x00020000 | 0x00040000 | 0x00080000);
-		} else if (two_keys && key_set) {
-			ADBG_EXPECT(c, op.params[3].value.b,
-				    0x00020000 | 0x00040000);
-		} else if (two_keys && initialized) {
-			ADBG_EXPECT(c, op.params[3].value.b,
-				    0x00020000 | 0x00080000);
-		} else if (key_set && initialized) {
-			ADBG_EXPECT(c, op.params[3].value.b,
-				    0x00040000 | 0x00080000);
-		}
+		if (flag_two_keys)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_EXPECT_TWO_KEYS;
+
+ 		if (flag_key_set)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_KEY_SET;
+
+ 		if (flag_initialized)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_INITIALIZED;
+
+		ADBG_EXPECT(c, op.params[3].value.b, mask_handle_state);
+
 	}
 
 	return res;
 }
+
+#ifdef CFG_GP_TESTSUITE_ENABLE
+/*CMD_GetOperationInfoMultiple*/
+static TEEC_Result Invoke_Crypto_GetOperationInfoMultiple(
+	ADBG_Case_t *c, TEEC_Session *s,
+	const uint32_t cmd_id, TEE_OperationHandle *oph, const uint32_t algo,
+	uint32_t op_class, TEE_OperationMode op_mod,
+	const size_t dgst_length, const size_t obj1_size,
+	const size_t obj2_size,
+	const size_t key_size, uint32_t key_usage, uint32_t key_exp,
+	bool flag_two_keys, bool flag_key_set, bool flag_initialized)
+{
+	TEEC_Result res;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig;
+	uint32_t *obuf;
+	uint32_t obuf_size;
+	uint32_t i;
+	uint32_t key_num;
+	uint32_t mask_handle_state = 0;
+
+	/*
+	 * ouput buffer size computation:
+	 * number of key expected * nb key fields
+	 * + operationState + numberOfkeys
+	 * * nb of bytes
+	 */
+	obuf_size = ((key_exp * 2) + 2) * 4;
+	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, obuf_size,
+			       TEEC_MEMREF_PARTIAL_OUTPUT)
+
+	op.params[0].value.a = (uint32_t)*oph;
+
+	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM01,
+					      SHARE_MEM01->size)
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_VALUE_OUTPUT,
+					 TEEC_VALUE_OUTPUT, TEEC_MEMREF_PARTIAL_OUTPUT);
+
+	res = TEEC_InvokeCommand(s, cmd_id, &op, &ret_orig);
+
+	if (res == TEEC_SUCCESS) {
+		ADBG_EXPECT(c, op.params[0].value.a, algo);
+		ADBG_EXPECT(c, op.params[0].value.b, op_class);
+		ADBG_EXPECT(c, op.params[1].value.a, (uint32_t)op_mod);
+		ADBG_EXPECT(c, op.params[1].value.b, dgst_length);
+		ADBG_EXPECT(c, op.params[2].value.a, obj1_size + obj2_size);
+
+ 		if (flag_two_keys)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_EXPECT_TWO_KEYS;
+
+ 		if (flag_key_set)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_KEY_SET;
+
+ 		if (flag_initialized)
+ 			mask_handle_state |= TEE_HANDLE_FLAG_INITIALIZED;
+
+		ADBG_EXPECT(c, op.params[2].value.b, mask_handle_state);
+
+		obuf = (uint32_t *) op.params[3].memref.parent->buffer;
+		obuf++;
+		key_num = *obuf;
+
+		for(i = 0; i < key_num; i++) {
+			obuf++;
+			ADBG_EXPECT(c, *obuf, key_size);
+			obuf++;
+			ADBG_EXPECT(c, *obuf, key_usage);
+		}
+	}
+
+exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+
+	return res;
+}
+#endif
 
 /*CMD_ResetOperation*/
 static TEEC_Result Invoke_Crypto_ResetOperation(

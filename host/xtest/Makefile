@@ -40,6 +40,8 @@ srcs := xtest_1000.c \
 	adbg/src/security_utils_mem.c
 
 ifeq ($(CFG_GP_TESTSUITE_ENABLE), y)
+CFLAGS += -DCFG_GP_TESTSUITE_ENABLE
+
 srcs  += xtest_7500.c \
 	 xtest_8000.c \
 	 xtest_8500.c \
