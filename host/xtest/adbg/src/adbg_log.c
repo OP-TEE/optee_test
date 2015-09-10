@@ -50,6 +50,7 @@ void Do_ADBG_Log(const char *const Format, ...)
 	vsnprintf(buf, sizeof(buf), Format, ap);
 	va_end(ap);
 	printf("%s\n", buf);
+	fflush(stdout);
 }
 
 void Do_ADBG_LogHeading(unsigned Level, const char *const Format, ...)
