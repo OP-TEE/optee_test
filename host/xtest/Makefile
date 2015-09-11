@@ -62,6 +62,7 @@ CFLAGS += -I../../ta/os_test/include
 CFLAGS += -I../../ta/rpc_test/include
 CFLAGS += -I../../ta/sims/include
 CFLAGS += -I../../ta/storage/include
+CFLAGS += -I../../ta/fake_uuid/include
 ifeq ($(CFG_GP_TESTSUITE_ENABLE),y)
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto
