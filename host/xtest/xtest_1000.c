@@ -600,6 +600,28 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	}
 	Do_ADBG_EndSubCase(c, "Load fake uuid TA");
 
+	Do_ADBG_BeginSubCase(c, "Load corrupted TA");
+	{
+		/*
+		 * Run this several times to see that there's no memory leakage.
+		 */
+		for (n = 0; n < 10; n++) {
+			TEEC_Result res;
+
+			Do_ADBG_Log("n = %zu", n);
+			res = xtest_teec_open_session(&session,
+						      &bad_payload_ta_uuid,
+						      NULL, &ret_orig);
+			if (res == TEEC_SUCCESS)
+				TEEC_CloseSession(&session);
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY,
+						     res))
+				break;
+		}
+
+	}
+	Do_ADBG_EndSubCase(c, "Load corrupted TA");
+
 }
 
 #ifdef USER_SPACE

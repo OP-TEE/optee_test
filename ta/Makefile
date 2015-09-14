@@ -11,7 +11,8 @@ TA_DIRS := create_fail_test \
 	   rpc_test \
 	   sims \
 	   storage \
-	   fake_uuid
+	   fake_uuid \
+	   bad_payload
 
 ifeq ($(CFG_GP_TESTSUITE_ENABLE), y)
 TA_DIRS += GP_TTA_Arithmetical \

@@ -177,6 +177,7 @@ extern const TEEC_UUID enc_fs_key_manager_test_ta_uuid;
 extern const TEEC_UUID ecc_test_ta_uuid;
 extern const TEEC_UUID gp_tta_time_uuid;
 extern const TEEC_UUID fake_uuid_ta_uuid;
+extern const TEEC_UUID bad_payload_ta_uuid;
 extern char *_device;
 
 #endif /*XTEST_TEST_H*/
