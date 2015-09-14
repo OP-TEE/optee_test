@@ -27,8 +27,8 @@
 
 #include <tee_ta_api.h>
 
-#include <bonnie.h>
-#include <ta_bonnie.h>
+#include <storage_benchmark.h>
+#include <ta_storage_benchmark.h>
 
 /*
  * Trusted Application Entry Points
@@ -69,26 +69,5 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 {
 	(void)pSessionContext;
 
-	switch (nCommandID) {
-	case TA_BONNIE_CMD_TEST_PUTC:
-		return ta_bonnie_cmd_test_putc(nParamTypes, pParams);
-
-	case TA_BONNIE_CMD_TEST_REWRITE:
-		return ta_bonnie_cmd_test_rewrite(nParamTypes, pParams);
-
-	case TA_BONNIE_CMD_TEST_FASTWRITE:
-		return ta_bonnie_cmd_test_fastwrite(nParamTypes, pParams);
-
-	case TA_BONNIE_CMD_TEST_GETC:
-		return ta_bonnie_cmd_test_getc(nParamTypes, pParams);
-
-	case TA_BONNIE_CMD_TEST_FASTREAD:
-		return ta_bonnie_cmd_test_fastread(nParamTypes, pParams);
-
-	case TA_BONNIE_CMD_TEST_LSEEK:
-		return ta_bonnie_cmd_test_lseek(nParamTypes, pParams);
-
-	default:
-		return TEE_ERROR_BAD_PARAMETERS;
-	}
+	return ta_storage_benchmark_cmd_handler(nCommandID, nParamTypes, pParams);
 }

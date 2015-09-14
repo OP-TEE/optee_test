@@ -94,6 +94,10 @@ ADBG_CASE_DECLARE(XTEST_TEE_20522);
 ADBG_CASE_DECLARE(XTEST_TEE_20523);
 #endif /* CFG_ENC_FS */
 
+ADBG_CASE_DECLARE(XTEST_TEE_BENCHMARK_1001);
+ADBG_CASE_DECLARE(XTEST_TEE_BENCHMARK_1002);
+ADBG_CASE_DECLARE(XTEST_TEE_BENCHMARK_1003);
+
 #ifdef WITH_GP_TESTS
 #include "adbg_case_declare.h"
 ADBG_CASE_DECLARE_AUTO_GENERATED_TESTS()
@@ -201,7 +205,7 @@ extern const TEEC_UUID enc_fs_key_manager_test_ta_uuid;
 extern const TEEC_UUID ecc_test_ta_uuid;
 extern const TEEC_UUID gp_tta_time_uuid;
 extern const TEEC_UUID concurrent_ta_uuid;
-extern const TEEC_UUID bonnie_ta_uuid;
+extern const TEEC_UUID storage_benchmark_ta_uuid;
 extern char *_device;
 
 #endif /*XTEST_TEST_H*/

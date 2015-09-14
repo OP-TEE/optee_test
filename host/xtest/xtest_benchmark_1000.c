@@ -12,109 +12,162 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
-#include <ta_bonnie.h>
+#include <ta_storage_benchmark.h>
+#include <util.h>
+
+#define DO_VERIFY 0
+#define DEFAULT_DATA_SIZE (2 * 1024 * 1024) /* 2MB */
+#define DEFAULT_CHUNK_SIZE (1 * 1024) /* 1KB */
+#define DEFAULT_COUNT (10)
+
+size_t data_size_table[] = {
+	256,
+	512,
+	1024,
+	2 * 1024,
+	4 * 1024,
+	16 * 1024,
+	512 * 1024,
+	1024 * 1024,
+	0
+};
 
 static void xtest_tee_benchmark_1001(ADBG_Case_t *Case_p);
 static void xtest_tee_benchmark_1002(ADBG_Case_t *Case_p);
 static void xtest_tee_benchmark_1003(ADBG_Case_t *Case_p);
-static void xtest_tee_benchmark_1004(ADBG_Case_t *Case_p);
-static void xtest_tee_benchmark_1005(ADBG_Case_t *Case_p);
-static void xtest_tee_benchmark_1006(ADBG_Case_t *Case_p);
 
-
-static TEEC_Result run_test(enum bonnie_cmd cmd)
+static TEEC_Result run_test_with_args(enum storage_benchmark_cmd cmd,
+		uint32_t arg0, uint32_t arg1, uint32_t arg2,
+		uint32_t arg3, uint32_t *out0, uint32_t *out1)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
 	TEEC_Session sess;
 	uint32_t orig;
 
-	res = xtest_teec_open_session(&sess, &bonnie_ta_uuid, NULL, &orig);
+	res = xtest_teec_open_session(&sess, &storage_benchmark_ta_uuid, NULL, &orig);
 	if (res != TEEC_SUCCESS)
 		return res;
 
+	op.params[0].value.a = arg0;
+	op.params[0].value.b = arg1;
+	op.params[1].value.a = arg2;
+	op.params[1].value.b = arg3;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+			TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT, TEEC_NONE);
+
 	res = TEEC_InvokeCommand(&sess, cmd, &op, &orig);
+
+	if (out0)
+		*out0 = op.params[2].value.a;
+	if (out1)
+		*out1 = op.params[2].value.b;
 
 	TEEC_CloseSession(&sess);
 
 	return res;
 }
 
+struct test_record {
+	size_t data_size;
+	float spent_time;
+	float speed_in_kb;
+};
+
+static TEEC_Result run_chunk_access_test(enum storage_benchmark_cmd cmd,
+		uint32_t data_size, uint32_t chunk_size, struct test_record *rec)
+{
+	TEE_Result res;
+	uint32_t spent_time;
+
+	res = run_test_with_args(cmd, data_size, chunk_size, DO_VERIFY, 0,
+				&spent_time, NULL);
+
+	rec->data_size = data_size;
+	rec->spent_time = (float)spent_time / 1000.0;
+	rec->speed_in_kb = ((float)data_size / 1024.0) / rec->spent_time;
+
+	return res;
+}
+
+static void show_test_result(struct test_record records[], size_t size)
+{
+	uint i;
+
+	printf("-----------------+---------------+----------------\n");
+	printf(" Data Size (B) \t | Time (s)\t | Speed (kB/s)\t \n");
+	printf("-----------------+---------------+----------------\n");
+
+	for (i = 0; i < size; i++) {
+		printf(" %8zd \t | %8.3f \t | %8.3f\n",
+			records[i].data_size, records[i].spent_time,
+			records[i].speed_in_kb);
+	}
+
+	printf("-----------------+---------------+----------------\n");
+
+}
+
+static void chunk_test(ADBG_Case_t *c, enum storage_benchmark_cmd cmd)
+{
+	uint32_t chunk_size = DEFAULT_CHUNK_SIZE;
+	struct test_record records[ARRAY_SIZE(data_size_table) - 1];
+	uint i;
+
+	for (i = 0; data_size_table[i]; i++) {
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+			run_chunk_access_test(cmd, data_size_table[i],
+				chunk_size, &records[i]));
+	}
+
+	show_test_result(records, ARRAY_SIZE(records));
+}
+
 static void xtest_tee_benchmark_1001(ADBG_Case_t *c)
 {
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_PUTC));
+	chunk_test(c, TA_STORAGE_BENCHMARK_CMD_TEST_WRITE);
 }
 
 static void xtest_tee_benchmark_1002(ADBG_Case_t *c)
 {
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_REWRITE));
+	chunk_test(c, TA_STORAGE_BENCHMARK_CMD_TEST_READ);
 }
 
 static void xtest_tee_benchmark_1003(ADBG_Case_t *c)
 {
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_FASTWRITE));
+	chunk_test(c, TA_STORAGE_BENCHMARK_CMD_TEST_REWRITE);
 }
-
-static void xtest_tee_benchmark_1004(ADBG_Case_t *c)
-{
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_GETC));
-}
-
-static void xtest_tee_benchmark_1005(ADBG_Case_t *c)
-{
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_FASTREAD));
-}
-
-static void xtest_tee_benchmark_1006(ADBG_Case_t *c)
-{
-	ADBG_EXPECT_TEEC_SUCCESS(c, run_test(TA_BONNIE_CMD_TEST_LSEEK));
-}
-
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1001, xtest_tee_benchmark_1001,
-		/* Title */ "TEE Trusted Storage Performance Test (PUTC)",
-		/* Short description */ "",
+		/* Title */
+		"TEE Trusted Storage Performance Test (WRITE)",
+		/* Short description */
+		"Write a chunk of data",
 		/* Requirement IDs */ "",
 		/* How to implement */ ""
 		);
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1002, xtest_tee_benchmark_1002,
-		/* Title */ "TEE Trusted Storage Performance Test (REWRITE)",
-		/* Short description */ "",
+		/* Title */
+		"TEE Trusted Storage Performance Test (READ)",
+		/* Short description */
+		"Read a chunk of data",
 		/* Requirement IDs */ "",
 		/* How to implement */ ""
 		);
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1003, xtest_tee_benchmark_1003,
-		/* Title */ "TEE Trusted Storage Performance Test (FASTWRITE)",
-		/* Short description */ "",
+		/* Title */
+		"TEE Trusted Storage Performance Test (REWRITE)",
+		/* Short description */
+		"Read a chunk of data then write it",
 		/* Requirement IDs */ "",
 		/* How to implement */ ""
 		);
-
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1004, xtest_tee_benchmark_1004,
-		/* Title */ "TEE Trusted Storage Performance Test (GETC)",
-		/* Short description */ "",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1005, xtest_tee_benchmark_1005,
-		/* Title */ "TEE Trusted Storage Performance Test (FASTREAD)",
-		/* Short description */ "",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1006, xtest_tee_benchmark_1006,
-		/* Title */ "TEE Trusted Storage Performance Test (LSEEK)",
-		/* Short description */ "",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-

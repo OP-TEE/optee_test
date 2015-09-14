@@ -28,6 +28,7 @@
 #include <ta_storage.h>
 #include <tee_api_defines.h>
 #include <tee_api_types.h>
+#include <util.h>
 
 #define SIZE		1
 #define NUMELEM		1
@@ -48,8 +49,6 @@
 #define CORRUPT_FILE_RAND_BYTE		1024*4096+2
 #define CORRUPT_FILE_FIRST_BYTE		1024*4096+1
 #define CORRUPT_FILE_LAST_BYTE		1024*4096
-
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b) ? (a) : (b))

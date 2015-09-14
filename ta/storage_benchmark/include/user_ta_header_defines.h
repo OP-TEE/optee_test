@@ -25,55 +25,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tee_api.h>
-#include "include/bonnie.h"
+#ifndef USER_TA_HEADER_DEFINES_H
+#define USER_TA_HEADER_DEFINES_H
 
-#define ASSERT_PARAM_TYPE(pt_in, pt_expect) \
-do { \
-	if ((pt_in) != (pt_expect)) \
-		return TEE_ERROR_BAD_PARAMETERS; \
-} while (0)
+#include "ta_storage_benchmark.h"
 
+#define TA_UUID TA_STORAGE_BENCHMARK_UUID
 
-TEE_Result ta_bonnie_cmd_test_putc(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
+#define TA_FLAGS		(TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR)
+#define TA_STACK_SIZE		(2 * 1024)
+#define TA_DATA_SIZE		(32 * 1024)
 
-TEE_Result ta_bonnie_cmd_test_rewrite(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
-
-TEE_Result ta_bonnie_cmd_test_fastwrite(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
-
-TEE_Result ta_bonnie_cmd_test_getc(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
-
-TEE_Result ta_bonnie_cmd_test_fastread(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
-
-TEE_Result ta_bonnie_cmd_test_lseek(__unused uint32_t param_types,
-		__unused TEE_Param params[4])
-{
-	//TODO: implement it
-	return TEE_SUCCESS;
-}
-
+#endif

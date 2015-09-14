@@ -15,8 +15,8 @@ TA_DIRS := create_fail_test \
 	   rpc_test \
 	   sims \
 	   storage \
-	   concurrent
-	   bonnie
+	   concurrent \
+	   storage_benchmark
 
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
