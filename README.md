@@ -17,42 +17,44 @@ The user TAs (`optee_test/ta/*`) are provided under the
 
 ### HOWTO build the testsuite
 #### Standard tests
-	- Easiest way is to use a helper script like the ones generated when
-	  running either setup_fvp_optee.sh or setup_qemu_optee.sh in the
-	  [optee_os](https://github.com/OP-TEE/optee_os/tree/master/scripts)
-	  git. If you decide to not use those script you need to set a couple of
-	  environment variables before invoking make. Pay attention to that
-	  `CROSS_COMPILE_HOST` and `CROSS_COMPILE_TA` doesn't have to be the
-	  same. In some setups (ARMv8-A on FVP for example) you will point
-	  `CROSS_COMPILE_TA` to a 32-bit compiler, while you point the
-	  `CROSS_COMPILE_HOST` to a 64-bit compiler.
+xtest test suite comes with a standard test suite,
+freely available. When installing OP-TEE through the
+[manifest](https://github.com/OP-TEE/optee_os/blob/master/README.md#6-repo-manifests),
+the [build](https://github.com/OP-TEE/build)
+component provides the `xtest` target which builds optee_test.
+It makes use of the following environment variables:
+* `CROSS_COMPILE_HOST`: the cross compiler used to compile the
+  Non-Secure Client Application (`host/xtest`)
+* `CROSS_COMPILE_TA`: the cross compiler used to compile the
+  Trusted Applications (`ta`)
+* `TA_DEV_KIT_DIR`: the path to the Trusted Application Dev Kit.
+  It can be found in optee_os repository, once optee_os has been compiled.
+* `O`: the output repository
+* Moreover, when the Trusted OS is compiled in 64bits mode,
+  `CFG_ARM32=y` must be set.
 
-	  ```
-	  # The path to the toolchain
-	  export PATH=$HOME/devel/toolchains/aarch32/bin:$PATH
 
-	  # The compiler used to compile xtest, i.e, the host binary
-	  export CROSS_COMPILE_HOST=arm-linux-gnueabihf-
+#### Extended test (Global Platform tests)
+Developers can purchase the
+[Global Platform Compliance Test suite](https://www.globalplatform.org/store.asp).
+This test suite comes with .xml files describing the tests and
+the Trusted Applications.
 
-	  # The compiler used to compile the Trusted Applications
-	  export CROSS_COMPILE_TA=arm-linux-gnueabihf-
+Standard tests can be extended with the Global Platform test suite.
+The user must only:
+* Install the Global Platform `xml` files in `$CFG_GP_PACKAGE_PATH`
+* set `CFG_GP_TESTSUITE_ENABLE=y`
+* Run `make patch` (or call make `xtest-patch` from the `build` repository)
+  before compiling xtest. This must be run a single time after the installation
+  of OP-TEE.
 
-	  # The path to the TA-dev-kit created when you have built optee_os. It
-	  # is important to use this, since it contains flags etc that will be
-	  # used when building Trusted Applications for your target.
-	  export TA_DEV_KIT_DIR=$DEV_PATH/optee_os/out/arm-plat-vexpress/export-user_ta
+This will:
+* Create new Trusted Applications, that can be found in `ta/GP_xxx`
+* Create new tests in `host/xtest`, as for example `xtest_9000.c`
+* Patches `xtest_7000.c`, adding new tests.
 
-	  # You must specify where the binaries and intermediate build files for
-          # optee_test should be located. We're suggesting that you put them as
-	  # stated just below.
-	  export O=$OPTEE_DEV_PATH/optee_test/out/${ARCH}-plat-${CFG_PLATFORM}
-	  ```
+Then the tests must be compiled with `CFG_GP_TESTSUITE_ENABLE=y`.
 
-#### Extended test (GlobalPlatform tests)
-        FIXME: This needs to be updated to make sure it matches the recent
-	changes where we are using the ta-dev-kit from the optee_os git (
-	please check previous versions of this particular file to find the old
-	instructions).
 
 ### HOWTO run xtest
 
