@@ -1022,6 +1022,10 @@ static void xtest_tee_test_6010(ADBG_Case_t *c)
     uint32_t orig;
     uint8_t out[4000] = {0};
     uint8_t in[0x12c] = {'b'};
+    int i;
+
+    for (i=0; i<sizeof(in); i++)
+	    in[i] = i;
 
     if (!ADBG_EXPECT_TEEC_SUCCESS(
             c, xtest_teec_open_session(
@@ -1096,14 +1100,20 @@ static void xtest_tee_test_6010(ADBG_Case_t *c)
     /* check buffer */
     (void)ADBG_EXPECT_BUFFER(
         c, data_00, sizeof(data_00), out, sizeof(data_00));
+    memset(out, 0xab, sizeof(out));
 
     if (!ADBG_EXPECT_TEEC_SUCCESS(
             c, ds_seek_gp(
-                &sess, TEE_DATA_SEEK_END, sizeof(in), 0, in, sizeof(in), out,
+                &sess, TEE_DATA_SEEK_END, sizeof(in)/2, 0, in, sizeof(in), out,
                 sizeof(out))))
         goto exit;
 
-    (void)ADBG_EXPECT_BUFFER(c, in + sizeof(in), sizeof(in), out, sizeof(in));
+    (void)ADBG_EXPECT_BUFFER(c, in, sizeof(in) / 2,
+		             out + (sizeof(in) / 2), sizeof(in) / 2);
+    memset(in, 0, sizeof(in));
+    (void)ADBG_EXPECT_BUFFER(c, in, sizeof(in) / 2,
+		             out, sizeof(in)/2);
+    memset(out, 0xab, sizeof(out));
 
     Do_ADBG_EndSubCase(c, "GP DS SeekWriteRead SEEK_END (9d-e4-58)");
     Do_ADBG_BeginSubCase(c, "GP DS Rename Access Conflict (9d-29-d1)");
