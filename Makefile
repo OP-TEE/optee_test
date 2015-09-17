@@ -38,7 +38,7 @@ clean:
 patch:
 ifeq ($(CFG_GP_TESTSUITE_ENABLE),y)
 CFG_GP_API?=1.0
-CFG_GP_XSL_PACKAGE_PATH?=$(CFG_DEV_PATH)/optee_test/package/testsuite/global_platform/api_1.0/GP_XSL_TEE_Initial_Configuration-Test_Suite_v1_0_0-2014-12-03-STM
+CFG_GP_XSL_PACKAGE_PATH?=$(CURDIR)/package/testsuite/global_platform/api_1.0/GP_XSL_TEE_Initial_Configuration-Test_Suite_v1_0_0-2014-12-03-STM
 patch:
-	$(q) CFG_GP_API=$(CFG_GP_API) CFG_GP_XSL_PACKAGE_PATH=$(CFG_GP_XSL_PACKAGE_PATH) $(CURDIR)/scripts/patch_gp_testsuite.sh
+	$(q) OPTEE_TEST_ROOT=$(CURDIR) CFG_GP_API=$(CFG_GP_API) CFG_GP_XSL_PACKAGE_PATH=$(CFG_GP_XSL_PACKAGE_PATH) $(CURDIR)/scripts/patch_gp_testsuite.sh
 endif

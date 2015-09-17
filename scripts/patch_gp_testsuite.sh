@@ -199,7 +199,7 @@ if [ ${CFG_GP_TESTSUITE_ENABLE} == "y" ]; then
 
 	# openssl .h file installation
 	if [ -d /usr/include/openssl ]; then
-		forgpdir=${CFG_DEV_PATH}/optee_test/host/xtest/for_gp/
+		forgpdir=${OPTEE_TEST_ROOT}/host/xtest/for_gp/
 		mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
 		[ -d /usr/include/x86_64-linux-gnu/openssl ] && LCI_CPD /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include
 		for f in /usr/include/openssl/*.h ; do
@@ -214,7 +214,7 @@ fi
 cd ${CDIR}
 
 LCI_PRINT_L1 "Update test: 9238 (TEE_GetOperationInfoMultiple)"
-ARRAY=(["FILE"]="${CFG_OPTEE_TEST_PATH}/host/xtest/xtest_9000.c"
+ARRAY=(["FILE"]="${OPTEE_TEST_ROOT}/host/xtest/xtest_9000.c"
 	["PATCH"]="${CFG_GP_XSL_PACKAGE_PATH}/host/xtest/xtest_9000.c.patch")
 LCI_PATCH  ${ARRAY[FILE]} ${ARRAY[PATCH]}
 LCI_PRINT_SEPARATOR

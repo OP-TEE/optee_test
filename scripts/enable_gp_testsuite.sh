@@ -29,12 +29,12 @@ fi
 
 echo -e "| Processing ..."
 
-GP_XTEST_OUT_DIR="${CFG_DEV_PATH}/optee_test/host/xtest"
+GP_XTEST_OUT_DIR="${OPTEE_TEST_ROOT}/host/xtest"
 export GP_XTEST_OUT_DIR
 GP_XTEST_IN_DIR="${GP_XTEST_OUT_DIR}/global_platform/${CFG_GP_API}"
 export GP_XTEST_IN_DIR
 
-GP_USERTA_DIR="${CFG_DEV_PATH}/optee_test/ta"
+GP_USERTA_DIR="${OPTEE_TEST_ROOT}/ta"
 export GP_USERTA_DIR
 
 echo -e "| Clean"
