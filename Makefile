@@ -78,7 +78,9 @@ endef
 forgpdir=${CURDIR}/host/xtest/for_gp
 patch-openssl:
 	$(q)mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
-	$(q)[ -d /usr/include/x86_64-linux-gnu/openssl ] && cp -r /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include
+	$(q)if [ -d /usr/include/x86_64-linux-gnu/openssl ]; then \
+		cp -r /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include ; \
+	fi
 	$(q)cp /usr/include/openssl/*.h $f ${forgpdir}/include/openssl
 
 define mv-package
