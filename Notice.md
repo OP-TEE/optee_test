@@ -1,8 +1,4 @@
-OP-TEE sanity testsuite
-=======================
-
-This is the OP-TEE (Open Portable Trusted Execution Environment) sanity
-testsuite with initial contributions from STMicroelectronics.
-
-Note this is an early version of the test suite. Further update will
-allow to install all OP-TEE components for a given platform.
+To avoid duplicating information we link to the Notice.md file in optee_os which
+states the contributor agreement rules etc, i.e, optee_test follows what is
+written in the Notice.md on the URL below
+https://github.com/OP-TEE/optee_os/blob/master/Notice.md
