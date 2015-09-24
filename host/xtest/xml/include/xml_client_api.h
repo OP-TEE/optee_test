@@ -319,7 +319,7 @@ static void *context_thread(void *arg)
 	IDENTIFIER_NOT_USED(t_ctx)
 #endif
 
-#ifdef XTEST_WITH_GP_TESTS
+#ifdef WITH_GP_TESTS
 /*
  * Required by Global Platform test suite for v1.0
  */

@@ -12,7 +12,7 @@ TA_DIRS := create_fail_test \
 	   sims \
 	   storage
 
-ifeq ($(CFG_GP_TESTSUITE_ENABLE), y)
+ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
 	   GP_TTA_Crypto \
 	   GP_TTA_DS \

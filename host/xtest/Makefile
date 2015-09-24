@@ -39,8 +39,8 @@ srcs := xtest_1000.c \
 	adbg/src/security_utils_hex.c \
 	adbg/src/security_utils_mem.c
 
-ifeq ($(CFG_GP_TESTSUITE_ENABLE), y)
-CFLAGS += -DCFG_GP_TESTSUITE_ENABLE
+ifdef CFG_GP_PACKAGE_PATH
+CFLAGS += -DWITH_GP_TESTS
 
 srcs  += xtest_7500.c \
 	 xtest_8000.c \
@@ -64,7 +64,7 @@ CFLAGS += -I../../ta/os_test/include
 CFLAGS += -I../../ta/rpc_test/include
 CFLAGS += -I../../ta/sims/include
 CFLAGS += -I../../ta/storage/include
-ifeq ($(CFG_GP_TESTSUITE_ENABLE),y)
+ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto
 CFLAGS += -I../../ta/GP_TTA_DS
@@ -90,15 +90,12 @@ else
 LDFLAGS += ../lib/armv8/libcrypto.a
 endif
 
-# need more flags
-CFLAGS += -DXTEST_WITH_GP_TESTS
-
 endif
 
 # FIXME: Check if and why we need this flag?
 CFLAGS += -DUSER_SPACE
 
-ifneq ($(CFG_GP_TESTSUITE_ENABLE),y)
+ifndef CFG_GP_PACKAGE_PATH
 CFLAGS += -Wall -Wcast-align -Werror \
 	  -Werror-implicit-function-declaration -Wextra -Wfloat-equal \
 	  -Wformat-nonliteral -Wformat-security -Wformat=2 -Winit-self \

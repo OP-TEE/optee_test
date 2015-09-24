@@ -777,7 +777,7 @@ static TEEC_Result Invoke_Crypto_GetOperationInfo(
 	return res;
 }
 
-#ifdef CFG_GP_TESTSUITE_ENABLE
+#ifdef WITH_GP_TESTS
 /*CMD_GetOperationInfoMultiple*/
 static TEEC_Result Invoke_Crypto_GetOperationInfoMultiple(
 	ADBG_Case_t *c, TEEC_Session *s,

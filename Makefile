@@ -36,7 +36,7 @@ clean:
 
 .PHONY: patch
 patch:
-ifeq ($(CFG_GP_TESTSUITE_ENABLE),y)
+ifdef CFG_GP_PACKAGE_PATH
 CFG_GP_API?=1.0
 CFG_GP_XSL_PACKAGE_PATH?=$(CURDIR)/package/testsuite/global_platform/api_1.0/GP_XSL_TEE_Initial_Configuration-Test_Suite_v1_0_0-2014-12-03-STM
 
@@ -254,5 +254,5 @@ patch: patch-openssl patch-generate-host patch-generate-ta
 
 else
 patch:
-	$(q) echo "Please define CFG_GP_TESTSUITE_ENABLE=y" && false
+	$(q) echo "Please define CFG_GP_PACKAGE_PATH" && false
 endif

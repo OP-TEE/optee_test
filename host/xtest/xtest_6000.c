@@ -22,7 +22,7 @@
 #include <ta_storage.h>
 #include <tee_api_defines.h>
 #include <tee_api_types.h>
-#ifdef CFG_GP_TESTSUITE_ENABLE
+#ifdef WITH_GP_TESTS
 #include <TTA_DS_protocol.h>
 #endif
 
@@ -441,7 +441,7 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
-#ifdef CFG_GP_TESTSUITE_ENABLE
+#ifdef WITH_GP_TESTS
 static TEEC_Result ds_open_access_conf(TEEC_Session *sess)
 {
     TEEC_Operation op;
@@ -1015,7 +1015,7 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
-#ifdef CFG_GP_TESTSUITE_ENABLE
+#ifdef WITH_GP_TESTS
 static void xtest_tee_test_6010(ADBG_Case_t *c)
 {
     TEEC_Session sess;
@@ -1296,7 +1296,7 @@ ADBG_CASE_DEFINE(
 	"Description of how to implement ..."
 	);
 
-#ifdef CFG_GP_TESTSUITE_ENABLE
+#ifdef WITH_GP_TESTS
 ADBG_CASE_DEFINE(
     XTEST_TEE_6010, xtest_tee_test_6010,
     /* Title */

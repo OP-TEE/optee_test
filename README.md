@@ -43,7 +43,6 @@ the Trusted Applications.
 Standard tests can be extended with the Global Platform test suite.
 The user must only:
 * Install the Global Platform `xml` files in `$CFG_GP_PACKAGE_PATH`
-* set `CFG_GP_TESTSUITE_ENABLE=y`
 * Run `make patch` (or call make `xtest-patch` from the `build` repository)
   before compiling xtest. This must be run a single time after the installation
   of OP-TEE.
@@ -53,7 +52,7 @@ This will:
 * Create new tests in `host/xtest`, as for example `xtest_9000.c`
 * Patches `xtest_7000.c`, adding new tests.
 
-Then the tests must be compiled with `CFG_GP_TESTSUITE_ENABLE=y`.
+Then the tests must be compiled with `CFG_GP_PACKAGE_PATH=<path>`.
 
 
 ### HOWTO run xtest
