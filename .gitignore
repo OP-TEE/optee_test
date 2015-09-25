@@ -6,6 +6,7 @@ GTAGS
 out/*
 ta/GP_*
 host/xtest/global_platform/
+host/xtest/xtest_7000_gp.c
 host/xtest/xtest_7500.c
 host/xtest/xtest_8000.c
 host/xtest/xtest_8500.c

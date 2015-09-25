@@ -109,7 +109,7 @@ patch-generate-host: patch-package
 	$(q)find ${CFG_GP_XSL_PACKAGE_PATH}/packages -type f -name "*.xsl" -exec cp -p {} ${GP_XTEST_IN_DIR} \;
 	$(call patch-xalan,TEE.xml,adbg_case_declare.xsl,adbg_case_declare.h)
 	$(call patch-xalan,TEE.xml,adbg_entry_declare.xsl,adbg_entry_declare.h)
-	$(call patch-xalan,TEE.xml,TEE.xsl,xtest_7000.c)
+	$(call patch-xalan,TEE.xml,TEE.xsl,xtest_7000_gp.c)
 	$(call patch-xalan,TEE_DataStorage_API.xml,TEE_DataStorage_API.xsl,xtest_7500.c)
 	$(call patch-xalan,TEE_Internal_API.xml,TEE_Internal_API.xsl,xtest_8000.c)
 	$(call patch-xalan,TEE_TimeArithm_API.xml,TEE_TimeArithm_API.xsl,xtest_8500.c)

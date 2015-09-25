@@ -19,11 +19,15 @@ OBJCOPY		:= $(CROSS_COMPILE)objcopy
 OBJDUMP		:= $(CROSS_COMPILE)objdump
 READELF		:= $(CROSS_COMPILE)readelf
 
+ifdef CFG_GP_PACKAGE_PATH
+GP := _gp
+endif
+
 srcs := xtest_1000.c \
 	xtest_4000.c \
 	xtest_5000.c \
 	xtest_6000.c \
-	xtest_7000.c \
+	xtest_7000$(GP).c \
 	xtest_10000.c \
 	xtest_helpers.c \
 	xtest_main.c \
