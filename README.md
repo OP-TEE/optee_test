@@ -30,7 +30,7 @@ It makes use of the following environment variables:
 * `TA_DEV_KIT_DIR`: the path to the Trusted Application Dev Kit.
   It can be found in optee_os repository, once optee_os has been compiled.
 * `O`: the output repository
-* Moreover, when the Trusted OS is compiled in 64bits mode,
+* When the application is compiled in 32bits mode,
   `CFG_ARM32=y` must be set.
 
 
