@@ -18,6 +18,8 @@
 #include <tee_api_types.h>
 #include <adbg.h>
 
+extern unsigned int level;
+
 /* Global context to use if any context is needed as input to a function */
 extern TEEC_Context xtest_teec_ctx;
 
