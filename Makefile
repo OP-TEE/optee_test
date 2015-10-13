@@ -6,7 +6,7 @@ else
 	out-dir := $(CURDIR)/out
 endif
 
-include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+-include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
 ifneq ($V,1)
 	q := @
@@ -15,7 +15,12 @@ else
 endif
 
 .PHONY: all
+ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 all: xtest ta
+else
+all:
+	$(q)echo "TA_DEV_KIT_DIR is not correctly defined" && false
+endif
 
 .PHONY: xtest
 xtest:
@@ -32,9 +37,15 @@ ta:
 			  $@
 
 .PHONY: clean
+ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 clean:
 	$(q)$(MAKE) -C host/xtest O=$(out-dir)/xtest q=$(q) $@
 	$(q)$(MAKE) -C ta O=$(out-dir)/ta q=$(q) $@
+else
+clean:
+	$(q)echo "TA_DEV_KIT_DIR is not correctly defined"
+	$(q)echo "You can remove manually $(out-dir)"
+endif
 
 .PHONY: patch
 patch:
@@ -78,6 +89,7 @@ endef
 
 # openssl .h file installation
 forgpdir=${CURDIR}/host/xtest/for_gp
+.PHONY: patch-openssl
 patch-openssl:
 	$(q)mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
 	$(q)if [ -d /usr/include/x86_64-linux-gnu/openssl ]; then \
@@ -104,6 +116,7 @@ define patch-cp-ta
 	$(q)cp -p $(CFG_GP_XSL_PACKAGE_PATH)/${2}/* $(GP_USERTA_DIR)/${3}
 endef
 
+.PHONY: patch-generate-host
 patch-generate-host: patch-package
 	@echo "INFO: Generate host tests"
 	$(q) mkdir -p ${GP_XTEST_IN_DIR} ${GP_XTEST_IN_DIR}
@@ -123,6 +136,7 @@ patch-generate-host: patch-package
 	# $(q)sed -i '246 c\    xtest_tee_deinit();\n' ${GP_XTEST_OUT_DIR}/xtest_9000.c
 	$(call patch-file,host/xtest/xtest_9000.c,${CFG_GP_XSL_PACKAGE_PATH}/host/xtest/xtest_9000.c.patch)
 
+.PHONY: patch-generate-ta
 patch-generate-ta: patch-package
 	@echo "INFO: Generate TA"
 	$(call patch-cp-ta,TTAs/TTA_Arithmetical/TTA_Arithmetical/code_files,TTAs/TTA_Arithmetical/code_files,GP_TTA_Arithmetical)
@@ -142,6 +156,7 @@ patch-generate-ta: patch-package
 	$(call patch-cp-ta,TTAs/TTA_TCF/TTA_TCF/code_files,TTAs/TTA_TCF/TTA_TCF/code_files,GP_TTA_TCF)
 
 # Patch the GP package
+.PHONY: patch-package
 patch-package:
 	@echo "INFO: Patch provided tests"
 	$(q)mkdir -p ${CFG_GP_PACKAGE_PATH}/packages
@@ -179,6 +194,7 @@ define patch-filter-one
 	$(q)sed -i 's|    ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)\\|    /\*ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)\*/\\|g' ${GP_XTEST_OUT_DIR}/adbg_entry_declare.h
 endef
 
+.PHONY: patch-filter
 patch-filter:
 	@echo "INFO: Filter some tests"
 	$(call patch-filter-one,7038)
@@ -253,10 +269,12 @@ patch-filter:
 	$(call patch-filter-one,9204)
 	$(call patch-filter-one,9239)
 
+.PHONY: patch
 patch: patch-openssl patch-generate-host patch-generate-ta
 	$(MAKE) patch-filter
 
 else
+.PHONY: patch
 patch:
 	$(q) echo "Please define CFG_GP_PACKAGE_PATH" && false
 endif
