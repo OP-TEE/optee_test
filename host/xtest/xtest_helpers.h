@@ -39,7 +39,7 @@ TEEC_Result xtest_teec_open_static_session(TEEC_Session *session,
 					   TEEC_Operation *op,
 					   uint32_t *ret_orig);
 
-#define TEEC_OPERATION_INITIALIZER { 0, 0, { { { 0 } } } }
+#define TEEC_OPERATION_INITIALIZER { 0 }
 
 /* IO access macro */
 #define  IO(addr)  (*((volatile unsigned long *)(addr)))
