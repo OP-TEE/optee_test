@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef USER_SPACE
 #include <pthread.h>
@@ -508,11 +509,105 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 	TEEC_CloseSession(&session);
 }
 
+static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
+			const char *extra_suffix)
+{
+	static const char ta_dir[] = "/lib/teetz";
+
+	snprintf(buf, blen,
+		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta%s",
+		ta_dir, uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
+		uuid->clockSeqAndNode[0], uuid->clockSeqAndNode[1],
+		uuid->clockSeqAndNode[2], uuid->clockSeqAndNode[3],
+		uuid->clockSeqAndNode[4], uuid->clockSeqAndNode[5],
+		uuid->clockSeqAndNode[6], uuid->clockSeqAndNode[7],
+		extra_suffix ? extra_suffix : "");
+}
+
+static FILE *open_ta_file(const TEEC_UUID *uuid, const char *extra_suffix,
+			const char *mode)
+{
+	char buf[PATH_MAX];
+
+	uuid_to_full_name(buf, sizeof(buf), uuid, extra_suffix);
+	return fopen(buf, mode);
+}
+
+static bool rm_file(const TEEC_UUID *uuid, const char *extra_suffix)
+{
+	char buf[PATH_MAX];
+
+	uuid_to_full_name(buf, sizeof(buf), uuid, extra_suffix);
+	return !unlink(buf);
+}
+
+static bool copy_file(FILE *src, FILE *dst)
+{
+	char buf[4 * 1024];
+	size_t r;
+	size_t w;
+
+	while (true) {
+		r = fread(buf, 1, sizeof(buf), src);
+		if (!r)
+			return !!feof(src);
+		w = fwrite(buf, 1, r, dst);
+		if (w != r)
+			return false;
+	}
+}
+
+static void load_fake_ta(ADBG_Case_t *c)
+{
+	static const TEEC_UUID fake_uuid =  {
+		0x7e0a0900, 0x586b, 0x11e5,
+		{ 0x93, 0x1f, 0x00, 0x02, 0xa5, 0xd5, 0xc5, 0x1b }
+	};
+	TEEC_Session session = { 0 };
+	TEEC_Result res;
+	uint32_t ret_orig;
+	FILE *fsrc;
+	FILE *fdst;
+	bool r;
+	size_t n;
+
+	fsrc = open_ta_file(&create_fail_test_ta_uuid, NULL, "r");
+	if (!ADBG_EXPECT_NOT_NULL(c, fsrc))
+		return;
+	fdst = open_ta_file(&fake_uuid, NULL, "w");
+	if (!ADBG_EXPECT_NOT_NULL(c, fdst)) {
+		fclose(fsrc);
+		return;
+	}
+	r = copy_file(fsrc, fdst);
+	fclose(fsrc);
+	fclose(fdst);
+
+	if (ADBG_EXPECT_TRUE(c, r)) {
+		/*
+		 * Run this several times to see that there's no memory leakage.
+		 */
+		for (n = 0; n < 10; n++) {
+			Do_ADBG_Log("n = %zu", n);
+			res = xtest_teec_open_session(&session, &fake_uuid,
+						      NULL, &ret_orig);
+			if (res == TEEC_SUCCESS)
+				TEEC_CloseSession(&session);
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY,
+						     res))
+				break;
+		}
+	}
+
+	ADBG_EXPECT_TRUE(c, rm_file(&fake_uuid, NULL));
+}
+
 static void xtest_tee_test_1008(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
 	TEEC_Session session_crypt = { 0 };
 	uint32_t ret_orig;
+
 
 	Do_ADBG_BeginSubCase(c, "Invoke command");
 	{
@@ -559,12 +654,12 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 
 	Do_ADBG_BeginSubCase(c, "Create session fail");
 	{
+		size_t n;
+
 		(void)ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_GENERIC,
 			xtest_teec_open_session(&session_crypt,
 						&create_fail_test_ta_uuid, NULL,
 						&ret_orig));
-		size_t n;
-
 		/*
 		 * Run this several times to see that there's no memory leakage.
 		 */
@@ -577,6 +672,11 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 		}
 	}
 	Do_ADBG_EndSubCase(c, "Create session fail");
+
+	Do_ADBG_BeginSubCase(c, "Load fake uuid TA");
+	load_fake_ta(c);
+	Do_ADBG_EndSubCase(c, "Load fake uuid TA");
+
 }
 
 #ifdef USER_SPACE
