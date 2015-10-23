@@ -22,6 +22,7 @@
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
+#include <signed_hdr.h>
 
 #include <ta_crypt.h>
 #include <ta_os_test.h>
@@ -512,7 +513,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
 			const char *extra_suffix)
 {
-	static const char ta_dir[] = "/lib/teetz";
+	static const char ta_dir[] = "/lib/optee_armtz";
 
 	snprintf(buf, blen,
 		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta%s",
@@ -541,20 +542,64 @@ static bool rm_file(const TEEC_UUID *uuid, const char *extra_suffix)
 	return !unlink(buf);
 }
 
-static bool copy_file(FILE *src, FILE *dst)
+static bool rename_file(const TEEC_UUID *old_uuid, const char *old_extra_suffix,
+			const TEEC_UUID *new_uuid, const char *new_extra_suffix)
+{
+	char old_buf[PATH_MAX];
+	char new_buf[PATH_MAX];
+
+	uuid_to_full_name(old_buf, sizeof(old_buf), old_uuid, old_extra_suffix);
+	uuid_to_full_name(new_buf, sizeof(new_buf), new_uuid, new_extra_suffix);
+	return !rename(old_buf, new_buf);
+}
+
+static bool copy_file(const TEEC_UUID *src_uuid, const char *src_extra_suffix,
+			const TEEC_UUID *dst_uuid, const char *dst_extra_suffix)
 {
 	char buf[4 * 1024];
+	FILE *src = open_ta_file(src_uuid, src_extra_suffix, "r");
+	FILE *dst = open_ta_file(dst_uuid, dst_extra_suffix, "w");
 	size_t r;
 	size_t w;
+	bool ret = false;
 
-	while (true) {
-		r = fread(buf, 1, sizeof(buf), src);
-		if (!r)
-			return !!feof(src);
-		w = fwrite(buf, 1, r, dst);
-		if (w != r)
-			return false;
+	if (src && dst) {
+		do {
+			r = fread(buf, 1, sizeof(buf), src);
+			if (!r) {
+				ret = !!feof(src);
+				break;
+			}
+			w = fwrite(buf, 1, r, dst);
+		} while (w == r);
 	}
+
+	if (src)
+		fclose(src);
+	if (dst)
+		fclose(dst);
+	return ret;
+}
+
+static bool corrupt_file(FILE *f, long offs, uint8_t mask)
+{
+	uint8_t b;
+
+	if (fseek(f, offs, SEEK_SET))
+		return false;
+
+	if (fread(&b, 1, 1, f) != 1)
+		return false;
+
+	b ^= mask;
+
+	if (fseek(f, offs, SEEK_SET))
+		return false;
+
+	if (fwrite(&b, 1, 1, f) != 1)
+		return false;
+
+	return true;
 }
 
 static void load_fake_ta(ADBG_Case_t *c)
@@ -566,40 +611,56 @@ static void load_fake_ta(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	TEEC_Result res;
 	uint32_t ret_orig;
-	FILE *fsrc;
-	FILE *fdst;
 	bool r;
-	size_t n;
 
-	fsrc = open_ta_file(&create_fail_test_ta_uuid, NULL, "r");
-	if (!ADBG_EXPECT_NOT_NULL(c, fsrc))
-		return;
-	fdst = open_ta_file(&fake_uuid, NULL, "w");
-	if (!ADBG_EXPECT_NOT_NULL(c, fdst)) {
-		fclose(fsrc);
-		return;
-	}
-	r = copy_file(fsrc, fdst);
-	fclose(fsrc);
-	fclose(fdst);
+	r = copy_file(&create_fail_test_ta_uuid, NULL, &fake_uuid, NULL);
 
 	if (ADBG_EXPECT_TRUE(c, r)) {
-		/*
-		 * Run this several times to see that there's no memory leakage.
-		 */
-		for (n = 0; n < 10; n++) {
-			Do_ADBG_Log("n = %zu", n);
-			res = xtest_teec_open_session(&session, &fake_uuid,
-						      NULL, &ret_orig);
-			if (res == TEEC_SUCCESS)
-				TEEC_CloseSession(&session);
-			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY,
-						     res))
-				break;
-		}
+		res = xtest_teec_open_session(&session, &fake_uuid, NULL,
+					      &ret_orig);
+		if (res == TEEC_SUCCESS)
+			TEEC_CloseSession(&session);
+		ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
 	}
 
 	ADBG_EXPECT_TRUE(c, rm_file(&fake_uuid, NULL));
+}
+
+static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
+{
+	TEEC_Session session = { 0 };
+	TEEC_Result res;
+	uint32_t ret_orig;
+	FILE *f;
+	bool r;
+
+	r = copy_file(&create_fail_test_ta_uuid, NULL,
+		      &create_fail_test_ta_uuid, "save");
+	if (!ADBG_EXPECT_TRUE(c, r)) {
+		rm_file(&create_fail_test_ta_uuid, "save");
+		return false;
+	}
+
+	f = open_ta_file(&create_fail_test_ta_uuid, NULL, "r+");
+	if (!ADBG_EXPECT_NOT_NULL(c, f)) {
+		rm_file(&create_fail_test_ta_uuid, "save");
+		return false;
+	}
+	r = corrupt_file(f, offs, mask);
+	fclose(f);
+
+	if (ADBG_EXPECT_TRUE(c, r)) {
+		res = xtest_teec_open_session(&session,
+					      &create_fail_test_ta_uuid,
+					      NULL, &ret_orig);
+		if (res == TEEC_SUCCESS)
+			TEEC_CloseSession(&session);
+		r &= ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
+	}
+
+	r &= ADBG_EXPECT_TRUE(c, rename_file(&create_fail_test_ta_uuid, "save",
+					     &create_fail_test_ta_uuid, NULL));
+	return r;
 }
 
 static void xtest_tee_test_1008(ADBG_Case_t *c)
@@ -607,7 +668,6 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	TEEC_Session session_crypt = { 0 };
 	uint32_t ret_orig;
-
 
 	Do_ADBG_BeginSubCase(c, "Invoke command");
 	{
@@ -677,6 +737,26 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	load_fake_ta(c);
 	Do_ADBG_EndSubCase(c, "Load fake uuid TA");
 
+	Do_ADBG_BeginSubCase(c, "Load corrupt TA");
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, magic), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, img_type), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, img_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, algo), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, hash_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, sig_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, sizeof(struct shdr), 1)); /* hash */
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, sizeof(struct shdr) + 32, 1)); /* sig */
+	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 3000, 1)); /* payload */
+	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 30000, 1)); /* payload */
+	Do_ADBG_EndSubCase(c, "Load corrupt TA");
 }
 
 #ifdef USER_SPACE
