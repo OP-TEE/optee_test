@@ -523,10 +523,14 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 	TEEC_CloseSession(&session);
 }
 
+#ifndef TA_DIR
+#define TA_DIR "/lib/optee_armtz"
+#endif
+
 static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
 			const char *extra_suffix)
 {
-	static const char ta_dir[] = "/lib/optee_armtz";
+	static const char ta_dir[] = TA_DIR;
 
 	snprintf(buf, blen,
 		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta%s",

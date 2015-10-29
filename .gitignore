@@ -14,3 +14,5 @@ host/xtest/xtest_9000.c
 host/xtest/adbg_case_declare.h
 host/xtest/adbg_entry_declare.h
 package/testsuite/global_platform/api_1.0/TEE*
+/libs
+/obj
