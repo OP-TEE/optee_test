@@ -349,7 +349,7 @@ static int obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 			offset = rand() % (st.st_size-1);
 		}
 
-		fd = fopen(name, "rw+");
+		fd = fopen(name, "r+");
 		if (!fd)
 			goto exit;
 
