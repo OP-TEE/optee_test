@@ -5,6 +5,10 @@ ifeq ($O,)
 $(error output path should be specified when calling this makefile)
 endif
 
+# Prevent use of LDFLAGS from the environment. For example, yocto exports
+# LDFLAGS that are suitable for the client applications, not for TAs
+LDFLAGS=
+
 TA_DIRS := create_fail_test \
 	   crypt \
 	   os_test \

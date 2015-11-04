@@ -25,6 +25,7 @@ endif
 .PHONY: xtest
 xtest:
 	$(q)$(MAKE) -C host/xtest CROSS_COMPILE="$(CROSS_COMPILE_HOST)" \
+			     --no-builtin-variables \
 			     q=$(q) \
 			     O=$(out-dir)/xtest \
 			     $@
