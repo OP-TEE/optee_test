@@ -32,13 +32,7 @@
 
 #define TA_UUID TA_CRYPT_UUID
 
-/* It is important to leave it as TA_FLAG_SINGLE_INSTANCE
-	and TA_FLAG_MULTI_SESSION */
-/* It is not possible to open it twice in a raw */
-#define TA_FLAGS		(TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
-				TA_FLAG_SINGLE_INSTANCE | \
-				TA_FLAG_MULTI_SESSION \
-				)
+#define TA_FLAGS		(TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR)
 #define TA_STACK_SIZE		(2 * 1024)
 #define TA_DATA_SIZE		(32 * 1024)
 
