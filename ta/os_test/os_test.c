@@ -62,9 +62,9 @@ while (true) {
 	char nbuf[80];
 	char vbuf[80];
 	char vbuf2[80];
-	size_t nblen = sizeof(nbuf);
-	size_t vblen = sizeof(vbuf);
-	size_t vblen2 = sizeof(vbuf2);
+	uint32_t nblen = sizeof(nbuf);
+	uint32_t vblen = sizeof(vbuf);
+	uint32_t vblen2 = sizeof(vbuf2);
 
 	res = TEE_GetPropertyName(h, nbuf, &nblen);
 	if (res != TEE_SUCCESS) {
@@ -171,7 +171,7 @@ while (true) {
 		case P_TYPE_BINARY_BLOCK:
 			{
 				char bbuf[80];
-				size_t bblen = sizeof(bbuf);
+				uint32_t bblen = sizeof(bbuf);
 
 				res =
 				    TEE_GetPropertyAsBinaryBlock(h,

@@ -79,7 +79,7 @@ static void test_BigInt_getsetOctetString(void)
 	uint8_t os4[] = { 0x11, 0x22, 0x44, 0x55, 0x66, 0x77, 0x88 };
 	uint8_t os_res[10];
 	TEE_Result res;
-	size_t os_len;
+	uint32_t os_len;
 
 	DEF_BIGINT(a, 512);
 	DEF_BIGINT(b, 512);

@@ -34,6 +34,8 @@ do {                                             \
 		return TEE_ERROR_BAD_PARAMETERS; \
 } while (0)
 
+#define VAL2HANDLE(v) (void *)(uintptr_t)(v)
+
 TEE_Result ta_entry_allocate_operation(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_Result res;
@@ -47,104 +49,121 @@ TEE_Result ta_entry_allocate_operation(uint32_t param_type, TEE_Param params[4])
 	res = TEE_AllocateOperation(&op,
 				    params[0].value.b, params[1].value.a,
 				    params[1].value.b);
-	params[0].value.a = (uint32_t) op;
+	params[0].value.a = (uintptr_t)op;
 	return res;
 }
 
 TEE_Result ta_entry_free_operation(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_FreeOperation((TEE_OperationHandle) params[0].value.a);
+	TEE_FreeOperation(op);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_get_operation_info(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
+
 	if (params[1].memref.size < sizeof(TEE_OperationInfo))
 		return TEE_ERROR_SHORT_BUFFER;
 	params[1].memref.size = sizeof(TEE_OperationInfo);
 
-	TEE_GetOperationInfo((TEE_OperationHandle) params[0].value.a,
-			     params[1].memref.buffer);
+	TEE_GetOperationInfo(op, params[1].memref.buffer);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_reset_operation(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_ResetOperation((TEE_OperationHandle) params[0].value.a);
+	TEE_ResetOperation(op);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_set_operation_key(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+	TEE_ObjectHandle key = VAL2HANDLE(params[0].value.b);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	return TEE_SetOperationKey((TEE_OperationHandle) params[0].value.a,
-				   (TEE_ObjectHandle) params[0].value.b);
+	return TEE_SetOperationKey(op, key);
 }
 
 TEE_Result ta_entry_set_operation_key2(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+	TEE_ObjectHandle key1 = VAL2HANDLE(params[0].value.b);
+	TEE_ObjectHandle key2 = VAL2HANDLE(params[1].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_SetOperationKey2((TEE_OperationHandle) params[0].value.a,
-				    (TEE_ObjectHandle) params[0].value.b,
-				    (TEE_ObjectHandle) params[1].value.a);
+	return TEE_SetOperationKey2(op, key1, key2);
 }
 
 TEE_Result ta_entry_copy_operation(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle dst = VAL2HANDLE(params[0].value.a);
+	TEE_OperationHandle src = VAL2HANDLE(params[0].value.b);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CopyOperation((TEE_OperationHandle) params[0].value.a,
-			  (TEE_OperationHandle) params[0].value.b);
+
+	TEE_CopyOperation(dst, src);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_digest_update(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	TEE_DigestUpdate((TEE_OperationHandle) params[0].value.a,
-			 params[1].memref.buffer, params[1].memref.size);
+	TEE_DigestUpdate(op, params[1].memref.buffer, params[1].memref.size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_digest_do_final(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_DigestDoFinal((TEE_OperationHandle) params[0].value.a,
-				 params[1].memref.buffer, params[1].memref.size,
-				 params[2].memref.buffer,
-				 &params[2].memref.size);
+
+	return TEE_DigestDoFinal(op,
+			params[1].memref.buffer, params[1].memref.size,
+			params[2].memref.buffer, &params[2].memref.size);
 }
 
 TEE_Result ta_entry_cipher_init(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	void *buffer;
 	size_t size;
 
@@ -162,36 +181,42 @@ TEE_Result ta_entry_cipher_init(uint32_t param_type, TEE_Param params[4])
 		size = params[1].memref.size;
 	} else
 		return TEE_ERROR_BAD_PARAMETERS;
-	TEE_CipherInit((TEE_OperationHandle) params[0].value.a, buffer, size);
+
+	TEE_CipherInit(op, buffer, size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_cipher_update(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_CipherUpdate((TEE_OperationHandle) params[0].value.a,
-				params[1].memref.buffer, params[1].memref.size,
-				params[2].memref.buffer,
-				&params[2].memref.size);
+
+	return TEE_CipherUpdate(op,
+			params[1].memref.buffer, params[1].memref.size,
+			params[2].memref.buffer, &params[2].memref.size);
 }
 
 TEE_Result ta_entry_cipher_do_final(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_CipherDoFinal((TEE_OperationHandle) params[0].value.a,
-				 params[1].memref.buffer, params[1].memref.size,
-				 params[2].memref.buffer,
-				 &params[2].memref.size);
+
+	return TEE_CipherDoFinal(op,
+			 params[1].memref.buffer, params[1].memref.size,
+			 params[2].memref.buffer, &params[2].memref.size);
 }
 
 TEE_Result ta_entry_mac_init(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	void *buffer;
 	size_t size;
 
@@ -210,46 +235,49 @@ TEE_Result ta_entry_mac_init(uint32_t param_type, TEE_Param params[4])
 	} else
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	TEE_MACInit((TEE_OperationHandle) params[0].value.a, buffer, size);
+	TEE_MACInit(op, buffer, size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_mac_update(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	TEE_MACUpdate((TEE_OperationHandle) params[0].value.a,
-		      params[1].memref.buffer, params[1].memref.size);
+	TEE_MACUpdate(op, params[1].memref.buffer, params[1].memref.size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_mac_final_compute(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_MACComputeFinal((TEE_OperationHandle) params[0].value.a,
-				   params[1].memref.buffer,
-				   params[1].memref.size,
-				   params[2].memref.buffer,
-				   &params[2].memref.size);
+
+	return TEE_MACComputeFinal(op,
+			   params[1].memref.buffer, params[1].memref.size,
+			   params[2].memref.buffer, &params[2].memref.size);
 }
 
 TEE_Result ta_entry_mac_final_compare(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_MACCompareFinal((TEE_OperationHandle) params[0].value.a,
-				   params[1].memref.buffer,
-				   params[1].memref.size,
-				   params[2].memref.buffer,
-				   params[2].memref.size);
+
+	return TEE_MACCompareFinal(op,
+			   params[1].memref.buffer, params[1].memref.size,
+			   params[2].memref.buffer, params[2].memref.size);
 }
 
 TEE_Result ta_entry_allocate_transient_object(uint32_t param_type,
@@ -262,76 +290,91 @@ TEE_Result ta_entry_allocate_transient_object(uint32_t param_type,
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
-	res =
-	    TEE_AllocateTransientObject(params[0].value.a, params[0].value.b,
-					&o);
+
+	res = TEE_AllocateTransientObject(params[0].value.a, params[0].value.b,
+					  &o);
 	if (res == TEE_SUCCESS)
-		params[1].value.a = (uint32_t) o;
+		params[1].value.a = (uint32_t)(uintptr_t)o;
 	return res;
 }
 
 TEE_Result ta_entry_free_transient_object(uint32_t param_type,
 					  TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
-	TEE_FreeTransientObject((TEE_ObjectHandle) params[0].value.a);
+
+	TEE_FreeTransientObject(o);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_reset_transient_object(uint32_t param_type,
 					   TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
-	TEE_ResetTransientObject((TEE_ObjectHandle) params[0].value.a);
+
+	TEE_ResetTransientObject(o);
 	return TEE_SUCCESS;
 }
+
+struct attr_packed {
+	uint32_t id;
+	uint32_t a;
+	uint32_t b;
+};
 
 static TEE_Result unpack_attrs(const uint8_t *buf, size_t blen,
 			       TEE_Attribute **attrs, uint32_t *attr_count)
 {
 	TEE_Result res = TEE_SUCCESS;
 	TEE_Attribute *a = NULL;
+	const struct attr_packed *ap;
 	size_t num_attrs = 0;
 	const size_t num_attrs_size = sizeof(uint32_t);
 
 	if (blen == 0)
 		goto out;
 
-	if (((uint32_t) buf & 0x3) != 0 || blen < num_attrs_size)
+	if (((uintptr_t)buf & 0x3) != 0 || blen < num_attrs_size)
 		return TEE_ERROR_BAD_PARAMETERS;
 	num_attrs = *(uint32_t *) (void *)buf;
-	if ((blen - num_attrs_size) < (num_attrs * sizeof(TEE_Attribute)))
+	if ((blen - num_attrs_size) < (num_attrs * sizeof(*ap)))
 		return TEE_ERROR_BAD_PARAMETERS;
+	ap = (const struct attr_packed *)(const void *)(buf + num_attrs_size);
 
 	if (num_attrs > 0) {
 		size_t n;
 
 		a = TEE_Malloc(num_attrs * sizeof(TEE_Attribute), 0);
-		if (a == NULL)
+		if (!a)
 			return TEE_ERROR_OUT_OF_MEMORY;
-		TEE_MemMove(a, buf + num_attrs_size,
-			    num_attrs * sizeof(TEE_Attribute));
-
 		for (n = 0; n < num_attrs; n++) {
 			uintptr_t p;
 
+			a[n].attributeID = ap[n].id;
 #define TEE_ATTR_BIT_VALUE		  (1 << 29)
-			if ((a[n].attributeID & TEE_ATTR_BIT_VALUE) != 0)
-				continue; /* Only memrefs need to be updated */
-
-			p = (uintptr_t) a[n].content.ref.buffer;
-			if (p == 0)
+			if (ap[n].id & TEE_ATTR_BIT_VALUE) {
+				a[n].content.value.a = ap[n].a;
+				a[n].content.value.b = ap[n].b;
 				continue;
-
-			if ((p + a[n].content.ref.length) > blen) {
-				res = TEE_ERROR_BAD_PARAMETERS;
-				goto out;
 			}
-			p += (uintptr_t) buf;
+
+			a[n].content.ref.length = ap[n].b;
+			p = (uintptr_t)ap[n].a;
+			if (p) {
+				if ((p + a[n].content.ref.length) > blen) {
+					res = TEE_ERROR_BAD_PARAMETERS;
+					goto out;
+				}
+				p += (uintptr_t)buf;
+			}
 			a[n].content.ref.buffer = (void *)p;
 		}
 	}
@@ -353,6 +396,7 @@ TEE_Result ta_entry_populate_transient_object(uint32_t param_type,
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -364,8 +408,7 @@ TEE_Result ta_entry_populate_transient_object(uint32_t param_type,
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res = TEE_PopulateTransientObject((TEE_ObjectHandle) params[0].value.a,
-					  attrs, attr_count);
+	res = TEE_PopulateTransientObject(o, attrs, attr_count);
 	TEE_Free(attrs);
 	return res;
 }
@@ -373,17 +416,20 @@ TEE_Result ta_entry_populate_transient_object(uint32_t param_type,
 TEE_Result ta_entry_copy_object_attributes(uint32_t param_type,
 					   TEE_Param params[4])
 {
+	TEE_ObjectHandle dst = VAL2HANDLE(params[0].value.a);
+	TEE_ObjectHandle src = VAL2HANDLE(params[0].value.b);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CopyObjectAttributes1((TEE_ObjectHandle) params[0].value.a,
-				 (TEE_ObjectHandle) params[0].value.b);
+	TEE_CopyObjectAttributes1(dst, src);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -398,14 +444,14 @@ TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res = TEE_GenerateKey((TEE_ObjectHandle) params[0].value.a,
-			      params[0].value.b, attrs, attr_count);
+	res = TEE_GenerateKey(o, params[0].value.b, attrs, attr_count);
 	TEE_Free(attrs);
 	return res;
 }
 
 TEE_Result ta_entry_asymmetric_encrypt(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -421,17 +467,16 @@ TEE_Result ta_entry_asymmetric_encrypt(uint32_t param_type, TEE_Param params[4])
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res = TEE_AsymmetricEncrypt((TEE_OperationHandle) params[0].value.a,
-				    attrs, attr_count, params[2].memref.buffer,
-				    params[2].memref.size,
-				    params[3].memref.buffer,
-				    &params[3].memref.size);
+	res = TEE_AsymmetricEncrypt(op, attrs, attr_count,
+			params[2].memref.buffer, params[2].memref.size,
+			params[3].memref.buffer, &params[3].memref.size);
 	TEE_Free(attrs);
 	return res;
 }
 
 TEE_Result ta_entry_asymmetric_decrypt(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -447,11 +492,9 @@ TEE_Result ta_entry_asymmetric_decrypt(uint32_t param_type, TEE_Param params[4])
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res = TEE_AsymmetricDecrypt((TEE_OperationHandle) params[0].value.a,
-				    attrs, attr_count, params[2].memref.buffer,
-				    params[2].memref.size,
-				    params[3].memref.buffer,
-				    &params[3].memref.size);
+	res = TEE_AsymmetricDecrypt(op, attrs, attr_count,
+			params[2].memref.buffer, params[2].memref.size,
+			params[3].memref.buffer, &params[3].memref.size);
 	TEE_Free(attrs);
 	return res;
 }
@@ -459,6 +502,7 @@ TEE_Result ta_entry_asymmetric_decrypt(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_asymmetric_sign_digest(uint32_t param_type,
 					   TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -474,12 +518,9 @@ TEE_Result ta_entry_asymmetric_sign_digest(uint32_t param_type,
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res = TEE_AsymmetricSignDigest((TEE_OperationHandle) params[0].value.a,
-				       attrs, attr_count,
-				       params[2].memref.buffer,
-				       params[2].memref.size,
-				       params[3].memref.buffer,
-				       &params[3].memref.size);
+	res = TEE_AsymmetricSignDigest(op, attrs, attr_count,
+			params[2].memref.buffer, params[2].memref.size,
+			params[3].memref.buffer, &params[3].memref.size);
 	TEE_Free(attrs);
 	return res;
 }
@@ -487,6 +528,7 @@ TEE_Result ta_entry_asymmetric_sign_digest(uint32_t param_type,
 TEE_Result ta_entry_asymmetric_verify_digest(uint32_t param_type,
 					     TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -502,19 +544,17 @@ TEE_Result ta_entry_asymmetric_verify_digest(uint32_t param_type,
 	if (res != TEE_SUCCESS)
 		return res;
 
-	res =
-	    TEE_AsymmetricVerifyDigest((TEE_OperationHandle) params[0].value.a,
-				       attrs, attr_count,
-				       params[2].memref.buffer,
-				       params[2].memref.size,
-				       params[3].memref.buffer,
-				       params[3].memref.size);
+	res = TEE_AsymmetricVerifyDigest(op, attrs, attr_count,
+			params[2].memref.buffer, params[2].memref.size,
+			params[3].memref.buffer, params[3].memref.size);
 	TEE_Free(attrs);
 	return res;
 }
 
 TEE_Result ta_entry_derive_key(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+	TEE_ObjectHandle key = VAL2HANDLE(params[0].value.b);
 	TEE_Result res;
 	TEE_Attribute *attrs;
 	uint32_t attr_count;
@@ -529,8 +569,7 @@ TEE_Result ta_entry_derive_key(uint32_t param_type, TEE_Param params[4])
 	if (res != TEE_SUCCESS)
 		return res;
 
-	TEE_DeriveKey((TEE_OperationHandle) params[0].value.a,
-		      attrs, attr_count, (TEE_ObjectHandle) params[0].value.b);
+	TEE_DeriveKey(op, attrs, attr_count, key);
 	TEE_Free(attrs);
 	return TEE_SUCCESS;
 }
@@ -548,43 +587,47 @@ TEE_Result ta_entry_random_number_generate(uint32_t param_type,
 
 TEE_Result ta_entry_ae_init(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE));
-	return TEE_AEInit((TEE_OperationHandle) params[0].value.a,
-			  params[1].memref.buffer, params[1].memref.size,
+	return TEE_AEInit(op, params[1].memref.buffer, params[1].memref.size,
 			  params[0].value.b * 8, /* tag_len in bits */
 			  params[2].value.a, params[2].value.b);
 }
 
 TEE_Result ta_entry_ae_update_aad(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	TEE_AEUpdateAAD((TEE_OperationHandle) params[0].value.a,
-			params[1].memref.buffer, params[1].memref.size);
+	TEE_AEUpdateAAD(op, params[1].memref.buffer, params[1].memref.size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_ae_update(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
 
-	TEE_AEUpdate((TEE_OperationHandle) params[0].value.a,
-		     params[1].memref.buffer, params[1].memref.size,
+	TEE_AEUpdate(op, params[1].memref.buffer, params[1].memref.size,
 		     params[2].memref.buffer, &params[2].memref.size);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_ae_encrypt_final(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_Result res;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
@@ -593,56 +636,53 @@ TEE_Result ta_entry_ae_encrypt_final(uint32_t param_type, TEE_Param params[4])
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT));
 
-	res = TEE_AEEncryptFinal((TEE_OperationHandle) params[0].value.a,
-				 params[1].memref.buffer, params[1].memref.size,
-				 params[2].memref.buffer,
-				 &params[2].memref.size,
-				 params[3].memref.buffer,
-				 &params[3].memref.size);
+	res = TEE_AEEncryptFinal(op,
+			params[1].memref.buffer, params[1].memref.size,
+			params[2].memref.buffer, &params[2].memref.size,
+			params[3].memref.buffer, &params[3].memref.size);
 	return res;
 }
 
 TEE_Result ta_entry_ae_decrypt_final(uint32_t param_type, TEE_Param params[4])
 {
+	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT));
 
-	return TEE_AEDecryptFinal((TEE_OperationHandle) params[0].value.a,
-				  params[1].memref.buffer,
-				  params[1].memref.size,
-				  params[2].memref.buffer,
-				  &params[2].memref.size,
-				  params[3].memref.buffer,
-				  params[3].memref.size);
+	return TEE_AEDecryptFinal(op,
+			params[1].memref.buffer, params[1].memref.size,
+			params[2].memref.buffer, &params[2].memref.size,
+			params[3].memref.buffer, params[3].memref.size);
 }
 
 TEE_Result ta_entry_get_object_buffer_attribute(uint32_t param_type,
 						TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_GetObjectBufferAttribute((TEE_ObjectHandle) params[0].value.
-					    a, params[0].value.b,
-					    params[1].memref.buffer,
-					    &params[1].memref.size);
+	return TEE_GetObjectBufferAttribute(o, params[0].value.b,
+			params[1].memref.buffer, &params[1].memref.size);
 }
 
 TEE_Result ta_entry_get_object_value_attribute(uint32_t param_type,
 					       TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_GetObjectValueAttribute((TEE_ObjectHandle) params[0].value.a,
-					   params[0].value.b,
-					   &params[1].value.a,
-					   &params[1].value.b);
+	return TEE_GetObjectValueAttribute(o, params[0].value.b,
+				   &params[1].value.a, &params[1].value.b);
 }

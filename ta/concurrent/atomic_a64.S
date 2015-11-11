@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright (c) 2015, Linaro Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,29 +25,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef USER_TA_HEADER_DEFINES_H
-#define USER_TA_HEADER_DEFINES_H
+/* uint32_t atomic_inc(uint32_t *v); */
+.global atomic_inc
+.func atomic_inc
+atomic_inc:
+	ldaxr	w1, [x0]
+	add	w1, w1, #1
+	stxr	w2, w1, [x0]
+	cmp	w2, #0
+	bne	atomic_inc
+	mov	w0, w1
+	ret
+.endfunc
 
-#include <stdint.h>
-#include <ta_os_test.h>
-#include <user_ta_header.h>
+/* uint32_t atomic_dec(uint32_t *v); */
+.global atomic_dec
+.func atomic_dec
+atomic_dec:
+	ldaxr	w1, [x0]
+	sub	w1, w1, #1
+	stxr	w2, w1, [x0]
+	cmp	w2, #0
+	bne	atomic_dec
+	mov	w0, w1
+	ret
+.endfunc
 
-#define TA_UUID TA_OS_TEST_UUID
-
-#define TA_FLAGS (TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
-		  TA_FLAG_UNSAFE_NW_PARAMS | \
-		  TA_FLAG_MULTI_SESSION)
-#define TA_STACK_SIZE (8 * 1024)
-#define TA_DATA_SIZE (900 * 1024)
-
-#define TA_CURRENT_TA_EXT_PROPERTIES \
-	{ "myprop.true", USER_TA_PROP_TYPE_BOOL, &(const bool){ true } }, \
-	{ "myprop.42",   USER_TA_PROP_TYPE_U32,  &(const uint32_t){ 42 } }, \
-	{ "myprop.123",  USER_TA_PROP_TYPE_UUID, \
-		&(const TEE_UUID) {1, 2, 3 } }, \
-	{ "myprop.1234", USER_TA_PROP_TYPE_IDENTITY, \
-		&(const TEE_Identity) { 1, { 2, 3, 4 } } }, \
-	{ "myprop.hello", USER_TA_PROP_TYPE_STRING, "hello" }, \
-	{ "myprop.binaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "SGVsbG8gd29ybGQh" },
-#endif

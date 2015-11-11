@@ -35,36 +35,45 @@ do { \
 		return TEE_ERROR_BAD_PARAMETERS; \
 } while (0)
 
+#define VAL2HANDLE(v) (void *)(uintptr_t)(v)
+
 TEE_Result ta_storage_cmd_open(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_Result res;
+	TEE_ObjectHandle o;
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
+	res = TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
 					params[0].memref.buffer,
 					params[0].memref.size,
-					params[1].value.a,
-					(void *)&params[1].value.b);
+					params[1].value.a, &o);
+
+	params[1].value.b = (uintptr_t)o;
+	return res;
 }
 
 TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_Result res;
+	TEE_ObjectHandle o;
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT));
 
-	return TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
-					  params[0].memref.buffer,
-					  params[0].memref.size,
-					  params[1].value.a,
-					  (TEE_ObjectHandle) params[2].value.a,
-					  params[3].memref.buffer,
-					  params[3].memref.size,
-					  (void *)&params[1].value.b);
+	res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+		 params[0].memref.buffer, params[0].memref.size,
+		 params[1].value.a,
+		 (TEE_ObjectHandle)(uintptr_t)params[2].value.a,
+		 params[3].memref.buffer, params[3].memref.size, &o);
+	params[1].value.b = (uintptr_t)o;
+	return res;
 }
 
 TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4])
@@ -73,32 +82,34 @@ TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4])
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CloseObject((TEE_ObjectHandle) params[0].value.a);
+	TEE_CloseObject((TEE_ObjectHandle)(uintptr_t)params[0].value.a);
 
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_ReadObjectData((TEE_ObjectHandle) params[1].value.a,
-				  params[0].memref.buffer,
+	return TEE_ReadObjectData(o, params[0].memref.buffer,
 				  params[0].memref.size, &params[1].value.b);
 }
 
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_WriteObjectData((TEE_ObjectHandle) params[1].value.a,
-				   params[0].memref.buffer,
+	return TEE_WriteObjectData(o, params[0].memref.buffer,
 				   params[0].memref.size);
 }
 
@@ -106,16 +117,17 @@ TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res;
 	TEE_ObjectInfo info;
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	res = TEE_SeekObjectData((TEE_ObjectHandle) params[0].value.a,
-				 params[0].value.b, params[1].value.a);
-
-	res = TEE_GetObjectInfo1((TEE_ObjectHandle) params[0].value.a, &info);
+	res = TEE_SeekObjectData(o, params[0].value.b, params[1].value.a);
+	if (res != TEE_SUCCESS)
+		return res;
+	res = TEE_GetObjectInfo1(o, &info);
 
 	params[1].value.b = info.dataPosition;
 
@@ -124,85 +136,94 @@ TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_storage_cmd_unlink(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CloseAndDeletePersistentObject1((TEE_ObjectHandle) params[0].value.
-					   a);
+	TEE_CloseAndDeletePersistentObject1(o);
 
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_storage_cmd_rename(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_RenamePersistentObject((TEE_ObjectHandle) params[0].value.a,
-					  params[1].memref.buffer,
+	return TEE_RenamePersistentObject(o, params[1].memref.buffer,
 					  params[1].memref.size);
 }
 
 TEE_Result ta_storage_cmd_trunc(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	return TEE_TruncateObjectData((TEE_ObjectHandle) params[0].value.a,
-				      params[0].value.b);
+	return TEE_TruncateObjectData(o, params[0].value.b);
 }
 
 TEE_Result ta_storage_cmd_alloc_enum(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_Result res;
+	TEE_ObjectEnumHandle oe;
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	return TEE_AllocatePersistentObjectEnumerator((void *)&params[0].
-						      value.a);
+	res = TEE_AllocatePersistentObjectEnumerator(&oe);
+	params[0].value.a = (uintptr_t)oe;
+	return res;
 }
 
 TEE_Result ta_storage_cmd_free_enum(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_FreePersistentObjectEnumerator((TEE_ObjectEnumHandle) params[0].
-					   value.a);
-
+	TEE_FreePersistentObjectEnumerator(oe);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_storage_cmd_reset_enum(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_ResetPersistentObjectEnumerator((TEE_ObjectEnumHandle) params[0].
-					    value.a);
-
+	TEE_ResetPersistentObjectEnumerator(oe);
 	return TEE_SUCCESS;
 }
 
 TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	return TEE_StartPersistentObjectEnumerator((TEE_ObjectEnumHandle)
-						   params[0].value.a,
-						   TEE_STORAGE_PRIVATE);
+	return TEE_StartPersistentObjectEnumerator(oe, TEE_STORAGE_PRIVATE);
 }
 
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT,
@@ -216,9 +237,7 @@ TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 
 	params[1].memref.size = sizeof(TEE_ObjectInfo);
 
-	return TEE_GetNextPersistentObject((TEE_ObjectEnumHandle) params[0].
-					   value.a,
-					   (TEE_ObjectInfo *) params[1].memref.
-					   buffer, params[2].memref.buffer,
-					   &params[2].memref.size);
+	return TEE_GetNextPersistentObject(oe,
+			(TEE_ObjectInfo *)params[1].memref.buffer,
+			params[2].memref.buffer, &params[2].memref.size);
 }
