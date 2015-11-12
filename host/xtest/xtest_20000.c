@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <errno.h>
 
 #include <adbg.h>
 #include <xtest_test.h>
@@ -250,22 +251,29 @@ static int get_obj_filename(void *file_id, uint32_t file_id_length,
 	return p-buffer;
 }
 
-static int dump_file(FILE *fd, char *buffer, uint32_t len)
+static void dump_file(FILE * fd __attribute__ ((unused)))
 {
-
+#if DUMPFILE == 1
 	uint16_t format = 16;
 	uint16_t size;
-	int res=-1;
+	char buffer[DUMPLIMIT];
+
+	if (!fd) {
+		fprintf(stderr, "fd == NULL\n");
+		return;
+	}
 
 	printf("o Dump data (limit %d bytes)\n", DUMPLIMIT);
-	if ( 0 != fseek(fd, 0, SEEK_SET))
-		goto exit;
-	fread(buffer, 1, len, fd);
-	size = ( len < DUMPLIMIT ) ? len : DUMPLIMIT;
+	if (0 != fseek(fd, 0, SEEK_SET)) {
+		fprintf(stderr, "fseek(%d): %s",
+				0, strerror(errno));
+		return;
+	}
+
+	memset(buffer, 0, sizeof(buffer));
+	size = fread(buffer, 1, sizeof(buffer), fd);
 	Do_ADBG_HexLog(buffer, size, format);
-	res=0;
-exit:
-	return res;
+#endif
 }
 
 static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
@@ -297,19 +305,23 @@ err:
         return 0;
 }
 
-static int obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
+static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		       uint32_t file_id_length,
 		       uint32_t offset, enum tee_fs_file_type file_type,
-		       uint8_t block_num, uint8_t version, uint32_t data_len)
+		       uint8_t block_num, uint8_t version)
 {
 	char ta_dirname[32 + 1];
 	char obj_filename[2*file_id_length + 1];
 	char name[500];
-	FILE *fd;
-	uint8_t byte;
-	int res=-1;
-	char buffer[data_len];
+	FILE *fd = NULL;
+	uint8_t bytes[SIZE * NUMELEM];
+	int res;
+	TEEC_Result tee_res = TEE_SUCCESS;
 	struct stat st;
+	int i;
+	int num_corrupt_bytes = SIZE * NUMELEM;
+
+	memset(name, 0, sizeof(name));
 
 	if (get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
 	    get_obj_filename(file_id, file_id_length, obj_filename,
@@ -334,57 +346,93 @@ static int obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		}
 
 		res = stat(name, &st);
-		if (res < 0)
+		if (res < 0) {
+			fprintf(stderr, "stat(\"%s\"): %s",
+					name, strerror(errno));
+			tee_res = TEEC_ERROR_ACCESS_DENIED;
 			goto exit;
+		}
+
+		if (num_corrupt_bytes > st.st_size) {
+			fprintf(stderr, "number of corrupt bytes(%d) > file size(%d)",
+					num_corrupt_bytes, (int)st.st_size);
+			tee_res = TEEC_ERROR_EXCESS_DATA;
+			goto exit;
+		}
 
 		if (offset == CORRUPT_FILE_FIRST_BYTE) {
 			offset = 0;
-
 		} else if (offset == CORRUPT_FILE_LAST_BYTE) {
-			offset = st.st_size-1;
-
+			offset = st.st_size - num_corrupt_bytes;
 		} else if (offset == CORRUPT_FILE_RAND_BYTE) {
 			srand(time(NULL));
 			offset = rand() % (st.st_size-1);
+			num_corrupt_bytes = 1;
 		}
 
 		fd = fopen(name, "r+");
-		if (!fd)
+		if (!fd) {
+			fprintf(stderr, "fopen(\"%s\"): %s",
+					name, strerror(errno));
+			tee_res = TEEC_ERROR_ACCESS_DENIED;
 			goto exit;
+		}
 
-		if (DUMPFILE)
-			dump_file(fd, buffer, sizeof(buffer));
+		dump_file(fd);
 
-		if (0 != fseek(fd, offset, SEEK_SET))
+		if (0 != fseek(fd, offset, SEEK_SET)) {
+			fprintf(stderr, "fseek(%d): %s",
+					offset, strerror(errno));
+			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
+		}
 
-		if (SIZE*NUMELEM != fread(&byte, SIZE, NUMELEM,fd))
+		res = fread(bytes, 1, num_corrupt_bytes, fd);
+		if (res != num_corrupt_bytes) {
+			fprintf(stderr, "fread(%d): res=%d\n",
+					num_corrupt_bytes, res);
+			tee_res = TEEC_ERROR_SHORT_BUFFER;
 			goto exit;
+		}
 
 		printf("o Corrupt %s\n", name);
 		printf("o Size: %ld byte(s)\n", st.st_size);
-		printf("o Byte offset: %u (0x%04X), ", offset, offset);
-		printf("Old value: 0x%x, ", byte);
-		byte += 1;
-		printf("New value: 0x%x\n", byte);
+		printf("o Byte offset: %u (0x%04X)\n", offset, offset);
+		printf("Old value:");
+		for (i = 0; i < num_corrupt_bytes; i++) {
+			printf(" 0x%02x", bytes[i]);
+			bytes[i] += 1;
+		}
+		printf("\n");
 
-		if ( 0 != fseek(fd, offset, SEEK_SET))
+		printf("New value:");
+		for (i = 0; i < num_corrupt_bytes; i++)
+			printf(" 0x%02x", bytes[i]);
+		printf("\n");
+
+		if (0 != fseek(fd, offset, SEEK_SET)) {
+			fprintf(stderr, "fseek(%d): %s",
+					offset, strerror(errno));
+			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
+		}
 
-		if (SIZE*NUMELEM != fwrite(&byte, SIZE, NUMELEM,fd))
+		res = fwrite(bytes, 1, num_corrupt_bytes, fd);
+		if (res != num_corrupt_bytes) {
+			fprintf(stderr, "fwrite(%d): res=%d\n",
+					num_corrupt_bytes, res);
+			tee_res = TEEC_ERROR_SHORT_BUFFER;
 			goto exit;
+		}
 
-		if (DUMPFILE)
-			dump_file(fd, buffer, sizeof(buffer));
-
-		fclose(fd);
-
-		res = 0;
-		goto exit;
+		dump_file(fd);
 	}
 
 exit:
-	return res;
+	if (fd)
+		fclose(fd);
+
+	return tee_res;
 }
 
 static void storage_corrupt(ADBG_Case_t *c,
@@ -420,6 +468,9 @@ static void storage_corrupt(ADBG_Case_t *c,
 		char *filedata = NULL;
 		size_t p;
 		uint8_t data_byte = 0;
+
+		memset(filename, 0, sizeof(filename));
+
 		snprintf(filename, sizeof(filename), "file_%dB", tv->data_len);
 		filedata = malloc(tv->data_len * sizeof(*filedata));
 		if (!filedata)
@@ -468,73 +519,73 @@ static void storage_corrupt(ADBG_Case_t *c,
 		case META_FILE:
 		/* corrupt object */
 		if (!ADBG_EXPECT(c, TEE_SUCCESS,
-			         obj_corrupt(&uuid, filename,
-				 ARRAY_SIZE(filename), offset,
-			         file_type, tv->meta, tv->meta,
-				 tv->data_len)))
+				obj_corrupt(&uuid, filename,
+					ARRAY_SIZE(filename), offset,
+					file_type, tv->meta, tv->meta)))
 			goto exit;	
 
 		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
-				        obj_open(&sess, filename,
+				obj_open(&sess, filename,
 					ARRAY_SIZE(filename),
 					TEE_DATA_FLAG_ACCESS_READ |
 					TEE_DATA_FLAG_ACCESS_WRITE_META,
 					&obj_id));
 
 		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
-					obj_open(&sess, filename,
+				obj_open(&sess, filename,
 					ARRAY_SIZE(filename),
 					TEE_DATA_FLAG_ACCESS_READ |
 					TEE_DATA_FLAG_ACCESS_WRITE_META,
 					&obj_id));
 
 		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-					     is_obj_present(&uuid,
-					     filename,
-					     ARRAY_SIZE(filename), file_type,
-					     tv->meta, tv->meta));
+				is_obj_present(&uuid,
+					filename,
+					ARRAY_SIZE(filename), file_type,
+					tv->meta, tv->meta));
 			break;
 
 		case BLOCK_FILE:
 		/* corrupt object */
 		if (!ADBG_EXPECT(c, TEE_SUCCESS,
-			         obj_corrupt(&uuid, filename,
-				 ARRAY_SIZE(filename), offset,
-			         file_type, tv->block_num, tv->version,
-				 tv->data_len)))
+					obj_corrupt(&uuid, filename,
+						ARRAY_SIZE(filename),
+						offset, file_type,
+						tv->block_num, tv->version)))
 			goto exit;
 
 		if ( tv->block_num == BLOCK0 ) {
 			ADBG_EXPECT(c, TEE_ERROR_CORRUPT_OBJECT,
-				    obj_open(&sess, filename,
-				    ARRAY_SIZE(filename),
-				    TEE_DATA_FLAG_ACCESS_READ |
-				    TEE_DATA_FLAG_ACCESS_WRITE_META,
-				    &obj_id));
+					obj_open(&sess, filename,
+						ARRAY_SIZE(filename),
+						TEE_DATA_FLAG_ACCESS_READ |
+						TEE_DATA_FLAG_ACCESS_WRITE_META,
+						&obj_id));
 		} else {
 			ADBG_EXPECT(c, TEE_SUCCESS,
-				    obj_open(&sess, filename,
-				    ARRAY_SIZE(filename),
-				    TEE_DATA_FLAG_ACCESS_READ |
-				    TEE_DATA_FLAG_ACCESS_WRITE_META,
-				    &obj_id));
+					obj_open(&sess, filename,
+						ARRAY_SIZE(filename),
+						TEE_DATA_FLAG_ACCESS_READ |
+						TEE_DATA_FLAG_ACCESS_WRITE_META,
+						&obj_id));
 
 			ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
-						obj_read(&sess, obj_id, buffer,
+					obj_read(&sess, obj_id, buffer,
 						tv->data_len, &nb));
 		}
 
 		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
-			    obj_open(&sess, filename, ARRAY_SIZE(filename),
-			    TEE_DATA_FLAG_ACCESS_READ |
-			    TEE_DATA_FLAG_ACCESS_WRITE_META, &obj_id));
+				obj_open(&sess, filename, ARRAY_SIZE(filename),
+					TEE_DATA_FLAG_ACCESS_READ |
+					TEE_DATA_FLAG_ACCESS_WRITE_META,
+					&obj_id));
 
 		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-					     is_obj_present(&uuid,
-					     filename,
-					     ARRAY_SIZE(filename),
-					     file_type, tv->block_num,
-					     tv->version));
+				is_obj_present(&uuid,
+					filename,
+					ARRAY_SIZE(filename),
+					file_type, tv->block_num,
+					tv->version));
 			break;
 
 		default:
