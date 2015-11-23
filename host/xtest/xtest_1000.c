@@ -689,11 +689,6 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	Do_ADBG_BeginSubCase(c, "Invoke command");
 	{
 		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&session_crypt,
-						&crypt_user_ta_uuid, NULL,
-						&ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &os_test_ta_uuid,
 						NULL, &ret_orig));
 
@@ -702,7 +697,6 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 					   NULL, &ret_orig));
 
 		TEEC_CloseSession(&session);
-		TEEC_CloseSession(&session_crypt);
 	}
 	Do_ADBG_EndSubCase(c, "Invoke command");
 
