@@ -128,7 +128,7 @@ void usage(char *program)
 	printf("options:\n");
 	printf("\t-d <device>        default value = %s\n", gdevname_tz);
 	printf("\t-l <level>         test suite level: [0-15]\n");
-	printf("\t-t <test_suite>    available test suite: sanity, benchmark\n");
+	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
 	printf("\t                   default value = %s\n", gsuitename);
 	printf("\t-h                 show usage\n");
 	printf("\n");
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 
 	xtest_teec_ctx_init();
 
-	if (strcmp(test_suite, "sanity") == 0)
+	if (strcmp(test_suite, "regression") == 0)
 		ret = Do_ADBG_RunSuite(&ADBG_Suite_XTEST_TEE_TEST, argc - optind, (argv + optind));
 	else if (strcmp(test_suite, "benchmark") == 0)
 		ret = Do_ADBG_RunSuite(&ADBG_Suite_XTEST_TEE_BENCHMARK, argc - optind, (argv + optind));
