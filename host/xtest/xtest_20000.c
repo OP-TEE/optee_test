@@ -36,16 +36,14 @@
 #define DUMPFILE 	0
 #define DUMPLIMIT 	128
 
-#define CORRUPT_META_KEY_OFFSET       offsetof(struct meta_header, encrypted_key)
-#define CORRUPT_META_IV_OFFSET        (offsetof(struct meta_header, common) + \
-				       offsetof(struct common_header, iv))
-#define CORRUPT_META_TAG_OFFSET       (offsetof(struct meta_header, common) + \
-				       offsetof(struct common_header, tag))
-#define CORRUPT_META_DATA_OFFSET      sizeof(struct meta_header)
+#define CORRUPT_META_KEY_OFFSET       offsetof(struct fh_cipher_header, encrypted_fek)
+#define CORRUPT_META_IV_OFFSET        offsetof(struct fh_cipher_header, iv)
+#define CORRUPT_META_TAG_OFFSET       offsetof(struct fh_cipher_header, tag)
+#define CORRUPT_META_DATA_OFFSET      sizeof(struct fh_cipher_header)
 
-#define CORRUPT_BLOCK_IV_OFFSET       offsetof(struct common_header, iv)
-#define CORRUPT_BLOCK_TAG_OFFSET      offsetof(struct common_header, tag)
-#define CORRUPT_BLOCK_DATA_OFFSET     sizeof(struct block_header)
+#define CORRUPT_BLOCK_IV_OFFSET       offsetof(struct block_cipher_header, iv)
+#define CORRUPT_BLOCK_TAG_OFFSET      offsetof(struct block_cipher_header, tag)
+#define CORRUPT_BLOCK_DATA_OFFSET     sizeof(struct block_cipher_header)
 
 #define CORRUPT_FILE_RAND_BYTE		1024*4096+2
 #define CORRUPT_FILE_FIRST_BYTE		1024*4096+1
@@ -61,17 +59,12 @@
 			    (((w32) & 0xFF00) << 8) |\
 			    (((w32) & 0xFF) << 24))
 
-#define XTEST_ENC_FS(level, data_len, meta, block_num, version) \
+#define XTEST_ENC_FS(level, data_len, block_num, version) \
 	{ \
 	  level, \
 	  data_len, \
-	  meta, block_num, version \
+	  block_num, version \
 	}
-
-enum meta {
-	META0,
-	META1
-};
 
 enum version {
 	VERSION0,
@@ -90,37 +83,36 @@ enum block_num {
 struct xtest_enc_fs_case {
 	uint8_t level;
 	uint32_t data_len;
-	uint8_t meta;
 	uint8_t block_num;
 	uint8_t version;
 };
 
 static const struct xtest_enc_fs_case xtest_enc_fs_cases[] = {
-	XTEST_ENC_FS(1, 1, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 2, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 3, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 8, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 16, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 32, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 64, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 128, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 256, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 512, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 1024, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 2048, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 3072, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4094, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4095, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(0, 4097, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(0, 4097, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 4098, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4098, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 1*4096, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 2*4096, META0, BLOCK2, VERSION0),
-	XTEST_ENC_FS(1, 3*4096, META0, BLOCK3, VERSION0),
-	XTEST_ENC_FS(1, 4*4096, META0, BLOCK3, VERSION0),
-	XTEST_ENC_FS(1, 4*4096, META0, BLOCK4, VERSION0),
+	XTEST_ENC_FS(1, 1, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 2, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 3, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 4, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 8, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 16, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 32, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 64, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 128, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 256, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 512, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 1024, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 2048, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 3072, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 4094, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 4095, BLOCK0, VERSION1),
+	XTEST_ENC_FS(0, 4097, BLOCK0, VERSION1),
+	XTEST_ENC_FS(0, 4097, BLOCK1, VERSION0),
+	XTEST_ENC_FS(1, 4098, BLOCK0, VERSION1),
+	XTEST_ENC_FS(1, 4098, BLOCK1, VERSION0),
+	XTEST_ENC_FS(1, 1*4096, BLOCK1, VERSION0),
+	XTEST_ENC_FS(1, 2*4096, BLOCK2, VERSION0),
+	XTEST_ENC_FS(1, 3*4096, BLOCK3, VERSION0),
+	XTEST_ENC_FS(1, 4*4096, BLOCK3, VERSION0),
+	XTEST_ENC_FS(1, 4*4096, BLOCK4, VERSION0),
 };
 
 static TEEC_Result obj_open(TEEC_Session *sess, void *id, uint32_t id_size,
@@ -278,7 +270,7 @@ static void dump_file(FILE * fd __attribute__ ((unused)))
 
 static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
                           uint32_t file_id_length,
-                          enum tee_fs_file_type file_type,
+                          enum tee_file_data_type file_type,
                           uint8_t block_num, uint8_t version)
 {
         char ta_dirname[32 + 1];
@@ -289,13 +281,13 @@ static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
         if (get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
             get_obj_filename(file_id, file_id_length, obj_filename,
 			     sizeof(obj_filename))) {
-                if (file_type == META_FILE) {
-                        snprintf(path, sizeof(path), "/data/tee/%s/%s/meta.%d",
-                                ta_dirname, obj_filename, version);
-                } else if (file_type == BLOCK_FILE) {
+                if (file_type == FILE_HEADER) {
+                        snprintf(path, sizeof(path), "/data/tee/%s/%s/%s",
+                                ta_dirname, obj_filename, FILE_HEADER_NAME);
+                } else if (file_type == DATA_BLOCK) {
                         snprintf(path, sizeof(path),
-                                "/data/tee/%s/%s/block%d.%d", ta_dirname,
-                                obj_filename, block_num, version);
+                                "/data/tee/%s/%s/%s%d.%d", ta_dirname,
+                                obj_filename, DATA_BLOCK_NAME, block_num, version);
                 } else
                         goto err;
 
@@ -307,7 +299,7 @@ err:
 
 static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		       uint32_t file_id_length,
-		       uint32_t offset, enum tee_fs_file_type file_type,
+		       uint32_t offset, enum tee_file_data_type file_type,
 		       uint8_t block_num, uint8_t version)
 {
 	char ta_dirname[32 + 1];
@@ -333,16 +325,17 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		 * and rewrite this value at the same offset
 		 */
 
-		if (file_type == META_FILE) {
+		if (file_type == FILE_HEADER) {
 			snprintf(name, sizeof(name),
-				 "/data/tee/%s/%s/meta.%d",
-				 ta_dirname, obj_filename, version);
+				 "/data/tee/%s/%s/%s",
+				 ta_dirname, obj_filename, FILE_HEADER_NAME);
 		}
 
-		if (file_type == BLOCK_FILE) {
+		if (file_type == DATA_BLOCK) {
 			snprintf(name, sizeof(name),
-				 "/data/tee/%s/%s/block%d.%d",
-				 ta_dirname, obj_filename, block_num, version);
+				 "/data/tee/%s/%s/%s%d.%d",
+				 ta_dirname, obj_filename, DATA_BLOCK_NAME,
+				 block_num, version);
 		}
 
 		res = stat(name, &st);
@@ -436,7 +429,7 @@ exit:
 }
 
 static void storage_corrupt(ADBG_Case_t *c,
-			    enum tee_fs_file_type file_type,
+			    enum tee_file_data_type file_type,
 			    uint32_t offset
 			   )
 {
@@ -492,17 +485,10 @@ static void storage_corrupt(ADBG_Case_t *c,
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_close(&sess, obj_id));
 
-		if (file_type == META_FILE)
-			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
-					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename), file_type,
-					     tv->meta, tv->meta));
-
-		if (file_type == BLOCK_FILE)
-			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
-					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename), file_type,
-					     tv->block_num, tv->version));
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
+					 is_obj_present(&uuid, filename,
+					 ARRAY_SIZE(filename), file_type,
+					 tv->block_num, tv->version));
 
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_open(&sess, filename, ARRAY_SIZE(filename),
@@ -516,12 +502,12 @@ static void storage_corrupt(ADBG_Case_t *c,
 			    obj_close(&sess, obj_id));
 
 		switch (file_type) {
-		case META_FILE:
+		case FILE_HEADER:
 		/* corrupt object */
 		if (!ADBG_EXPECT(c, TEE_SUCCESS,
 				obj_corrupt(&uuid, filename,
 					ARRAY_SIZE(filename), offset,
-					file_type, tv->meta, tv->meta)))
+					file_type, tv->block_num, tv->version)))
 			goto exit;	
 
 		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
@@ -542,10 +528,10 @@ static void storage_corrupt(ADBG_Case_t *c,
 				is_obj_present(&uuid,
 					filename,
 					ARRAY_SIZE(filename), file_type,
-					tv->meta, tv->meta));
+					tv->block_num, tv->version));
 			break;
 
-		case BLOCK_FILE:
+		case DATA_BLOCK:
 		/* corrupt object */
 		if (!ADBG_EXPECT(c, TEE_SUCCESS,
 					obj_corrupt(&uuid, filename,
@@ -605,100 +591,86 @@ exit:
 /* Corrupt Meta Encrypted Key */
 static void xtest_tee_test_20001(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_KEY_OFFSET
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_META_KEY_OFFSET);
 }
 
 /* Corrupt Meta IV */
 static void xtest_tee_test_20002(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_IV_OFFSET
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_META_IV_OFFSET);
 }
 
 /* Corrupt Meta Tag */
 static void xtest_tee_test_20003(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_TAG_OFFSET
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_META_TAG_OFFSET);
 }
 
 /* Corrupt Meta Data */
 static void xtest_tee_test_20004(ADBG_Case_t *c)
 {
-	storage_corrupt(c,
-			META_FILE, CORRUPT_META_DATA_OFFSET
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_META_DATA_OFFSET);
 }
 
 /* Corrupt Meta File : first byte */
 static void xtest_tee_test_20021(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_FIRST_BYTE
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_FILE_FIRST_BYTE);
 
 }
 
 /* Corrupt Meta File : last byte */
 static void xtest_tee_test_20022(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_LAST_BYTE
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_FILE_LAST_BYTE);
 
 }
 
 /* Corrupt Meta File : random byte */
 static void xtest_tee_test_20023(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_RAND_BYTE
-			);
+	storage_corrupt(c, FILE_HEADER, CORRUPT_FILE_RAND_BYTE);
 
 }
 
 /* Corrupt Block IV */
 static void xtest_tee_test_20501(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_IV_OFFSET
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_BLOCK_IV_OFFSET);
 
 }
 
 /* Corrupt Block Tag */
 static void xtest_tee_test_20502(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_TAG_OFFSET
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_BLOCK_TAG_OFFSET);
 }
 
 /* Corrupt Block Data */
 static void xtest_tee_test_20503(ADBG_Case_t *c)
 {
 
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_DATA_OFFSET
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_BLOCK_DATA_OFFSET);
 }
 
 /* Corrupt Block File : first byte */
 static void xtest_tee_test_20521(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_FIRST_BYTE
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_FILE_FIRST_BYTE);
 
 }
 
 /* Corrupt Block File : last byte */
 static void xtest_tee_test_20522(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_LAST_BYTE
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_FILE_LAST_BYTE);
 
 }
 
 /* Corrupt Block File : random byte */
 static void xtest_tee_test_20523(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_RAND_BYTE
-			);
+	storage_corrupt(c, DATA_BLOCK, CORRUPT_FILE_RAND_BYTE);
 
 }
 
