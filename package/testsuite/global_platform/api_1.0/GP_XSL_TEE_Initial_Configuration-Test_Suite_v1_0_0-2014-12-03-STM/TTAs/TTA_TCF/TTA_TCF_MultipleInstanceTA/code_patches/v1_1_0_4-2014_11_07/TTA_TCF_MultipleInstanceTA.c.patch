@@ -1,0 +1,19 @@
+--- TEE_Initial_Configuration-Test_Suite_v1_1_0_4-2014_11_07/TTAs/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/TTA_TCF_MultipleInstanceTA.c	2012-05-14 16:40:28.000000000 +0200
++++ TEE_Initial_Configuration-Test_Suite_v1_1_0_4-2014_11_07-patched/TTAs/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/TTA_TCF_MultipleInstanceTA.c	2015-12-04 15:31:18.255886195 +0100
+@@ -14,6 +14,7 @@
+ * ---------------------------------------------------------------------------- */
+ #include "tee_internal_api.h"
+ #include "TTA_TCF_MultipleInstanceTA_protocol.h"
++#include <string.h>
+ 
+ 
+ /* ----------------------------------------------------------------------------
+@@ -128,7 +129,7 @@
+    pDataBuffer = (char*) TEE_GetInstanceData();                         // retrieve the pointer
+    if(pDataBuffer == NULL)
+       return TEE_ERROR_GENERIC;                                         // if the pointer is NULL, it is because the function SetInstanceData has not been called
+-   nStringSize = sizeof(pDataBuffer);                                   // retrieve the length of the string stored
++   nStringSize = strlen(pDataBuffer) + 1;                               // retrieve the length of the string stored
+    
+    if(pParams[0].memref.size < nStringSize)
+    {

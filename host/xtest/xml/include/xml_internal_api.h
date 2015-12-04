@@ -452,8 +452,8 @@ static TEEC_Result Invoke_SetInstanceData(
 	uint32_t org;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEMREF_PARTIAL_INPUT, sizeof(data),
-					data)
+					TEEC_MEMREF_PARTIAL_INPUT,
+					strlen(data) + 1, data)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
