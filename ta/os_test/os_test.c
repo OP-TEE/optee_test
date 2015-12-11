@@ -33,6 +33,7 @@
 
 #include "os_test.h"
 #include "testframework.h"
+#include "test_float_subj.h"
 
 enum p_type {
 	P_TYPE_BOOL,
@@ -451,6 +452,90 @@ static TEE_Result test_time(void)
 	return TEE_SUCCESS;
 }
 
+#ifdef CFG_TA_FLOAT_SUPPORT
+static bool my_dcmpeq(double v1, double v2, double prec)
+{
+	return v1 > (v2 - prec) && v1 < (v2 + prec);
+}
+
+static bool my_fcmpeq(float v1, float v2, float prec)
+{
+	return v1 > (v2 - prec) && v1 < (v2 + prec);
+}
+
+
+static TEE_Result test_float(void)
+{
+#define VAL1		2.6
+#define VAL1_INT	2
+#define VAL2		5.3
+#define DPREC		0.000000000000001
+#define FPREC		0.000001
+#define EXPECT(expr) do { \
+		if (!(expr)) { \
+			EMSG("Expression %s failed", #expr); \
+			return TEE_ERROR_GENERIC; \
+		} \
+	} while (0)
+
+	IMSG("Testing floating point operations");
+
+	EXPECT(my_dcmpeq(test_float_dadd(VAL1, VAL2), VAL1 + VAL2, DPREC));
+	EXPECT(my_dcmpeq(test_float_ddiv(VAL1, VAL2), VAL1 / VAL2, DPREC));
+	EXPECT(my_dcmpeq(test_float_dmul(VAL1, VAL2), VAL1 * VAL2, DPREC));
+	EXPECT(my_dcmpeq(test_float_drsub(VAL1, VAL2), VAL2 - VAL1, DPREC));
+	EXPECT(my_dcmpeq(test_float_dsub(VAL1, VAL2), VAL1 - VAL2, DPREC));
+
+	EXPECT(test_float_dcmpeq(VAL1, VAL1) == 1);
+	EXPECT(test_float_dcmplt(VAL1, VAL2) == 1);
+	EXPECT(test_float_dcmple(VAL1, VAL1) == 1);
+	EXPECT(test_float_dcmpge(VAL1, VAL1) == 1);
+	EXPECT(test_float_dcmpgt(VAL2, VAL1) == 1);
+
+	EXPECT(my_fcmpeq(test_float_fadd(VAL1, VAL2), VAL1 + VAL2, FPREC));
+	EXPECT(my_fcmpeq(test_float_fdiv(VAL1, VAL2), VAL1 / VAL2, FPREC));
+	EXPECT(my_fcmpeq(test_float_fmul(VAL1, VAL2), VAL1 * VAL2, FPREC));
+	EXPECT(my_fcmpeq(test_float_frsub(VAL1, VAL2), VAL2 - VAL1, FPREC));
+	EXPECT(my_fcmpeq(test_float_fsub(VAL1, VAL2), VAL1 - VAL2, FPREC));
+
+	EXPECT(test_float_fcmpeq(VAL1, VAL1) == 1);
+	EXPECT(test_float_fcmplt(VAL1, VAL2) == 1);
+	EXPECT(test_float_fcmple(VAL1, VAL1) == 1);
+	EXPECT(test_float_fcmpge(VAL1, VAL1) == 1);
+	EXPECT(test_float_fcmpgt(VAL2, VAL1) == 1);
+
+	EXPECT(test_float_d2iz(VAL1) == VAL1_INT);
+	EXPECT(test_float_d2uiz(VAL1) == VAL1_INT);
+	EXPECT(test_float_d2lz(VAL1) == VAL1_INT);
+	EXPECT(test_float_d2ulz(VAL1) == VAL1_INT);
+
+	EXPECT(test_float_f2iz(VAL1) == VAL1_INT);
+	EXPECT(test_float_f2uiz(VAL1) == VAL1_INT);
+	EXPECT(test_float_f2lz(VAL1) == VAL1_INT);
+	EXPECT(test_float_f2ulz(VAL1) == VAL1_INT);
+
+	EXPECT(my_fcmpeq(test_float_d2f(VAL1), VAL1, FPREC));
+	EXPECT(my_dcmpeq(test_float_f2d(VAL1), VAL1, FPREC));
+
+	EXPECT(my_dcmpeq(test_float_i2d(VAL1_INT), VAL1_INT, DPREC));
+	EXPECT(my_dcmpeq(test_float_ui2d(VAL1_INT), VAL1_INT, DPREC));
+	EXPECT(my_dcmpeq(test_float_l2d(VAL1_INT), VAL1_INT, DPREC));
+	EXPECT(my_dcmpeq(test_float_ul2d(VAL1_INT), VAL1_INT, DPREC));
+
+	EXPECT(my_fcmpeq(test_float_i2f(VAL1_INT), VAL1_INT, FPREC));
+	EXPECT(my_fcmpeq(test_float_ui2f(VAL1_INT), VAL1_INT, FPREC));
+	EXPECT(my_fcmpeq(test_float_l2f(VAL1_INT), VAL1_INT, FPREC));
+	EXPECT(my_fcmpeq(test_float_ul2f(VAL1_INT), VAL1_INT, FPREC));
+	return TEE_SUCCESS;
+}
+#else /*CFG_TA_FLOAT_SUPPORT*/
+static TEE_Result test_float(void)
+{
+	IMSG("Floating point disabled");
+	return TEE_SUCCESS;
+}
+#endif /*CFG_TA_FLOAT_SUPPORT*/
+
 TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
@@ -470,6 +555,10 @@ TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 		return res;
 
 	res = test_time();
+	if (res != TEE_SUCCESS)
+		return res;
+
+	res = test_float();
 	if (res != TEE_SUCCESS)
 		return res;
 

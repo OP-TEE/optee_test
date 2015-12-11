@@ -1,5 +1,6 @@
 global-incdirs-y += include
 global-incdirs-y += ../crypt/include
+cflags-y += -Wno-float-equal
 srcs-y += init.c
 srcs-y += os_test.c
 srcs-y += ta_entry.c
@@ -26,4 +27,4 @@ srcs-y += tb_shift.c
 cflags-tb_shift.c-y += -Wno-declaration-after-statement
 srcs-y += tb_var.c
 srcs-y += testframework.c
-
+srcs-$(CFG_TA_FLOAT_SUPPORT) += test_float_subj.c
