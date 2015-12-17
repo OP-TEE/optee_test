@@ -212,7 +212,8 @@ static const uint8_t TEE_ATTR_RSA_MODULUS_VALUE01[] = {
 	0x4d, 0xbf, 0xe7, 0x8f,
 	0xed, 0xca, 0x8e, 0xf8, 0x8d, 0x87, 0x5f, 0xd4, 0xb4, 0x1a, 0x2c, 0xc9,
 	0xa7, 0x67, 0x7e, 0xb2,
-	0x1b, 0xc
+	0x1b, 0xc1, 0xce, 0xb6, 0x83, 0x7c, 0xce, 0xb4, 0x3d, 0x85, 0xc7, 0x53,
+	0x30, 0x7c, 0xfe, 0x85
 };
 static const uint8_t TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE01[] = {
 	0x01, 0x00, 0x01
@@ -1840,15 +1841,19 @@ exit:
 static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 	ADBG_Case_t *c, TEEC_Session *s,
 	const uint32_t cmd_id, TEE_OperationHandle *oph,
-	const void *full_data, const size_t fdata_length, uint32_t case_buf)
+	const void *full_data, const size_t fdata_length, uint32_t case_buf,
+	uint32_t nopad)
 {
 	TEEC_Result res;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 	size_t initial_size;
+	char *expected_res;
+	size_t expected_size;
 
 	/* Fill SharedMem1 with buffer_asym_encrypted */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+					buffer_asym_encrypted.size,
 					TEEC_MEMREF_PARTIAL_INPUT,
 					buffer_asym_encrypted.size,
 					buffer_asym_encrypted.buffer)
@@ -1874,12 +1879,30 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 
 	res = TEEC_InvokeCommand(s, cmd_id, &op, &ret_orig);
 
+	expected_res = full_data;
+	expected_size =  fdata_length;
+	if (nopad) {
+		/*
+		 * According to GP 1.1, no pad encrypting TEE_ALG_RSA_NOPAD
+		 * follows "PKCS #1 (RSA primitive)", as stated in
+		 * ftp://ftp.rsasecurity.com/pub/pkcs/pkcs-1/pkcs-1v2-1.pdf
+		 * Page 10, it is stated that RSA primitives RSAEP and RSADP
+		 * outputs "an integer between 0 and n-1". Hence the
+		 * leading 0s must not be taken into account when checking
+		 * the reference
+		 */
+		while (expected_size && expected_res[0] == 0) {
+			expected_size--;
+			expected_res++;
+		}
+	}
+
 	if (res == TEEC_SUCCESS) {
 		/* Compare the clear data in
 		 * $IN_fullDataValue$ with "SharedMem2"
 		 * and check they are equal
 		 */
-		ADBG_EXPECT_BUFFER(c, full_data, fdata_length,
+		ADBG_EXPECT_BUFFER(c, expected_res, expected_size,
 				   SHARE_MEM02->buffer,
 				   op.params[3].memref.size);
 	} else if (res == TEEC_ERROR_SHORT_BUFFER) {
