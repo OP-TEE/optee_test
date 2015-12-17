@@ -1080,9 +1080,11 @@ static void *test_1013_thread(void *arg)
 	return NULL;
 }
 
-static void xtest_tee_test_1013(ADBG_Case_t *c)
+#define NUM_THREADS 3
+
+static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
 {
-	size_t num_threads = 3;
+	size_t num_threads = NUM_THREADS;
 	size_t nt;
 	size_t n;
 	pthread_t thr[num_threads];
@@ -1098,6 +1100,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	};
 	uint8_t out[32] = { 0 };
 
+	*mean_concurrency = 0;
 
 	memset(&shm, 0, sizeof(shm));
 	shm.size = sizeof(struct ta_concurrent_shm);
@@ -1105,9 +1108,6 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
 		return;
-
-	Do_ADBG_BeginSubCase(c, "Busy loop with %zu parallel threads",
-			     num_threads);
 
 	memset(shm.buffer, 0, shm.size);
 	memset(arg, 0, sizeof(arg));
@@ -1130,8 +1130,6 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 			max_concurrency = arg[n].max_concurrency;
 	}
 
-	Do_ADBG_Log("Max concurrency %zu", max_concurrency);
-
 	/*
 	 * Concurrency can be limited by several factors, for instance in a
 	 * single CPU system it's dependent on the Preemtion Model used by
@@ -1140,13 +1138,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	 */
 	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, >, 0);
 	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, <=, num_threads);
-
-	Do_ADBG_EndSubCase(c, "Busy loop with %zu parallel threads",
-			   num_threads);
-
-
-	Do_ADBG_BeginSubCase(c, "Hashing with %zu parallel threads",
-			     num_threads);
+	*mean_concurrency += max_concurrency;
 
 	memset(shm.buffer, 0, shm.size);
 	memset(arg, 0, sizeof(arg));
@@ -1174,11 +1166,27 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 		if (arg[n].max_concurrency > max_concurrency)
 			max_concurrency = arg[n].max_concurrency;
 	}
+	*mean_concurrency += max_concurrency;
 
-	Do_ADBG_Log("Max concurrency %zu", max_concurrency);
-
-	Do_ADBG_EndSubCase(c, "Hashing with %zu parallel threads",
-			   num_threads);
-
+	*mean_concurrency /= 2.0;
 	TEEC_ReleaseSharedMemory(&shm);
 }
+
+static void xtest_tee_test_1013(ADBG_Case_t *c)
+{
+	int i;
+	double mean_concurrency;
+	double concurrency;
+	const int nb_loops = 50;
+
+	mean_concurrency = 0;
+	for (i = 0; i < nb_loops; i++) {
+		xtest_tee_test_1013_single(c, &concurrency);
+		mean_concurrency += concurrency;
+	}
+	mean_concurrency /= nb_loops;
+
+	Do_ADBG_Log("    Number of parallel threads: %d", NUM_THREADS);
+	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
+}
+
