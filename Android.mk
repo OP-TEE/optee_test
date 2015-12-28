@@ -22,6 +22,7 @@ srcs := xtest_1000.c \
 	xtest_7000.c \
 	xtest_10000.c \
 	xtest_20000.c \
+	xtest_benchmark_1000.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
@@ -43,6 +44,7 @@ LOCAL_C_INCLUDES += host/xtest/adbg/include
 LOCAL_C_INCLUDES += host/xtest/xml/include
 LOCAL_C_INCLUDES += $(TA_DEV_KIT_DIR)/host_include
 
+LOCAL_C_INCLUDES += ta/concurrent/include
 LOCAL_C_INCLUDES += ta/create_fail_test/include
 LOCAL_C_INCLUDES += ta/crypt/include
 LOCAL_C_INCLUDES += ta/enc_fs/include
@@ -50,6 +52,7 @@ LOCAL_C_INCLUDES += ta/os_test/include
 LOCAL_C_INCLUDES += ta/rpc_test/include
 LOCAL_C_INCLUDES += ta/sims/include
 LOCAL_C_INCLUDES += ta/storage/include
+LOCAL_C_INCLUDES += ta/storage_benchmark/include
 
 ifeq ($(CFG_ENC_FS),y)
 LOCAL_CFLAGS += -DCFG_ENC_FS
