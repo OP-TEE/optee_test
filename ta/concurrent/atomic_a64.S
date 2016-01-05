@@ -28,6 +28,7 @@
 /* uint32_t atomic_inc(uint32_t *v); */
 .global atomic_inc
 .func atomic_inc
+.type atomic_inc %function
 atomic_inc:
 	ldaxr	w1, [x0]
 	add	w1, w1, #1
@@ -41,6 +42,7 @@ atomic_inc:
 /* uint32_t atomic_dec(uint32_t *v); */
 .global atomic_dec
 .func atomic_dec
+.type atomic_dec %function
 atomic_dec:
 	ldaxr	w1, [x0]
 	sub	w1, w1, #1

@@ -28,6 +28,7 @@
 /* uint32_t atomic_inc(uint32_t *v); */
 .global atomic_inc
 .func atomic_inc
+.type atomic_inc %function
 atomic_inc:
 	ldrex	r1, [r0]
 	add	r1, r1, #1
@@ -41,6 +42,7 @@ atomic_inc:
 /* uint32_t atomic_dec(uint32_t *v); */
 .global atomic_dec
 .func atomic_dec
+.type atomic_dec %function
 atomic_dec:
 	ldrex	r1, [r0]
 	sub	r1, r1, #1
