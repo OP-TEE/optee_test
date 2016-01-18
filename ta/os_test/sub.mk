@@ -1,3 +1,5 @@
+cppflags-$(CFG_TA_FLOAT_SUPPORT) += -DCFG_TA_FLOAT_SUPPORT=1
+
 global-incdirs-y += include
 global-incdirs-y += ../crypt/include
 cflags-y += -Wno-float-equal
