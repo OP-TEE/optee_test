@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#ifdef CFG_ENC_FS
+#if defined(CFG_ENC_FS) && !defined(CFG_RPMB_FS)
 
 #include <stdlib.h>
 #include <string.h>
@@ -858,4 +858,4 @@ ADBG_CASE_DEFINE(
 	"Description of how to implement ..."
 	);
 
-#endif /* CFG_ENC_FS */
+#endif /* defined(CFG_ENC_FS) && !defined(CFG_RPMB_FS) */

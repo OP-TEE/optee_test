@@ -57,6 +57,9 @@ LOCAL_C_INCLUDES += ta/storage_benchmark/include
 ifeq ($(CFG_ENC_FS),y)
 LOCAL_CFLAGS += -DCFG_ENC_FS
 endif
+ifeq ($(CFG_RPMB_FS),y)
+LOCAL_CFLAGS += -DCFG_RPMB_FS
+endif
 
 LOCAL_CFLAGS += -DUSER_SPACE
 LOCAL_CFLAGS += -DTA_DIR=\"/system/lib/optee_armtz\"
