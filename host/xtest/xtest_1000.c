@@ -1177,7 +1177,10 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	int i;
 	double mean_concurrency;
 	double concurrency;
-	const int nb_loops = 50;
+	int nb_loops = 50;
+
+	if (level == 0)
+		nb_loops /= 2;
 
 	mean_concurrency = 0;
 	for (i = 0; i < nb_loops; i++) {

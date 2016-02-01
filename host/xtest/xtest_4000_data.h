@@ -5991,7 +5991,7 @@ static struct derive_key_ecdh_t {
 		.out      = nist_kas_ecc_cdh_testvector_1_out,
 	},
 	{
-		.level    = 0,
+		.level    = 1,
 		.algo     = TEE_ALG_ECDH_P192,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
@@ -6242,7 +6242,7 @@ static struct derive_key_ecdh_t {
 		.out      = nist_kas_ecc_cdh_testvector_26_out,
 	},
 	{
-		.level    = 0,
+		.level    = 1,
 		.algo     = TEE_ALG_ECDH_P224,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
@@ -6493,7 +6493,7 @@ static struct derive_key_ecdh_t {
 		.out      = nist_kas_ecc_cdh_testvector_51_out,
 	},
 	{
-		.level    = 0,
+		.level    = 1,
 		.algo     = TEE_ALG_ECDH_P256,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
@@ -6744,7 +6744,7 @@ static struct derive_key_ecdh_t {
 		.out      = nist_kas_ecc_cdh_testvector_76_out,
 	},
 	{
-		.level    = 0,
+		.level    = 1,
 		.algo     = TEE_ALG_ECDH_P384,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
@@ -6995,7 +6995,7 @@ static struct derive_key_ecdh_t {
 		.out      = nist_kas_ecc_cdh_testvector_101_out,
 	},
 	{
-		.level    = 0,
+		.level    = 1,
 		.algo     = TEE_ALG_ECDH_P521,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
