@@ -45,7 +45,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_1001, xtest_tee_test_1001,
 		/* Title */
-		"Registering TAs",
+		"Core self tests",
 		/* Short description */
 		"Short description ...",
 		/* Requirement IDs */
@@ -359,47 +359,24 @@ static void xtest_crypto_test(struct xtest_crypto_session *cs)
 
 static void xtest_tee_test_1001(ADBG_Case_t *c)
 {
-#ifdef USER_SPACE
-	(void)c;
-#else
-#define REG_TA(name) \
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c, \
-		TEEC_RegisterTA(name, name ## _size))
+	TEEC_Result res;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
 
-	REG_TA(crypt_user_ta);
-	REG_TA(os_test_ta);
-	REG_TA(create_fail_test_ta);
-	REG_TA(rpc_test_ta);
-	REG_TA(sims_test_ta);
+#define CMD_SELF_TESTS  2
 
-	TEEC_UnregisterTA(crypt_user_ta);
-	TEEC_UnregisterTA(os_test_ta);
-	TEEC_UnregisterTA(create_fail_test_ta);
-	TEEC_UnregisterTA(rpc_test_ta);
-	TEEC_UnregisterTA(sims_test_ta);
+	res = xtest_teec_open_session(&session, &sta_test_ta_uuid, NULL,
+				      &ret_orig);
+	/*
+	 * If the static TA (which is optional) isn't available, skip this
+	 * test.
+	 */
+	if (res != TEEC_SUCCESS)
+		return;
 
-	REG_TA(crypt_user_ta);
-	REG_TA(os_test_ta);
-	REG_TA(create_fail_test_ta);
-	REG_TA(rpc_test_ta);
-	REG_TA(sims_test_ta);
-	REG_TA(storage_ta);
-
-	REG_TA(gp_tta_testing_client_api_ta);
-	REG_TA(gp_tta_answer_success_to_open_session_invoke_ta);
-	REG_TA(gp_tta_answer_error_to_invoke_ta);
-	REG_TA(gp_tta_answer_error_to_open_session_ta);
-	REG_TA(gp_tta_check_open_session_with_4_parameters_ta);
-	REG_TA(gp_tta_time_ta);
-	REG_TA(gp_tta_ds_ta);
-	REG_TA(gp_tta_tcf_ta);
-	REG_TA(gp_tta_crypto_ta);
-	REG_TA(gp_tta_arithm_ta);
-	REG_TA(gp_tta_ica_ta);
-	REG_TA(gp_tta_ica2_ta);
-	REG_TA(gp_tta_tcf_singleinstance_ta);
-	REG_TA(gp_tta_tcf_multipleinstance_ta);
-#endif  /*!USER_SPACE*/
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
+		&session, CMD_SELF_TESTS, NULL, &ret_orig));
+	TEEC_CloseSession(&session);
 }
 
 static void xtest_tee_test_1004(ADBG_Case_t *c)
