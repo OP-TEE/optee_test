@@ -47,7 +47,8 @@
 		&(const TEE_UUID) {1, 2, 3 } }, \
 	{ "myprop.1234", USER_TA_PROP_TYPE_IDENTITY, \
 		&(const TEE_Identity) { 1, { 2, 3, 4 } } }, \
-	{ "myprop.hello", USER_TA_PROP_TYPE_STRING, "hello" }, \
+	{ "myprop.hello", USER_TA_PROP_TYPE_STRING, \
+		"hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong" }, \
 	{ "myprop.binaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
 	   "SGVsbG8gd29ybGQh" },
 #endif

@@ -50,6 +50,25 @@ struct p_attr {
 	bool retrieved;
 };
 
+static TEE_Result check_returned_prop(
+		int line, char *prop_name,
+		TEE_Result return_res, TEE_Result expected_res,
+		uint32_t return_len, uint32_t expected_len)
+{
+	if (return_res != expected_res) {
+		EMSG("From line %d (property name=%s): return_res=0x%x  vs  expected_res=0x%x",
+		     line, (prop_name ? prop_name : "unknown"),
+		     (unsigned int)return_res, (unsigned int)expected_res);
+		return TEE_ERROR_GENERIC;
+	}
+	if (return_len != expected_len) {
+		EMSG("From line %d: return_len=%u  vs  expected_res=%u",
+		     line, return_len, expected_len);
+		return TEE_ERROR_GENERIC;
+	}
+	return TEE_SUCCESS;
+}
+
 static TEE_Result print_properties(TEE_PropSetHandle h,
 				   TEE_PropSetHandle prop_set,
 				   struct p_attr *p_attrs, size_t num_p_attrs)
@@ -60,10 +79,12 @@ size_t n;
 TEE_StartPropertyEnumerator(h, prop_set);
 
 while (true) {
-	char nbuf[80];
-	char vbuf[80];
-	char vbuf2[80];
+	char nbuf[256];
+	char nbuf_small[256];
+	char vbuf[256];
+	char vbuf2[256];
 	uint32_t nblen = sizeof(nbuf);
+	uint32_t nblen_small;
 	uint32_t vblen = sizeof(vbuf);
 	uint32_t vblen2 = sizeof(vbuf2);
 
@@ -73,21 +94,82 @@ while (true) {
 		     (unsigned int)res);
 		return res;
 	}
+	if (nblen != strlen(nbuf) + 1) {
+		EMSG("Name has wrong size: %u vs %u", nblen, strlen(nbuf) + 1);
+		return TEE_ERROR_GENERIC;
+	}
 
+
+	/* Get the property name with a very small buffer */
+	nblen_small = 2;
+	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+				  nblen_small, nblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Get the property name with almost the correct buffer */
+	nblen_small = nblen - 1;
+	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+				  nblen_small, nblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Get the property name with the exact buffer length */
+	nblen_small = nblen;
+	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+				  nblen_small, nblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Get the property value */
 	res = TEE_GetPropertyAsString(h, NULL, vbuf, &vblen);
-	if (res != TEE_SUCCESS) {
-		EMSG("1TEE_GetPropertyAsString(\"%s\") returned 0x%x\n",
-		     nbuf, (unsigned int)res);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+				  vblen, strlen(vbuf) + 1);
+	if (res != TEE_SUCCESS)
 		return res;
-	}
+
 	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-	if (res != TEE_SUCCESS) {
-		EMSG("2TEE_GetPropertyAsString(\"%s\") returned 0x%x\n",
-		     nbuf, (unsigned int)res);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+				  vblen2, strlen(vbuf2) + 1);
+	if (res != TEE_SUCCESS)
 		return res;
-	}
+
 	if (my_strcmp(vbuf, vbuf2) != 0) {
 		EMSG("String of \"%s\" differs\n", nbuf);
+		return TEE_ERROR_GENERIC;
+	}
+
+	/* Get the property with a very small buffer */
+	vblen2 = 1;
+	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+				  vblen2, vblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Get the property with almost the correct buffer */
+	vblen2 = vblen - 1;
+	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+				  vblen2, vblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* Get the property name with the exact buffer length */
+	vblen2 = vblen;
+	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS, vblen2, vblen);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* check specific myprop.hello property, which is larger than 80 */
+	if (!strcmp("myprop.hello", nbuf) &&
+	    vblen2 != 1 + strlen("hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong")) {
+		EMSG("TEE_GetPropertyAsString(\"%s\") is truncated - returned \"%s\"\n",
+		     nbuf, vbuf);
 		return TEE_ERROR_GENERIC;
 	}
 
