@@ -62,8 +62,9 @@ static TEE_Result check_returned_prop(
 		return TEE_ERROR_GENERIC;
 	}
 	if (return_len != expected_len) {
-		EMSG("From line %d: return_len=%u  vs  expected_res=%u",
-		     line, return_len, expected_len);
+		EMSG("From line %d (property name=%s): return_len=%u  vs  expected_res=%u",
+		     line, (prop_name ? prop_name : "unknown"),
+		     return_len, expected_len);
 		return TEE_ERROR_GENERIC;
 	}
 	return TEE_SUCCESS;
