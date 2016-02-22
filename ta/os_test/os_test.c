@@ -96,7 +96,7 @@ while (true) {
 		return res;
 	}
 	if (nblen != strlen(nbuf) + 1) {
-		EMSG("Name has wrong size: %u vs %u", nblen, strlen(nbuf) + 1);
+		EMSG("Name has wrong size: %u vs %zu", nblen, strlen(nbuf) + 1);
 		return TEE_ERROR_GENERIC;
 	}
 
