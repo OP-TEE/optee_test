@@ -93,8 +93,14 @@ CFLAGS += -I../../ta/GP_TTA_testingClientAPI
 # need more include: openssl
 CFLAGS += -Ifor_gp/include
 
-# need more libraries: openssl
+# by default, the client application is compiled as the kernel of optee-os
 ifeq ($(CFG_ARM32),y)
+COMPILE_NS_USER ?= 32
+else
+COMPILE_NS_USER ?= 64
+endif
+
+ifeq ($(COMPILE_NS_USER),32)
 LDFLAGS += ../lib/armv7/libcrypto.a
 else
 LDFLAGS += ../lib/armv8/libcrypto.a
