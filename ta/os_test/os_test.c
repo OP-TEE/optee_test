@@ -51,7 +51,7 @@ struct p_attr {
 };
 
 static TEE_Result check_returned_prop(
-		int line, char *prop_name,
+		int line __maybe_unused, char *prop_name __maybe_unused,
 		TEE_Result return_res, TEE_Result expected_res,
 		uint32_t return_len, uint32_t expected_len)
 {
