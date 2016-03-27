@@ -25,6 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdint.h>
+#include <setjmp.h>
 
 #include <compiler.h>
 #include <ta_crypt.h>
@@ -619,6 +620,26 @@ static TEE_Result test_float(void)
 }
 #endif /*CFG_TA_FLOAT_SUPPORT*/
 
+static __noinline void call_longjmp(jmp_buf env)
+{
+	DMSG("Calling longjmp");
+	longjmp(env, 1);
+	EMSG("error: longjmp returned to calling function");
+}
+
+static TEE_Result test_setjmp(void)
+{
+	jmp_buf env;
+
+	if (setjmp(env)) {
+		IMSG("Returned via longjmp");
+		return TEE_SUCCESS;
+	} else {
+		call_longjmp(env);
+		return TEE_ERROR_GENERIC;
+	}
+}
+
 TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
@@ -642,6 +663,10 @@ TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 		return res;
 
 	res = test_float();
+	if (res != TEE_SUCCESS)
+		return res;
+
+	res = test_setjmp();
 	if (res != TEE_SUCCESS)
 		return res;
 
