@@ -206,6 +206,7 @@ extern const TEEC_UUID ecc_test_ta_uuid;
 extern const TEEC_UUID sta_test_ta_uuid;
 extern const TEEC_UUID gp_tta_time_uuid;
 extern const TEEC_UUID concurrent_ta_uuid;
+extern const TEEC_UUID concurrent_large_ta_uuid;
 extern const TEEC_UUID storage_benchmark_ta_uuid;
 extern char *_device;
 

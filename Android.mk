@@ -38,6 +38,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/host/xtest/xml/include
 		$(TA_DEV_KIT_DIR)/host_include \
 		$(LOCAL_PATH)/ta/concurrent/include \
+		$(LOCAL_PATH)/ta/concurrent_large/include \
 		$(LOCAL_PATH)/ta/create_fail_test/include \
 		$(LOCAL_PATH)/ta/crypt/include \
 		$(LOCAL_PATH)/ta/enc_fs/include \

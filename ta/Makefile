@@ -16,6 +16,7 @@ TA_DIRS := create_fail_test \
 	   sims \
 	   storage \
 	   concurrent \
+	   concurrent_large \
 	   storage_benchmark
 
 ifdef CFG_GP_PACKAGE_PATH

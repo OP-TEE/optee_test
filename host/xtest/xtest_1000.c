@@ -1007,6 +1007,7 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 }
 
 struct test_1013_thread_arg {
+	const TEEC_UUID *uuid;
 	uint32_t cmd;
 	uint32_t repeat;
 	TEEC_SharedMemory *shm;
@@ -1027,7 +1028,7 @@ static void *test_1013_thread(void *arg)
 	uint8_t p2 = TEEC_NONE;
 	uint8_t p3 = TEEC_NONE;
 
-	a->res = xtest_teec_open_session(&session, &concurrent_ta_uuid, NULL,
+	a->res = xtest_teec_open_session(&session, a->uuid, NULL,
 					 &a->error_orig);
 	if (a->res != TEEC_SUCCESS)
 		return NULL;
@@ -1059,11 +1060,13 @@ static void *test_1013_thread(void *arg)
 
 #define NUM_THREADS 3
 
-static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
+static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
+				       const TEEC_UUID *uuid)
 {
 	size_t num_threads = NUM_THREADS;
 	size_t nt;
 	size_t n;
+	size_t repeat = 1000;
 	pthread_t thr[num_threads];
 	TEEC_SharedMemory shm;
 	size_t max_concurrency;
@@ -1077,6 +1080,7 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
 	};
 	uint8_t out[32] = { 0 };
 
+	Do_ADBG_BeginSubCase(c, "Busy loop repeat %zu", repeat * 10);
 	*mean_concurrency = 0;
 
 	memset(&shm, 0, sizeof(shm));
@@ -1092,8 +1096,9 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
 	nt = num_threads;
 
 	for (n = 0; n < nt; n++) {
+		arg[n].uuid = uuid;
 		arg[n].cmd = TA_CONCURRENT_CMD_BUSY_LOOP;
-		arg[n].repeat = 10000;
+		arg[n].repeat = repeat * 10;
 		arg[n].shm = &shm;
 		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
 						test_1013_thread, arg + n)))
@@ -1116,15 +1121,18 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
 	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, >, 0);
 	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, <=, num_threads);
 	*mean_concurrency += max_concurrency;
+	Do_ADBG_EndSubCase(c, "Busy loop repeat %zu", repeat * 10);
 
+	Do_ADBG_BeginSubCase(c, "SHA-256 loop repeat %zu", repeat);
 	memset(shm.buffer, 0, shm.size);
 	memset(arg, 0, sizeof(arg));
 	max_concurrency = 0;
 	nt = num_threads;
 
 	for (n = 0; n < nt; n++) {
+		arg[n].uuid = uuid;
 		arg[n].cmd = TA_CONCURRENT_CMD_SHA256;
-		arg[n].repeat = 1000;
+		arg[n].repeat = repeat;
 		arg[n].shm = &shm;
 		arg[n].in = sha256_in;
 		arg[n].in_len = sizeof(sha256_in);
@@ -1144,6 +1152,7 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency)
 			max_concurrency = arg[n].max_concurrency;
 	}
 	*mean_concurrency += max_concurrency;
+	Do_ADBG_EndSubCase(c, "SHA-256 loop repeat %zu", repeat);
 
 	*mean_concurrency /= 2.0;
 	TEEC_ReleaseSharedMemory(&shm);
@@ -1154,19 +1163,34 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	int i;
 	double mean_concurrency;
 	double concurrency;
-	int nb_loops = 50;
+	int nb_loops = 24;
 
 	if (level == 0)
 		nb_loops /= 2;
 
+	Do_ADBG_BeginSubCase(c, "Using small concurrency TA");
 	mean_concurrency = 0;
 	for (i = 0; i < nb_loops; i++) {
-		xtest_tee_test_1013_single(c, &concurrency);
+		xtest_tee_test_1013_single(c, &concurrency,
+					   &concurrent_ta_uuid);
 		mean_concurrency += concurrency;
 	}
 	mean_concurrency /= nb_loops;
 
 	Do_ADBG_Log("    Number of parallel threads: %d", NUM_THREADS);
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
-}
+	Do_ADBG_EndSubCase(c, "Using small concurrency TA");
 
+	Do_ADBG_BeginSubCase(c, "Using large concurrency TA");
+	mean_concurrency = 0;
+	for (i = 0; i < nb_loops; i++) {
+		xtest_tee_test_1013_single(c, &concurrency,
+					   &concurrent_large_ta_uuid);
+		mean_concurrency += concurrency;
+	}
+	mean_concurrency /= nb_loops;
+
+	Do_ADBG_Log("    Number of parallel threads: %d", NUM_THREADS);
+	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
+	Do_ADBG_EndSubCase(c, "Using large concurrency TA");
+}
