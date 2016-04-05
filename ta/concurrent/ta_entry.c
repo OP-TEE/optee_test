@@ -25,14 +25,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <atomic.h>
 #include <tee_ta_api.h>
 #include <tee_api.h>
 #include <ta_concurrent.h>
 #include <trace.h>
 #include <utee_defines.h>
-
-uint32_t atomic_inc(uint32_t *v);
-uint32_t atomic_dec(uint32_t *v);
 
 TEE_Result TA_CreateEntryPoint(void)
 {
@@ -60,12 +58,12 @@ void TA_CloseSessionEntryPoint(void *session_ctx)
 
 static uint32_t inc_active_count(struct ta_concurrent_shm *shm)
 {
-	return atomic_inc(&shm->active_count);
+	return atomic_inc32(&shm->active_count);
 }
 
 static uint32_t dec_active_count(struct ta_concurrent_shm *shm)
 {
-	return atomic_dec(&shm->active_count);
+	return atomic_dec32(&shm->active_count);
 }
 
 
