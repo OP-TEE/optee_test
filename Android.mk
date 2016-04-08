@@ -3,17 +3,11 @@ LOCAL_PATH := $(call my-dir)
 VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown)
 OPTEE_CLIENT_PATH ?= $(LOCAL_PATH)/../optee_client
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := teec
-LOCAL_SRC_FILES := $(OPTEE_CLIENT_PATH)/libs/$(TARGET_ARCH_ABI)/libteec.so
-LOCAL_EXPORT_C_INCLUDES := $(OPTEE_CLIENT_PATH)/public
-include $(PREBUILT_SHARED_LIBRARY)
-
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := xtest
-LOCAL_SHARED_LIBRARIES := teec
+LOCAL_SHARED_LIBRARIES := libteec
 
 srcs := xtest_1000.c \
 	xtest_4000.c \
