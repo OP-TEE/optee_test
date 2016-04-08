@@ -1,0 +1,7 @@
+include $(CLEAR_VARS)
+LOCAL_MODULE := cb3e5ba0-adf1-11e0-998b0002a5d5c51b.ta
+LOCAL_SRC_FILES := ./crypt/cb3e5ba0-adf1-11e0-998b0002a5d5c51b.ta
+LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/optee_armtz
+LOCAL_MODULE_CLASS := EXECUTABLES
+LOCAL_MODULE_TAGS := optional
+include $(BUILD_PREBUILT)

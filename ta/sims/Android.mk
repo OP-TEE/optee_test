@@ -1,0 +1,7 @@
+include $(CLEAR_VARS)
+LOCAL_MODULE := e6a33ed4-562b-463a-bb7eff5e15a493c8.ta
+LOCAL_SRC_FILES := ./sims/e6a33ed4-562b-463a-bb7eff5e15a493c8.ta
+LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/optee_armtz
+LOCAL_MODULE_CLASS := EXECUTABLES
+LOCAL_MODULE_TAGS := optional
+include $(BUILD_PREBUILT)
