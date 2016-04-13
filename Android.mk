@@ -60,3 +60,5 @@ LOCAL_CFLAGS += -DTA_DIR=\"/system/lib/optee_armtz\"
 LOCAL_CFLAGS += -pthread
 
 include $(BUILD_EXECUTABLE)
+
+include $(LOCAL_PATH)/ta/Android.mk
