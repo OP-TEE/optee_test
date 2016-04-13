@@ -35,7 +35,7 @@ LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/host/xtest/adbg/include\
-		$(LOCAL_PATH)/host/xtest/xml/include
+		$(LOCAL_PATH)/host/xtest/xml/include \
 		$(TA_DEV_KIT_DIR)/host_include \
 		$(LOCAL_PATH)/ta/concurrent/include \
 		$(LOCAL_PATH)/ta/concurrent_large/include \
