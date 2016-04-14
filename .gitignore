@@ -16,3 +16,4 @@ host/xtest/adbg_entry_declare.h
 package/testsuite/global_platform/api_1.0/TEE*
 /libs
 /obj
+/TEE_Initial_Configuration-Test_Suite*
