@@ -45,6 +45,10 @@ static uint8_t file_03[] = {
 	0x03, 0x13, 0x03
 };
 
+static uint8_t file_04[] = {
+	0x00, 0x01, 0x02
+};
+
 static uint8_t data_00[] = {
 	0x00, 0x6E, 0x04, 0x57, 0x08, 0xFB, 0x71, 0x96,
 	0x00, 0x2E, 0x55, 0x3D, 0x02, 0xC3, 0xA6, 0x92,
@@ -108,6 +112,25 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 
 	if (res == TEEC_SUCCESS)
 		*obj = op.params[1].value.b;
+
+	return res;
+}
+
+static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id,
+				       uint32_t id_size)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res;
+	uint32_t org;
+
+	op.params[0].tmpref.buffer = id;
+	op.params[0].tmpref.size = id_size;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_CREATE_OVERWRITE, &op, &org);
 
 	return res;
 }
@@ -1188,6 +1211,49 @@ exit:
 }
 #endif
 
+static void xtest_tee_test_6012(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t orig;
+	uint32_t obj;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
+		goto exit;
+
+	TEEC_CloseSession(&sess);
+
+	/* re-create the same */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
+		goto exit;
+
+	/*
+	 * recreate it with an object, and remove it so that xtest 6009
+	 * can be replayed
+	 */
+	 if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_04, sizeof(file_04),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj)))
+			goto exit;
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
 ADBG_CASE_DEFINE(
 	XTEST_TEE_6001, xtest_tee_test_6001,
 	/* Title */
@@ -1321,3 +1387,15 @@ ADBG_CASE_DEFINE(
     "Description of how to implement ..."
 );
 #endif
+
+ADBG_CASE_DEFINE(
+    XTEST_TEE_6012, xtest_tee_test_6012,
+    /* Title */
+    "Test TEE GP TTA DS init objects",
+    /* Short description */
+    "Short description ...",
+    /* Requirement IDs */
+    "TEE-??",
+    /* How to implement */
+    "Description of how to implement ..."
+);

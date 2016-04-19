@@ -85,6 +85,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_STORAGE_CMD_CREATE:
 		return ta_storage_cmd_create(nParamTypes, pParams);
 
+	case TA_STORAGE_CMD_CREATE_OVERWRITE:
+		return ta_storage_cmd_create_overwrite(nParamTypes, pParams);
+
 	case TA_STORAGE_CMD_SEEK:
 		return ta_storage_cmd_seek(nParamTypes, pParams);
 
