@@ -32,6 +32,7 @@
 
 TEE_Result ta_storage_cmd_open(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4]);

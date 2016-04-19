@@ -112,6 +112,24 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 	return res;
 }
 
+static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id, uint32_t id_size)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res;
+	uint32_t org;
+
+	op.params[0].tmpref.buffer = id;
+	op.params[0].tmpref.size = id_size;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_CREATE_OVERWRITE, &op, &org);
+
+	return res;
+}
+
 static TEEC_Result fs_close(TEEC_Session *sess, uint32_t obj)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -1188,6 +1206,34 @@ exit:
 }
 #endif
 
+static void xtest_tee_test_6012(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create_overwrite(&sess, file_00, sizeof(file_00))))
+		goto exit;
+
+	TEEC_CloseSession(&sess);
+
+	/* re-create the same */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create_overwrite(&sess, file_00, sizeof(file_00))))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
 ADBG_CASE_DEFINE(
 	XTEST_TEE_6001, xtest_tee_test_6001,
 	/* Title */
@@ -1321,3 +1367,15 @@ ADBG_CASE_DEFINE(
     "Description of how to implement ..."
 );
 #endif
+
+ADBG_CASE_DEFINE(
+    XTEST_TEE_6012, xtest_tee_test_6012,
+    /* Title */
+    "Test TEE GP TTA DS init objects",
+    /* Short description */
+    "Short description ...",
+    /* Requirement IDs */
+    "TEE-??",
+    /* How to implement */
+    "Description of how to implement ..."
+);
