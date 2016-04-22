@@ -45,6 +45,10 @@ static uint8_t file_03[] = {
 	0x03, 0x13, 0x03
 };
 
+static uint8_t file_04[] = {
+	0x00, 0x01, 0x02
+};
+
 static uint8_t data_00[] = {
 	0x00, 0x6E, 0x04, 0x57, 0x08, 0xFB, 0x71, 0x96,
 	0x00, 0x2E, 0x55, 0x3D, 0x02, 0xC3, 0xA6, 0x92,
@@ -112,7 +116,8 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 	return res;
 }
 
-static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id, uint32_t id_size)
+static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id,
+				       uint32_t id_size)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
@@ -1210,13 +1215,14 @@ static void xtest_tee_test_6012(ADBG_Case_t *c)
 {
 	TEEC_Session sess;
 	uint32_t orig;
+	uint32_t obj;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
 		return;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_create_overwrite(&sess, file_00, sizeof(file_00))))
+		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
 		goto exit;
 
 	TEEC_CloseSession(&sess);
@@ -1227,7 +1233,21 @@ static void xtest_tee_test_6012(ADBG_Case_t *c)
 		return;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_create_overwrite(&sess, file_00, sizeof(file_00))))
+		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
+		goto exit;
+
+	/*
+	 * recreate it with an object, and remove it so that xtest 6009
+	 * can be replayed
+	 */
+	 if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_04, sizeof(file_04),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj)))
+			goto exit;
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
 		goto exit;
 
 exit:
