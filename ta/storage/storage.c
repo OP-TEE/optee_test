@@ -76,6 +76,24 @@ TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4])
 	return res;
 }
 
+TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types,
+					   TEE_Param params[4])
+{
+	TEE_Result res;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE));
+
+	res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+		 params[0].memref.buffer, params[0].memref.size,
+		 TEE_DATA_FLAG_OVERWRITE,
+		 NULL, NULL, 0, NULL);
+	return res;
+}
+
 TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4])
 {
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
