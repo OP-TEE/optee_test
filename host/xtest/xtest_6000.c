@@ -299,9 +299,10 @@ static TEEC_Result fs_next_enum(TEEC_Session *sess, uint32_t e, void *obj_info,
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_OUTPUT,
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE);
+	if (obj_info && info_size)
+		op.paramTypes |= (TEEC_MEMREF_TEMP_OUTPUT << 4);
 
 	op.params[0].value.a = e;
 	op.params[1].tmpref.buffer = obj_info;
@@ -993,7 +994,7 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 
 	/* get 01 */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_next_enum(&sess, e, info, sizeof(info), id, sizeof(id))))
+		fs_next_enum(&sess, e, NULL, 0, id, sizeof(id))))
 		goto exit;
 
 	/* get 02 */
