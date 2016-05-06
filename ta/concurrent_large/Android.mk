@@ -1,6 +1,8 @@
+LOCAL_PATH := $(call my-dir)
+
 include $(CLEAR_VARS)
 LOCAL_MODULE :=  5ce0c432-0ab0-40e5-a056782ca0e6aba2.ta
-LOCAL_SRC_FILES := concurrent_large/5ce0c432-0ab0-40e5-a056782ca0e6aba2.ta
+LOCAL_SRC_FILES := $(LOCAL_MODULE)
 LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/optee_armtz
 LOCAL_MODULE_CLASS := EXECUTABLES
 LOCAL_MODULE_TAGS := optional
