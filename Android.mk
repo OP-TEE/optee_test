@@ -51,8 +51,8 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 ifeq ($(CFG_ENC_FS),y)
 LOCAL_CFLAGS += -DCFG_ENC_FS
 endif
-ifeq ($(CFG_RPMB_FS),y)
-LOCAL_CFLAGS += -DCFG_RPMB_FS
+ifeq ($(CFG_REE_FS),y)
+LOCAL_CFLAGS += -DCFG_REE_FS
 endif
 
 LOCAL_CFLAGS += -DUSER_SPACE

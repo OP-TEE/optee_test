@@ -114,8 +114,8 @@ CFLAGS += -DUSER_SPACE
 ifeq ($(CFG_ENC_FS),y)
 CFLAGS += -DCFG_ENC_FS
 endif
-ifeq ($(CFG_RPMB_FS),y)
-CFLAGS += -DCFG_RPMB_FS
+ifeq ($(CFG_REE_FS),y)
+CFLAGS += -DCFG_REE_FS
 endif
 
 ifndef CFG_GP_PACKAGE_PATH
