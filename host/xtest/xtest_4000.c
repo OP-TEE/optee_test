@@ -39,6 +39,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4007(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4008(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
+static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_4001, xtest_tee_test_4001,
 		/* Title */
@@ -142,6 +143,17 @@ ADBG_CASE_DEFINE(XTEST_TEE_4008, xtest_tee_test_4008,
 ADBG_CASE_DEFINE(XTEST_TEE_4009, xtest_tee_test_4009,
 		/* Title */
 		"Test TEE Internal API Derive key ECDH",
+		/* Short description */
+		"Short description ...",
+		/* Requirement IDs */
+		"TEE-??",
+		/* How to implement */
+		"Description of how to implement ..."
+		 );
+
+ADBG_CASE_DEFINE(XTEST_TEE_4010, xtest_tee_test_4010,
+		/* Title */
+		"Test TEE Internal API create transient object (negative)",
 		/* Short description */
 		"Short description ...",
 		/* Requirement IDs */
@@ -4980,5 +4992,35 @@ out:
 	Do_ADBG_EndSubCase(c, "Derive ECDH key - algo = 0x%x", pt->algo);
 
 noerror:
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_4010(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+	TEE_ObjectHandle o;
+	static const uint8_t large_key[1024] = { 1, 2, 3, 4, 5, 6 };
+	static const TEE_Attribute attr = {
+		.attributeID = TEE_ATTR_SECRET_VALUE,
+		.content.ref.buffer = (void *)large_key,
+		.content.ref.length = sizeof(large_key),
+	};
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_HMAC_SHA256, 1024, &o)))
+		goto out;
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+		ta_crypt_cmd_populate_transient_object(c, &session, o,
+						       &attr, 1));
+
+out:
 	TEEC_CloseSession(&session);
 }

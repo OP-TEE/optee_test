@@ -224,7 +224,7 @@ TEEC_Result ta_crypt_cmd_populate_transient_object(ADBG_Case_t *c,
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_POPULATE_TRANSIENT_OBJECT, &op,
 				 &ret_orig);
 
-	if (res != TEEC_SUCCESS) {
+	if (res != TEEC_SUCCESS && res != TEEC_ERROR_TARGET_DEAD) {
 		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
 						    ret_orig);
 	}
