@@ -1255,6 +1255,26 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+static void xtest_tee_test_6013(ADBG_Case_t *c)
+{
+	TEEC_Session sess;
+	uint32_t orig;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&sess, TA_STORAGE_CMD_KEY_IN_PERSISTENT,
+				   &op, &orig));
+
+	TEEC_CloseSession(&sess);
+}
+
 ADBG_CASE_DEFINE(
 	XTEST_TEE_6001, xtest_tee_test_6001,
 	/* Title */
@@ -1393,6 +1413,18 @@ ADBG_CASE_DEFINE(
     XTEST_TEE_6012, xtest_tee_test_6012,
     /* Title */
     "Test TEE GP TTA DS init objects",
+    /* Short description */
+    "Short description ...",
+    /* Requirement IDs */
+    "TEE-??",
+    /* How to implement */
+    "Description of how to implement ..."
+);
+
+ADBG_CASE_DEFINE(
+    XTEST_TEE_6013, xtest_tee_test_6013,
+    /* Title */
+    "Key usage in Persistent objects",
     /* Short description */
     "Short description ...",
     /* Requirement IDs */

@@ -32,7 +32,8 @@
 
 TEE_Result ta_storage_cmd_open(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types,
+					   TEE_Param params[4]);
 TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4]);
@@ -45,5 +46,7 @@ TEE_Result ta_storage_cmd_free_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_reset_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
+					    TEE_Param params[4]);
 
 #endif /*STORAGE_H */

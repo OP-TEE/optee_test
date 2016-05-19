@@ -28,6 +28,7 @@
 #include "storage.h"
 
 #include <tee_api.h>
+#include <trace.h>
 
 #define ASSERT_PARAM_TYPE(pt) \
 do { \
@@ -270,3 +271,120 @@ TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 					   params[2].memref.buffer,
 					   &params[2].memref.size);
 }
+
+static TEE_Result check_obj(TEE_ObjectInfo *o1, TEE_ObjectInfo *o2)
+{
+	if ((o1->objectType != o2->objectType) ||
+	    (o1->keySize != o2->keySize) ||
+	    (o1->maxKeySize != o2->maxKeySize) ||
+	    (o1->objectUsage != o2->objectUsage))
+		return TEE_ERROR_GENERIC;
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
+					    TEE_Param params[4])
+{
+	TEE_Result result = TEE_SUCCESS;
+	TEE_ObjectHandle transient_key = (TEE_ObjectHandle)NULL;
+	TEE_ObjectHandle persistent_key = (TEE_ObjectHandle)NULL;
+	TEE_ObjectHandle key = (TEE_ObjectHandle)NULL;
+	TEE_OperationHandle encrypt_op = (TEE_OperationHandle)NULL;
+	TEE_ObjectInfo keyInfo;
+	TEE_ObjectInfo keyInfo2;
+	TEE_ObjectInfo keyInfo3;
+	uint32_t alg = TEE_ALG_AES_CBC_NOPAD;
+	void *IV = NULL;
+	size_t IVlen = 16;
+	size_t key_size = 256;
+	uint32_t objectID = 1;
+	uint32_t flags = TEE_DATA_FLAG_ACCESS_READ |
+			 TEE_DATA_FLAG_ACCESS_WRITE |
+			 TEE_DATA_FLAG_ACCESS_WRITE_META |
+			 TEE_DATA_FLAG_SHARE_READ |
+			 TEE_DATA_FLAG_SHARE_WRITE;
+
+	(void)param_types;
+	(void)params;
+
+	result = TEE_AllocateTransientObject(TEE_TYPE_AES, key_size,
+					     &transient_key);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to Allocate transient object handle : 0x%x",
+		     result);
+		goto cleanup1;
+	}
+
+	result = TEE_GenerateKey(transient_key, key_size, NULL, 0);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to generate a transient key: 0x%x", result);
+		goto cleanup2;
+	}
+
+	TEE_GetObjectInfo1(transient_key, &keyInfo);
+	result = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+					    &objectID, sizeof(objectID),
+					    flags, transient_key, NULL, 0,
+					    &persistent_key);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to create a persistent key: 0x%x", result);
+		goto cleanup2;
+	}
+
+	TEE_GetObjectInfo1(persistent_key, &keyInfo2);
+	result = check_obj(&keyInfo, &keyInfo2);
+	if (result != TEE_SUCCESS) {
+		EMSG("keyInfo and keyInfo2 are different");
+		goto cleanup2;
+	}
+
+	TEE_CloseObject(persistent_key);
+
+	result = TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
+					  &objectID, sizeof(objectID),
+					  flags, &key);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to open persistent key: 0x%x", result);
+		goto cleanup2;
+	}
+
+	TEE_GetObjectInfo(key, &keyInfo3);
+	result = check_obj(&keyInfo3, &keyInfo2);
+	if (result != TEE_SUCCESS) {
+		EMSG("keyInfo2 and keyInfo3 are different");
+		goto cleanup2;
+	}
+
+	result = TEE_AllocateOperation(&encrypt_op, alg, TEE_MODE_ENCRYPT,
+				       keyInfo3.maxObjectSize);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to allocate an operation: 0x%x", result);
+		goto cleanup3;
+	}
+
+	result = TEE_SetOperationKey(encrypt_op, key);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to set operation key: 0x%x", result);
+		goto cleanup4;
+	}
+
+	IV = TEE_Malloc(IVlen, 0);
+	if (!IV) {
+		EMSG("Out of memory for IV.");
+		result = TEE_ERROR_OUT_OF_MEMORY;
+		goto cleanup4;
+	}
+
+	TEE_CipherInit(encrypt_op, IV, IVlen);
+	TEE_Free(IV);
+
+cleanup4:
+	TEE_FreeOperation(encrypt_op);
+cleanup3:
+	TEE_CloseAndDeletePersistentObject1(key);
+cleanup2:
+	TEE_FreeTransientObject(transient_key);
+cleanup1:
+	return result;
+}
+
