@@ -85,7 +85,7 @@ static TEEC_Result run_chunk_access_test(enum storage_benchmark_cmd cmd,
 		uint32_t data_size, uint32_t chunk_size, struct test_record *rec)
 {
 	TEE_Result res;
-	uint32_t spent_time;
+	uint32_t spent_time = 0;
 
 	res = run_test_with_args(cmd, data_size, chunk_size, DO_VERIFY, 0,
 				&spent_time, NULL);
