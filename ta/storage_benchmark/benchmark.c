@@ -135,7 +135,7 @@ static TEE_Result test_write(TEE_ObjectHandle object, size_t data_size,
 	while (remain_bytes) {
 		size_t write_size;
 
-		DMSG("Write data, remain bytes: %u", remain_bytes);
+		DMSG("Write data, remain bytes: %zu", remain_bytes);
 		if (chunk_size > remain_bytes)
 			write_size = remain_bytes;
 		else
@@ -175,7 +175,7 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 	while (remain_bytes) {
 		size_t read_size;
 
-		DMSG("Read data, remain bytes: %d", remain_bytes);
+		DMSG("Read data, remain bytes: %zu", remain_bytes);
 		if (remain_bytes < chunk_size)
 			read_size = remain_bytes;
 		else
