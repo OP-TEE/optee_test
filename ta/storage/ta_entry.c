@@ -118,6 +118,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_STORAGE_CMD_KEY_IN_PERSISTENT:
 		return ta_storage_cmd_key_in_persistent(nParamTypes, pParams);
 
+	case TA_STORAGE_CMD_LOOP:
+		return ta_storage_cmd_loop(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

@@ -388,3 +388,38 @@ cleanup1:
 	return result;
 }
 
+TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4])
+{
+	TEE_ObjectHandle object = TEE_HANDLE_NULL;
+	TEE_Result res;
+	int object_id = 0;
+	uint32_t flags =  TEE_DATA_FLAG_OVERWRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META;
+	int i = 0;
+
+	(void)param_types;
+	(void)params;
+
+	for (i = 0; i < 20; i++) {
+		DMSG("\n\nLOOP : %d", i);
+		object = TEE_HANDLE_NULL;
+		object_id = i;
+		res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+						 &object_id, sizeof(int), flags,
+						 TEE_HANDLE_NULL, NULL, 0,
+						 &object);
+
+		if (res != TEE_SUCCESS) {
+			EMSG("FAIL");
+			return res;
+		}
+
+		res = TEE_CloseAndDeletePersistentObject1(object);
+		if (res != TEE_SUCCESS) {
+			EMSG("FAIL");
+			return res;
+		}
+	}
+
+	return TEE_SUCCESS;
+}
