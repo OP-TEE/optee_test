@@ -48,5 +48,6 @@ TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 					    TEE_Param params[4]);
+TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*STORAGE_H */
