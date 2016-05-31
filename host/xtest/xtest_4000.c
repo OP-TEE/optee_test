@@ -4246,7 +4246,12 @@ out:
 struct key_attrs {
 	const char *name;
 	uint32_t attr;
-	bool keysize_check;
+	/*
+	 * When keysize_check != 0: size of attribute is checked
+	 * Expected value is key_size bits except for DH in which case it is
+	 * the value of keysize_check.
+	 */
+	uint32_t keysize_check;
 };
 
 static bool test_keygen_attributes(ADBG_Case_t *c, TEEC_Session *s,
@@ -4341,8 +4346,7 @@ static bool test_ecc_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 }
 
 static bool test_dh_key_pair(ADBG_Case_t *c, TEEC_Session *s,
-			     uint32_t check_keysize,
-			     TEE_ObjectHandle key, uint32_t key_size)
+			     TEE_ObjectHandle key, uint32_t check_keysize)
 {
 	const struct key_attrs attrs[] = {
 		KEY_ATTR(TEE_ATTR_DH_PRIME, false),
@@ -4352,7 +4356,7 @@ static bool test_dh_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 		KEY_ATTR(TEE_ATTR_DH_X_BITS, false),
 	};
 
-	return test_keygen_attributes(c, s, key, key_size,
+	return test_keygen_attributes(c, s, key, check_keysize,
 				      (struct key_attrs *)&attrs,
 				      ARRAY_SIZE(attrs));
 }
@@ -4423,8 +4427,7 @@ static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 
 	case TEE_TYPE_DH_KEYPAIR:
 		ret_val = ADBG_EXPECT_TRUE(c,
-				test_dh_key_pair(c, s, check_keysize, key,
-						 key_size));
+				test_dh_key_pair(c, s, key, check_keysize));
 		break;
 
 	case TEE_TYPE_DSA_KEYPAIR:
@@ -4537,35 +4540,35 @@ static void xtest_test_keygen_dh(ADBG_Case_t *c, TEEC_Session *session)
 		size_t subprime_len;
 	} key_types[] = {
 		{ 0, 256, XTEST_DH_GK_DATA(keygen_dh256) },
-		{ 1, 256, XTEST_DH_GK_DATA(keygen_dh320) },
+		{ 0, 320, XTEST_DH_GK_DATA(keygen_dh320) },
 		{ 1, 384, XTEST_DH_GK_DATA(keygen_dh384) },
-		{ 1, 256, XTEST_DH_GK_DATA(keygen_dh448) },
+		{ 1, 448, XTEST_DH_GK_DATA(keygen_dh448) },
 		{ 1, 512, XTEST_DH_GK_DATA(keygen_dh512) },
-		{ 1, 288, XTEST_DH_GK_DATA(keygen_dh576) },
+		{ 1, 576, XTEST_DH_GK_DATA(keygen_dh576) },
 		{ 1, 640, XTEST_DH_GK_DATA(keygen_dh640) },
-		{ 1, 352, XTEST_DH_GK_DATA(keygen_dh704) },
+		{ 1, 704, XTEST_DH_GK_DATA(keygen_dh704) },
 		{ 1, 768, XTEST_DH_GK_DATA(keygen_dh768) },
-		{ 1, 416, XTEST_DH_GK_DATA(keygen_dh832) },
+		{ 1, 832, XTEST_DH_GK_DATA(keygen_dh832) },
 		{ 1, 896, XTEST_DH_GK_DATA(keygen_dh896) },
-		{ 1, 480, XTEST_DH_GK_DATA(keygen_dh960) },
+		{ 1, 960, XTEST_DH_GK_DATA(keygen_dh960) },
 		{ 1, 1024, XTEST_DH_GK_DATA(keygen_dh1024) },
-		{ 1, 544, XTEST_DH_GK_DATA(keygen_dh1088) },
+		{ 1, 1088, XTEST_DH_GK_DATA(keygen_dh1088) },
 		{ 1, 1152, XTEST_DH_GK_DATA(keygen_dh1152) },
-		{ 1, 608, XTEST_DH_GK_DATA(keygen_dh1216) },
+		{ 1, 1216, XTEST_DH_GK_DATA(keygen_dh1216) },
 		{ 1, 1280, XTEST_DH_GK_DATA(keygen_dh1280) },
-		{ 1, 672, XTEST_DH_GK_DATA(keygen_dh1344) },
+		{ 1, 1344, XTEST_DH_GK_DATA(keygen_dh1344) },
 		{ 1, 1408, XTEST_DH_GK_DATA(keygen_dh1408) },
-		{ 1, 736, XTEST_DH_GK_DATA(keygen_dh1472) },
+		{ 1, 1472, XTEST_DH_GK_DATA(keygen_dh1472) },
 		{ 1, 1536, XTEST_DH_GK_DATA(keygen_dh1536) },
-		{ 1, 800, XTEST_DH_GK_DATA(keygen_dh1600) },
+		{ 1, 1600, XTEST_DH_GK_DATA(keygen_dh1600) },
 		{ 1, 1664, XTEST_DH_GK_DATA(keygen_dh1664) },
-		{ 1, 864, XTEST_DH_GK_DATA(keygen_dh1728) },
+		{ 1, 1728, XTEST_DH_GK_DATA(keygen_dh1728) },
 		{ 1, 1792, XTEST_DH_GK_DATA(keygen_dh1792) },
-		{ 1, 928, XTEST_DH_GK_DATA(keygen_dh1856) },
+		{ 1, 1856, XTEST_DH_GK_DATA(keygen_dh1856) },
 		{ 1, 1920, XTEST_DH_GK_DATA(keygen_dh1920) },
-		{ 1, 992, XTEST_DH_GK_DATA(keygen_dh1984) },
+		{ 1, 1984, XTEST_DH_GK_DATA(keygen_dh1984) },
 		{ 1, 2048, XTEST_DH_GK_DATA(keygen_dh2048) },
-		{ 1, 256, XTEST_DH_GK_DATA_SUBPRIME(keygen_dh2048_subprime) }
+		{ 1, 2048, XTEST_DH_GK_DATA_SUBPRIME(keygen_dh2048_subprime) }
 	};
 
 
@@ -4605,7 +4608,7 @@ static void xtest_test_keygen_dh(ADBG_Case_t *c, TEEC_Session *session)
 
 		if (!ADBG_EXPECT_TRUE(c,
 			generate_and_test_key(c, session, TEE_TYPE_DH_KEYPAIR,
-				((*key_types[n].private_bits) != 0),
+				*key_types[n].private_bits,
 				key_types[n]. key_size, params, param_count)))
 			break;
 
