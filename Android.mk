@@ -1,5 +1,11 @@
 LOCAL_PATH := $(call my-dir)
 
+## include variants like TA_DEV_KIT_DIR
+## and target of BUILD_OPTEE_OS
+INCLUDE_FOR_BUILD_TA := false
+include $(BUILD_OPTEE_MK)
+INCLUDE_FOR_BUILD_TA :=
+
 VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown)
 OPTEE_CLIENT_PATH ?= $(LOCAL_PATH)/../optee_client
 
@@ -58,6 +64,11 @@ endif
 LOCAL_CFLAGS += -DUSER_SPACE
 LOCAL_CFLAGS += -DTA_DIR=\"/system/lib/optee_armtz\"
 LOCAL_CFLAGS += -pthread
+
+## target BUILD_OPTEE_OS is defined in the common ta build
+## mk file included before, and this BUILD_OPTEE_OS will
+## help to generate the header files under $(TA_DEV_KIT_DIR)/host_include
+LOCAL_ADDITIONAL_DEPENDENCIES := BUILD_OPTEE_OS
 
 include $(BUILD_EXECUTABLE)
 
