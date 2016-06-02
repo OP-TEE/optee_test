@@ -1,7 +1,4 @@
-include $(CLEAR_VARS)
-LOCAL_MODULE :=  d17f73a0-36ef-11e1-984a0002a5d5c51b.ta
-LOCAL_SRC_FILES := ./rpc_test/d17f73a0-36ef-11e1-984a0002a5d5c51b.ta
-LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/optee_armtz
-LOCAL_MODULE_CLASS := EXECUTABLES
-LOCAL_MODULE_TAGS := optional
-include $(BUILD_PREBUILT)
+LOCAL_PATH := $(call my-dir)
+
+local_module :=  d17f73a0-36ef-11e1-984a0002a5d5c51b.ta
+include $(BUILD_OPTEE_MK)

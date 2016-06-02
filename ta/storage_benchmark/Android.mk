@@ -1,7 +1,4 @@
-include $(CLEAR_VARS)
-LOCAL_MODULE :=  f157cda0-550c-11e5-a6fa0002a5d5c51b.ta
-LOCAL_SRC_FILES := storage_benchmark/f157cda0-550c-11e5-a6fa0002a5d5c51b.ta
-LOCAL_MODULE_PATH := $(TARGET_OUT)/lib/optee_armtz
-LOCAL_MODULE_CLASS := EXECUTABLES
-LOCAL_MODULE_TAGS := optional
-include $(BUILD_PREBUILT)
+LOCAL_PATH := $(call my-dir)
+
+local_module := f157cda0-550c-11e5-a6fa0002a5d5c51b.ta
+include $(BUILD_OPTEE_MK)
