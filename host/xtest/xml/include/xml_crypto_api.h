@@ -806,7 +806,7 @@ static TEEC_Result Invoke_Crypto_GetOperationInfoMultiple(
 	 */
 	obuf_size = ((key_exp * 2) + 2) * 4;
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, obuf_size,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 
@@ -917,9 +917,9 @@ static TEEC_Result Invoke_Crypto_InitObjectWithKeys(
 	int tmp_offset = 0;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEMREF_PARTIAL_INPUT)
+			       TEEC_MEM_INPUT)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEMREF_PARTIAL_INPUT)
+			       TEEC_MEM_INPUT)
 
 	/* Serialize the data in format:
 	 * SHARE_MEM01 = (uint32_t)attr_id1|(uint32_t)attr_val1_offset
@@ -1138,7 +1138,7 @@ static TEEC_Result Invoke_Crypto_AEInit(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, nonce_length,
-					TEEC_MEMREF_PARTIAL_INPUT, nonce_length,
+					TEEC_MEM_INPUT, nonce_length,
 					nonce_val)
 
 	op.params[0].value.a = (uint32_t)*oph;
@@ -1180,10 +1180,10 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_encryption(
 	size_t initial_size;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1241,12 +1241,12 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_decryption(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					buffer_encrypted_chunks[chunk_id].size,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					buffer_encrypted_chunks[chunk_id].size,
 					buffer_encrypted_chunks[chunk_id].
 						buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, partd_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, partd_length)
@@ -1298,7 +1298,7 @@ static TEEC_Result Invoke_Crypto_AEUpdateAAD(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, aad_length,
-					TEEC_MEMREF_PARTIAL_INPUT, aad_length,
+					TEEC_MEM_INPUT, aad_length,
 					aad_data)
 
 	op.params[0].value.a = (uint32_t)*oph;
@@ -1338,12 +1338,12 @@ static TEEC_Result Invoke_Crypto_AEEncryptFinal(
 	size_t initial_partd_size, initial_fdata_size;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, partd_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1431,14 +1431,14 @@ static TEEC_Result Invoke_Crypto_AEDecryptFinal(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					buffer_encrypted_chunks[chunk_id].size,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					buffer_encrypted_chunks[chunk_id].size,
 					buffer_encrypted_chunks[chunk_id].
 						buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, partd_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ae_encrypt_tag.size,
-			       TEEC_MEMREF_PARTIAL_INPUT)
+			       TEEC_MEM_INPUT)
 	/* Fill "SharedMem3" with the tag previously
 	 * saved in Invoke_Crypto_AEEncryptFinal
 	 * (with an error (one bit changed) if $IN_caseMac$ = INVALID_MAC)
@@ -1516,7 +1516,7 @@ static TEEC_Result Invoke_Crypto_GenerateRandom(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t ret_orig;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -1573,7 +1573,7 @@ static TEEC_Result Invoke_Crypto_DigestUpdate(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 
 	op.params[0].value.a = (uint32_t)*oph;
@@ -1605,10 +1605,10 @@ static TEEC_Result Invoke_Crypto_DigestDoFinal(
 	size_t initial_size;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1675,10 +1675,10 @@ static TEEC_Result Invoke_Crypto_AsymmetricSignDigest(
 	/* Fill SharedMem1 with the previously stored Digest
 		value after TEE_DigestDoFinal */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					saved_digest.size, saved_digest.buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1733,10 +1733,10 @@ static TEEC_Result Invoke_Crypto_AsymmetricVerifyDigest(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					saved_digest.size, saved_digest.buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
-			       TEEC_MEMREF_PARTIAL_INPUT)
+			       TEEC_MEM_INPUT)
 
 	struct crypto_buffer signed_dgst;
 	CRYPTO_INIT(signed_dgst);
@@ -1788,10 +1788,10 @@ static TEEC_Result Invoke_Crypto_AsymmetricEncrypt(
 
 	/* Fill SharedMem1 with full_data */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT, fdata_length,
+					TEEC_MEM_INPUT, fdata_length,
 					full_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1854,11 +1854,11 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 	/* Fill SharedMem1 with buffer_asym_encrypted */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					buffer_asym_encrypted.size,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					buffer_asym_encrypted.size,
 					buffer_asym_encrypted.buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1946,7 +1946,7 @@ static TEEC_Result Invoke_Crypto_MACInit(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM06, iv_len,
-					TEEC_MEMREF_PARTIAL_INPUT, iv_len, iv)
+					TEEC_MEM_INPUT, iv_len, iv)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM06, iv_len)
@@ -1983,7 +1983,7 @@ static TEEC_Result Invoke_Crypto_MACUpdate(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 
 	op.params[0].value.a = (uint32_t)*oph;
@@ -2015,10 +2015,10 @@ static TEEC_Result Invoke_Crypto_MACCompareFinal(
 
 	/* Fill SharedMem1 with part_data */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
-			       TEEC_MEMREF_PARTIAL_INPUT)
+			       TEEC_MEM_INPUT)
 
 	/* Fill SharedMem2 with valid computed MAC of full_data */
 	struct crypto_buffer mac;
@@ -2067,10 +2067,10 @@ static TEEC_Result Invoke_Crypto_MACComputeFinal(
 
 	/* Fill SharedMem1 with part_data */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -2130,7 +2130,7 @@ static TEEC_Result Invoke_Crypto_CipherInit(
 	uint32_t ret_orig;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, iv_len,
-					TEEC_MEMREF_PARTIAL_INPUT, iv_len, iv)
+					TEEC_MEM_INPUT, iv_len, iv)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -2173,10 +2173,10 @@ static TEEC_Result Invoke_Crypto_CipherUpdate(
 	size_t initial_size;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, partd_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -2237,12 +2237,12 @@ static TEEC_Result Invoke_Crypto_CipherDoFinal(
 	size_t initial_size;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, partd_length,
-					TEEC_MEMREF_PARTIAL_INPUT, partd_length,
+					TEEC_MEM_INPUT, partd_length,
 					part_data)
 	/* used fulld_length instead of partd_length as
 		described in the Adaptation layer specification.*/
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fulld_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)*oph;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -2349,10 +2349,10 @@ static TEEC_Result calculate_digest(
 
 	/*CMD_DigestDoFinal*/
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, data_length,
-					TEEC_MEMREF_PARTIAL_INPUT, data_length,
+					TEEC_MEM_INPUT, data_length,
 					data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, data_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)op1;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
@@ -2417,10 +2417,10 @@ static TEEC_Result sign_digest(
 	/* Fill SharedMem1 with the previously stored
 		Digest value after TEE_DigestDoFinal*/
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, 512,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					in_dgst->size, in_dgst->buffer)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, 512,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)op1;
 	if (in_dgst->size != 0) {
@@ -2487,12 +2487,12 @@ static bool verify_digest(
 	}
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, 512,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					saved_digest.size, saved_digest.buffer)
 	/* Fill "SharedMem2" with signature based on the previously
 		stored Digest value after TEE_DigestDoFinal */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, 512,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					in_sdgst->size, in_sdgst->buffer)
 
 	op.params[0].value.a = (uint32_t)op1;
@@ -2558,10 +2558,10 @@ static TEEC_Result mac_compute_final(
 	/* CMD_MACComputeFinal */
 	/* Fill SharedMem1 with full_data */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT, fdata_length,
+					TEEC_MEM_INPUT, fdata_length,
 					full_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, fdata_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)op1;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
@@ -2624,7 +2624,7 @@ static TEEC_Result cipher_do_final(
 	}
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					saved_cipher_iv.size,
 					saved_cipher_iv.buffer)
 
@@ -2647,10 +2647,10 @@ static TEEC_Result cipher_do_final(
 	/* CMD_CipherDoFinal */
 	/* Fill SharedMem1 with full_data */
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, fdata_length,
-					TEEC_MEMREF_PARTIAL_INPUT, fdata_length,
+					TEEC_MEM_INPUT, fdata_length,
 					full_data)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, fdata_length,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	op.params[0].value.a = (uint32_t)op1;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,

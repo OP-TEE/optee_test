@@ -364,15 +364,14 @@ static TEEC_Result Invoke_GetPropertyAsXXX_withoutEnum(
 
 	nameLen = strlen(name) + 1;
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEMREF_PARTIAL_INPUT, nameLen,
-					name)
+					TEEC_MEM_INPUT, nameLen, name)
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 1,
-				       TEEC_MEMREF_PARTIAL_OUTPUT)
+				       TEEC_MEM_OUTPUT)
 	} else {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, BIG_SIZE,
-				       TEEC_MEMREF_PARTIAL_OUTPUT)
+				       TEEC_MEM_OUTPUT)
 	}
 
 	op.params[0].value.a = (uint32_t)propSet;
@@ -452,7 +451,7 @@ static TEEC_Result Invoke_SetInstanceData(
 	uint32_t org;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEMREF_PARTIAL_INPUT,
+					TEEC_MEM_INPUT,
 					strlen(data) + 1, data)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
@@ -477,7 +476,7 @@ static TEEC_Result Invoke_GetInstanceData(
 	uint32_t org;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -514,7 +513,7 @@ static TEEC_Result Invoke_ProcessInvokeTAOpenSession(
 	uint32_t org;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEMREF_PARTIAL_INPUT, 16, UUID)
+					TEEC_MEM_INPUT, 16, UUID)
 
 	op.params[0].value.a = TACmd;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, 16)
@@ -654,10 +653,10 @@ static TEEC_Result Invoke_GetPropertyName(
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, 1,
-				       TEEC_MEMREF_PARTIAL_OUTPUT)
+				       TEEC_MEM_OUTPUT)
 	} else {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-				       TEEC_MEMREF_PARTIAL_OUTPUT)
+				       TEEC_MEM_OUTPUT)
 	}
 
 	op.params[0].value.a = enumerator;

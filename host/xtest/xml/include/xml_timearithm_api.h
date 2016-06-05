@@ -529,10 +529,10 @@ static TEEC_Result Invoke_BigIntCmpS32(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -573,9 +573,9 @@ static TEEC_Result Invoke_BigIntShiftRight(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, ((size_N2 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -658,12 +658,12 @@ static TEEC_Result Invoke_BigIntDiv_Remain(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -735,12 +735,12 @@ static TEEC_Result Invoke_BigIntDiv_Quotient(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -812,12 +812,12 @@ static TEEC_Result Invoke_BigIntAdd(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -885,7 +885,7 @@ static TEEC_Result Invoke_BigIntIsProbablePrime(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -920,13 +920,13 @@ static TEEC_Result Invoke_BigIntConvert_and_ComputeFMM(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM03,
 					((size_N3 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value3)
+					TEEC_MEM_INPUT, value3)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -972,12 +972,12 @@ static TEEC_Result Invoke_BigIntAddMod(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1054,12 +1054,12 @@ static TEEC_Result Invoke_BigIntSubMod(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1132,7 +1132,7 @@ static TEEC_Result Invoke_BigIntGetBit(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1172,12 +1172,12 @@ static TEEC_Result Invoke_BigIntMulMod(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1267,10 +1267,10 @@ static TEEC_Result Invoke_BigIntComputeExtendedGcd(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1307,7 +1307,7 @@ static TEEC_Result Invoke_BigIntGetBitCount(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1346,12 +1346,12 @@ static TEEC_Result Invoke_BigIntSub(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1422,9 +1422,9 @@ static TEEC_Result Invoke_BigIntNeg(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1492,10 +1492,10 @@ static TEEC_Result Invoke_BigIntCmp(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1577,12 +1577,12 @@ static TEEC_Result Invoke_BigIntMul(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1653,12 +1653,12 @@ static TEEC_Result Invoke_BigIntInvMod(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1747,9 +1747,9 @@ static TEEC_Result Invoke_BigIntSquare(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEMREF_PARTIAL_OUTPUT)
+			       TEEC_MEM_OUTPUT)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1826,10 +1826,10 @@ static TEEC_Result Invoke_BigIntRelativePrime(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value1)
+					TEEC_MEM_INPUT, value1)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEMREF_PARTIAL_INPUT, value2)
+					TEEC_MEM_INPUT, value2)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
