@@ -10,8 +10,10 @@ endif
 
 ifneq ($V,1)
 	q := @
+	echo := @echo
 else
 	q :=
+	echo := @:
 endif
 
 .PHONY: all
@@ -263,3 +265,11 @@ else
 patch:
 	$(q) echo "Please define CFG_GP_PACKAGE_PATH" && false
 endif
+
+install:
+	$(echo) '  INSTALL ${DESTDIR}/lib/optee_armtz'
+	$(q)mkdir -p ${DESTDIR}/lib/optee_armtz
+	$(q)find $(out-dir) -name \*.ta -exec cp -a {} ${DESTDIR}/lib/optee_armtz \;
+	$(echo) '  INSTALL ${DESTDIR}/bin'
+	$(q)mkdir -p ${DESTDIR}/bin
+	$(q)cp -a $(out-dir)/xtest/xtest ${DESTDIR}/bin
