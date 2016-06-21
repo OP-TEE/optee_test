@@ -545,9 +545,28 @@ static TEEC_Result Invoke_CheckMemoryAccessRight(
 	TEEC_Result res = TEE_ERROR_NOT_SUPPORTED;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
+	uint32_t memory_flag;
 
-	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       memoryParamType)
+	switch (memoryParamType) {
+	case TEEC_MEMREF_TEMP_INPUT:
+	case TEEC_MEMREF_PARTIAL_INPUT:
+		memory_flag = TEEC_MEM_INPUT;
+		break;
+	case TEEC_MEMREF_TEMP_OUTPUT:
+	case TEEC_MEMREF_PARTIAL_OUTPUT:
+		memory_flag = TEEC_MEM_OUTPUT;
+		break;
+	case TEEC_MEMREF_TEMP_INOUT:
+	case TEEC_MEMREF_PARTIAL_INOUT:
+	case TEEC_MEMREF_WHOLE:
+		memory_flag = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+		break;
+	default:
+		memory_flag = 0;
+		break;
+	}
+
+	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE, memory_flag)
 
 	op.params[0].value.a = memoryAccessFlags;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
