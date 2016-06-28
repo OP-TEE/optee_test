@@ -1185,6 +1185,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
 	Do_ADBG_EndSubCase(c, "Using small concurrency TA");
 
+#ifndef CFG_PAGED_USER_TA
 	Do_ADBG_BeginSubCase(c, "Using large concurrency TA");
 	mean_concurrency = 0;
 	for (i = 0; i < nb_loops; i++) {
@@ -1197,4 +1198,5 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_Log("    Number of parallel threads: %d", NUM_THREADS);
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
 	Do_ADBG_EndSubCase(c, "Using large concurrency TA");
+#endif
 }
