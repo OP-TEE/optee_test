@@ -26,6 +26,7 @@
  */
 #include "testframework.h"
 #include <assert.h>
+#include <compiler.h>
 
 #define TEST_GCD(stra, strb)                  \
 do {                                          \
@@ -119,7 +120,7 @@ static void test_extended_gcd_special(void)
 
 static void test_relative_prime(void)
 {
-	bool res;
+	bool res __maybe_unused;
 
 	DEF_BIGINT(x, 2048);
 	DEF_BIGINT(y, 2048);
