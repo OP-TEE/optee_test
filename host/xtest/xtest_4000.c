@@ -40,6 +40,7 @@ static void xtest_tee_test_4007(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4008(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
+static void xtest_tee_test_4011(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_4001, xtest_tee_test_4001,
 		/* Title */
@@ -154,6 +155,17 @@ ADBG_CASE_DEFINE(XTEST_TEE_4009, xtest_tee_test_4009,
 ADBG_CASE_DEFINE(XTEST_TEE_4010, xtest_tee_test_4010,
 		/* Title */
 		"Test TEE Internal API create transient object (negative)",
+		/* Short description */
+		"Short description ...",
+		/* Requirement IDs */
+		"TEE-??",
+		/* How to implement */
+		"Description of how to implement ..."
+		 );
+
+ADBG_CASE_DEFINE(XTEST_TEE_4011, xtest_tee_test_4011,
+		/* Title */
+		"Test TEE Internal API Bleichenbacher attack (negative)",
 		/* Short description */
 		"Short description ...",
 		/* Requirement IDs */
@@ -5026,4 +5038,141 @@ static void xtest_tee_test_4010(ADBG_Case_t *c)
 
 out:
 	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_4011(ADBG_Case_t *c)
+{
+	TEEC_Session s = { 0 };
+	size_t key_size = 512;
+	TEE_ObjectHandle key;
+	TEE_OperationHandle ops;
+	TEE_OperationHandle opv;
+	TEE_OperationHandle ope;
+	TEE_OperationHandle opd;
+	uint32_t ret_orig;
+	uint8_t in[TEE_SHA1_HASH_SIZE];
+	uint8_t out[1024];
+	uint8_t tmp[1024];
+	size_t out_size;
+	size_t tmp_size;
+	size_t n;
+	size_t m;
+	size_t i = 0;
+
+	/* Setup session, initialize message to sign, create a keypair */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(&s,
+			&crypt_user_ta_uuid, NULL, &ret_orig)))
+		return;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_random_number_generate(c,
+			&s, in, sizeof(in))))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_transient_object(
+			c, &s, TEE_TYPE_RSA_KEYPAIR, key_size, &key)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_generate_key(c, &s,
+			key, key_size, NULL, 0)))
+		goto out;
+
+	/* Allocate operations for sign, verify, encrypt and decrypt */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
+			&ops, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_SIGN,
+			key_size)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
+			&opv, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_VERIFY,
+			key_size)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
+			&ope, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT, key_size)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_allocate_operation(c, &s,
+			&opd, TEE_ALG_RSA_NOPAD, TEE_MODE_DECRYPT, key_size)))
+		goto out;
+
+	/* Assign the keypair to all operations */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &s, ops, key)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &s, opv, key)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &s, ope, key)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &s, opd, key)))
+		goto out;
+
+	/*
+	 * The core of the test case is inspired by the one in libtomcrypt:
+	 * https://github.com/libtom/libtomcrypt/blob/6ad52252688bb34f90b5e79da4830a927e87b81f/testprof/rsa_test.c#L398
+	 *
+	 * Testcase for Bleichenbacher attack
+	 *
+	 * (1) Create a valid signature
+	 * (2) Check that it can be verified
+	 * (3) Transform the package to fetch plain text (using the encrypt
+	 *     operation in GP TEE Internal API)
+	 * (4) Forge the structure of PKCS#1-EMSA encoded data
+	 * (4.1) Search for start and end of the padding string
+	 * (4.2) Move the signature to the front of the padding string
+	 * (4.3) Zero the message until the end
+	 * (5) Transform the package back (using the decrypt operation in
+	 *     GP TEE Internal API)
+	 * (6) The result should not be valid if the implementation is robust.
+	 */
+
+
+	for (i = 0; i < 9; i++) {
+		Do_ADBG_Log("Iteration %zu", i);
+
+		/* 1 */
+		out_size = sizeof(out);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_asymmetric_sign(c, &s, ops, NULL, 0,
+				in, sizeof(in), out, &out_size)))
+			goto out;
+
+		/* 2 */
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_asymmetric_verify(c, &s, opv, NULL, 0,
+				in, sizeof(in), out, out_size)))
+			goto out;
+
+		/* 3 */
+		tmp_size = sizeof(tmp);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_asymmetric_encrypt(c, &s, ope, NULL, 0,
+				out, out_size, tmp, &tmp_size)))
+			goto out;
+
+		/* 4.1 */
+		for (n = 0; n < tmp_size; n++)
+			if (tmp[n] == 0xff)
+				break;
+		for (m = n + 1; m < tmp_size; m++)
+			if (tmp[m] != 0xff)
+				break;
+		/* 4.2 */
+		memmove(tmp + n + i, tmp + m, tmp_size - m);
+		/* 4.3 */
+		for (n = n + tmp_size - m + i; n < tmp_size; n++)
+			tmp[n] = 0;
+
+		/* 5 */
+		out_size = sizeof(out);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_asymmetric_decrypt(c, &s, opd, NULL, 0,
+				tmp, tmp_size, out, &out_size)))
+			goto out;
+
+		/* 6 */
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_SIGNATURE_INVALID,
+			ta_crypt_cmd_asymmetric_verify(c, &s, opv, NULL, 0,
+				in, sizeof(in), out, out_size)))
+			goto out;
+	}
+
+out:
+	TEEC_CloseSession(&s);
 }
