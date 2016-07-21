@@ -832,6 +832,17 @@ TEE_Result ta_entry_wait(uint32_t param_types, TEE_Param params[4])
 	return res;
 }
 
+static void undef_instr(void)
+{
+#if defined(ARM64)
+	__asm__(".word 0x0");
+#elif defined(ARM32)
+	__asm__(".word 0xe7ffffff");
+#else
+#error "Unsupported architecture"
+#endif
+}
+
 TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 {
 	long stack;
@@ -854,10 +865,7 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 		((void (*)(void))(stack_addr + 0x40000000)) ();
 		break;
 	case 5:
-		{
-			static const uint32_t my_undef = 0xffffffff;
-			((void (*)(void))(uintptr_t) &my_undef) ();
-		}
+		undef_instr();
 		break;
 	default:
 		break;
