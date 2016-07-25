@@ -135,9 +135,11 @@ static TEEC_Result obj_open(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[0].tmpref.size = id_size;
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
+	op.params[2].value.a = TEE_STORAGE_PRIVATE;
 
 	op.paramTypes = TEEC_PARAM_TYPES(
-		TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INOUT, TEEC_NONE, TEEC_NONE);
+		TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INOUT, TEEC_VALUE_INPUT,
+		TEEC_NONE);
 
 	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_OPEN, &op, &org);
 
@@ -161,7 +163,7 @@ static TEEC_Result obj_create(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
 	op.params[2].value.a = attr;
-	op.params[2].value.b = 0;
+	op.params[2].value.b = TEE_STORAGE_PRIVATE;
 	op.params[3].tmpref.buffer = data;
 	op.params[3].tmpref.size = data_size;
 

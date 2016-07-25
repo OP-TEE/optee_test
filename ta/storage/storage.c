@@ -45,10 +45,11 @@ TEE_Result ta_storage_cmd_open(uint32_t param_types, TEE_Param params[4])
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
-			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_VALUE_INOUT,
+			   TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_NONE));
 
-	res = TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
+	res = TEE_OpenPersistentObject(params[2].value.a,
 					params[0].memref.buffer,
 					params[0].memref.size,
 					params[1].value.a, &o);
@@ -68,7 +69,7 @@ TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4])
 			   TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT));
 
-	res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+	res = TEE_CreatePersistentObject(params[2].value.b,
 		 params[0].memref.buffer, params[0].memref.size,
 		 params[1].value.a,
 		 (TEE_ObjectHandle)(uintptr_t)params[2].value.a,
@@ -84,11 +85,11 @@ TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types,
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
-			   TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+	res = TEE_CreatePersistentObject(params[1].value.a,
 		 params[0].memref.buffer, params[0].memref.size,
 		 TEE_DATA_FLAG_OVERWRITE,
 		 NULL, NULL, 0, NULL);
@@ -236,7 +237,7 @@ TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4])
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	return TEE_StartPersistentObjectEnumerator(oe, TEE_STORAGE_PRIVATE);
+	return TEE_StartPersistentObjectEnumerator(oe, params[0].value.b);
 }
 
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
@@ -304,8 +305,9 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 			 TEE_DATA_FLAG_SHARE_READ |
 			 TEE_DATA_FLAG_SHARE_WRITE;
 
-	(void)param_types;
-	(void)params;
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
 	result = TEE_AllocateTransientObject(TEE_TYPE_AES, key_size,
 					     &transient_key);
@@ -322,7 +324,7 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 	}
 
 	TEE_GetObjectInfo1(transient_key, &keyInfo);
-	result = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+	result = TEE_CreatePersistentObject(params[0].value.a,
 					    &objectID, sizeof(objectID),
 					    flags, transient_key, NULL, 0,
 					    &persistent_key);
@@ -340,7 +342,7 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 
 	TEE_CloseObject(persistent_key);
 
-	result = TEE_OpenPersistentObject(TEE_STORAGE_PRIVATE,
+	result = TEE_OpenPersistentObject(params[0].value.a,
 					  &objectID, sizeof(objectID),
 					  flags, &key);
 	if (result != TEE_SUCCESS) {
@@ -397,14 +399,16 @@ TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4])
 			  TEE_DATA_FLAG_ACCESS_WRITE_META;
 	int i = 0;
 
-	(void)param_types;
 	(void)params;
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
 	for (i = 0; i < 20; i++) {
 		DMSG("\n\nLOOP : %d", i);
 		object = TEE_HANDLE_NULL;
 		object_id = i;
-		res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
+		res = TEE_CreatePersistentObject(params[0].value.a,
 						 &object_id, sizeof(int), flags,
 						 TEE_HANDLE_NULL, NULL, 0,
 						 &object);

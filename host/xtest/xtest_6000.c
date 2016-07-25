@@ -21,10 +21,22 @@
 #include <tee_client_api.h>
 #include <ta_storage.h>
 #include <tee_api_defines.h>
+#include <tee_api_defines_extensions.h>
 #include <tee_api_types.h>
 #ifdef WITH_GP_TESTS
 #include <TTA_DS_protocol.h>
 #endif
+#include <util.h>
+
+static uint32_t storage_ids[] = {
+	TEE_STORAGE_PRIVATE,
+#ifdef CFG_REE_FS
+	TEE_STORAGE_PRIVATE_REE,
+#endif
+#ifdef CFG_RPMB_FS
+	TEE_STORAGE_PRIVATE_RPMB,
+#endif
+};
 
 static uint8_t file_00[] = {
 	0x00, 0x6E, 0x04, 0x57, 0x08, 0xFB, 0x71, 0x96,
@@ -64,7 +76,7 @@ static uint8_t data_01[] = {
 };
 
 static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
-			   uint32_t flags, uint32_t *obj)
+			   uint32_t flags, uint32_t *obj, uint32_t storage_id)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
@@ -74,9 +86,10 @@ static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[0].tmpref.size = id_size;
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
+	op.params[2].value.a = storage_id;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
-					 TEEC_VALUE_INOUT, TEEC_NONE,
+					 TEEC_VALUE_INOUT, TEEC_VALUE_INPUT,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_OPEN, &op, &org);
@@ -89,7 +102,8 @@ static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
 
 static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 			     uint32_t flags, uint32_t attr, void *data,
-			     uint32_t data_size, uint32_t *obj)
+			     uint32_t data_size, uint32_t *obj,
+			     uint32_t storage_id)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
@@ -100,7 +114,7 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
 	op.params[2].value.a = attr;
-	op.params[2].value.b = 0;
+	op.params[2].value.b = storage_id;
 	op.params[3].tmpref.buffer = data;
 	op.params[3].tmpref.size = data_size;
 
@@ -117,7 +131,7 @@ static TEEC_Result fs_create(TEEC_Session *sess, void *id, uint32_t id_size,
 }
 
 static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id,
-				       uint32_t id_size)
+				       uint32_t id_size, uint32_t storage_id)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res;
@@ -125,9 +139,10 @@ static TEEC_Result fs_create_overwrite(TEEC_Session *sess, void *id,
 
 	op.params[0].tmpref.buffer = id;
 	op.params[0].tmpref.size = id_size;
+	op.params[1].value.a = storage_id;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
-					 TEEC_NONE, TEEC_NONE,
+					 TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_CREATE_OVERWRITE, &op, &org);
@@ -280,7 +295,8 @@ static TEEC_Result fs_free_enum(TEEC_Session *sess, uint32_t e)
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_FREE_ENUM, &op, &org);
 }
 
-static TEEC_Result fs_start_enum(TEEC_Session *sess, uint32_t e)
+static TEEC_Result fs_start_enum(TEEC_Session *sess, uint32_t e,
+				 uint32_t storage_id)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
@@ -289,6 +305,7 @@ static TEEC_Result fs_start_enum(TEEC_Session *sess, uint32_t e)
 					 TEEC_NONE, TEEC_NONE);
 
 	op.params[0].value.a = e;
+	op.params[0].value.b = storage_id;
 
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_START_ENUM, &op, &org);
 }
@@ -314,7 +331,7 @@ static TEEC_Result fs_next_enum(TEEC_Session *sess, uint32_t e, void *obj_info,
 }
 
 /* trunc */
-static void test_truncate_file_length(ADBG_Case_t *c)
+static void test_truncate_file_length(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -332,7 +349,7 @@ static void test_truncate_file_length(ADBG_Case_t *c)
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_READ |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* trunc */
@@ -360,7 +377,7 @@ exit:
 }
 
 /* extend */
-static void test_extend_file_length(ADBG_Case_t *c)
+static void test_extend_file_length(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -379,7 +396,7 @@ static void test_extend_file_length(ADBG_Case_t *c)
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_READ |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* extend */
@@ -409,7 +426,7 @@ exit:
 }
 
 /* file hole */
-static void test_file_hole(ADBG_Case_t *c)
+static void test_file_hole(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -428,7 +445,7 @@ static void test_file_hole(ADBG_Case_t *c)
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_READ |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* seek */
@@ -622,7 +639,7 @@ static TEEC_Result ds_null_close_free_reset(TEEC_Session *sess)
 #endif
 
 /* create */
-static void xtest_tee_test_6001(ADBG_Case_t *c)
+static void xtest_tee_test_6001_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -636,7 +653,7 @@ static void xtest_tee_test_6001(ADBG_Case_t *c)
 		fs_create(&sess, file_00, sizeof(file_00),
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* clean */
@@ -647,8 +664,22 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+#define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)			     \
+static void test_name(ADBG_Case_t *c)					     \
+{									     \
+	size_t i;							     \
+									     \
+	for (i = 0; i < ARRAY_SIZE(storage_ids); i++) {			     \
+		Do_ADBG_BeginSubCase(c, "Storage id: %08x", storage_ids[i]); \
+		test_name##_single(c, storage_ids[i]);			     \
+		Do_ADBG_EndSubCase(c, "Storage id: %08x", storage_ids[i]);   \
+	}								     \
+}
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6001)
+
 /* open */
-static void xtest_tee_test_6002(ADBG_Case_t *c)
+static void xtest_tee_test_6002_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -661,7 +692,7 @@ static void xtest_tee_test_6002(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_01, sizeof(file_01),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -669,7 +700,7 @@ static void xtest_tee_test_6002(ADBG_Case_t *c)
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_01, sizeof(file_01),
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -677,7 +708,7 @@ static void xtest_tee_test_6002(ADBG_Case_t *c)
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_01, sizeof(file_01),
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	/* clean */
@@ -688,8 +719,10 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6002)
+
 /* read */
-static void xtest_tee_test_6003(ADBG_Case_t *c)
+static void xtest_tee_test_6003_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -704,7 +737,7 @@ static void xtest_tee_test_6003(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_02, sizeof(file_02),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj)))
+			  sizeof(data_01), &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -713,7 +746,7 @@ static void xtest_tee_test_6003(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_02, sizeof(file_02),
 			TEE_DATA_FLAG_ACCESS_READ |
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
@@ -729,8 +762,10 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6003)
+
 /* write */
-static void xtest_tee_test_6004(ADBG_Case_t *c)
+static void xtest_tee_test_6004_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -746,7 +781,7 @@ static void xtest_tee_test_6004(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_02, sizeof(file_02),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj)))
+			  sizeof(data_01), &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -755,7 +790,7 @@ static void xtest_tee_test_6004(ADBG_Case_t *c)
 	/* write new data */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_02, sizeof(file_02),
-			TEE_DATA_FLAG_ACCESS_WRITE, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE, &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -769,7 +804,7 @@ static void xtest_tee_test_6004(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_02, sizeof(file_02),
 			TEE_DATA_FLAG_ACCESS_READ |
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
@@ -785,8 +820,10 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6004)
+
 /* seek */
-static void xtest_tee_test_6005(ADBG_Case_t *c)
+static void xtest_tee_test_6005_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -804,7 +841,7 @@ static void xtest_tee_test_6005(ADBG_Case_t *c)
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_READ |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* seek */
@@ -826,8 +863,10 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6005)
+
 /* unlink */
-static void xtest_tee_test_6006(ADBG_Case_t *c)
+static void xtest_tee_test_6006_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -841,7 +880,7 @@ static void xtest_tee_test_6006(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_01, sizeof(file_01),
 			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
-			  sizeof(data_00), &obj)))
+			  sizeof(data_00), &obj, storage_id)))
 		goto exit;
 
 	/* del & close */
@@ -851,29 +890,33 @@ static void xtest_tee_test_6006(ADBG_Case_t *c)
 	/* check result */
 	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ITEM_NOT_FOUND,
 		fs_open(&sess, file_01, sizeof(file_01),
-			TEE_DATA_FLAG_ACCESS_READ, &obj)))
+			TEE_DATA_FLAG_ACCESS_READ, &obj, storage_id)))
 		goto exit;
 
 exit:
 	TEEC_CloseSession(&sess);
 }
 
-static void xtest_tee_test_6007(ADBG_Case_t *c)
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6006)
+
+static void xtest_tee_test_6007_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	Do_ADBG_BeginSubCase(c, "Test truncate file length");
-	test_truncate_file_length(c);
+	test_truncate_file_length(c, storage_id);
 	Do_ADBG_EndSubCase(c, "Test truncate file length");
 
 	Do_ADBG_BeginSubCase(c, "Test extend file length");
-	test_extend_file_length(c);
+	test_extend_file_length(c, storage_id);
 	Do_ADBG_EndSubCase(c, "Test extend file length");
 
 	Do_ADBG_BeginSubCase(c, "Test file hole");
-	test_file_hole(c);
+	test_file_hole(c, storage_id);
 	Do_ADBG_EndSubCase(c, "Test file hole");
 }
 
-static void xtest_tee_test_6008(ADBG_Case_t *c)
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6007)
+
+static void xtest_tee_test_6008_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj;
@@ -889,7 +932,7 @@ static void xtest_tee_test_6008(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_02, sizeof(file_02),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj)))
+			  sizeof(data_01), &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -898,7 +941,7 @@ static void xtest_tee_test_6008(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_02, sizeof(file_02),
 			TEE_DATA_FLAG_ACCESS_WRITE |
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	/* write new data */
@@ -918,7 +961,7 @@ static void xtest_tee_test_6008(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_03, sizeof(file_03),
 			TEE_DATA_FLAG_ACCESS_READ |
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
@@ -935,7 +978,9 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
-static void xtest_tee_test_6009(ADBG_Case_t *c)
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6008)
+
+static void xtest_tee_test_6009_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t obj0;
@@ -954,21 +999,21 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_00, sizeof(file_00),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj0)))
+			  sizeof(data_01), &obj0, storage_id)))
 		goto exit;
 
 	/* create file 01 */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_01, sizeof(file_01),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj1)))
+			  sizeof(data_01), &obj1, storage_id)))
 		goto exit;
 
 	/* create file 02 */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_02, sizeof(file_02),
 			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
-			  sizeof(data_01), &obj2)))
+			  sizeof(data_01), &obj2, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj0)))
@@ -984,7 +1029,7 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_alloc_enum(&sess, &e)))
 		goto exit;
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_start_enum(&sess, e)))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_start_enum(&sess, e, storage_id)))
 		goto exit;
 
 	/* get 00 */
@@ -1013,7 +1058,7 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 	/* clean */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_00, sizeof(file_00),
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj0)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj0, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj0)))
@@ -1021,7 +1066,7 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_01, sizeof(file_01),
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj1)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj1, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj1)))
@@ -1029,7 +1074,7 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_open(&sess, file_02, sizeof(file_02),
-			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj2)))
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj2, storage_id)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj2)))
@@ -1038,6 +1083,8 @@ static void xtest_tee_test_6009(ADBG_Case_t *c)
 exit:
 	TEEC_CloseSession(&sess);
 }
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6009)
 
 #ifdef WITH_GP_TESTS
 static void xtest_tee_test_6010(ADBG_Case_t *c)
@@ -1212,7 +1259,7 @@ exit:
 }
 #endif
 
-static void xtest_tee_test_6012(ADBG_Case_t *c)
+static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t orig;
@@ -1223,7 +1270,7 @@ static void xtest_tee_test_6012(ADBG_Case_t *c)
 		return;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
+		fs_create_overwrite(&sess, file_04, sizeof(file_04), storage_id)))
 		goto exit;
 
 	TEEC_CloseSession(&sess);
@@ -1234,7 +1281,8 @@ static void xtest_tee_test_6012(ADBG_Case_t *c)
 		return;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_create_overwrite(&sess, file_04, sizeof(file_04))))
+		fs_create_overwrite(&sess, file_04, sizeof(file_04),
+				    storage_id)))
 		goto exit;
 
 	/*
@@ -1244,7 +1292,9 @@ static void xtest_tee_test_6012(ADBG_Case_t *c)
 	 if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_04, sizeof(file_04),
 			  TEE_DATA_FLAG_ACCESS_WRITE |
-			  TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj)))
+			  TEE_DATA_FLAG_ACCESS_WRITE_META |
+			  TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj,
+			  storage_id)))
 			goto exit;
 
 	/* clean */
@@ -1255,7 +1305,9 @@ exit:
 	TEEC_CloseSession(&sess);
 }
 
-static void xtest_tee_test_6013(ADBG_Case_t *c)
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6012)
+
+static void xtest_tee_test_6013_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t orig;
@@ -1265,7 +1317,8 @@ static void xtest_tee_test_6013(ADBG_Case_t *c)
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
 		return;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE,
+	op.params[0].value.a = storage_id;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 
 	ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1275,7 +1328,9 @@ static void xtest_tee_test_6013(ADBG_Case_t *c)
 	TEEC_CloseSession(&sess);
 }
 
-static void xtest_tee_test_6014(ADBG_Case_t *c)
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6013)
+
+static void xtest_tee_test_6014_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t orig;
@@ -1285,7 +1340,8 @@ static void xtest_tee_test_6014(ADBG_Case_t *c)
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
 		return;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE,
+	op.params[0].value.a = storage_id;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 
 	ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1293,6 +1349,8 @@ static void xtest_tee_test_6014(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&sess);
 }
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6014)
 
 ADBG_CASE_DEFINE(
 	XTEST_TEE_6001, xtest_tee_test_6001,

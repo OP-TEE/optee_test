@@ -117,6 +117,9 @@ endif
 ifeq ($(CFG_REE_FS),y)
 CFLAGS += -DCFG_REE_FS
 endif
+ifeq ($(CFG_RPMB_FS),y)
+CFLAGS += -DCFG_RPMB_FS
+endif
 
 ifndef CFG_GP_PACKAGE_PATH
 CFLAGS += -Wall -Wcast-align -Werror \
