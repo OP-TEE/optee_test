@@ -18,6 +18,8 @@
 #ifdef USER_SPACE
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 #include "xtest_test.h"
@@ -504,55 +506,57 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 #define TA_DIR "/lib/optee_armtz"
 #endif
 
-static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
-			const char *extra_suffix)
-{
-	static const char ta_dir[] = TA_DIR;
+#ifndef TA_TEST_DIR
+# ifdef __ANDROID__
+#  define TA_TEST_DIR "/data/tmp/optee_armtz"
+# else
+#  define TA_TEST_DIR "/tmp/optee_armtz"
+# endif
+#endif
 
+static void make_test_ta_dir(void)
+{
+#ifdef __ANDROID__
+	(void)mkdir("/data/tmp", 0755);
+#endif
+	(void)mkdir(TA_TEST_DIR, 0755);
+}
+
+static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
+			bool for_write)
+{
 	snprintf(buf, blen,
-		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta%s",
-		ta_dir, uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
+		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta",
+		for_write ? TA_TEST_DIR : TA_DIR,
+		uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
 		uuid->clockSeqAndNode[0], uuid->clockSeqAndNode[1],
 		uuid->clockSeqAndNode[2], uuid->clockSeqAndNode[3],
 		uuid->clockSeqAndNode[4], uuid->clockSeqAndNode[5],
-		uuid->clockSeqAndNode[6], uuid->clockSeqAndNode[7],
-		extra_suffix ? extra_suffix : "");
+		uuid->clockSeqAndNode[6], uuid->clockSeqAndNode[7]);
 }
 
-static FILE *open_ta_file(const TEEC_UUID *uuid, const char *extra_suffix,
-			const char *mode)
+static FILE *open_ta_file(const TEEC_UUID *uuid, const char *mode,
+			  bool for_write)
 {
 	char buf[PATH_MAX];
 
-	uuid_to_full_name(buf, sizeof(buf), uuid, extra_suffix);
+	uuid_to_full_name(buf, sizeof(buf), uuid, for_write);
 	return fopen(buf, mode);
 }
 
-static bool rm_file(const TEEC_UUID *uuid, const char *extra_suffix)
+static bool rm_file(const TEEC_UUID *uuid)
 {
 	char buf[PATH_MAX];
 
-	uuid_to_full_name(buf, sizeof(buf), uuid, extra_suffix);
+	uuid_to_full_name(buf, sizeof(buf), uuid, true);
 	return !unlink(buf);
 }
 
-static bool rename_file(const TEEC_UUID *old_uuid, const char *old_extra_suffix,
-			const TEEC_UUID *new_uuid, const char *new_extra_suffix)
-{
-	char old_buf[PATH_MAX];
-	char new_buf[PATH_MAX];
-
-	uuid_to_full_name(old_buf, sizeof(old_buf), old_uuid, old_extra_suffix);
-	uuid_to_full_name(new_buf, sizeof(new_buf), new_uuid, new_extra_suffix);
-	return !rename(old_buf, new_buf);
-}
-
-static bool copy_file(const TEEC_UUID *src_uuid, const char *src_extra_suffix,
-			const TEEC_UUID *dst_uuid, const char *dst_extra_suffix)
+static bool copy_file(const TEEC_UUID *src_uuid, const TEEC_UUID *dst_uuid)
 {
 	char buf[4 * 1024];
-	FILE *src = open_ta_file(src_uuid, src_extra_suffix, "r");
-	FILE *dst = open_ta_file(dst_uuid, dst_extra_suffix, "w");
+	FILE *src = open_ta_file(src_uuid, "r", false);
+	FILE *dst = open_ta_file(dst_uuid, "w", true);
 	size_t r;
 	size_t w;
 	bool ret = false;
@@ -607,7 +611,7 @@ static void load_fake_ta(ADBG_Case_t *c)
 	uint32_t ret_orig;
 	bool r;
 
-	r = copy_file(&create_fail_test_ta_uuid, NULL, &fake_uuid, NULL);
+	r = copy_file(&create_fail_test_ta_uuid, &fake_uuid);
 
 	if (ADBG_EXPECT_TRUE(c, r)) {
 		res = xtest_teec_open_session(&session, &fake_uuid, NULL,
@@ -617,7 +621,7 @@ static void load_fake_ta(ADBG_Case_t *c)
 		ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
 	}
 
-	ADBG_EXPECT_TRUE(c, rm_file(&fake_uuid, NULL));
+	ADBG_EXPECT_TRUE(c, rm_file(&fake_uuid));
 }
 
 static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
@@ -628,16 +632,15 @@ static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
 	FILE *f;
 	bool r;
 
-	r = copy_file(&create_fail_test_ta_uuid, NULL,
-		      &create_fail_test_ta_uuid, "save");
+	r = copy_file(&create_fail_test_ta_uuid, &create_fail_test_ta_uuid);
 	if (!ADBG_EXPECT_TRUE(c, r)) {
-		rm_file(&create_fail_test_ta_uuid, "save");
+		rm_file(&create_fail_test_ta_uuid);
 		return false;
 	}
 
-	f = open_ta_file(&create_fail_test_ta_uuid, NULL, "r+");
+	f = open_ta_file(&create_fail_test_ta_uuid, "r+", true);
 	if (!ADBG_EXPECT_NOT_NULL(c, f)) {
-		rm_file(&create_fail_test_ta_uuid, "save");
+		rm_file(&create_fail_test_ta_uuid);
 		return false;
 	}
 	r = corrupt_file(f, offs, mask);
@@ -652,8 +655,7 @@ static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
 		r &= ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
 	}
 
-	r &= ADBG_EXPECT_TRUE(c, rename_file(&create_fail_test_ta_uuid, "save",
-					     &create_fail_test_ta_uuid, NULL));
+	r &= ADBG_EXPECT_TRUE(c, rm_file(&create_fail_test_ta_uuid));
 	return r;
 }
 
@@ -720,6 +722,8 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 		}
 	}
 	Do_ADBG_EndSubCase(c, "Create session fail");
+
+	make_test_ta_dir();
 
 	Do_ADBG_BeginSubCase(c, "Load fake uuid TA");
 	load_fake_ta(c);
