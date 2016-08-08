@@ -115,7 +115,7 @@ By default `optee_test` expects that `optee_client` is located at the same
 folder level. However if you build optee_client in another location, then you
 also would need to use (or export) the following flag:
 
-`$ make OPTEE_CLIENT_PATH=$HOME/my_new_location`
+`$ make OPTEE_CLIENT_EXPORT=$HOME/my_new_location/out/export`
 
 ## Coding standards
 In this project we are trying to adhere to the same coding convention as used in
