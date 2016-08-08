@@ -16,6 +16,10 @@ else
 	echo := @:
 endif
 
+# If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
+CROSS_COMPILE_HOST ?= $(CROSS_COMPILE)
+CROSS_COMPILE_TA ?= $(CROSS_COMPILE)
+
 .PHONY: all
 ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 all: xtest ta
