@@ -86,6 +86,7 @@ const TEEC_UUID sta_test_ta_uuid = STA_SELF_TEST_UUID;
 const TEEC_UUID rpc_test_ta_uuid = TA_RPC_TEST_UUID;
 const TEEC_UUID sims_test_ta_uuid = TA_SIMS_TEST_UUID;
 const TEEC_UUID storage_ta_uuid = TA_STORAGE_UUID;
+const TEEC_UUID storage2_ta_uuid = TA_STORAGE2_UUID;
 const TEEC_UUID enc_fs_key_manager_test_ta_uuid = ENC_FS_KEY_MANAGER_TEST_UUID;
 const TEEC_UUID concurrent_ta_uuid = TA_CONCURRENT_UUID;
 const TEEC_UUID concurrent_large_ta_uuid = TA_CONCURRENT_LARGE_UUID;

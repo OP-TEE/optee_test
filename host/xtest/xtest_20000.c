@@ -55,12 +55,6 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #endif
 
-#define SWAP_BYTES_16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
-#define SWAP_BYTES_32(w32) ((((w32) & 0xFF000000) >> 24) |\
-			    (((w32) & 0xFF0000) >> 8) |\
-			    (((w32) & 0xFF00) << 8) |\
-			    (((w32) & 0xFF) << 24))
-
 #define XTEST_ENC_FS(level, data_len, meta, block_num, version) \
 	{ \
 	  level, \
@@ -217,27 +211,6 @@ static TEEC_Result obj_close(TEEC_Session *sess, uint32_t obj)
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_CLOSE, &op, &org);
 }
 
-static int get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
-{
-
-	if (p_uuid == NULL || buffer == NULL)
-		return 0;
-	
-	return snprintf(buffer, len,
-		        "%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
-		        SWAP_BYTES_32(p_uuid->timeLow),
-		        SWAP_BYTES_16(p_uuid->timeMid),
-		        SWAP_BYTES_16(p_uuid->timeHiAndVersion),
-		        p_uuid->clockSeqAndNode[0],
-	                p_uuid->clockSeqAndNode[1],
-		        p_uuid->clockSeqAndNode[2],
-		        p_uuid->clockSeqAndNode[3],
-		        p_uuid->clockSeqAndNode[4],
-		        p_uuid->clockSeqAndNode[5],
-		        p_uuid->clockSeqAndNode[6],
-		        p_uuid->clockSeqAndNode[7]);
-}
-
 static int get_obj_filename(void *file_id, uint32_t file_id_length,
 			    char *buffer, uint32_t len)
 {
@@ -288,7 +261,7 @@ static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
         char path[150];
         struct stat sb;
 
-        if (get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
+        if (ree_fs_get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
             get_obj_filename(file_id, file_id_length, obj_filename,
 			     sizeof(obj_filename))) {
                 if (file_type == META_FILE) {
@@ -325,7 +298,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 
 	memset(name, 0, sizeof(name));
 
-	if (get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
+	if (ree_fs_get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
 	    get_obj_filename(file_id, file_id_length, obj_filename,
 			     sizeof(obj_filename))) {
 

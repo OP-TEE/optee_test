@@ -381,3 +381,30 @@ TEEC_Result ta_crypt_cmd_free_operation(ADBG_Case_t *c, TEEC_Session *s,
 
 	return res;
 }
+
+#define SWAP_BYTES_16(w16) ((((w16) & 0xFF00) >> 8) | (((w16) & 0xFF) << 8))
+#define SWAP_BYTES_32(w32) ((((w32) & 0xFF000000) >> 24) |\
+			    (((w32) & 0xFF0000) >> 8) |\
+			    (((w32) & 0xFF00) << 8) |\
+			    (((w32) & 0xFF) << 24))
+
+int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
+{
+
+	if (p_uuid == NULL || buffer == NULL)
+		return 0;
+
+	return snprintf(buffer, len,
+			"%08X%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
+			SWAP_BYTES_32(p_uuid->timeLow),
+			SWAP_BYTES_16(p_uuid->timeMid),
+			SWAP_BYTES_16(p_uuid->timeHiAndVersion),
+			p_uuid->clockSeqAndNode[0],
+			p_uuid->clockSeqAndNode[1],
+			p_uuid->clockSeqAndNode[2],
+			p_uuid->clockSeqAndNode[3],
+			p_uuid->clockSeqAndNode[4],
+			p_uuid->clockSeqAndNode[5],
+			p_uuid->clockSeqAndNode[6],
+			p_uuid->clockSeqAndNode[7]);
+}

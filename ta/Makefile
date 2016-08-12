@@ -15,6 +15,7 @@ TA_DIRS := create_fail_test \
 	   rpc_test \
 	   sims \
 	   storage \
+	   storage2 \
 	   concurrent \
 	   concurrent_large \
 	   storage_benchmark

@@ -100,4 +100,6 @@ void xtest_add_attr_value(size_t *attr_count, TEE_Attribute *attrs,
 TEE_Result pack_attrs(const TEE_Attribute *attrs, uint32_t attr_count,
 			     uint8_t **buf, size_t *blen);
 
+int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len);
+
 #endif /*XTEST_HELPERS_H*/
