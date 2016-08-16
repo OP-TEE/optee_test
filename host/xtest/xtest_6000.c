@@ -36,6 +36,9 @@ static uint32_t storage_ids[] = {
 #ifdef CFG_RPMB_FS
 	TEE_STORAGE_PRIVATE_RPMB,
 #endif
+#ifdef CFG_SQL_FS
+	TEE_STORAGE_PRIVATE_SQL,
+#endif
 };
 
 static uint8_t file_00[] = {
