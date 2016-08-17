@@ -67,6 +67,7 @@ endif
 LOCAL_CFLAGS += -DUSER_SPACE
 LOCAL_CFLAGS += -DTA_DIR=\"/system/lib/optee_armtz\"
 LOCAL_CFLAGS += -pthread
+LOCAL_CFLAGS += -g3
 
 ## target BUILD_OPTEE_OS is defined in the common ta build
 ## mk file included before, and this BUILD_OPTEE_OS will
