@@ -81,6 +81,10 @@ flag:
 
 `$ make V=1`
 
+To include debug information in xtest:
+
+`$ make DEBUG=1`
+
 To state where build files are stored use the `O` flag.
 
 `$ make O=$HOME/foo`

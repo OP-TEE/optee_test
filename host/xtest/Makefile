@@ -133,6 +133,10 @@ CFLAGS += -Wall -Wcast-align -Werror \
 	  -Wno-missing-field-initializers -Wno-format-zero-length
 endif
 
+ifeq ($(DEBUG),1)
+CFLAGS += -DDEBUG -O0 -g3
+endif
+
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lteec
 LDFLAGS += -lpthread
 
