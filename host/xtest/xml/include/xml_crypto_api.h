@@ -2046,8 +2046,8 @@ static TEEC_Result Invoke_Crypto_MACCompareFinal(
 
 	res = TEEC_InvokeCommand(s, cmd_id, &op, &ret_orig);
 
-exit:
 	CRYPTO_FREE(mac);
+exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
 	return res;
