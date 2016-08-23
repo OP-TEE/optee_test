@@ -62,7 +62,6 @@ xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:xsl="http://www.w3.org/1
 #include "TTA_Crypto_protocol.h"
 #include "xtest_test.h"
 #include "xtest_helpers.h"
-#include "tee_internal_api.h"
 #undef TA_UUID
 #include "ta_answerSuccessTo_OpenSession_Invoke_test.h"
 #undef TA_UUID

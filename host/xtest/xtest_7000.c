@@ -18,7 +18,6 @@
 #include <unistd.h>
 #include "xtest_test.h"
 #include "xtest_helpers.h"
-#include "tee_internal_api.h"
 #include "tee_api_defines.h"
 #include "tee_client_api.h"
 #include "xml_client_api.h"

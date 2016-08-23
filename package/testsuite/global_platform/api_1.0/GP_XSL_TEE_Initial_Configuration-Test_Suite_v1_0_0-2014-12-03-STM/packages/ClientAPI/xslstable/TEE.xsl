@@ -59,7 +59,6 @@ xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:xsl="http://www.w3.org/1
 #include &lt;unistd.h&gt;
 #include "xtest_test.h"
 #include "xtest_helpers.h"
-#include "tee_internal_api.h"
 #include "ta_testingClientAPI_test.h"
 #undef TA_UUID
 #include "ta_answerSuccessTo_OpenSession_Invoke_test.h"
