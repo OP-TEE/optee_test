@@ -13,6 +13,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include <adbg.h>
 #include <xtest_test.h>
@@ -1462,6 +1463,130 @@ exit2:
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6015)
 
+
+struct test_6016_thread_arg {
+	ADBG_Case_t *case_t;
+	uint32_t storage_id;
+	uint8_t file_name[8];
+	TEEC_Session session;
+};
+
+static void *test_6016_thread(void *arg)
+{
+	struct test_6016_thread_arg *a = arg;
+	TEEC_Session sess = a->session;
+	uint32_t obj;
+	uint8_t out[10] = { 0 };
+	uint32_t count;
+
+	/* create */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
+		fs_create(&sess, a->file_name, sizeof(a->file_name),
+			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_01,
+			  sizeof(data_01), &obj, a->storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t, fs_close(&sess, obj)))
+		goto exit;
+
+	/* write new data */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
+		fs_open(&sess, a->file_name, sizeof(a->file_name),
+			TEE_DATA_FLAG_ACCESS_WRITE, &obj, a->storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
+		fs_write(&sess, obj, data_00, sizeof(data_00))))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t, fs_close(&sess, obj)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
+		fs_open(&sess, a->file_name, sizeof(a->file_name),
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, a->storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
+			fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	(void)ADBG_EXPECT_BUFFER(a->case_t, data_00, 10, out, count);
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	return NULL;
+}
+
+
+#define NUM_THREADS 4
+static void xtest_tee_test_6016_loop(ADBG_Case_t *c, uint32_t storage_id)
+{
+	size_t num_threads = NUM_THREADS;
+	struct test_6016_thread_arg arg[num_threads];
+	pthread_t thr[num_threads];
+	uint32_t orig;
+	size_t i;
+	size_t n = 0;
+	size_t m;
+
+	memset(arg, 0, sizeof(arg));
+
+	for (m = 0; m < num_threads; m++)
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&arg[m].session,
+				&storage_ta_uuid, NULL, &orig)))
+			goto out;
+
+	for (n = 0; n < num_threads; n++) {
+		arg[n].case_t = c;
+		arg[n].storage_id = storage_id;
+		snprintf(&arg[n].file_name, sizeof(arg[n].file_name),
+			"file_%d", n);
+		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
+						test_6016_thread, arg + n)))
+			goto out;
+	}
+
+out:
+	for (i = 0; i < n; i++)
+		ADBG_EXPECT(c, 0, pthread_join(thr[i], NULL));
+	for (i = 0; i < m; i++)
+		TEEC_CloseSession(&arg[i].session);
+}
+
+/* concurency */
+static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	int i;
+	int loops = 8;
+
+	Do_ADBG_Log("    threads: %d, loops: %d", NUM_THREADS, loops);
+	for (i = 0; i < loops; i++)
+		xtest_tee_test_6016_loop(c, storage_id);
+}
+
+/*
+ * To be replaced with: DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6016)
+ * when all filesystems support concurrency
+ */
+static void xtest_tee_test_6016(ADBG_Case_t *c)
+{
+#ifdef CFG_RPMB_FS
+	Do_ADBG_BeginSubCase(c, "Storage id: %08x", TEE_STORAGE_PRIVATE_RPMB);
+	xtest_tee_test_6016_single(c, TEE_STORAGE_PRIVATE_RPMB);
+	Do_ADBG_EndSubCase(c, "Storage id: %08x", TEE_STORAGE_PRIVATE_RPMB);
+#else
+	Do_ADBG_Log("    Only RPMB supports concurrency. Test disabled.");
+#endif
+}
+
+
 ADBG_CASE_DEFINE(
 	XTEST_TEE_6001, xtest_tee_test_6001,
 	/* Title */
@@ -1642,4 +1767,16 @@ ADBG_CASE_DEFINE(
     "",
     /* How to implement */
     ""
+);
+
+ADBG_CASE_DEFINE(
+	XTEST_TEE_6016, xtest_tee_test_6016,
+	/* Title */
+	"Storage concurency",
+	/* Short description */
+	"Multiple thread operate secure storage",
+	/* Requirement IDs */
+	"",
+	/* How to implement */
+	""
 );
