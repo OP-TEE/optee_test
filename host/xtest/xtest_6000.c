@@ -1467,7 +1467,7 @@ DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6015)
 struct test_6016_thread_arg {
 	ADBG_Case_t *case_t;
 	uint32_t storage_id;
-	uint8_t file_name[8];
+	char file_name[8];
 	TEEC_Session session;
 };
 
