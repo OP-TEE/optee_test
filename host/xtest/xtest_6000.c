@@ -1464,6 +1464,7 @@ exit2:
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6015)
 
 
+#ifdef CFG_RPMB_FS
 struct test_6016_thread_arg {
 	ADBG_Case_t *case_t;
 	uint32_t storage_id;
@@ -1577,14 +1578,20 @@ static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
  */
 static void xtest_tee_test_6016(ADBG_Case_t *c)
 {
-#ifdef CFG_RPMB_FS
 	Do_ADBG_BeginSubCase(c, "Storage id: %08x", TEE_STORAGE_PRIVATE_RPMB);
 	xtest_tee_test_6016_single(c, TEE_STORAGE_PRIVATE_RPMB);
 	Do_ADBG_EndSubCase(c, "Storage id: %08x", TEE_STORAGE_PRIVATE_RPMB);
-#else
-	Do_ADBG_Log("    Only RPMB supports concurrency. Test disabled.");
-#endif
 }
+
+#else
+
+static void xtest_tee_test_6016(ADBG_Case_t *c)
+{
+	(void)c;
+	Do_ADBG_Log("    Only RPMB supports concurrency. Test disabled.");
+}
+
+#endif /* CFG_RPMB_FS */
 
 
 ADBG_CASE_DEFINE(
