@@ -1546,7 +1546,7 @@ static void xtest_tee_test_6016_loop(ADBG_Case_t *c, uint32_t storage_id)
 	for (n = 0; n < num_threads; n++) {
 		arg[n].case_t = c;
 		arg[n].storage_id = storage_id;
-		snprintf(&arg[n].file_name, sizeof(arg[n].file_name),
+		snprintf(arg[n].file_name, sizeof(arg[n].file_name),
 			"file_%d", n);
 		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
 						test_6016_thread, arg + n)))
