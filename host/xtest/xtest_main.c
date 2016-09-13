@@ -19,6 +19,10 @@
 #include <adbg.h>
 #include "xtest_test.h"
 #include "xtest_helpers.h"
+
+/* include here shandalone tests */
+#include "sha_perf.h"
+
 #ifdef WITH_GP_TESTS
 #include "adbg_entry_declare.h"
 #endif
@@ -113,12 +117,18 @@ ADBG_SUITE_DEFINE_END()
 
 
 ADBG_SUITE_DECLARE(XTEST_TEE_BENCHMARK)
-
 ADBG_SUITE_DEFINE_BEGIN(XTEST_TEE_BENCHMARK, NULL)
+
+/* Storage benchmarks */
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1001, NULL)
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1002, NULL)
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1003, NULL)
+
+/* SHA benchmarks */
+ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2001, NULL)
+ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2002, NULL)
 ADBG_SUITE_DEFINE_END()
+
 
 char *_device = NULL;
 unsigned int level = 0;
@@ -137,6 +147,9 @@ void usage(char *program)
 	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
 	printf("\t                   default value = %s\n", gsuitename);
 	printf("\t-h                 show usage\n");
+	printf("applets:\n");
+	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
+	printf("\t--sha perf -h      show usage of SHA performance testing tool\n");
 	printf("\n");
 }
 
@@ -149,6 +162,10 @@ int main(int argc, char *argv[])
 	char *test_suite = (char *)gsuitename;
 
 	opterr = 0;
+
+	if (argc > 1 && !strcmp(argv[1], "--sha-perf")) {
+		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
+	}
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
 		switch (opt) {

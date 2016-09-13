@@ -33,9 +33,11 @@ srcs := xtest_1000.c \
 	xtest_10000.c \
 	xtest_20000.c \
 	xtest_benchmark_1000.c \
+	xtest_benchmark_2000.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
+	sha_perf.c \
 	adbg/src/adbg_case.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
@@ -75,6 +77,7 @@ CFLAGS += -I../../ta/storage/include
 CFLAGS += -I../../ta/storage_benchmark/include
 CFLAGS += -I../../ta/concurrent/include
 CFLAGS += -I../../ta/concurrent_large/include
+CFLAGS += -I../../ta/sha_perf/include
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto
@@ -129,7 +132,7 @@ endif
 CFLAGS += -g3
 
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lteec
-LDFLAGS += -lpthread
+LDFLAGS += -lpthread -lm
 
 .PHONY: all
 all: xtest

@@ -18,7 +18,8 @@ TA_DIRS := create_fail_test \
 	   storage2 \
 	   concurrent \
 	   concurrent_large \
-	   storage_benchmark
+	   storage_benchmark \
+	   sha_perf
 
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
