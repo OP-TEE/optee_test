@@ -216,7 +216,7 @@ static TEEC_Result fs_seek(TEEC_Session *sess, uint32_t obj, int32_t offset,
 	uint32_t org;
 
 	op.params[0].value.a = obj;
-	op.params[0].value.b = offset;
+	op.params[0].value.b = *(uint32_t *)&offset;
 	op.params[1].value.a = whence;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INOUT,
@@ -332,6 +332,66 @@ static TEEC_Result fs_next_enum(TEEC_Session *sess, uint32_t e, void *obj_info,
 	op.params[2].tmpref.size = id_size;
 
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_NEXT_ENUM, &op, &org);
+}
+
+static TEEC_Result fs_restrict_usage(TEEC_Session *sess, uint32_t obj,
+				     uint32_t obj_usage)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.params[0].value.a = obj;
+	op.params[0].value.b = obj_usage;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_RESTRICT_USAGE,
+				  &op, &org);
+}
+
+static TEEC_Result fs_alloc_obj(TEEC_Session *sess, uint32_t obj_type,
+				     uint32_t max_key_size, uint32_t *obj)
+{
+	TEEC_Result res;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.params[0].value.a = obj_type;
+	op.params[0].value.b = max_key_size;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_ALLOC_OBJ, &op, &org);
+	*obj = op.params[1].value.a;
+	return res;
+}
+
+static TEEC_Result fs_free_obj(TEEC_Session *sess, uint32_t obj)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.params[0].value.a = obj;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_FREE_OBJ, &op, &org);
+}
+
+static TEEC_Result fs_reset_obj(TEEC_Session *sess, uint32_t obj)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.params[0].value.a = obj;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_RESET_OBJ, &op, &org);
 }
 
 /* trunc */
@@ -487,30 +547,6 @@ exit:
 }
 
 #ifdef WITH_GP_TESTS
-static TEEC_Result ds_open_access_conf(TEEC_Session *sess)
-{
-    TEEC_Operation op;
-    uint32_t org;
-
-    op.paramTypes = TEEC_PARAM_TYPES(
-        TEEC_NONE, TEEC_NONE, TEEC_NONE, TEEC_NONE);
-
-    return TEEC_InvokeCommand(
-        sess, CMD_CreatePersistentObject_AccessConflict, &op, &org);
-}
-
-static TEEC_Result ds_res_obj_panic(TEEC_Session *sess)
-{
-    TEEC_Operation op;
-    uint32_t org;
-
-    op.paramTypes = TEEC_PARAM_TYPES(
-        TEEC_NONE, TEEC_NONE, TEEC_NONE, TEEC_NONE);
-
-    return TEEC_InvokeCommand(
-        sess, CMD_RestrictObjectUsagePanic, &op, &org);
-}
-
 static TEEC_Result ds_seek_obj_inv_handle(TEEC_Session *sess)
 {
     TEEC_Operation op;
@@ -520,20 +556,6 @@ static TEEC_Result ds_seek_obj_inv_handle(TEEC_Session *sess)
         TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE, TEEC_NONE);
 
     op.params[0].value.a = CASE_DATA_OBJECT_NOT_PERSISTENT;
-
-    return TEEC_InvokeCommand(
-        sess, CMD_SeekObjectData_panic, &op, &org);
-}
-
-static TEEC_Result ds_seek_obj_bad_handle(TEEC_Session *sess)
-{
-    TEEC_Operation op;
-    uint32_t org;
-
-    op.paramTypes = TEEC_PARAM_TYPES(
-        TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE, TEEC_NONE);
-
-    op.params[0].value.a = CASE_DATA_BAD_HANDLE;
 
     return TEEC_InvokeCommand(
         sess, CMD_SeekObjectData_panic, &op, &org);
@@ -1090,143 +1112,191 @@ exit:
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6009)
 
-#ifdef WITH_GP_TESTS
-static void xtest_tee_test_6010(ADBG_Case_t *c)
+static void xtest_tee_test_6010_single(ADBG_Case_t *c, uint32_t storage_id)
 {
-    TEEC_Session sess;
-    uint32_t orig;
-    uint8_t out[4000] = {0};
-    uint8_t in[0x12c] = {'b'};
-    int i;
+	TEEC_Session sess;
+	uint32_t orig;
+	uint32_t o1;
+	uint32_t o2;
+	uint32_t e;
+	uint32_t f;
+	uint8_t data[1024];
+	uint8_t out[1024];
+	uint32_t n;
 
-    for (i=0; i<sizeof(in); i++)
-	    in[i] = i;
+	for (n = 0; n < ARRAY_SIZE(data); n++)
+		data[n] = n;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, xtest_teec_open_session(
-                &sess, &gp_tta_ds_uuid, NULL, &orig)))
-        return;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
 
-    Do_ADBG_BeginSubCase(
-        c, "GP DS CreatePersistentObject AccessConflict (9d-1d-62)");
+	Do_ADBG_BeginSubCase(c, "CreatePersistentObject AccessConflict");
 
-    if (!ADBG_EXPECT_TEEC_RESULT(
-            c, TEEC_ERROR_ACCESS_CONFLICT, ds_open_access_conf(&sess)))
-        goto exit;
+	o1 = TEE_HANDLE_NULL;
+	o2 = TEE_HANDLE_NULL;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE |
+	    TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ |
+	    TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS CreatePersistentObject AccessConflict (9d-1d-62)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS RestrictObjectUsagePanic (9d-5d-46)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id));
 
-    if (!ADBG_EXPECT_TEEC_RESULT(
-            c, TEE_ERROR_TARGET_DEAD, ds_res_obj_panic(&sess)))
-        goto exit;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE;
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ACCESS_CONFLICT,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o2, storage_id));
 
-    TEEC_CloseSession(&sess);
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
+	if (o2)
+		ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o2));
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS RestrictObjectUsagePanic (9d-5d-46)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS SeekObjectData BadHandle (9d-c3-c8)");
+	Do_ADBG_EndSubCase(c, "CreatePersistentObject AccessConflict");
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, xtest_teec_open_session(
-                &sess, &gp_tta_ds_uuid, NULL, &orig)))
-        return;
 
-    if (!ADBG_EXPECT_TEEC_RESULT(
-            c, TEE_ERROR_TARGET_DEAD, ds_seek_obj_bad_handle(&sess)))
-        goto exit;
 
-    TEEC_CloseSession(&sess);
+	Do_ADBG_BeginSubCase(c, "RestrictObjectUsage Panic");
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_TARGET_DEAD,
+		fs_restrict_usage(&sess, 0xffffbad0, 0xffffffff));
+	Do_ADBG_EndSubCase(c, "RestrictObjectUsage Panic");
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS SeekObjectData BadHandle (9d-c3-c8)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS SeekObjectData NotPersist (9d-db-4a)");
+	TEEC_CloseSession(&sess);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, xtest_teec_open_session(
-                &sess, &gp_tta_ds_uuid, NULL, &orig)))
-        return;
+	Do_ADBG_BeginSubCase(c, "SeekObjectData BadHandle");
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_TARGET_DEAD,
+		fs_seek(&sess, 0xffffbad0, 5, TEE_DATA_SEEK_SET));
+	Do_ADBG_EndSubCase(c, "SeekObjectData BadHandle");
 
-    if (!ADBG_EXPECT_TEEC_RESULT(
-            c, TEE_ERROR_TARGET_DEAD, ds_seek_obj_inv_handle(&sess)))
-        goto exit;
+	TEEC_CloseSession(&sess);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
 
-    TEEC_CloseSession(&sess);
+	Do_ADBG_BeginSubCase(c, "SeekObjectData NotPersist");
+	o1 = 0;
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_alloc_obj(&sess, TEE_TYPE_AES, 256, &o1));
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_TARGET_DEAD,
+		fs_seek(&sess, o1, 5, TEE_DATA_SEEK_SET));
+	Do_ADBG_EndSubCase(c, "SeekObjectData NotPersist");
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS SeekObjectData NotPersist (9d-db-4a)");
-    Do_ADBG_BeginSubCase(c, "GP DS SeekWriteRead SEEK_END (9d-e4-58)");
+	TEEC_CloseSession(&sess);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, xtest_teec_open_session(
-                &sess, &gp_tta_ds_uuid, NULL, &orig)))
-        return;
+	Do_ADBG_BeginSubCase(c, "SeekWriteRead");
+	o1 = 0;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE |
+	    TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ |
+	    TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id)))
+		goto seek_write_read_out;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, ds_seek_gp(
-                &sess, TEE_DATA_SEEK_END, 0, 2, data_00, sizeof(data_00), out,
-                sizeof(out))))
-        goto exit;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_seek(&sess, o1, 2, TEE_DATA_SEEK_SET)))
+		goto seek_write_read_out;
 
-    /* check buffer */
-    (void)ADBG_EXPECT_BUFFER(
-        c, data_00, sizeof(data_00), out, sizeof(data_00));
-    memset(out, 0xab, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_seek(&sess, o1, 0, TEE_DATA_SEEK_END)))
+		goto seek_write_read_out;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(
-            c, ds_seek_gp(
-                &sess, TEE_DATA_SEEK_END, sizeof(in)/2, 0, in, sizeof(in), out,
-                sizeof(out))))
-        goto exit;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_write(&sess, o1, data, sizeof(data))))
+		goto seek_write_read_out;
 
-    (void)ADBG_EXPECT_BUFFER(c, in, sizeof(in) / 2,
-		             out + (sizeof(in) / 2), sizeof(in) / 2);
-    memset(in, 0, sizeof(in));
-    (void)ADBG_EXPECT_BUFFER(c, in, sizeof(in) / 2,
-		             out, sizeof(in)/2);
-    memset(out, 0xab, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_seek(&sess, o1, sizeof(data), TEE_DATA_SEEK_SET)))
+		goto seek_write_read_out;
 
-    Do_ADBG_EndSubCase(c, "GP DS SeekWriteRead SEEK_END (9d-e4-58)");
-    Do_ADBG_BeginSubCase(c, "GP DS Rename Access Conflict (9d-29-d1)");
+	memset(out, 0xab, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_read(&sess, o1, out, sizeof(out), &n)))
+		goto seek_write_read_out;
 
-    if (!ADBG_EXPECT_TEEC_RESULT(
-            c, TEE_ERROR_ACCESS_CONFLICT, ds_rename_access_conflict(&sess)))
-        goto exit;
+	ADBG_EXPECT_BUFFER(c, data, sizeof(data), out, n);
 
-    Do_ADBG_EndSubCase(c, "GP DS Rename Access Conflict (9d-29-d1)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS StartPersistentObjectEnumerator ItemNotFound (9d-52-ec)");
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_seek(&sess, o1, -(int32_t)sizeof(data) / 2,
+			TEE_DATA_SEEK_END)))
+		goto seek_write_read_out;
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(c, ds_start_enum_no_item(&sess)))
-        goto exit;
+	memset(out, 0xab, sizeof(out) / 2);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_read(&sess, o1, out, sizeof(out) / 2, &n)))
+		goto seek_write_read_out;
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS StartPersistentObjectEnumerator ItemNotFound (9d-52-ec)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS RenamePersistent ReadWrite (9d-19-88)");
+	ADBG_EXPECT_BUFFER(c,
+		data + sizeof(data) / 2, sizeof(data) / 2,
+		out + sizeof(data) / 2, n);
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(c, ds_rename_success(&sess)))
-        goto exit;
+seek_write_read_out:
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
+	Do_ADBG_EndSubCase(c, "SeekWriteRead");
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS RenamePersistent ReadWrite (9d-19-88)");
-    Do_ADBG_BeginSubCase(
-        c, "GP DS Close Free Reset Null (9d-6d-87)");
+	Do_ADBG_BeginSubCase(c, "Rename Access Conflict");
 
-    if (!ADBG_EXPECT_TEEC_SUCCESS(c, ds_null_close_free_reset(&sess)))
-        goto exit;
+	o1 = TEE_HANDLE_NULL;
+	o2 = TEE_HANDLE_NULL;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE |
+	    TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ |
+	    TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id));
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01), f, 0, data,
+			  sizeof(data) / 2, &o2, storage_id));
 
-    Do_ADBG_EndSubCase(
-        c, "GP DS Close Free Reset Null (9d-6d-87)");
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ACCESS_CONFLICT,
+		fs_rename(&sess, o2, file_00, sizeof(file_00)));
 
-exit:
-    TEEC_CloseSession(&sess);
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o2));
+
+	Do_ADBG_EndSubCase(c, "Rename Access Conflict");
+
+	Do_ADBG_BeginSubCase(c, "StartPersistentObjectEnumerator ItemNotFound");
+	e = TEE_HANDLE_NULL;
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_alloc_enum(&sess, &e));
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+		fs_next_enum(&sess, e, NULL, 0, out, sizeof(out)));
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+		fs_start_enum(&sess, e, storage_id));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_free_enum(&sess, e));
+	Do_ADBG_EndSubCase(c, "StartPersistentObjectEnumerator ItemNotFound");
+
+	Do_ADBG_BeginSubCase(c, "RenamePersistent ReadWrite");
+	o1 = TEE_HANDLE_NULL;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE |
+	    TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ |
+	    TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id));
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_rename(&sess, o1, file_01, sizeof(file_01)));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
+	Do_ADBG_EndSubCase(c, "RenamePersistent ReadWrite");
+
+	Do_ADBG_BeginSubCase(c, "Close Free Reset Null");
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, TEE_HANDLE_NULL));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_free_obj(&sess, TEE_HANDLE_NULL));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_reset_obj(&sess, TEE_HANDLE_NULL));
+	Do_ADBG_EndSubCase(c, "Close Free Reset Null");
+
+	TEEC_CloseSession(&sess);
 }
 
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6010)
+
+#ifdef WITH_GP_TESTS
 static void xtest_tee_test_6011(ADBG_Case_t *c)
 {
     TEEC_Session sess;
@@ -1261,7 +1331,7 @@ static void xtest_tee_test_6011(ADBG_Case_t *c)
 exit:
     TEEC_CloseSession(&sess);
 }
-#endif
+#endif /*WITH_GP_TESTS*/
 
 static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1702,19 +1772,19 @@ ADBG_CASE_DEFINE(
 	"Description of how to implement ..."
 	);
 
-#ifdef WITH_GP_TESTS
 ADBG_CASE_DEFINE(
-    XTEST_TEE_6010, xtest_tee_test_6010,
-    /* Title */
-    "Test TEE GP TTA DS storage",
-    /* Short description */
-    "Short description ...",
-    /* Requirement IDs */
-    "TEE-??",
-    /* How to implement */
-    "Description of how to implement ..."
+	XTEST_TEE_6010, xtest_tee_test_6010,
+	/* Title */
+	"Test Storage",
+	/* Short description */
+	"Short description ...",
+	/* Requirement IDs */
+	"TEE-??",
+	/* How to implement */
+	"Description of how to implement ..."
 );
 
+#ifdef WITH_GP_TESTS
 ADBG_CASE_DEFINE(
     XTEST_TEE_6011, xtest_tee_test_6011,
     /* Title */

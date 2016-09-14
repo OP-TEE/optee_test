@@ -49,5 +49,10 @@ TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 					    TEE_Param params[4]);
 TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_restrict_usage(uint32_t param_types,
+					 TEE_Param params[4]);
+TEE_Result ta_storage_cmd_alloc_obj(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_free_obj(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*STORAGE_H */

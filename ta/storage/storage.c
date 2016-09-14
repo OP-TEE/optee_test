@@ -138,13 +138,15 @@ TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
 	TEE_Result res;
 	TEE_ObjectInfo info;
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+	int32_t offs;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	res = TEE_SeekObjectData(o, params[0].value.b, params[1].value.a);
+	offs = *(int32_t *)&params[0].value.b;
+	res = TEE_SeekObjectData(o, offs, params[1].value.a);
 	if (res != TEE_SUCCESS)
 		return res;
 	res = TEE_GetObjectInfo1(o, &info);
@@ -425,5 +427,61 @@ TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4])
 		}
 	}
 
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_storage_cmd_restrict_usage(uint32_t param_types,
+					 TEE_Param params[4])
+{
+	TEE_ObjectHandle o;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	o = (TEE_ObjectHandle)(uintptr_t)params[0].value.a;
+	TEE_RestrictObjectUsage1(o, params[0].value.b);
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_storage_cmd_alloc_obj(uint32_t param_types, TEE_Param params[4])
+{
+	TEE_Result res;
+	TEE_ObjectHandle o;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT,
+			   TEE_PARAM_TYPE_VALUE_OUTPUT,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	res = TEE_AllocateTransientObject(params[0].value.a, params[0].value.b,
+					  &o);
+	params[1].value.a = (uint32_t)(uintptr_t)o;
+	return res;
+}
+
+TEE_Result ta_storage_cmd_free_obj(uint32_t param_types, TEE_Param params[4])
+{
+	TEE_ObjectHandle o;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	o = (TEE_ObjectHandle)(uintptr_t)params[0].value.a;
+	TEE_FreeTransientObject(o);
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4])
+{
+	TEE_ObjectHandle o;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	o = (TEE_ObjectHandle)(uintptr_t)params[0].value.a;
+	TEE_ResetTransientObject(o);
 	return TEE_SUCCESS;
 }
