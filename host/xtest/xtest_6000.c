@@ -1223,6 +1223,15 @@ static void xtest_tee_test_6010_single(ADBG_Case_t *c, uint32_t storage_id)
 	ADBG_EXPECT_BUFFER(c, data, sizeof(data), out, n);
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_seek(&sess, o1, 10, TEE_DATA_SEEK_END)))
+		goto seek_write_read_out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_read(&sess, o1, out, sizeof(out), &n)))
+		goto seek_write_read_out;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, n, ==, 0);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_seek(&sess, o1, -(int32_t)sizeof(data) / 2,
 			TEE_DATA_SEEK_END)))
 		goto seek_write_read_out;
