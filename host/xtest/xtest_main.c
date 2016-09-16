@@ -21,8 +21,7 @@
 #include "xtest_helpers.h"
 
 /* include here shandalone tests */
-#include "sha_perf.h"
-#include "aes_perf.h"
+#include "crypto_common.h"
 
 #ifdef WITH_GP_TESTS
 #include "adbg_entry_declare.h"

@@ -39,18 +39,7 @@
 
 #include <tee_client_api.h>
 #include "ta_aes_perf.h"
-#include "aes_perf.h"
-
-#define _verbose(lvl, ...)			\
-	do {					\
-		if (verbosity >= lvl) {		\
-			printf(__VA_ARGS__);	\
-			fflush(stdout);		\
-		}				\
-	} while (0)
-
-#define verbose(...)  _verbose(1, __VA_ARGS__)
-#define vverbose(...) _verbose(2, __VA_ARGS__)
+#include "crypto_common.h"
 
 /*
  * TEE client stuff
@@ -394,15 +383,17 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	*/
 
 	size_t size = 1024;	/* Buffer size (-s) */
-	unsigned int n = 5000;	/* Number of measurements (-n) */
-	unsigned int l = 1;	/* Inner loops (-l) */
-	int verbosity = 0;	/* Verbosity (-v) */
+	unsigned int n = CRYPTO_DEF_COUNT; /*Number of measurements (-n)*/
+	unsigned int l = CRYPTO_DEF_LOOPS; /* Inner loops (-l) */
+	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
 	int decrypt = 0;		/* Encrypt by default, -d to decrypt */
-	int keysize = 128;	/* AES key size (-k) */
+	int keysize = AES_128;	/* AES key size (-k) */
 	int mode = TA_AES_ECB;	/* AES mode (-m) */
-	int random_in = 0;	/* Get input data from /dev/urandom (-r) */
-	int in_place = 0;	/* 1: use same buffer for in and out (-i) */
-	int warmup = 2;		/* Start with a 2-second busy loop (-w) */
+	/* Get input data from /dev/urandom (-r) */
+	int random_in = CRYPTO_USE_RANDOM;
+	/* Use same buffer for in and out (-i) */
+	int in_place = AES_PERF_INPLACE;
+	int warmup = CRYPTO_DEF_WARMUP;	/* Start with a 2-second busy loop (-w) */
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {

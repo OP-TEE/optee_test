@@ -18,22 +18,8 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
-#include <sha_perf.h>
-#include <aes_perf.h>
+#include <crypto_common.h>
 #include <util.h>
-
-#define SHA_PERF_COUNT 5000	/* Number of measurements */
-#define SHA_PERF_WARMUP 2 /* Start with a 2-second busy loop  */
-#define SHA_PERF_LOOPS 1 /* Inner loops */
-#define SHA_PERF_RANDOM_IN 1 /* Get input data from /dev/urandom */
-#define SHA_PERF_VERBOSITY 0
-
-#define AES_PERF_COUNT 5000	/* Number of measurements */
-#define AES_PERF_WARMUP 2 /* Start with a 2-second busy loop  */
-#define AES_PERF_LOOPS 1 /* Inner loops */
-#define AES_PERF_RANDOM_IN 1 /* Get input data from /dev/urandom */
-#define AES_PERF_VERBOSITY 0
-#define AES_PERF_INPLACE 0
 
 /* SHA bechmarks */
 static void xtest_tee_benchmark_2001(ADBG_Case_t *Case_p);
@@ -55,9 +41,9 @@ static void xtest_tee_benchmark_2001(ADBG_Case_t *c)
 	size_t size = 1024;	/* Buffer size */
 	int offset = 0;          /* Buffer offset wrt. alloc'ed address */
 
-	sha_perf_run_test(algo, size, SHA_PERF_COUNT,
-								SHA_PERF_LOOPS, SHA_PERF_RANDOM_IN, offset,
-								SHA_PERF_WARMUP, SHA_PERF_VERBOSITY);
+	sha_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
+				CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, offset,
+				CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 
 }
 
@@ -69,9 +55,9 @@ static void xtest_tee_benchmark_2002(ADBG_Case_t *c)
 	size_t size = 4096;	/* Buffer size */
 	int offset = 0;          /* Buffer offset wrt. alloc'ed address */
 
-	sha_perf_run_test(algo, size, SHA_PERF_COUNT,
-								SHA_PERF_LOOPS, SHA_PERF_RANDOM_IN, offset,
-								SHA_PERF_WARMUP, SHA_PERF_VERBOSITY);
+	sha_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
+				CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, offset,
+				CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 
 }
 
@@ -107,28 +93,23 @@ static void xtest_tee_benchmark_2011(ADBG_Case_t *c)
 	int keysize = AES_128;
 	size_t size = 1024;	/* Buffer size */
 
-
-	aes_perf_run_test(mode, keysize, decrypt, size, AES_PERF_COUNT,
-						AES_PERF_LOOPS, AES_PERF_RANDOM_IN, AES_PERF_INPLACE,
-						AES_PERF_WARMUP, AES_PERF_VERBOSITY);
-
+	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_COUNT,
+		CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, AES_PERF_INPLACE,
+		CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 }
 
 static void xtest_tee_benchmark_2012(ADBG_Case_t *c)
 {
 	UNUSED(c);
 
-	int mode = TA_AES_ECB;	/* AES mode */
+	int mode = TA_AES_CBC;	/* AES mode */
 	int decrypt = 0; /* Encrypt */
-	int keysize = AES_128;
+	int keysize = AES_256;
 	size_t size = 1024;	/* Buffer size */
 
-	aes_perf_run_test(mode, keysize, decrypt, size, AES_PERF_COUNT,
-						AES_PERF_LOOPS, AES_PERF_RANDOM_IN, AES_PERF_INPLACE,
-						AES_PERF_WARMUP, AES_PERF_VERBOSITY);
-
-
-
+	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_COUNT,
+		CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, AES_PERF_INPLACE,
+		CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_2011, xtest_tee_benchmark_2011,

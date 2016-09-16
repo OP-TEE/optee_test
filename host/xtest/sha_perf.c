@@ -39,18 +39,7 @@
 
 #include <adbg.h>
 #include <tee_client_api.h>
-#include "sha_perf.h"
-
-#define _verbose(lvl, ...)			\
-	do {					\
-		if (verbosity >= lvl) {		\
-			printf(__VA_ARGS__);	\
-			fflush(stdout);		\
-		}				\
-	} while (0)
-
-#define verbose(...)  _verbose(1, __VA_ARGS__)
-#define vverbose(...) _verbose(2, __VA_ARGS__)
+#include "crypto_common.h"
 
 /*
  * TEE client stuff
@@ -418,13 +407,15 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 	
 	/* Command line params */
 	size_t size = 1024;	/* Buffer size (-s) */
-	unsigned int n = 5000;	/* Number of measurements (-n) */
-	unsigned int l = 1;	/* Inner loops (-l) */
-	int verbosity = 0;	/* Verbosity (-v) */
+	unsigned int n = CRYPTO_DEF_COUNT;/* Number of measurements (-n)*/
+	unsigned int l = CRYPTO_DEF_LOOPS;	/* Inner loops (-l) */
+	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
 	int algo = TA_SHA_SHA1;	/* Algorithm (-a) */
-	int random_in = 0;	/* Get input data from /dev/urandom (-r) */
-	int warmup = 2;		/* Start with a 2-second busy loop (-w) */
-	int offset = 0;          /* Buffer offset wrt. alloc'ed address (-u) */
+	/* Get input data from /dev/urandom (-r) */
+	int random_in = CRYPTO_USE_RANDOM;
+	/* Start with a 2-second busy loop (-w) */
+	int warmup = CRYPTO_DEF_WARMUP;
+	int offset = 0; /* Buffer offset wrt. alloc'ed address (-u) */
 
 
 	/* Parse command line */
