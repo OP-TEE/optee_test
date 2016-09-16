@@ -22,6 +22,7 @@
 
 /* include here shandalone tests */
 #include "sha_perf.h"
+#include "aes_perf.h"
 
 #ifdef WITH_GP_TESTS
 #include "adbg_entry_declare.h"
@@ -127,6 +128,10 @@ ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_1003, NULL)
 /* SHA benchmarks */
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2001, NULL)
 ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2002, NULL)
+
+/* AES benchmarks */
+ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2011, NULL)
+ADBG_SUITE_ENTRY(XTEST_TEE_BENCHMARK_2012, NULL)
 ADBG_SUITE_DEFINE_END()
 
 
@@ -151,6 +156,9 @@ void usage(char *program)
 	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
 	printf("\t--sha perf -h      show usage of SHA performance testing tool\n");
 	printf("\n");
+	printf("\t--aes-perf         AES performance testing tool for OP-TEE\n");
+	printf("\t--aes perf -h      show usage of AES performance testing tool\n");
+	printf("\n");
 }
 
 int main(int argc, char *argv[])
@@ -163,9 +171,10 @@ int main(int argc, char *argv[])
 
 	opterr = 0;
 
-	if (argc > 1 && !strcmp(argv[1], "--sha-perf")) {
+	if (argc > 1 && !strcmp(argv[1], "--sha-perf"))
 		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
-	}
+	else if (argc > 1 && !strcmp(argv[1], "--aes-perf"))
+		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
 		switch (opt) {
