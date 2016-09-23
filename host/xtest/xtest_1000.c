@@ -443,7 +443,8 @@ static void xtest_tee_test_1005(ADBG_Case_t *c)
 
 	for (i = 0; i < MAX_SESSIONS; i++) {
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&sessions[i], &os_test_ta_uuid,
+			xtest_teec_open_session(&sessions[i],
+						&concurrent_ta_uuid,
 						NULL, &ret_orig)))
 			break;
 	}
