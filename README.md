@@ -75,6 +75,32 @@ Then the tests must be compiled with `CFG_GP_PACKAGE_PATH=<path>`.
 	$ tee-supplicant &
 	$ xtest _<family> (i.e.: xtest _1)
 
+	# running all benchmarks (secured storage, aes/sha)
+	boot and execute on your target
+	$ modprobe optee_armtz
+	$ tee-supplicant &
+	$ xtest -t benchmark
+
+	# running single benchmark
+	boot and execute on your target
+	$ modprobe optee_armtz
+	$ tee-supplicant &
+	$ xtest -t benchmark <benchmark_number> (i.e. xtest 2001)
+
+### HOWTO use SHA/AES benchmarking modules
+It's also possible to run SHA/AES benchmarks by using sha-perf/aes-perf modules
+within xtest. These modules allow to run custom benchmarks with user-defined 
+params.
+
+	# running sha-perf with default params
+	boot and execute on your target
+	$ modprobe optee_armtz
+	$ tee-supplicant &
+	$ xtest --sha-perf
+
+	# getting usage details and list of possible options for sha-perf
+	$ xtest --sha-perf -h
+
 #### Compiler flags
 To be able to see the full command when building you could build using following
 flag:
