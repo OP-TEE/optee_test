@@ -50,6 +50,12 @@ srcs := xtest_1000.c \
 	adbg/src/security_utils_hex.c \
 	adbg/src/security_utils_mem.c
 
+
+ifeq ($(CFG_TEE_BENCHMARK),y)
+CFLAGS += -DCFG_TEE_BENCHMARK
+srcs += xtest_benchmark_3000.c
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 
@@ -80,6 +86,7 @@ CFLAGS += -I../../ta/concurrent/include
 CFLAGS += -I../../ta/concurrent_large/include
 CFLAGS += -I../../ta/sha_perf/include
 CFLAGS += -I../../ta/aes_perf/include
+CFLAGS += -I../../ta/latency_perf/include
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto

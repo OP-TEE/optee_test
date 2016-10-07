@@ -40,13 +40,13 @@ static TEE_Result rpc_call_cryp(uint32_t nParamTypes, TEE_Param pParams[4],
 	TEE_TASessionHandle cryp_session;
 	TEE_Result res;
 	uint32_t origin;
-	TEE_Param params[4];
+	TEE_Param params[TEE_NUM_PARAMS];
 
 	uint32_t types =
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE,
 			    TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE);
 
-	TEE_MemFill(params, 0, sizeof(TEE_Param) * 4);
+	TEE_MemFill(params, 0, sizeof(TEE_Param) * TEE_NUM_PARAMS);
 
 	res = TEE_OpenTASession(&cryp_uuid, 0, types, params, &cryp_session,
 				&origin);
@@ -70,7 +70,7 @@ static TEE_Result rpc_call_cryp(uint32_t nParamTypes, TEE_Param pParams[4],
 	return res;
 }
 
-TEE_Result rpc_sha224(uint32_t nParamTypes, TEE_Param pParams[4])
+TEE_Result rpc_sha224(uint32_t nParamTypes, TEE_Param pParams[TEE_NUM_PARAMS])
 {
 	return rpc_call_cryp(nParamTypes, pParams, TA_CRYPT_CMD_SHA224);
 }
@@ -100,7 +100,7 @@ TEE_Result rpc_open(void *session_context, uint32_t param_types,
 	uint32_t types =
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
 			    TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE);
-	TEE_Param par[4];
+	TEE_Param par[TEE_NUM_PARAMS];
 
 	(void)session_context;
 	(void)param_types;
@@ -110,7 +110,7 @@ TEE_Result rpc_open(void *session_context, uint32_t param_types,
 	if (res != TEE_SUCCESS)
 		return res;
 
-	TEE_MemFill(params, 0, sizeof(TEE_Param) * 4);
+	TEE_MemFill(params, 0, sizeof(TEE_Param) * TEE_NUM_PARAMS);
 	res =
 	    TEE_InvokeTACommand(session, 0, TA_SIMS_CMD_GET_COUNTER, types, par,
 				&orig);

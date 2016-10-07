@@ -406,7 +406,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	TEE_Result res;
 	uint32_t ret_orig;
 	uint32_t l_pts;
-	TEE_Param l_params[4] = { { {0} } };
+	TEE_Param l_params[TEE_NUM_PARAMS] = { { {0} } };
 	uint8_t buf[32];
 	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
 	TEE_UUID *uuid;
@@ -785,7 +785,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	static const TEE_UUID crypt_uuid = TA_CRYPT_UUID;
 	TEE_Result res;
 	uint32_t l_pts;
-	TEE_Param l_params[4] = { { {0} } };
+	TEE_Param l_params[TEE_NUM_PARAMS] = { { {0} } };
 	TEE_TASessionHandle sess;
 	uint32_t ret_orig;
 	static const uint8_t sha256_in[] = { 'a', 'b', 'c' };
