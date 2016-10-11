@@ -27,6 +27,7 @@
 #include "tee_client_api.h"
 #undef TA_UUID
 #include "TTA_DS_protocol.h"
+#include "xml_common_api.h"
 
 #define Invoke_FreeTransientObjectPanic Invoke_Simple_Function
 #define Invoke_RenamePersistentObject_Success Invoke_Simple_Function
@@ -648,37 +649,6 @@ static TEEC_UUID UUID_TTA_testingInternalAPI_dataStorage = {
 	{ 0x54, 0x44, 0x41, 0x54, 0x41, 0x53, 0x54, 0x31 }
 };
 
-/* Helper functions/macros */
-
-#define ALLOCATE_SHARED_MEMORY(context, sharedMemory, sharedMemorySize, \
-			       memoryType) \
-	res = AllocateSharedMemory(context, sharedMemory, sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	memset(sharedMemory->buffer, 0, sharedMemorySize);
-
-#define ALLOCATE_AND_FILL_SHARED_MEMORY(context, sharedMemory, \
-					sharedMemorySize, \
-					memoryType, copySize, data) \
-	res = AllocateSharedMemory(context, sharedMemory, sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	if (data != NULL) { \
-		memcpy(sharedMemory->buffer, data, copySize); \
-	}
-
-#define SET_SHARED_MEMORY_OPERATION_PARAMETER(parameterNumber, \
-					      sharedMemoryOffset, \
-					      sharedMemory, \
-					      sharedMemorySize) \
-	op.params[parameterNumber].memref.offset = sharedMemoryOffset; \
-	op.params[parameterNumber].memref.size = sharedMemorySize; \
-	op.params[parameterNumber].memref.parent = sharedMemory;
-
 /* XML_VERIFY macro define.
  *
  * Use ADBG_EXPECT or ADBG_EXPECT_NOT depending on the
@@ -821,9 +791,9 @@ static TEEC_Result Invoke_SeekWriteReadObjectData(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
 					TEEC_MEM_INPUT,
-					sizeof(BUFFER01), BUFFER01)
+					sizeof(BUFFER01), BUFFER01, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = seekMode;
 	op.params[0].value.b = offset;
@@ -870,10 +840,12 @@ static TEEC_Result Invoke_SeekWriteReadObjectData(
 							 sizeof(BUFFER01))));
 	}
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
 	free(buf0);
+exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -899,9 +871,9 @@ static TEEC_Result Invoke_InitObjectAndAttributes(
 	uint32_t tmp_offset = 0;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEM_INPUT)
+			       TEEC_MEM_INPUT, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEM_INPUT)
+			       TEEC_MEM_INPUT, mem02_exit)
 
 	tmp_buf1 = SHARE_MEM01->buffer;
 	tmp_buf2 = (uint8_t *)SHARE_MEM02->buffer;
@@ -982,9 +954,10 @@ static TEEC_Result Invoke_InitObjectAndAttributes(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1018,13 +991,13 @@ static TEEC_Result Invoke_GetRSAAttributes(
 	uint32_t tmp_int2;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM04, DS_BIG_SIZE,
-			       (TEEC_MEM_INPUT | TEEC_MEM_OUTPUT))
+			       (TEEC_MEM_INPUT | TEEC_MEM_OUTPUT), mem04_exit)
 
 	tmp_buf = SHARE_MEM04->buffer;
 	put_uint32_be(&tmp_buf, attributeType);
@@ -1068,10 +1041,14 @@ static TEEC_Result Invoke_GetRSAAttributes(
 	(void)ADBG_EXPECT_COMPARE_SIGNED(c, tmp_int1, !=, attributeId);
 
 exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
-	TEEC_ReleaseSharedMemory(SHARE_MEM03);
 	TEEC_ReleaseSharedMemory(SHARE_MEM04);
+mem04_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1094,10 +1071,10 @@ static TEEC_Result Invoke_GenerateKey(
 	int tmp_offset = 0;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEM_INPUT)
+			       TEEC_MEM_INPUT, mem01_exit)
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
-			       TEEC_MEM_INPUT)
+			       TEEC_MEM_INPUT, mem02_exit)
 
 	tmp_buf1 = SHARE_MEM01->buffer;
 	tmp_buf2 = (uint8_t *)SHARE_MEM02->buffer;
@@ -1153,9 +1130,10 @@ static TEEC_Result Invoke_GenerateKey(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1168,7 +1146,7 @@ static TEEC_Result Invoke_ReadObjectData(
 	uint32_t org;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	op.params[0].value.a = readSize;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -1194,8 +1172,8 @@ static TEEC_Result Invoke_ReadObjectData(
 							initialBufferSize));
 	}
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1228,13 +1206,13 @@ static TEEC_Result Invoke_GetDHAttributes(
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, DS_BIG_SIZE,
 					TEEC_MEM_INPUT,
 					sizeof(TEE_ATTR_DH_PRIME_VALUE01),
-					TEE_ATTR_DH_PRIME_VALUE01)
+					TEE_ATTR_DH_PRIME_VALUE01, mem01_exit)
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
 					TEEC_MEM_INPUT,
 					sizeof(TEE_ATTR_DH_BASE_VALUE01),
-					TEE_ATTR_DH_BASE_VALUE01)
+					TEE_ATTR_DH_BASE_VALUE01, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	op.params[0].value.a = attributeType;
 	op.params[0].value.b = attributeId;
@@ -1262,10 +1240,12 @@ static TEEC_Result Invoke_GetDHAttributes(
 			TEE_ATTR_DH_BASE_VALUE01 */
 	}
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1306,7 +1286,7 @@ static TEEC_Result Invoke_TruncateReadObjectData(
 	}
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, DS_BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	op.params[0].value.a = numberOfBytes;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM01,
@@ -1347,9 +1327,8 @@ static TEEC_Result Invoke_TruncateReadObjectData(
 
 exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-
+mem01_exit:
 	free(buf0);
-
 	return res;
 }
 

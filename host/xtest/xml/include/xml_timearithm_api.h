@@ -15,6 +15,7 @@
 #define XML_TIMEARITHM_API_H_
 
 #include <openssl/bn.h>
+#include "xml_common_api.h"
 
 #define Invoke_GetSystemTime Invoke_Simple_Function
 #define Invoke_GetREETime Invoke_Simple_Function
@@ -366,45 +367,15 @@ static TEEC_UUID UUID_TTA_testingInternalAPI_Time = {
 };
 
 /*Helper functions/macros*/
-#define IDENTIFIER_NOT_USED(x) { if (sizeof(&x)) {} }
 
-#define ALLOCATE_SHARED_MEMORY(context, sharedMemory, sharedMemorySize, \
-			       memoryType) \
-	res = AllocateSharedMemory(context, sharedMemory, sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	memset(sharedMemory->buffer, 0, sharedMemorySize);
-
-#define ALLOCATE_AND_FILL_SHARED_MEMORY(context, sharedMemory, \
-					sharedMemorySize, \
-					memoryType, data) \
-	res = AllocateSharedMemory(context, sharedMemory, sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	if (data != NULL) { \
-		memcpy(sharedMemory->buffer, data, sharedMemorySize); \
-	}
-
-#define SET_SHARED_MEMORY_OPERATION_PARAMETER(parameterNumber, \
-					      sharedMemoryOffset, \
-					      sharedMemory, \
-					      sharedMemorySize) \
-	op.params[parameterNumber].memref.offset = sharedMemoryOffset; \
-	op.params[parameterNumber].memref.size = sharedMemorySize; \
-	op.params[parameterNumber].memref.parent = sharedMemory;
-
-#define BN_DECLARE_AND_INIT() \
+#define BN_DECLARE_AND_INIT(exit_label) \
 	BN_CTX *ctx = NULL; \
 	BIGNUM *a = NULL, *b = NULL, *s = NULL, *d = NULL, \
 		*m = NULL, *l = NULL, \
 	*r = NULL; \
 	ctx = BN_CTX_new(); \
 	if (ctx == NULL) { \
-		goto exit; \
+		goto exit_label; \
 	} \
 	a = BN_new(); \
 	b = BN_new(); \
@@ -527,12 +498,12 @@ static TEEC_Result Invoke_BigIntCmpS32(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -552,9 +523,10 @@ static TEEC_Result Invoke_BigIntCmpS32(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -569,13 +541,13 @@ static TEEC_Result Invoke_BigIntShiftRight(
 	uint32_t tmp = 0, sign_cmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT, value1, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, ((size_N2 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -595,7 +567,7 @@ static TEEC_Result Invoke_BigIntShiftRight(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM02->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM02->size);
 
@@ -635,10 +607,14 @@ static TEEC_Result Invoke_BigIntShiftRight(
 	}
 
 exit:
-	BN_FREE()
 	free(tmp1);
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -654,16 +630,18 @@ static TEEC_Result Invoke_BigIntDiv_Remain(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT,
+					value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT,
+					value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -686,7 +664,7 @@ static TEEC_Result Invoke_BigIntDiv_Remain(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -709,13 +687,16 @@ static TEEC_Result Invoke_BigIntDiv_Remain(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -731,16 +712,18 @@ static TEEC_Result Invoke_BigIntDiv_Quotient(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT,
+					value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT,
+					value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -763,7 +746,7 @@ static TEEC_Result Invoke_BigIntDiv_Quotient(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -786,13 +769,16 @@ static TEEC_Result Invoke_BigIntDiv_Quotient(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -808,16 +794,18 @@ static TEEC_Result Invoke_BigIntAdd(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT,
+					value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT,
+					value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -840,7 +828,7 @@ static TEEC_Result Invoke_BigIntAdd(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -863,13 +851,16 @@ static TEEC_Result Invoke_BigIntAdd(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -883,9 +874,10 @@ static TEEC_Result Invoke_BigIntIsProbablePrime(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT,
+					value1, mem01_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -902,8 +894,8 @@ static TEEC_Result Invoke_BigIntIsProbablePrime(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -918,15 +910,15 @@ static TEEC_Result Invoke_BigIntConvert_and_ComputeFMM(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM03,
+					TEEC_MEM_INPUT, value2, mem02_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM03,
 					((size_N3 + 7) / 8),
-					TEEC_MEM_INPUT, value3)
+					TEEC_MEM_INPUT, value3, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -949,10 +941,12 @@ static TEEC_Result Invoke_BigIntConvert_and_ComputeFMM(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -968,16 +962,16 @@ static TEEC_Result Invoke_BigIntAddMod(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1002,7 +996,7 @@ static TEEC_Result Invoke_BigIntAddMod(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1028,13 +1022,16 @@ static TEEC_Result Invoke_BigIntAddMod(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1050,16 +1047,16 @@ static TEEC_Result Invoke_BigIntSubMod(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1084,7 +1081,7 @@ static TEEC_Result Invoke_BigIntSubMod(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1110,13 +1107,16 @@ static TEEC_Result Invoke_BigIntSubMod(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1130,9 +1130,10 @@ static TEEC_Result Invoke_BigIntGetBit(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT,
+					value1, mem01_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1151,8 +1152,8 @@ static TEEC_Result Invoke_BigIntGetBit(
 	(void)ADBG_EXPECT_COMPARE_SIGNED(c, op.params[3].value.a, ==,
 					 expectedBooleanResult);
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1168,16 +1169,16 @@ static TEEC_Result Invoke_BigIntMulMod(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1202,7 +1203,7 @@ static TEEC_Result Invoke_BigIntMulMod(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1228,13 +1229,16 @@ static TEEC_Result Invoke_BigIntMulMod(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1265,12 +1269,12 @@ static TEEC_Result Invoke_BigIntComputeExtendedGcd(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1289,9 +1293,10 @@ static TEEC_Result Invoke_BigIntComputeExtendedGcd(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1305,9 +1310,9 @@ static TEEC_Result Invoke_BigIntGetBitCount(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT, value1, mem01_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1325,8 +1330,8 @@ static TEEC_Result Invoke_BigIntGetBitCount(
 	(void)ADBG_EXPECT_COMPARE_SIGNED(c, op.params[3].value.a, ==,
 					 ExpectedBitCount);
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1342,16 +1347,16 @@ static TEEC_Result Invoke_BigIntSub(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT,  value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1374,7 +1379,7 @@ static TEEC_Result Invoke_BigIntSub(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1397,13 +1402,16 @@ static TEEC_Result Invoke_BigIntSub(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1418,13 +1426,13 @@ static TEEC_Result Invoke_BigIntNeg(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL, *tmp2 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT, value1, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1443,13 +1451,13 @@ static TEEC_Result Invoke_BigIntNeg(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
 	tmp2 = (uint8_t *)malloc(SHARE_MEM01->size);
 	if (tmp2 == NULL)
-		goto exit;
+		goto tmp2_exit;
 	memset(tmp2, 0, SHARE_MEM01->size);
 
 
@@ -1470,12 +1478,16 @@ static TEEC_Result Invoke_BigIntNeg(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+	free(tmp2);
+tmp2_exit:
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1490,12 +1502,12 @@ static TEEC_Result Invoke_BigIntCmp(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1515,9 +1527,10 @@ static TEEC_Result Invoke_BigIntCmp(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -1573,16 +1586,16 @@ static TEEC_Result Invoke_BigIntMul(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1605,7 +1618,7 @@ static TEEC_Result Invoke_BigIntMul(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1627,13 +1640,16 @@ static TEEC_Result Invoke_BigIntMul(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1649,16 +1665,16 @@ static TEEC_Result Invoke_BigIntInvMod(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL, *tmp2 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1683,13 +1699,13 @@ static TEEC_Result Invoke_BigIntInvMod(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
 	tmp2 = (uint8_t *)malloc(SHARE_MEM01->size);
 	if (tmp2 == NULL)
-		goto exit;
+		goto tmp2_exit;
 
 	memset(tmp2, 0, SHARE_MEM01->size);
 	tmp2[0] = 1;
@@ -1719,16 +1735,18 @@ static TEEC_Result Invoke_BigIntInvMod(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	if (tmp2)
-		free(tmp2);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
-	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+	free(tmp2);
+tmp2_exit:
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1743,13 +1761,13 @@ static TEEC_Result Invoke_BigIntSquare(
 	uint32_t tmp = 0;
 	uint8_t *tmp1 = NULL;
 
-	BN_DECLARE_AND_INIT()
+	BN_DECLARE_AND_INIT(bn_exit)
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
+					TEEC_MEM_INPUT, value1, mem01_exit)
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, ((size_N3 + 7) / 8),
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1768,7 +1786,7 @@ static TEEC_Result Invoke_BigIntSquare(
 
 	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
-		goto exit;
+		goto tmp1_exit;
 
 	memset(tmp1, 0, SHARE_MEM03->size);
 
@@ -1787,12 +1805,14 @@ static TEEC_Result Invoke_BigIntSquare(
 						SHARE_MEM03->size));
 
 exit:
-	if (tmp1)
-		free(tmp1);
-
-	BN_FREE()
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+	free(tmp1);
+tmp1_exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM03);
+mem03_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
+	BN_FREE()
+bn_exit:
 	return res;
 }
 
@@ -1824,12 +1844,12 @@ static TEEC_Result Invoke_BigIntRelativePrime(
 	uint32_t org;
 	uint32_t tmp = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM01,
 					((size_N1 + 7) / 8),
-					TEEC_MEM_INPUT, value1)
-	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM02,
+					TEEC_MEM_INPUT, value1, mem01_exit)
+	ALLOCATE_AND_FILL_SHARED_MEMORY_6(CONTEXT01, SHARE_MEM02,
 					((size_N2 + 7) / 8),
-					TEEC_MEM_INPUT, value2)
+					TEEC_MEM_INPUT, value2, mem02_exit)
 
 	if (sign1)
 		tmp = tmp | BIT0_MASK;
@@ -1849,9 +1869,10 @@ static TEEC_Result Invoke_BigIntRelativePrime(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 

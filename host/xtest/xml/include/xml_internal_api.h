@@ -27,7 +27,7 @@
 #include "tee_client_api.h"
 #undef TA_UUID
 #include "TTA_TCF.h"
-
+#include "xml_common_api.h"
 
 #define Invoke_MaskUnmaskCancellations Invoke_Simple_Function
 #define Invoke_ProcessTAInvoke_Payload_Value Invoke_Simple_Function
@@ -210,41 +210,6 @@ static TEEC_UUID UUID_Unknown = {
 };
 
 
-/* Helper functions/macros */
-
-#define IDENTIFIER_NOT_USED(x) { if (sizeof(&x)) {} }
-
-#define ALLOCATE_SHARED_MEMORY(context, sharedMemory, \
-			       sharedMemorySize, \
-			       memoryType) \
-	res = AllocateSharedMemory(context, sharedMemory, \
-				   sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	memset(sharedMemory->buffer, 0, sharedMemorySize);
-
-#define ALLOCATE_AND_FILL_SHARED_MEMORY(context, sharedMemory, \
-					sharedMemorySize, \
-					memoryType, copySize, data) \
-	res = AllocateSharedMemory(context, sharedMemory, sharedMemorySize, \
-				   memoryType); \
-	if (res != TEEC_SUCCESS) { \
-		goto exit; \
-	} \
-	if (data != NULL) { \
-		memcpy(sharedMemory->buffer, data, copySize); \
-	}
-
-#define SET_SHARED_MEMORY_OPERATION_PARAMETER(parameterNumber, \
-					      sharedMemoryOffset, \
-					      sharedMemory, \
-					      sharedMemorySize) \
-	op.params[parameterNumber].memref.offset = sharedMemoryOffset; \
-	op.params[parameterNumber].memref.size = sharedMemorySize; \
-	op.params[parameterNumber].memref.parent = sharedMemory;
-
 /* XML_VERIFY macro define.
  *
  * Use ADBG_EXPECT or ADBG_EXPECT_NOT depending on the expected return value.
@@ -364,14 +329,14 @@ static TEEC_Result Invoke_GetPropertyAsXXX_withoutEnum(
 
 	nameLen = strlen(name) + 1;
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEM_INPUT, nameLen, name)
+					TEEC_MEM_INPUT, nameLen, name, mem01_exit)
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 1,
-				       TEEC_MEM_OUTPUT)
+				       TEEC_MEM_OUTPUT, mem02_exit)
 	} else {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, BIG_SIZE,
-				       TEEC_MEM_OUTPUT)
+				       TEEC_MEM_OUTPUT, mem02_exit)
 	}
 
 	op.params[0].value.a = (uint32_t)propSet;
@@ -399,8 +364,10 @@ static TEEC_Result Invoke_GetPropertyAsXXX_withoutEnum(
 	}
 
 exit:
-	TEEC_ReleaseSharedMemory(SHARE_MEM01);
 	TEEC_ReleaseSharedMemory(SHARE_MEM02);
+mem02_exit:
+	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -452,7 +419,7 @@ static TEEC_Result Invoke_SetInstanceData(
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
 					TEEC_MEM_INPUT,
-					strlen(data) + 1, data)
+					strlen(data) + 1, data, mem01_exit)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -462,8 +429,8 @@ static TEEC_Result Invoke_SetInstanceData(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -476,7 +443,7 @@ static TEEC_Result Invoke_GetInstanceData(
 	uint32_t org;
 
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-			       TEEC_MEM_OUTPUT)
+			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -501,6 +468,7 @@ static TEEC_Result Invoke_GetInstanceData(
 
 exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -513,7 +481,7 @@ static TEEC_Result Invoke_ProcessInvokeTAOpenSession(
 	uint32_t org;
 
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-					TEEC_MEM_INPUT, 16, UUID)
+					TEEC_MEM_INPUT, 16, UUID, mem01_exit)
 
 	op.params[0].value.a = TACmd;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, 16)
@@ -535,6 +503,7 @@ static TEEC_Result Invoke_ProcessInvokeTAOpenSession(
 
 exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -566,7 +535,8 @@ static TEEC_Result Invoke_CheckMemoryAccessRight(
 		break;
 	}
 
-	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE, memory_flag)
+	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
+					memory_flag, mem01_exit)
 
 	op.params[0].value.a = memoryAccessFlags;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
@@ -577,8 +547,8 @@ static TEEC_Result Invoke_CheckMemoryAccessRight(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
@@ -672,10 +642,10 @@ static TEEC_Result Invoke_GetPropertyName(
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, 1,
-				       TEEC_MEM_OUTPUT)
+				       TEEC_MEM_OUTPUT, mem01_exit)
 	} else {
 		ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, BIG_SIZE,
-				       TEEC_MEM_OUTPUT)
+				       TEEC_MEM_OUTPUT, mem01_exit)
 	}
 
 	op.params[0].value.a = enumerator;
@@ -703,6 +673,7 @@ static TEEC_Result Invoke_GetPropertyName(
 
 exit:
 	TEEC_ReleaseSharedMemory(SHARE_MEM01);
+mem01_exit:
 	return res;
 }
 
