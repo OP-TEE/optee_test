@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#if defined(CFG_ENC_FS) && defined(CFG_REE_FS)
+#if defined(CFG_REE_FS)
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +26,8 @@
 
 #include <tee_fs_key_manager.h>
 #include <tee_client_api.h>
+#include <tee_api_defines_extensions.h>
+
 #include <ta_storage.h>
 #include <tee_api_defines.h>
 #include <tee_api_types.h>
@@ -129,7 +131,7 @@ static TEEC_Result obj_open(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[0].tmpref.size = id_size;
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
-	op.params[2].value.a = TEE_STORAGE_PRIVATE;
+	op.params[2].value.a = TEE_STORAGE_PRIVATE_REE;
 
 	op.paramTypes = TEEC_PARAM_TYPES(
 		TEEC_MEMREF_TEMP_INPUT, TEEC_VALUE_INOUT, TEEC_VALUE_INPUT,
@@ -157,7 +159,7 @@ static TEEC_Result obj_create(TEEC_Session *sess, void *id, uint32_t id_size,
 	op.params[1].value.a = flags;
 	op.params[1].value.b = 0;
 	op.params[2].value.a = attr;
-	op.params[2].value.b = TEE_STORAGE_PRIVATE;
+	op.params[2].value.b = TEE_STORAGE_PRIVATE_REE;
 	op.params[3].tmpref.buffer = data;
 	op.params[3].tmpref.size = data_size;
 
@@ -833,4 +835,4 @@ ADBG_CASE_DEFINE(
 	"Description of how to implement ..."
 	);
 
-#endif /* defined(CFG_ENC_FS) && defined(CFG_REE_FS) */
+#endif /* defined(CFG_REE_FS) */
