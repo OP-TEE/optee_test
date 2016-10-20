@@ -424,14 +424,17 @@ static void storage_corrupt(ADBG_Case_t *c,
 	uint32_t obj_id;
 	uint32_t nb;
 	size_t n;
+	char *filedata = NULL;
 
 
-	ADBG_EXPECT(c, TEE_SUCCESS,
-		    TEEC_InitializeContext(_device, &ctx));
+	if (!ADBG_EXPECT(c, TEE_SUCCESS,
+	            TEEC_InitializeContext(_device, &ctx)))
+		return;
 
-	ADBG_EXPECT(c, TEE_SUCCESS,
+	if (!ADBG_EXPECT(c, TEE_SUCCESS,
 		    TEEC_OpenSession(&ctx, &sess, &uuid,
-			TEEC_LOGIN_PUBLIC, NULL, NULL, &error));
+		        TEEC_LOGIN_PUBLIC, NULL, NULL, &error)))
+		return;
 
 	for (n = 0; n < ARRAY_SIZE(xtest_enc_fs_cases); n++) {
 
@@ -442,7 +445,6 @@ static void storage_corrupt(ADBG_Case_t *c,
 
 		char buffer[tv->data_len];
 		char filename[20];
-		char *filedata = NULL;
 		size_t p;
 		uint8_t data_byte = 0;
 
@@ -461,13 +463,15 @@ static void storage_corrupt(ADBG_Case_t *c,
 		Do_ADBG_BeginSubCase(c, "| filename: %s , data size: %d byte(s)",
 				     filename, tv->data_len);
 
-		ADBG_EXPECT(c, TEE_SUCCESS,
+		if (ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_create(&sess, filename, ARRAY_SIZE(filename),
 				TEE_DATA_FLAG_ACCESS_WRITE, 0, filedata,
-				tv->data_len, &obj_id));
+			        tv->data_len, &obj_id)))
 
-		ADBG_EXPECT(c, TEE_SUCCESS,
-			    obj_close(&sess, obj_id));
+			ADBG_EXPECT(c, TEE_SUCCESS,
+			            obj_close(&sess, obj_id));
+		else
+			goto exit;
 
 		if (file_type == META_FILE)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
@@ -571,10 +575,12 @@ static void storage_corrupt(ADBG_Case_t *c,
 		}
 
 		free(filedata);
+		filedata = NULL;
 		Do_ADBG_EndSubCase(c, NULL);
 	};
 
 exit:
+	free(filedata);
 	TEEC_CloseSession(&sess);
 	TEEC_FinalizeContext(&ctx);
 }

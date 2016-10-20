@@ -411,9 +411,10 @@ static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, uint32_t n)
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
-					&ret_orig));
+		                        &ret_orig)))
+		return;
 
 	op.params[0].value.a = n;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE,
@@ -424,11 +425,11 @@ static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, uint32_t n)
 		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_BAD_MEM_ACCESS, &op,
 				   &ret_orig));
 
-	(void)ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
-				      TEEC_InvokeCommand(&session,
-					TA_OS_TEST_CMD_BAD_MEM_ACCESS,
-					&op,
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+	        TEEC_ERROR_TARGET_DEAD,
+	        TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_BAD_MEM_ACCESS, &op,
 					&ret_orig));
+
 	(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
 
 	TEEC_CloseSession(&session);
@@ -482,9 +483,10 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
-					&ret_orig));
+		                        &ret_orig)))
+		return;
 
 	(void)ADBG_EXPECT_TEEC_RESULT(c,
 		TEEC_ERROR_TARGET_DEAD,
@@ -668,15 +670,16 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 
 	Do_ADBG_BeginSubCase(c, "Invoke command");
 	{
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		if (ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &os_test_ta_uuid,
-						NULL, &ret_orig));
+			                        NULL, &ret_orig))) {
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CLIENT,
-					   NULL, &ret_orig));
+			(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			    TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CLIENT,
+			                       NULL, &ret_orig));
+			TEEC_CloseSession(&session);
+		}
 
-		TEEC_CloseSession(&session);
 	}
 	Do_ADBG_EndSubCase(c, "Invoke command");
 
@@ -688,18 +691,18 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 		op.paramTypes = TEEC_PARAM_TYPES(
 			TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE, TEEC_NONE);
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		if (ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session,
 						&os_test_ta_uuid,
 						NULL,
-						&ret_orig));
+			                        &ret_orig))) {
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session,
-					   TA_OS_TEST_CMD_CLIENT_WITH_TIMEOUT,
-					   &op, &ret_orig));
-
-		TEEC_CloseSession(&session);
+			(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			  TEEC_InvokeCommand(&session,
+			                     TA_OS_TEST_CMD_CLIENT_WITH_TIMEOUT,
+			                     &op, &ret_orig));
+			TEEC_CloseSession(&session);
+		}
 	}
 	Do_ADBG_EndSubCase(c, "Invoke command with timeout");
 
@@ -765,109 +768,70 @@ static void *cancellation_thread(void *arg)
 }
 #endif
 
-static void xtest_tee_test_1009(ADBG_Case_t *c)
+static void xtest_tee_test_1009_subcase(ADBG_Case_t *c, const char *subcase,
+                                        uint32_t timeout, bool cancel)
 {
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
-
-	Do_ADBG_BeginSubCase(c, "TEE Wait 0.1s");
-	{
-		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&session, &os_test_ta_uuid,
-						NULL, &ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-
-		op.params[0].value.a = 100;
-		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
-						 TEEC_NONE, TEEC_NONE);
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_WAIT, &op,
-					   &ret_orig));
-		TEEC_CloseSession(&session);
-	}
-	Do_ADBG_EndSubCase(c, "TEE Wait 0.1s");
-
-	Do_ADBG_BeginSubCase(c, "TEE Wait 0.5s");
-	{
-		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&session, &os_test_ta_uuid,
-						NULL, &ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-
-		op.params[0].value.a = 500;
-		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
-						 TEEC_NONE, TEEC_NONE);
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_WAIT, &op,
-					   &ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-		TEEC_CloseSession(&session);
-	}
-	Do_ADBG_EndSubCase(c, "TEE Wait 0.5s");
-
 #ifdef USER_SPACE
-	Do_ADBG_BeginSubCase(c, "TEE Wait 2s cancel");
-	{
-		pthread_t thr;
-		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&session, &os_test_ta_uuid,
-						NULL, &ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-
-		op.params[0].value.a = 2000;
-		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
-						 TEEC_NONE, TEEC_NONE);
-
-		(void)ADBG_EXPECT(c, 0,
-			pthread_create(&thr, NULL, cancellation_thread, &op));
-
-		(void)ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_CANCEL,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_WAIT, &op,
-					   &ret_orig));
-
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-		(void)ADBG_EXPECT(c, 0, pthread_join(thr, NULL));
-		TEEC_CloseSession(&session);
-	}
-	Do_ADBG_EndSubCase(c, "TEE Wait 2s cancel");
+	pthread_t thr;
 #endif
 
-	Do_ADBG_BeginSubCase(c, "TEE Wait 2s");
+	Do_ADBG_BeginSubCase(c, "%s", subcase);
 	{
 		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			xtest_teec_open_session(&session, &os_test_ta_uuid,
-						NULL, &ret_orig));
+		if (ADBG_EXPECT_TEEC_SUCCESS(c,
+		         xtest_teec_open_session(&session, &os_test_ta_uuid,
+		                                 NULL, &ret_orig))) {
 
-		op.params[0].value.a = 2000;
-		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
-						 TEEC_NONE, TEEC_NONE);
+			(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c,
+			           TEEC_ORIGIN_TRUSTED_APP,
+			           ret_orig);
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_WAIT, &op,
-					   &ret_orig));
+			op.params[0].value.a = timeout;
+			op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+			                                 TEEC_NONE,
+			                                 TEEC_NONE, TEEC_NONE);
+#ifdef USER_SPACE
+			if (cancel) {
+				(void)ADBG_EXPECT(c, 0,
+				      pthread_create(&thr, NULL,
+				                     cancellation_thread, &op));
 
-		TEEC_CloseSession(&session);
+				(void)ADBG_EXPECT_TEEC_RESULT(c,
+				           TEEC_ERROR_CANCEL,
+			                   TEEC_InvokeCommand(&session,
+			                                 TA_OS_TEST_CMD_WAIT,
+			                                  &op,
+			                                  &ret_orig));
+			} else
+#endif
+
+			(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			           TEEC_InvokeCommand(&session,
+			                              TA_OS_TEST_CMD_WAIT,
+			                              &op,
+			                              &ret_orig));
+#ifdef USER_SPACE
+			if (cancel)
+				(void)ADBG_EXPECT(c, 0, pthread_join(thr, NULL));
+#endif
+
+			TEEC_CloseSession(&session);
+		}
 	}
-	Do_ADBG_EndSubCase(c, "TEE Wait 2s");
+	Do_ADBG_EndSubCase(c, "%s", subcase);
+}
+
+static void xtest_tee_test_1009(ADBG_Case_t *c)
+{
+	xtest_tee_test_1009_subcase(c, "TEE Wait 0.1s", 100, false);
+	xtest_tee_test_1009_subcase(c, "TEE Wait 0.5s", 500, false);
+#ifdef USER_SPACE
+	xtest_tee_test_1009_subcase(c, "TEE Wait 2s cancel", 2000, true);
+#endif
+	xtest_tee_test_1009_subcase(c, "TEE Wait 2s", 2000, false);
 }
 
 static void xtest_tee_test_1010(ADBG_Case_t *c)
@@ -929,9 +893,10 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 		uint8_t out[32] = { 0 };
 		int i;
 
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session1, &uuid, NULL,
-						&ret_orig));
+			                        &ret_orig)))
+			return;
 
 		op.params[0].value.a = 0;
 		op.params[1].tmpref.buffer = (void *)in;
@@ -945,9 +910,10 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 					   &ret_orig));
 
 		for (i = 1; i < 1000; i++) {
-			(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				xtest_teec_open_session(&session2, &uuid, NULL,
-							&ret_orig));
+				                        &ret_orig)))
+				continue;
 
 			op.params[0].value.a = 0;
 			op.params[1].tmpref.buffer = out;
