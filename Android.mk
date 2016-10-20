@@ -9,6 +9,13 @@ INCLUDE_FOR_BUILD_TA :=
 VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown)
 OPTEE_CLIENT_PATH ?= $(LOCAL_PATH)/../optee_client
 
+# TA_DEV_KIT_DIR must be set to non-empty value to
+# avoid the Android build scripts complaining about
+# includes pointing outside the Android source tree.
+# This var is expected to be set when OPTEE OS built.
+# We set the default value to an invalid path.
+TA_DEV_KIT_DIR ?= ../invalid_include_path
+
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
 include $(CLEAR_VARS)
