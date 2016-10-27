@@ -511,7 +511,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 
 #ifndef TA_TEST_DIR
 # ifdef __ANDROID__
-#  define TA_TEST_DIR "/data/tmp/optee_armtz"
+#  define TA_TEST_DIR "/data/tee/optee_armtz"
 # else
 #  define TA_TEST_DIR "/tmp/optee_armtz"
 # endif
@@ -520,7 +520,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 static void make_test_ta_dir(void)
 {
 #ifdef __ANDROID__
-	(void)mkdir("/data/tmp", 0755);
+	(void)mkdir("/data/tee", 0755);
 #endif
 	(void)mkdir(TA_TEST_DIR, 0755);
 }
