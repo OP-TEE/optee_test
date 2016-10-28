@@ -13,12 +13,13 @@
 
 #if defined(CFG_REE_FS)
 
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <time.h>
-#include <errno.h>
 
 #include <adbg.h>
 #include <xtest_test.h>
@@ -254,31 +255,21 @@ static void dump_file(FILE * fd __attribute__ ((unused)))
 }
 
 static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
-                          uint32_t file_id_length,
-                          enum tee_fs_file_type file_type,
-                          uint8_t block_num, uint8_t version)
+                          uint32_t file_id_length)
 {
         char ta_dirname[32 + 1];
         char obj_filename[2*file_id_length + 1];
-        char path[150];
+        char path[PATH_MAX];
         struct stat sb;
 
         if (ree_fs_get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
             get_obj_filename(file_id, file_id_length, obj_filename,
 			     sizeof(obj_filename))) {
-                if (file_type == META_FILE) {
-                        snprintf(path, sizeof(path), "/data/tee/%s/%s/meta.%d",
-                                ta_dirname, obj_filename, version);
-                } else if (file_type == BLOCK_FILE) {
-                        snprintf(path, sizeof(path),
-                                "/data/tee/%s/%s/block%d.%d", ta_dirname,
-                                obj_filename, block_num, version);
-                } else
-                        goto err;
+		snprintf(path, sizeof(path), "/data/tee/%s/%s",
+			ta_dirname, obj_filename);
 
                 return !stat(path, &sb);
         }
-err:
         return 0;
 }
 
@@ -289,14 +280,20 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 {
 	char ta_dirname[32 + 1];
 	char obj_filename[2*file_id_length + 1];
-	char name[500];
+	char name[PATH_MAX];
 	FILE *fd = NULL;
 	uint8_t bytes[SIZE * NUMELEM];
 	int res;
 	TEEC_Result tee_res = TEE_SUCCESS;
-	struct stat st;
 	int i;
 	int num_corrupt_bytes = SIZE * NUMELEM;
+	size_t real_offset;
+	const size_t meta_block_size = sizeof(struct meta_header) +
+				       sizeof(struct tee_fs_file_meta);
+	const size_t meta_info_size = sizeof(struct meta_header) +
+				      sizeof(struct tee_fs_file_info);
+	const size_t block_size = sizeof(struct block_header) +
+				  BLOCK_FILE_SIZE;
 
 	memset(name, 0, sizeof(name));
 
@@ -310,41 +307,32 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		 * and rewrite this value at the same offset
 		 */
 
+		snprintf(name, sizeof(name), "/data/tee/%s/%s",
+			 ta_dirname, obj_filename);
+
+		real_offset = sizeof(uint32_t); /* meta counter */
 		if (file_type == META_FILE) {
-			snprintf(name, sizeof(name),
-				 "/data/tee/%s/%s/meta.%d",
-				 ta_dirname, obj_filename, version);
+			real_offset += version * meta_block_size;
+		} else if (file_type == BLOCK_FILE) {
+			real_offset += meta_block_size * 2;
+			real_offset += (block_num * 2 + version) * block_size;
 		}
 
-		if (file_type == BLOCK_FILE) {
-			snprintf(name, sizeof(name),
-				 "/data/tee/%s/%s/block%d.%d",
-				 ta_dirname, obj_filename, block_num, version);
-		}
-
-		res = stat(name, &st);
-		if (res < 0) {
-			fprintf(stderr, "stat(\"%s\"): %s",
-					name, strerror(errno));
-			tee_res = TEEC_ERROR_ACCESS_DENIED;
-			goto exit;
-		}
-
-		if (num_corrupt_bytes > st.st_size) {
-			fprintf(stderr, "number of corrupt bytes(%d) > file size(%d)",
-					num_corrupt_bytes, (int)st.st_size);
-			tee_res = TEEC_ERROR_EXCESS_DATA;
-			goto exit;
-		}
-
-		if (offset == CORRUPT_FILE_FIRST_BYTE) {
-			offset = 0;
-		} else if (offset == CORRUPT_FILE_LAST_BYTE) {
-			offset = st.st_size - num_corrupt_bytes;
+		if (offset == CORRUPT_FILE_LAST_BYTE) {
+			if (file_type == META_FILE)
+				real_offset += meta_info_size;
+			else
+				real_offset += block_size;
+			real_offset -= num_corrupt_bytes;
 		} else if (offset == CORRUPT_FILE_RAND_BYTE) {
 			srand(time(NULL));
-			offset = rand() % (st.st_size-1);
+			if (file_type == META_FILE)
+				real_offset += rand() % (meta_info_size - 1);
+			else
+				real_offset += rand() % (block_size - 1);
 			num_corrupt_bytes = 1;
+		} else if (offset != CORRUPT_FILE_FIRST_BYTE) {
+			real_offset += offset;
 		}
 
 		fd = fopen(name, "r+");
@@ -357,9 +345,9 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 
 		dump_file(fd);
 
-		if (0 != fseek(fd, offset, SEEK_SET)) {
+		if (0 != fseek(fd, real_offset, SEEK_SET)) {
 			fprintf(stderr, "fseek(%d): %s",
-					offset, strerror(errno));
+					real_offset, strerror(errno));
 			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
 		}
@@ -373,8 +361,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		}
 
 		printf("o Corrupt %s\n", name);
-		printf("o Size: %ld byte(s)\n", st.st_size);
-		printf("o Byte offset: %u (0x%04X)\n", offset, offset);
+		printf("o Byte offset: %u (0x%04X)\n", real_offset, real_offset);
 		printf("Old value:");
 		for (i = 0; i < num_corrupt_bytes; i++) {
 			printf(" 0x%02x", bytes[i]);
@@ -387,9 +374,9 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 			printf(" 0x%02x", bytes[i]);
 		printf("\n");
 
-		if (0 != fseek(fd, offset, SEEK_SET)) {
+		if (0 != fseek(fd, real_offset, SEEK_SET)) {
 			fprintf(stderr, "fseek(%d): %s",
-					offset, strerror(errno));
+					real_offset, strerror(errno));
 			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
 		}
@@ -476,14 +463,12 @@ static void storage_corrupt(ADBG_Case_t *c,
 		if (file_type == META_FILE)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
 					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename), file_type,
-					     tv->meta, tv->meta));
+					     ARRAY_SIZE(filename)));
 
 		if (file_type == BLOCK_FILE)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
 					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename), file_type,
-					     tv->block_num, tv->version));
+					     ARRAY_SIZE(filename)));
 
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_open(&sess, filename, ARRAY_SIZE(filename),
@@ -520,10 +505,8 @@ static void storage_corrupt(ADBG_Case_t *c,
 					&obj_id));
 
 		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-				is_obj_present(&uuid,
-					filename,
-					ARRAY_SIZE(filename), file_type,
-					tv->meta, tv->meta));
+				is_obj_present(&uuid, filename,
+					       ARRAY_SIZE(filename)));
 			break;
 
 		case BLOCK_FILE:
@@ -562,11 +545,8 @@ static void storage_corrupt(ADBG_Case_t *c,
 					&obj_id));
 
 		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-				is_obj_present(&uuid,
-					filename,
-					ARRAY_SIZE(filename),
-					file_type, tv->block_num,
-					tv->version));
+				is_obj_present(&uuid, filename,
+					       ARRAY_SIZE(filename)));
 			break;
 
 		default:
