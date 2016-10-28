@@ -38,7 +38,7 @@
 #define TA_OS_TEST_CMD_BASIC                5
 #define TA_OS_TEST_CMD_PANIC                6
 #define TA_OS_TEST_CMD_CLIENT               7
-#define TA_OS_TEST_CMD_PRIVATE_PARAMS       8
+#define TA_OS_TEST_CMD_PARAMS_ACCESS        8
 #define TA_OS_TEST_CMD_WAIT                 9
 #define TA_OS_TEST_CMD_BAD_MEM_ACCESS       10
 

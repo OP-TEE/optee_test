@@ -91,8 +91,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_CLIENT:
 		return ta_entry_client(nParamTypes, pParams);
 
-	case TA_OS_TEST_CMD_PRIVATE_PARAMS:
-		return ta_entry_private_params(nParamTypes, pParams);
+	case TA_OS_TEST_CMD_PARAMS_ACCESS:
+		return ta_entry_params_access_rights(nParamTypes, pParams);
 
 	case TA_OS_TEST_CMD_WAIT:
 		return ta_entry_wait(nParamTypes, pParams);

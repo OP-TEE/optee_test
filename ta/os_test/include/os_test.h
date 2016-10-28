@@ -35,7 +35,7 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 					TEE_Param params[4]);
 TEE_Result ta_entry_panic(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_entry_private_params(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_entry_params_access_rights(uint32_t p_types, TEE_Param params[4]);
 TEE_Result ta_entry_wait(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_mfw_apply_ddr_rules(uint32_t param_types,

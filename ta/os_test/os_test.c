@@ -409,21 +409,63 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	TEE_Param l_params[4] = { { {0} } };
 	uint8_t buf[32];
 	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	TEE_UUID *uuid;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0, 0))
 		return TEE_ERROR_GENERIC;
-	res =
-	    TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
-					TEE_MEMORY_ACCESS_ANY_OWNER,
-					params[0].memref.buffer,
-					params[0].memref.size);
+
+	/* test access rights on memref parameter */
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
+					  TEE_MEMORY_ACCESS_ANY_OWNER,
+					  params[0].memref.buffer,
+					  params[0].memref.size);
 	if (res != TEE_SUCCESS)
 		return res;
+
 	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ,
 					  params[0].memref.buffer,
 					  params[0].memref.size);
 	if (res != TEE_ERROR_ACCESS_DENIED)
+		return TEE_ERROR_GENERIC;
+
+	/* test access rights on private read-only and read-write memory */
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ,
+					  (void *)&test_uuid, sizeof(test_uuid));
+	if (res != TEE_SUCCESS)
+		return res;
+
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_WRITE,
+					  (void *)&test_uuid, sizeof(test_uuid));
+	if (res == TEE_SUCCESS)
+		return TEE_ERROR_GENERIC;
+
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
+					  TEE_MEMORY_ACCESS_WRITE,
+					  &ret_orig, sizeof(ret_orig));
+	if (res != TEE_SUCCESS)
+		return res;
+
+	uuid = TEE_Malloc(sizeof(*uuid), 0);
+	if (!uuid)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
+					  TEE_MEMORY_ACCESS_WRITE,
+					  uuid, sizeof(*uuid));
+	TEE_Free(uuid);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	/* test access rights on invalid memory (at least lower 256kB) */
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ,
+					  NULL, 1);
+	if (res == TEE_SUCCESS)
+		return TEE_ERROR_GENERIC;
+
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ,
+					  (void*)(256 * 1024), 1);
+	if (res == TEE_SUCCESS)
 		return TEE_ERROR_GENERIC;
 
 	res = TEE_OpenTASession(&test_uuid, 0, 0, NULL, &sess, &ret_orig);
@@ -435,7 +477,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	l_pts = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0, 0);
 	l_params[0].memref.buffer = buf;
 	l_params[0].memref.size = sizeof(buf);
-	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_PRIVATE_PARAMS,
+	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("test_mem_access_right: TEE_InvokeTACommand failed\n");
@@ -798,26 +840,28 @@ cleanup_return:
 	return res;
 }
 
-TEE_Result ta_entry_private_params(uint32_t param_types, TEE_Param params[4])
+TEE_Result ta_entry_params_access_rights(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0, 0))
 		return TEE_ERROR_GENERIC;
-	res =
-	    TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
-					TEE_MEMORY_ACCESS_ANY_OWNER,
-					params[0].memref.buffer,
-					params[0].memref.size);
+
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
+					  TEE_MEMORY_ACCESS_ANY_OWNER,
+					  params[0].memref.buffer,
+					  params[0].memref.size);
 	if (res != TEE_SUCCESS)
 		return res;
 
 	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ,
 					  params[0].memref.buffer,
 					  params[0].memref.size);
+	if (res != TEE_ERROR_ACCESS_DENIED)
+		return TEE_ERROR_GENERIC;
 
-	return res;
+	return TEE_SUCCESS;
 }
 
 TEE_Result ta_entry_wait(uint32_t param_types, TEE_Param params[4])
