@@ -346,7 +346,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		dump_file(fd);
 
 		if (0 != fseek(fd, real_offset, SEEK_SET)) {
-			fprintf(stderr, "fseek(%d): %s",
+			fprintf(stderr, "fseek(%zu): %s",
 					real_offset, strerror(errno));
 			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
@@ -361,7 +361,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		}
 
 		printf("o Corrupt %s\n", name);
-		printf("o Byte offset: %u (0x%04X)\n", real_offset, real_offset);
+		printf("o Byte offset: %zu (0x%04zX)\n", real_offset, real_offset);
 		printf("Old value:");
 		for (i = 0; i < num_corrupt_bytes; i++) {
 			printf(" 0x%02x", bytes[i]);
@@ -375,7 +375,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		printf("\n");
 
 		if (0 != fseek(fd, real_offset, SEEK_SET)) {
-			fprintf(stderr, "fseek(%d): %s",
+			fprintf(stderr, "fseek(%zu): %s",
 					real_offset, strerror(errno));
 			tee_res = TEEC_ERROR_BAD_PARAMETERS;
 			goto exit;
