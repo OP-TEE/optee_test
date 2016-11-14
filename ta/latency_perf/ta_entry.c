@@ -50,7 +50,7 @@ void TA_DestroyEntryPoint(void)
 
 /* Called each time a session is opened */
 TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
-				    TEE_Param pParams[4],
+				    TEE_Param pParams[TEE_NUM_PARAMS],
 				    void **ppSessionContext)
 {
 	(void)nParamTypes;
