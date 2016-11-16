@@ -87,8 +87,6 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	switch (nCommandID) {
 	case TA_LATENCY_PERF_CMD_NOP:
-		MSG("Received TA_LATENCY_PERF_CMD_NOP. Just adding timestamp and \
-						returning ...");
 		tee_add_timestamp(pParams[TEE_BENCH_DEF_PARAM].memref.buffer,
 						TEE_BENCH_DUMB_TA);
 		return TEE_SUCCESS;

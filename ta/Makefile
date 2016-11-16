@@ -20,8 +20,11 @@ TA_DIRS := create_fail_test \
 	   concurrent_large \
 	   storage_benchmark \
 	   sha_perf \
-	   aes_perf \
-	   latency_perf
+	   aes_perf
+
+ifeq ($(CFG_TEE_BENCHMARK),y)
+TA_DIRS += latency_perf
+endif
 
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
@@ -44,7 +47,7 @@ endif
 all: ta
 
 .PHONY: ta
-ta: 
+ta:
 	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) \
     CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) O=$(O)/$(dir) &&) true
 
