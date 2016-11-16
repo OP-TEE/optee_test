@@ -28,6 +28,7 @@
 /* ----------------------------------------------------------------------- */
 
 #define BENCH_COUNT 1000
+#define BENCH_DIVIDER 64
 
 /*
  * TEE client stuff
@@ -115,14 +116,16 @@ static void xtest_tee_benchmark_3001(ADBG_Case_t *c)
 
 		ccnt_diff = get_timestamp(ringbuf_shm.buffer, TEE_BENCH_DUMB_TA) -
 				get_timestamp(ringbuf_shm.buffer, TEE_BENCH_CLIENT_P1);
-		
+
 		update_stats(&stats, ccnt_diff);
 	}
 
 	printf("Results:\n");
-	printf("Min=%" PRIu64 " cycles; Max=%" PRIu64 
+	printf("Min=%" PRIu64 " cycles; Max=%" PRIu64
 			" cycles; Med=%" PRIu64 " cycles;\n",
-	       (uint64_t)stats.min, (uint64_t)stats.max, (uint64_t)stats.m);
+	       ((uint64_t)stats.min) * BENCH_DIVIDER,
+		   ((uint64_t)stats.max) * BENCH_DIVIDER,
+		   ((uint64_t)stats.m) * BENCH_DIVIDER);
 
 	close_latency_ta();
 
