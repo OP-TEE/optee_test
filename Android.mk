@@ -7,7 +7,7 @@ include $(BUILD_OPTEE_MK)
 INCLUDE_FOR_BUILD_TA :=
 
 VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown)
-OPTEE_CLIENT_PATH ?= $(LOCAL_PATH)/../optee_client
+OPTEE_CLIENT_EXPORT ?= $(LOCAL_PATH)/../optee_client
 
 # TA_DEV_KIT_DIR must be set to non-empty value to
 # avoid the Android build scripts complaining about
