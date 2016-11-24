@@ -31,11 +31,6 @@
 #define TA_LATENCY_PERF_UUID { 0x0ee4959f, 0x67f5, 0x4a63, \
 	{ 0xac, 0x2a, 0xb4, 0x15, 0xc2, 0xad, 0xa6, 0x27 } }
 
-/*
- * Commands implemented by the TA
- */
-
-// No operation, just return
-#define TA_LATENCY_PERF_CMD_NOP 0
+#define TA_LATENCY_PERF_CMD_NOP		0
 
 #endif /* TA_LATENCY_PERF_H */

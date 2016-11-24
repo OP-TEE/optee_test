@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Linaro Limited
+ * Copyright (c) 2016, Linaro Limited
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -24,7 +24,7 @@
 #include "tee_bench.h"
 
 /* ----------------------------------------------------------------------- */
-/* ------------------------- Auxiliary staff ----------------------------- */
+/* ------------------------- Auxiliary stuff ----------------------------- */
 /* ----------------------------------------------------------------------- */
 
 #define BENCH_COUNT 1000
@@ -68,15 +68,15 @@ static void print_latency_stats(void *timebuffer, struct statistics *stats)
 
 	printf("Latency statistics:\n");
 	printf("===============================================================");
-	printf("===============================================================\n");
-	for (uint32_t ts_i = 0; ts_i < timeb->tm_ind; ts_i++) {
+	printf("==============================================================\n");
+	for (uint64_t ts_i = 0; ts_i < timeb->tm_ind; ts_i++) {
 		if (!ts_i)
 			start = timeb->stamps[ts_i].cnt;
 
 		printf("| CCNT=%14" PRIu64 " | SRC=%-8s | PC=0x%016"
 			PRIx64 " | Min=%14" PRIu64 " | Max=%14" PRIu64
-			" | Med=%14" PRIu64 " |;\n",
-			(timeb->stamps[ts_i].cnt-start) * BENCH_DIVIDER,
+			" | Med=%14" PRIu64 " |\n",
+			(timeb->stamps[ts_i].cnt - start) * BENCH_DIVIDER,
 			bench_str_src(timeb->stamps[ts_i].src),
 			(timeb->stamps[ts_i].addr),
 			(ts_i)?((uint64_t)stats[ts_i-1].min) * BENCH_DIVIDER : 0,
@@ -84,7 +84,7 @@ static void print_latency_stats(void *timebuffer, struct statistics *stats)
 			(ts_i)?((uint64_t)stats[ts_i-1].m) * BENCH_DIVIDER : 0);
 	}
 	printf("===============================================================");
-	printf("===============================================================\n");
+	printf("==============================================================\n");
 }
 
 static void open_latency_ta(void)
@@ -107,76 +107,12 @@ static void close_latency_ta(void)
 	TEEC_CloseSession(&sess);
 	TEEC_FinalizeContext(&ctx);
 }
-
-static uint64_t get_timestamp(void *timebuffer, uint64_t src)
-{
-	struct tee_time_buf *timeb = (struct tee_time_buf *) timebuffer;
-	for (uint64_t ts_i = 0; ts_i < timeb->tm_ind; ts_i++) {
-		if (timeb->stamps[ts_i].src == src)
-			return timeb->stamps[ts_i].cnt;
-	}
-	return 0;
-}
-
 /* ----------------------------------------------------------------------- */
 /* -------------------------- Latency tests  ----------------------------- */
 /* ----------------------------------------------------------------------- */
-
-
 static void xtest_tee_benchmark_3001(ADBG_Case_t *Case_p);
-static void xtest_tee_benchmark_3002(ADBG_Case_t *Case_p);
 
 static void xtest_tee_benchmark_3001(ADBG_Case_t *c)
-{
-	TEEC_Operation op;
-	TEEC_Result res;
-	uint32_t err_origin;
-	uint64_t ccnt_diff;
-	struct statistics stats;
-	UNUSED(c);
-
-	open_latency_ta();
-	memset(&op, 0, sizeof(op));
-
-	res = TEEC_AllocateSharedMemory(&ctx, &timebuf_shm);
-	tee_check_res(res, "TEEC_AllocateSharedMemory");
-
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
-					 TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
-
-	op.params[TEE_BENCH_DEF_PARAM].memref.parent =
-				&timebuf_shm;
-	op.params[TEE_BENCH_DEF_PARAM].memref.offset = 0;
-	op.params[TEE_BENCH_DEF_PARAM].memref.size =
-				TEE_BENCH_RB_SIZE;
-
-	/* Benchmarking */
-	for (int i = 0; i < BENCH_COUNT; i++) {
-		memset(timebuf_shm.buffer, 0, timebuf_shm.size);
-
-		res = TEEC_InvokeCommand(&sess, TA_LATENCY_PERF_CMD_NOP,
-						&op, &err_origin);
-		tee_check_res(res, "TEEC_InvokeCommand");
-
-		ccnt_diff = get_timestamp(timebuf_shm.buffer, TEE_BENCH_DUMB_TA) -
-				get_timestamp(timebuf_shm.buffer, TEE_BENCH_CLIENT);
-
-		update_stats(&stats, ccnt_diff);
-	}
-
-	printf("Results:\n");
-	printf("Min=%" PRIu64 " cycles; Max=%" PRIu64
-			" cycles; Med=%" PRIu64 " cycles;\n",
-	       ((uint64_t)stats.min) * BENCH_DIVIDER,
-		   ((uint64_t)stats.max) * BENCH_DIVIDER,
-		   ((uint64_t)stats.m) * BENCH_DIVIDER);
-
-	close_latency_ta();
-
-}
-
-static void xtest_tee_benchmark_3002(ADBG_Case_t *c)
 {
 	TEEC_Operation op;
 	TEEC_Result res;
@@ -195,9 +131,8 @@ static void xtest_tee_benchmark_3002(ADBG_Case_t *c)
 
 	timeb = (struct tee_time_buf *)timebuf_shm.buffer;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
-					 TEEC_NONE,
-					 TEEC_NONE, TEEC_NONE);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE,
+				TEEC_NONE, TEEC_NONE);
 	op.params[TEE_BENCH_DEF_PARAM].memref.parent =
 				&timebuf_shm;
 	op.params[TEE_BENCH_DEF_PARAM].memref.offset = 0;
@@ -226,23 +161,12 @@ static void xtest_tee_benchmark_3002(ADBG_Case_t *c)
 	printf("Results:\n");
 	print_latency_stats(timeb, stats);
 	close_latency_ta();
-
 }
 
 /* ----------------------------------------------------------------------- */
 /* ------------------------ ADBG Case defines  --------------------------- */
 /* ----------------------------------------------------------------------- */
-
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_3001, xtest_tee_benchmark_3001,
-		/* Title */
-		"OP-TEE Client -> TA latency benchmark",
-		/* Short description */
-		"",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_3002, xtest_tee_benchmark_3002,
 		/* Title */
 		"OP-TEE all-layers latecy benchmark",
 		/* Short description */

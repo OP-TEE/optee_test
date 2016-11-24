@@ -50,7 +50,6 @@ srcs := xtest_1000.c \
 	adbg/src/security_utils_hex.c \
 	adbg/src/security_utils_mem.c
 
-
 ifeq ($(CFG_TEE_BENCHMARK),y)
 CFLAGS += -DCFG_TEE_BENCHMARK
 srcs += xtest_benchmark_3000.c

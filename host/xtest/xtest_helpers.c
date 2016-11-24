@@ -423,7 +423,6 @@ void tee_check_res(TEEC_Result res, const char *errmsg)
 		tee_errx(errmsg, res);
 }
 
-
 /* Take new sample into account (Knuth/Welford algorithm) */
 void update_stats(struct statistics *s, uint64_t t) 
 {

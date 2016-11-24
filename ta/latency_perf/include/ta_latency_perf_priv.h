@@ -30,5 +30,4 @@
 
 #include <tee_api.h>
 
-
 #endif /* TA_LATENCY_PERF_PRIV_H */

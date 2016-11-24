@@ -30,25 +30,18 @@
 
 #include <trace.h>
 
-
 #include "ta_latency_perf.h"
 #include "ta_latency_perf_priv.h"
-/*
- * Trusted Application Entry Points
- */
 
-/* Called each time a new instance is created */
 TEE_Result TA_CreateEntryPoint(void)
 {
 	return TEE_SUCCESS;
 }
 
-/* Called each time an instance is destroyed */
 void TA_DestroyEntryPoint(void)
 {
 }
 
-/* Called each time a session is opened */
 TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
 				    TEE_Param pParams[TEE_NUM_PARAMS],
 				    void **ppSessionContext)
@@ -59,31 +52,18 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
 	return TEE_SUCCESS;
 }
 
-/* Called each time a session is closed */
 void TA_CloseSessionEntryPoint(void *pSessionContext)
 {
 	(void)pSessionContext;
-
-	//cmd_clean_res();
 }
 
-/* Called when a command is invoked */
 TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 				      uint32_t nCommandID, uint32_t nParamTypes,
 				      TEE_Param *pParams)
 {
-	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE,
-						   TEE_PARAM_TYPE_NONE);
-
 	(void)pSessionContext;
 	(void)pParams;
 	(void)nParamTypes;
-
-
-	if (nParamTypes != exp_param_types)
-				return TEE_ERROR_BAD_PARAMETERS;
 
 	switch (nCommandID) {
 	case TA_LATENCY_PERF_CMD_NOP:

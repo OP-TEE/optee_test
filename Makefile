@@ -30,7 +30,7 @@ xtest:
 			     --no-builtin-variables \
 			     q=$(q) \
 			     O=$(out-dir)/xtest \
-                 CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) \
+				 CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) \
 			     $@
 
 .PHONY: ta
