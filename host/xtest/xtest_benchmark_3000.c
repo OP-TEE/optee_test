@@ -61,21 +61,36 @@ static const char *bench_str_src(uint64_t source)
 	}
 }
 
+static void print_line(void)
+{
+		int n = 102;
+
+		while(n-- > 0)
+			printf("=");
+		printf("\n");
+}
+
 static void print_latency_stats(void *timebuffer, struct statistics *stats)
 {
 	struct tee_time_buf *timeb = (struct tee_time_buf *)timebuffer;
 	uint64_t start = 0;
+	uint64_t ts_i;
 
 	printf("Latency statistics:\n");
-	printf("===============================================================");
-	printf("==============================================================\n");
-	for (uint64_t ts_i = 0; ts_i < timeb->tm_ind; ts_i++) {
+	printf("First column represents values of CPU cycles received after\n");
+	printf("the last invocation of TEEC_InvokeCommand\n");
+	print_line();
+	printf("| %14s | %9s | %18s | %14s | %14s | %14s |\n",
+		   "CPU cycles", "TEE layer", "Address", "Min CPU cycles",
+		   "Max CPU cycles", "Avg CPU cycles");
+	print_line();
+	for (ts_i = 0; ts_i < timeb->tm_ind; ts_i++) {
 		if (!ts_i)
 			start = timeb->stamps[ts_i].cnt;
 
-		printf("| CCNT=%14" PRIu64 " | SRC=%-8s | PC=0x%016"
-			PRIx64 " | Min=%14" PRIu64 " | Max=%14" PRIu64
-			" | Med=%14" PRIu64 " |\n",
+		printf("| %14" PRIu64 " | %9s | 0x%016"
+			PRIx64 " | %14" PRIu64 " | %14" PRIu64
+			" | %14" PRIu64 " |\n",
 			(timeb->stamps[ts_i].cnt - start) * BENCH_DIVIDER,
 			bench_str_src(timeb->stamps[ts_i].src),
 			(timeb->stamps[ts_i].addr),
@@ -83,8 +98,7 @@ static void print_latency_stats(void *timebuffer, struct statistics *stats)
 			(ts_i)?((uint64_t)stats[ts_i-1].max) * BENCH_DIVIDER : 0,
 			(ts_i)?((uint64_t)stats[ts_i-1].m) * BENCH_DIVIDER : 0);
 	}
-	printf("===============================================================");
-	printf("==============================================================\n");
+	print_line();
 }
 
 static void open_latency_ta(void)
@@ -120,6 +134,8 @@ static void xtest_tee_benchmark_3001(ADBG_Case_t *c)
 	int64_t ccnt_diff;
 	struct statistics stats[TEE_BENCH_MAX_STAMPS-1];
 	struct tee_time_buf *timeb = NULL;
+	int i;
+
 	UNUSED(c);
 
 	open_latency_ta();
@@ -140,7 +156,9 @@ static void xtest_tee_benchmark_3001(ADBG_Case_t *c)
 				TEE_BENCH_RB_SIZE;
 
 	/* Benchmarking */
-	for (int i = 0; i < BENCH_COUNT; i++) {
+	for (i = 0; i < BENCH_COUNT; i++) {
+		uint64_t ts_i;
+
 		memset(timebuf_shm.buffer, 0, timebuf_shm.size);
 
 		res = TEEC_InvokeCommand(&sess, TA_LATENCY_PERF_CMD_NOP,
@@ -148,7 +166,7 @@ static void xtest_tee_benchmark_3001(ADBG_Case_t *c)
 		tee_check_res(res, "TEEC_InvokeCommand");
 
 		/* perform variance calculation for the each OP-TEE layer */
-		for (uint64_t ts_i = 1; ts_i < timeb->tm_ind; ts_i++) {
+		for (ts_i = 1; ts_i < timeb->tm_ind; ts_i++) {
 			/* lets skip cases when counter overflows */
 			if (timeb->stamps[ts_i].cnt < timeb->stamps[0].cnt)
 					continue;

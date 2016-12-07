@@ -413,7 +413,7 @@ int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
 /* Misc auxilary functions */
 void tee_errx(const char *msg, TEEC_Result res)
 {
-	fprintf(stderr, "%s: 0x%08x", msg, res);
+	fprintf(stderr, "%s: 0x%08x\n", msg, res);
 	exit (1);
 }
 
