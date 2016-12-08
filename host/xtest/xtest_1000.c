@@ -529,7 +529,7 @@ static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
 			bool for_write)
 {
 	snprintf(buf, blen,
-		"%s/%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x.ta",
+		"%s/%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x.ta",
 		for_write ? TA_TEST_DIR : TA_DIR,
 		uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
 		uuid->clockSeqAndNode[0], uuid->clockSeqAndNode[1],
