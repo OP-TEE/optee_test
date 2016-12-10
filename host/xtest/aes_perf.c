@@ -40,6 +40,7 @@
 #include <tee_client_api.h>
 #include "ta_aes_perf.h"
 #include "crypto_common.h"
+#include "xtest_helpers.h"
 
 /*
  * TEE client stuff
@@ -58,18 +59,6 @@ static TEEC_SharedMemory out_shm = {
 	.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT
 };
 
-static void errx(const char *msg, TEEC_Result res)
-{
-	fprintf(stderr, "%s: 0x%08x", msg, res);
-	exit (1);
-}
-
-static void check_res(TEEC_Result res, const char *errmsg)
-{
-	if (res != TEEC_SUCCESS)
-		errx(errmsg, res);
-}
-
 static void open_ta(void)
 {
 	TEEC_Result res;
@@ -77,54 +66,13 @@ static void open_ta(void)
 	uint32_t err_origin;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
-	check_res(res,"TEEC_InitializeContext");
+	tee_check_res(res,"TEEC_InitializeContext");
 
 	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL,
 			       NULL, &err_origin);
-	check_res(res,"TEEC_OpenSession");
+	tee_check_res(res,"TEEC_OpenSession");
 }
 
-/*
- * Statistics
- *
- * We want to compute min, max, mean and standard deviation of processing time
- */
-
-struct statistics {
-	int n;
-	double m;
-	double M2;
-	double min;
-	double max;
-	int initialized;
-};
-
-/* Take new sample into account (Knuth/Welford algorithm) */
-static void update_stats(struct statistics *s, uint64_t t)
-{
-	double x = (double)t;
-	double delta = x - s->m;
-
-	s->n++;
-	s->m += delta/s->n;
-	s->M2 += delta*(x - s->m);
-	if (!s->initialized) {
-		s->min = s->max = x;
-		s->initialized = 1;
-	} else {
-		if (s->min > x)
-			s->min = x;
-		if (s->max < x)
-			s->max = x;
-	}
-}
-
-static double stddev(struct statistics *s)
-{
-	if (s->n < 2)
-		return NAN;
-	return sqrt(s->M2/s->n);
-}
 
 static const char *mode_str(uint32_t mode)
 {
@@ -184,13 +132,13 @@ static void alloc_shm(size_t sz, int in_place)
 	in_shm.buffer = NULL;
 	in_shm.size = sz;
 	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
-	check_res(res, "TEEC_AllocateSharedMemory");
+	tee_check_res(res, "TEEC_AllocateSharedMemory");
 
 	if (!in_place) {
 		out_shm.buffer = NULL;
 		out_shm.size = sz;
 		res = TEEC_AllocateSharedMemory(&ctx, &out_shm);
-		check_res(res, "TEEC_AllocateSharedMemory");
+		tee_check_res(res, "TEEC_AllocateSharedMemory");
 	}
 }
 
@@ -255,7 +203,7 @@ static uint64_t run_test_once(void *in, size_t size, TEEC_Operation *op,
 	get_current_time(&t0);
 	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PROCESS, op,
 				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand");
+	tee_check_res(res, "TEEC_InvokeCommand");
 	get_current_time(&t1);
 
 	return timespec_diff_ns(&t0, &t1);
@@ -275,7 +223,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 	op.params[1].value.a = mode;
 	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PREPARE_KEY, &op,
 				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand");
+	tee_check_res(res, "TEEC_InvokeCommand");
 }
 
 static void do_warmup(int warmup)

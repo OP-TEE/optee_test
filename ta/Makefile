@@ -22,6 +22,10 @@ TA_DIRS := create_fail_test \
 	   sha_perf \
 	   aes_perf
 
+ifeq ($(CFG_TEE_BENCHMARK),y)
+TA_DIRS += latency_perf
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
 	   GP_TTA_Crypto \
@@ -43,8 +47,9 @@ endif
 all: ta
 
 .PHONY: ta
-ta: 
-	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) O=$(O)/$(dir) &&) true
+ta:
+	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) \
+    CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) O=$(O)/$(dir) &&) true
 
 .PHONY: clean
 clean:

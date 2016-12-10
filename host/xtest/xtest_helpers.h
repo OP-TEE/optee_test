@@ -14,11 +14,21 @@
 #ifndef XTEST_HELPERS_H
 #define XTEST_HELPERS_H
 
+#include <stdlib.h>
 #include <tee_client_api.h>
 #include <tee_api_types.h>
 #include <adbg.h>
 
 extern unsigned int level;
+
+struct statistics {
+	int n;
+	double m;
+	double M2;
+	double min;
+	double max;
+	int initialized;
+};
 
 /* Global context to use if any context is needed as input to a function */
 extern TEEC_Context xtest_teec_ctx;
@@ -102,5 +112,12 @@ TEE_Result pack_attrs(const TEE_Attribute *attrs, uint32_t attr_count,
 			     uint8_t **buf, size_t *blen);
 
 int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len);
+
+void tee_errx(const char *msg, TEEC_Result res) __attribute__((noreturn));
+void tee_check_res(TEEC_Result res, const char *errmsg);
+
+/* Knuth/Welford algorithm implementation */
+void update_stats(struct statistics *s, uint64_t t);
+double stddev(struct statistics *s);
 
 #endif /*XTEST_HELPERS_H*/

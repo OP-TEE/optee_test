@@ -17,13 +17,14 @@
 #include <ta_crypt.h>
 #include <utee_defines.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <malloc.h>
 #include <assert.h>
-
-/* Round up the even multiple of size, size has to be a multiple of 2 */
-#define ROUNDUP(v, size) (((v) + (size - 1)) & ~(size - 1))
+#include <malloc.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <util.h>
+#include <unistd.h>
 
 TEEC_Context xtest_teec_ctx;
 
@@ -407,4 +408,44 @@ int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
 			p_uuid->clockSeqAndNode[5],
 			p_uuid->clockSeqAndNode[6],
 			p_uuid->clockSeqAndNode[7]);
+}
+
+/* Misc auxilary functions */
+void tee_errx(const char *msg, TEEC_Result res)
+{
+	fprintf(stderr, "%s: 0x%08x\n", msg, res);
+	exit (1);
+}
+
+void tee_check_res(TEEC_Result res, const char *errmsg)
+{
+	if (res != TEEC_SUCCESS)
+		tee_errx(errmsg, res);
+}
+
+/* Take new sample into account (Knuth/Welford algorithm) */
+void update_stats(struct statistics *s, uint64_t t) 
+{
+	double x = (double)t;
+	double delta = x - s->m;
+
+	s->n++;
+	s->m += delta/s->n;
+	s->M2 += delta*(x - s->m);
+	if (!s->initialized) {
+		s->min = s->max = x;
+		s->initialized = 1;
+	} else {
+		if (s->min > x)
+			s->min = x;
+		if (s->max < x)
+			s->max = x;
+	}
+}
+
+double stddev(struct statistics *s)
+{
+	if (s->n < 2)
+		return NAN;
+	return sqrt(s->M2/s->n);
 }
