@@ -25,8 +25,15 @@ ifdef CFG_GP_PACKAGE_PATH
 GP := _gp
 endif
 
-srcs := xtest_1000.c \
-	xtest_4000.c \
+srcs := xtest_1000.c
+
+ifeq ($(CFG_GP_SOCKETS),y)
+srcs += xtest_2000.c \
+	sock_server.c \
+	rand_stream.c
+endif
+
+srcs += xtest_4000.c \
 	xtest_5000.c \
 	xtest_6000.c \
 	xtest_7000$(GP).c \
@@ -45,6 +52,8 @@ srcs := xtest_1000.c \
 	adbg/src/adbg_log.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c
+
+CFLAGS += -D_GNU_SOURCE
 
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
@@ -76,6 +85,7 @@ CFLAGS += -I../../ta/concurrent/include
 CFLAGS += -I../../ta/concurrent_large/include
 CFLAGS += -I../../ta/sha_perf/include
 CFLAGS += -I../../ta/aes_perf/include
+CFLAGS += -I../../ta/socket/include
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto

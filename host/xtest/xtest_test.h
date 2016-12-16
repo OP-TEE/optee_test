@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016, Linaro Limited
  * Copyright (c) 2014, STMicroelectronics International N.V.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -125,6 +126,7 @@ extern const TEEC_UUID gp_tta_time_uuid;
 extern const TEEC_UUID concurrent_ta_uuid;
 extern const TEEC_UUID concurrent_large_ta_uuid;
 extern const TEEC_UUID storage_benchmark_ta_uuid;
+extern const TEEC_UUID socket_ta_uuid;
 extern char *_device;
 
 #endif /*XTEST_TEST_H*/

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2016, Linaro Limited
  * Copyright (c) 2014, STMicroelectronics International N.V.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -11,6 +12,8 @@
  * GNU General Public License for more details.
  */
 
+#include <err.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,6 +65,12 @@ int main(int argc, char *argv[])
 	char *test_suite = (char *)gsuitename;
 
 	opterr = 0;
+
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		warn("signal(SIGPIPE, SIG_IGN)");
+
+	if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+		warn("signal(SIGPIPE, SIG_IGN)");
 
 	if (argc > 1 && !strcmp(argv[1], "--sha-perf"))
 		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);

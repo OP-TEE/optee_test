@@ -21,8 +21,15 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := xtest
 LOCAL_SHARED_LIBRARIES := libteec
 
-srcs := xtest_1000.c \
-	xtest_4000.c \
+srcs := xtest_1000.c
+
+ifeq ($(CFG_GP_SOCKETS),y)
+srcs += xtest_2000.c \
+	sock_server.c \
+	rand_stream.c
+endif
+
+srcs += xtest_4000.c \
 	xtest_5000.c \
 	xtest_6000.c \
 	xtest_7000.c \

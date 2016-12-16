@@ -20,7 +20,8 @@ TA_DIRS := create_fail_test \
 	   concurrent_large \
 	   storage_benchmark \
 	   sha_perf \
-	   aes_perf
+	   aes_perf \
+	   socket
 
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
