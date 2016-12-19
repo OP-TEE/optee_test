@@ -485,3 +485,21 @@ TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4])
 	TEE_ResetTransientObject(o);
 	return TEE_SUCCESS;
 }
+
+TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
+					    TEE_Param params[4])
+{
+	TEE_Result res;
+	TEE_ObjectInfo *info;
+	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT,
+			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE));
+
+	info = (TEE_ObjectInfo *)params[1].memref.buffer;
+	res = TEE_GetObjectInfo1(o, info);
+
+	return res;
+}

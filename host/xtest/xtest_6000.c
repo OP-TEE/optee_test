@@ -394,6 +394,23 @@ static TEEC_Result fs_reset_obj(TEEC_Session *sess, uint32_t obj)
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_RESET_OBJ, &op, &org);
 }
 
+static TEEC_Result fs_get_obj_info(TEEC_Session *sess, uint32_t obj,
+				void *obj_info, size_t info_size)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					TEEC_MEMREF_TEMP_OUTPUT,
+					TEEC_NONE, TEEC_NONE);
+
+	op.params[0].value.a = obj;
+	op.params[1].tmpref.buffer = obj_info;
+	op.params[1].tmpref.size = info_size;
+
+	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_GET_OBJ_INFO, &op, &org);
+}
+
 /* trunc */
 static void test_truncate_file_length(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1652,6 +1669,59 @@ static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6016)
 
+static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	TEEC_Session sess;
+	TEE_ObjectInfo obj_info1;
+	TEE_ObjectInfo obj_info2;
+	uint32_t obj;
+	uint32_t orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE, 0, NULL,
+			  0, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_write(&sess, obj, data_00, sizeof(data_00))))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_get_obj_info(&sess, obj, &obj_info1,
+				sizeof(TEE_ObjectInfo))))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_get_obj_info(&sess, obj, &obj_info2,
+				sizeof(TEE_ObjectInfo))))
+		goto exit;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		obj_info1.dataSize, ==, obj_info2.dataSize))
+		goto exit;
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6017)
 
 ADBG_CASE_DEFINE(XTEST_TEE_6001, xtest_tee_test_6001,
 		 "Test TEE_CreatePersistentObject");
@@ -1686,3 +1756,5 @@ ADBG_CASE_DEFINE(XTEST_TEE_6014, xtest_tee_test_6014,
 		 "Loop on Persistent objects");
 ADBG_CASE_DEFINE(XTEST_TEE_6015, xtest_tee_test_6015, "Storage isolation");
 ADBG_CASE_DEFINE(XTEST_TEE_6016, xtest_tee_test_6016, "Storage concurency");
+ADBG_CASE_DEFINE(XTEST_TEE_6017, xtest_tee_test_6017,
+		 "Test Persistent objects info");

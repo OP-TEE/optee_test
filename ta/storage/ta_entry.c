@@ -133,6 +133,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_STORAGE_CMD_RESET_OBJ:
 		return ta_storage_cmd_reset_obj(nParamTypes, pParams);
 
+	case TA_STORAGE_CMD_GET_OBJ_INFO:
+		return ta_storage_cmd_get_obj_info(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
