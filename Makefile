@@ -34,6 +34,7 @@ xtest:
 			     --no-builtin-variables \
 			     q=$(q) \
 			     O=$(out-dir)/xtest \
+                 CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) \
 			     $@
 
 .PHONY: ta
@@ -41,6 +42,7 @@ ta:
 	$(q)$(MAKE) -C ta CROSS_COMPILE="$(CROSS_COMPILE_TA)" \
 			  q=$(q) \
 			  O=$(out-dir)/ta \
+              CFG_TEE_BENCHMARK=$(CFG_TEE_BENCHMARK) \
 			  $@
 
 .PHONY: clean
