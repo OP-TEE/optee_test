@@ -11,16 +11,17 @@
  * GNU General Public License for more details.
  */
 
-#include "xtest_helpers.h"
-#include "xtest_test.h"
-
+#include <assert.h>
+#include <err.h>
+#include <malloc.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
 #include <ta_crypt.h>
 #include <utee_defines.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <malloc.h>
-#include <assert.h>
+#include "xtest_helpers.h"
+#include "xtest_test.h"
 
 /* Round up the even multiple of size, size has to be a multiple of 2 */
 #define ROUNDUP(v, size) (((v) + (size - 1)) & ~(size - 1))
@@ -407,4 +408,62 @@ int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
 			p_uuid->clockSeqAndNode[5],
 			p_uuid->clockSeqAndNode[6],
 			p_uuid->clockSeqAndNode[7]);
+}
+
+
+void xtest_mutex_init(pthread_mutex_t *mutex)
+{
+	int e = pthread_mutex_init(mutex, NULL);
+
+	if (e)
+		errx(1, "pthread_mutex_init: %s", strerror(e));
+}
+
+void xtest_mutex_destroy(pthread_mutex_t *mutex)
+{
+	int e = pthread_mutex_destroy(mutex);
+
+	if (e)
+		errx(1, "pthread_mutex_destroy: %s", strerror(e));
+}
+
+void xtest_mutex_lock(pthread_mutex_t *mutex)
+{
+	int e = pthread_mutex_lock(mutex);
+
+	if (e)
+		errx(1, "pthread_mutex_lock: %s", strerror(e));
+}
+
+void xtest_mutex_unlock(pthread_mutex_t *mutex)
+{
+	int e = pthread_mutex_unlock(mutex);
+
+	if (e)
+		errx(1, "pthread_mutex_unlock: %s", strerror(e));
+}
+
+void xtest_barrier_init(pthread_barrier_t *barrier, unsigned count)
+{
+	int e = pthread_barrier_init(barrier, NULL, count);
+
+	if (e)
+		errx(1, "pthread_barrier_init: %s", strerror(e));
+}
+
+void xtest_barrier_destroy(pthread_barrier_t *barrier)
+{
+	int e = pthread_barrier_destroy(barrier);
+
+	if (e)
+		errx(1, "pthread_barrier_destroy: %s", strerror(e));
+}
+
+int xtest_barrier_wait(pthread_barrier_t *barrier)
+{
+	int e = pthread_barrier_wait(barrier);
+
+	if (e && e != PTHREAD_BARRIER_SERIAL_THREAD)
+		errx(1, "pthread _barrier_wait: %s", strerror(e));
+	return e;
 }

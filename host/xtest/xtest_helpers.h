@@ -14,9 +14,10 @@
 #ifndef XTEST_HELPERS_H
 #define XTEST_HELPERS_H
 
-#include <tee_client_api.h>
-#include <tee_api_types.h>
 #include <adbg.h>
+#include <pthread.h>
+#include <tee_api_types.h>
+#include <tee_client_api.h>
 
 extern unsigned int level;
 
@@ -102,5 +103,14 @@ TEE_Result pack_attrs(const TEE_Attribute *attrs, uint32_t attr_count,
 			     uint8_t **buf, size_t *blen);
 
 int ree_fs_get_ta_dirname(TEEC_UUID *p_uuid, char *buffer, uint32_t len);
+
+void xtest_mutex_init(pthread_mutex_t *mutex);
+void xtest_mutex_destroy(pthread_mutex_t *mutex);
+void xtest_mutex_lock(pthread_mutex_t *mutex);
+void xtest_mutex_unlock(pthread_mutex_t *mutex);
+
+void xtest_barrier_init(pthread_barrier_t *barrier, unsigned count);
+void xtest_barrier_destroy(pthread_barrier_t *barrier);
+int xtest_barrier_wait(pthread_barrier_t *barrier);
 
 #endif /*XTEST_HELPERS_H*/
