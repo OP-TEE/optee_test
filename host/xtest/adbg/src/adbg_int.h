@@ -74,7 +74,6 @@ struct ADBG_Case {
 	ADBG_SubCase_t *CurrentSubCase_p;
 	ADBG_SubCase_t *FirstSubCase_p;
 
-	ADBG_SuiteData_t *SuiteData_p;
 	ADBG_Result_t Result;
 	TAILQ_ENTRY(ADBG_Case)          Link;
 };
@@ -99,8 +98,7 @@ void ADBG_Case_IterateSubCase(ADBG_Case_t *Case_p,
 
 ADBG_SubCase_t *ADBG_Case_NextSubCase(ADBG_SubCase_Iterator_t *Iterator_p);
 
-ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p,
-			   ADBG_SuiteData_t *SuiteData_p);
+ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p);
 
 void ADBG_Case_Delete(ADBG_Case_t *Case_p);
 

@@ -31,7 +31,6 @@ typedef struct ADBG_Runner {
 	ADBG_Result_t Result;
 	const ADBG_Suite_Definition_t *Suite_p;
 
-	ADBG_SuiteData_t SuiteData;
 	ADBG_CaseHead_t CasesList;
 } ADBG_Runner_t;
 
@@ -112,7 +111,7 @@ static int ADBG_RunSuite(
 			}
 		}
 
-		Case_p = ADBG_Case_New(SuiteEntry_p, &Runner_p->SuiteData);
+		Case_p = ADBG_Case_New(SuiteEntry_p);
 		if (Case_p == NULL) {
 			Do_ADBG_Log("HEAP_ALLOC failed for Case %s!",
 				    SuiteEntry_p->CaseDefinition_p->TestID_p);
@@ -162,9 +161,6 @@ static int ADBG_RunSuite(
 			break;
 		}
 	}
-
-	if (Runner_p->Suite_p->CleanupSuite_fp != NULL)
-		Runner_p->Suite_p->CleanupSuite_fp(&Runner_p->SuiteData);
 
 	Do_ADBG_Log("+-----------------------------------------------------");
 	if (argc > 0) {

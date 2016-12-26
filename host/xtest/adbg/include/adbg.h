@@ -85,12 +85,7 @@ typedef struct {
 } ADBG_Case_SuiteEntry_t;
 
 typedef struct {
-	void *Data_p;
-} ADBG_SuiteData_t;
-
-typedef struct {
 	const char *SuiteID_p;
-	void (*CleanupSuite_fp)(ADBG_SuiteData_t *SuiteData_p);
 	const ADBG_Case_SuiteEntry_t *SuiteEntries_p;
 } ADBG_Suite_Definition_t;
 
@@ -104,10 +99,10 @@ typedef struct {
 #define ADBG_SUITE_DECLARE(Name) \
 	extern const ADBG_Suite_Definition_t ADBG_Suite_ ## Name;
 
-#define ADBG_SUITE_DEFINE_BEGIN(Name, CleanupSuite) \
+#define ADBG_SUITE_DEFINE_BEGIN(Name) \
 	extern const ADBG_Case_SuiteEntry_t ADBG_SuiteEntries_ ## Name[]; \
 	const ADBG_Suite_Definition_t ADBG_Suite_ ## Name = \
-	{ #Name, CleanupSuite, ADBG_SuiteEntries_ ## Name }; \
+	{ #Name, ADBG_SuiteEntries_ ## Name }; \
 	const ADBG_Case_SuiteEntry_t ADBG_SuiteEntries_ ## Name[] = {
 /**
  * Defines a suite entry, this is the name of a case.
@@ -447,8 +442,6 @@ int Do_ADBG_RunSuite(const ADBG_Suite_Definition_t *Suite_p, int argc,
 
 void Do_ADBG_MTS_Suite(const ADBG_Suite_Definition_t *Suite_p, int argc,
 		       char *argv[]);
-
-ADBG_SuiteData_t *Do_ADBG_GetSuiteData(const ADBG_Case_t *const Case_p);
 
 /*
  * SubCase functions

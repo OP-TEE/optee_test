@@ -45,10 +45,7 @@ static const char *ADBG_Case_GetTestID(ADBG_Case_t *Case_p);
 /*************************************************************************
 * 5. Definition of external functions
 *************************************************************************/
-ADBG_Case_t *ADBG_Case_New(
-	const ADBG_Case_SuiteEntry_t *SuiteEntry_p,
-	ADBG_SuiteData_t *SuiteData_p
-	)
+ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p)
 {
 	ADBG_Case_t *Case_p;
 
@@ -58,7 +55,6 @@ ADBG_Case_t *ADBG_Case_New(
 
 	memset(Case_p, 0, sizeof(ADBG_Case_t));
 	Case_p->SuiteEntry_p = SuiteEntry_p;
-	Case_p->SuiteData_p = SuiteData_p;
 	return Case_p;
 }
 
@@ -289,13 +285,6 @@ void Do_ADBG_AbortSuite(
 {
 	Case_p->Result.AbortTestSuite = true;
 }
-
-ADBG_SuiteData_t *Do_ADBG_GetSuiteData(const ADBG_Case_t *const Case_p)
-{
-	return Case_p->SuiteData_p;
-}
-
-
 
 /*************************************************************************
 * 6. Definition of internal functions
