@@ -43,136 +43,29 @@ static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4011(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(XTEST_TEE_4001, xtest_tee_test_4001,
-		/* Title */
-		"Test TEE Internal API hash operations",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API hash operations");
 ADBG_CASE_DEFINE(XTEST_TEE_4002, xtest_tee_test_4002,
-		/* Title */
-		"Test TEE Internal API MAC operations",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API MAC operations");
 ADBG_CASE_DEFINE(XTEST_TEE_4003_NO_XTS, xtest_tee_test_4003_no_xts,
-		/* Title */
-		"Test TEE Internal API cipher operations without AES XTS",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API cipher operations without AES XTS");
 ADBG_CASE_DEFINE(XTEST_TEE_4003_XTS, xtest_tee_test_4003_xts,
-		/* Title */
-		"Test TEE Internal API cipher operations for AES XTS",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API cipher operations for AES XTS");
 ADBG_CASE_DEFINE(XTEST_TEE_4004, xtest_tee_test_4004,
-		/* Title */
-		"Test TEE Internal API get random",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API get random");
 ADBG_CASE_DEFINE(XTEST_TEE_4005, xtest_tee_test_4005,
-		/* Title */
-		"Test TEE Internal API Authenticated Encryption operations",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API Authenticated Encryption operations");
 ADBG_CASE_DEFINE(XTEST_TEE_4006, xtest_tee_test_4006,
-		/* Title */
-		"Test TEE Internal API Asymmetric Cipher operations",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API Asymmetric Cipher operations");
 ADBG_CASE_DEFINE(XTEST_TEE_4007, xtest_tee_test_4007,
-		/* Title */
-		"Test TEE Internal API Generate key",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API Generate key");
 ADBG_CASE_DEFINE(XTEST_TEE_4008, xtest_tee_test_4008,
-		/* Title */
-		"Test TEE Internal API Derive key",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API Derive key");
 ADBG_CASE_DEFINE(XTEST_TEE_4009, xtest_tee_test_4009,
-		/* Title */
-		"Test TEE Internal API Derive key ECDH",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API Derive key ECDH");
 ADBG_CASE_DEFINE(XTEST_TEE_4010, xtest_tee_test_4010,
-		/* Title */
-		"Test TEE Internal API create transient object (negative)",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
-
+		"Test TEE Internal API create transient object (negative)");
 ADBG_CASE_DEFINE(XTEST_TEE_4011, xtest_tee_test_4011,
-		/* Title */
-		"Test TEE Internal API Bleichenbacher attack (negative)",
-		/* Short description */
-		"Short description ...",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ..."
-		 );
+		"Test TEE Internal API Bleichenbacher attack (negative)");
 
 static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,
 						       TEEC_Session *s,

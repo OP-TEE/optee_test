@@ -638,11 +638,4 @@ static void xtest_teec_TEE(ADBG_Case_t *c)
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_5006, xtest_teec_TEE,
-		/* Title */
-		"Tests for Global platform TEEC",
-		/* Short description */
-		"Invocation of all tests for TEE Client API",
-		/* Requirement IDs */
-		"TEE-??",
-		/* How to implement */
-		"Description of how to implement ...");
+		"Tests for Global platform TEEC");

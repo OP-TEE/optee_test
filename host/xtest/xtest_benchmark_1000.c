@@ -146,28 +146,8 @@ static void xtest_tee_benchmark_1003(ADBG_Case_t *c)
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1001, xtest_tee_benchmark_1001,
-		/* Title */
-		"TEE Trusted Storage Performance Test (WRITE)",
-		/* Short description */
-		"Write a chunk of data",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
+		"TEE Trusted Storage Performance Test (WRITE)");
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1002, xtest_tee_benchmark_1002,
-		/* Title */
-		"TEE Trusted Storage Performance Test (READ)",
-		/* Short description */
-		"Read a chunk of data",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
+		"TEE Trusted Storage Performance Test (READ)");
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1003, xtest_tee_benchmark_1003,
-		/* Title */
-		"TEE Trusted Storage Performance Test (REWRITE)",
-		/* Short description */
-		"Read a chunk of data then write it",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
+		"TEE Trusted Storage Performance Test (REWRITE)");

@@ -356,173 +356,40 @@ static void xtest_tee_7019(ADBG_Case_t *c)
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_7001, xtest_tee_7001,
-		/* Title */
-		"29-84-6d",
-		/* Short description */
-		"Allocate_In",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_ALLOCATED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Allocate_In RELEASE_SHARED_MEMORY_WHEN_ALLOCATED");
 ADBG_CASE_DEFINE(XTEST_TEE_7002, xtest_tee_7002,
-		/* Title */
-		"29-c2-4c",
-		/* Short description */
-		"Allocate_out_of_memory",
-		/* Requirement IDs */
-		"INITIALIZE_CONTEXT_NAMES",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Allocate_out_of_memory INITIALIZE_CONTEXT_NAMES");
 ADBG_CASE_DEFINE(XTEST_TEE_7003, xtest_tee_7003,
-		/* Title */
-		"29-b0-da",
-		/* Short description */
-		"ReleaseSharedMemory_null",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_ALLOCATED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"ReleaseSharedMemory_null RELEASE_SHARED_MEMORY_WHEN_ALLOCATED");
 ADBG_CASE_DEFINE(XTEST_TEE_7004, xtest_tee_7004,
-		/* Title */
-		"29-1c-00",
-		/* Short description */
-		"Allocate_InOut",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_ALLOCATED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Allocate_InOut RELEASE_SHARED_MEMORY_WHEN_ALLOCATED");
 ADBG_CASE_DEFINE(XTEST_TEE_7005, xtest_tee_7005,
-		/* Title */
-		"29-9f-a2",
-		/* Short description */
-		"Register_In",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_REGISTERED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Register_In RELEASE_SHARED_MEMORY_WHEN_REGISTERED");
 ADBG_CASE_DEFINE(XTEST_TEE_7006, xtest_tee_7006,
-		/* Title */
-		"29-11-02",
-		/* Short description */
-		"Register_notZeroLength_Out",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_REGISTERED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Register_notZeroLength_Out RELEASE_SHARED_MEMORY_WHEN_REGISTERED");
 ADBG_CASE_DEFINE(XTEST_TEE_7007, xtest_tee_7007,
-		/* Title */
-		"29-1f-a2",
-		/* Short description */
-		"Register_InOut",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_REGISTERED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Register_InOut RELEASE_SHARED_MEMORY_WHEN_REGISTERED");
 ADBG_CASE_DEFINE(XTEST_TEE_7008, xtest_tee_7008,
-		/* Title */
-		"29-2e-8d",
-		/* Short description */
-		"Register_zeroLength_Out",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_REGISTERED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Register_zeroLength_Out RELEASE_SHARED_MEMORY_WHEN_REGISTERED");
 ADBG_CASE_DEFINE(XTEST_TEE_7009, xtest_tee_7009,
-		/* Title */
-		"29-2b-3f",
-		/* Short description */
-		"OpenSession_error_notExistingTA",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_error_notExistingTA OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7010, xtest_tee_7010,
-		/* Title */
-		"29-cd-39",
-		/* Short description */
-		"Allocate_Out",
-		/* Requirement IDs */
-		"RELEASE_SHARED_MEMORY_WHEN_ALLOCATED",
-		/* How to implement */
-		"Description of how to implement ...");
+	"Allocate_Out RELEASE_SHARED_MEMORY_WHEN_ALLOCATED");
 ADBG_CASE_DEFINE(XTEST_TEE_7011, xtest_tee_7011,
-		/* Title */
-		"29-f0-9c",
-		/* Short description */
-		"OpenSession_success_nullReturnOrigin",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_success_nullReturnOrigin OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7012, xtest_tee_7012,
-		/* Title */
-		"29-4d-b0",
-		/* Short description */
-		"OpenSession_error_originTrustedApp",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_error_originTrustedApp OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7013, xtest_tee_7013,
-		/* Title */
-		"29-a2-e3",
-		/* Short description */
-		"OpenSession_error_originTEE",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_error_originTEE OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7014, xtest_tee_7014,
-		/* Title */
-		"29-5d-d8",
-		/* Short description */
-		"OpenSession_with_operation_parameters",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_with_operation_parameters OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7015, xtest_tee_7015,
-		/* Title */
-		"29-82-81",
-		/* Short description */
-		"OpenSession_success_originTrustedApp",
-		/* Requirement IDs */
-		"OPEN_SESSION_TARGET_TRUSTED_APP",
-		/* How to implement */
-		"Description of how to implement ...");
+	"OpenSession_success_originTrustedApp OPEN_SESSION_TARGET_TRUSTED_APP");
 ADBG_CASE_DEFINE(XTEST_TEE_7016, xtest_tee_7016,
-		/* Title */
-		"29-db-48",
-		/* Short description */
-		"CloseSession_null",
-		/* Requirement IDs */
-		"CLOSE_SESSION_IGNORE_SESSION_NULL",
-		/* How to implement */
-		"Description of how to implement ...");
+	"CloseSession_null CLOSE_SESSION_IGNORE_SESSION_NULL");
 ADBG_CASE_DEFINE(XTEST_TEE_7017, xtest_tee_7017,
-		/* Title */
-		"29-a1-83",
-		/* Short description */
-		"InitializeContext_NotExistingTEE",
-		/* Requirement IDs */
-		"INITIALIZE_CONTEXT_NAMES",
-		/* How to implement */
-		"Description of how to implement ...");
+	"InitializeContext_NotExistingTEE INITIALIZE_CONTEXT_NAMES");
 ADBG_CASE_DEFINE(XTEST_TEE_7018, xtest_tee_7018,
-		/* Title */
-		"29-c1-a5",
-		/* Short description */
-		"FinalizeContext_null",
-		/* Requirement IDs */
-		"FINALIZE_CONTEXT_IGNORE_NULL",
-		/* How to implement */
-		"Description of how to implement ...");
+	"FinalizeContext_null FINALIZE_CONTEXT_IGNORE_NULL");
 ADBG_CASE_DEFINE(XTEST_TEE_7019, xtest_tee_7019,
-		/* Title */
-		"29-91-aa",
-		/* Short description */
-		"InitializeContext_concurrentContext",
-		/* Requirement IDs */
-		"INITIALIZE_CONTEXT_NAMES",
-		/* How to implement */
-		"Description of how to implement ...");
+	"InitializeContext_concurrentContext INITIALIZE_CONTEXT_NAMES");

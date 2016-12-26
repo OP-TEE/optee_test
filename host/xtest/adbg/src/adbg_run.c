@@ -125,12 +125,7 @@ static int ADBG_RunSuite(
 		Do_ADBG_BeginSubCase(Case_p, "%s",
 				     SuiteEntry_p->CaseDefinition_p->Title_p);
 
-		if (SuiteEntry_p->WhyDisabled_p == NULL) {
-			/* Run case */
-			SuiteEntry_p->CaseDefinition_p->Run_fp(Case_p);
-		} else {
-			NumSkippedTestCases++;
-		}
+		SuiteEntry_p->CaseDefinition_p->Run_fp(Case_p);
 
 		/* End abondoned subcases */
 		while (Case_p->CurrentSubCase_p != Case_p->FirstSubCase_p)
@@ -141,7 +136,6 @@ static int ADBG_RunSuite(
 				   SuiteEntry_p->CaseDefinition_p->Title_p);
 
 		/* Sum up the errors */
-		Case_p->Result.WhySkipped_p = SuiteEntry_p->WhyDisabled_p;
 		Runner_p->Result.NumTests += Case_p->Result.NumTests +
 					     Case_p->Result.NumSubTests;
 		Runner_p->Result.NumFailedTests +=

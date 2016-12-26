@@ -48,20 +48,11 @@ typedef uint32_t (ADBG_SignalFunction_t)(uint8_t);
 ADBG_CASE_DEFINE(TEST_1001, TEST_Test_1001,
 		/* Title */
 		"My test case title",
-		/* Short description */
-		"Verifies that functionality X is working",
-		/* Requirement IDs */
-		"?",
-		/* How to implement */
-		"The function should return OK"
 		);
 #endif
 
-#define ADBG_CASE_DEFINE(TestID, Run, Title, ShortDescription, \
-			 RequiredMentIDs, HowToImplement) \
-	const ADBG_Case_Definition_t TestID = {#TestID, Title, Run, \
-					       ShortDescription, \
-					       RequiredMentIDs, HowToImplement }
+#define ADBG_CASE_DEFINE(TestID, Run, Title) \
+	const ADBG_Case_Definition_t TestID = {#TestID, Title, Run, }
 
 #define ADBG_CASE_DECLARE(name) \
 	extern const ADBG_Case_Definition_t name
@@ -74,14 +65,10 @@ typedef struct {
 	const char *TestID_p;
 	const char *Title_p;
 	void (*Run_fp)(ADBG_Case_t *ADBG_Case_pp);
-	const char *ShortDescription_p;
-	const char *RequirementIDs_p;
-	const char *HowToImplement_p;
 } ADBG_Case_Definition_t;
 
 typedef struct {
 	const ADBG_Case_Definition_t *CaseDefinition_p;
-	const char *WhyDisabled_p;
 } ADBG_Case_SuiteEntry_t;
 
 typedef struct {
@@ -107,10 +94,9 @@ typedef struct {
 /**
  * Defines a suite entry, this is the name of a case.
  */
-#define ADBG_SUITE_ENTRY(name, WhyDisabledOrNULL) \
-	{ &name, WhyDisabledOrNULL },
+#define ADBG_SUITE_ENTRY(name) { &name },
 
-#define ADBG_SUITE_DEFINE_END() { NULL, NULL } };
+#define ADBG_SUITE_DEFINE_END() { NULL } };
 
 /*************************************************************************
 * 2.3 IDbg table definitions
@@ -439,9 +425,6 @@ void Do_ADBG_AbortSuite(ADBG_Case_t *const Case_p);
 
 int Do_ADBG_RunSuite(const ADBG_Suite_Definition_t *Suite_p, int argc,
 		     char *argv[]);
-
-void Do_ADBG_MTS_Suite(const ADBG_Suite_Definition_t *Suite_p, int argc,
-		       char *argv[]);
 
 /*
  * SubCase functions

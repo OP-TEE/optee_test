@@ -62,22 +62,9 @@ static void xtest_tee_benchmark_2002(ADBG_Case_t *c)
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_2001, xtest_tee_benchmark_2001,
-		/* Title */
-		"TEE SHA Performance test (TA_SHA_SHA1)",
-		/* Short description */
-		"Hashing 1024 bytes buffer with SHA1 algo, offset = 0",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
+		"TEE SHA Performance test (TA_SHA_SHA1)");
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_2002, xtest_tee_benchmark_2002,
-		/* Title */
-		"TEE SHA Performance test (TA_SHA_SHA226)",
-		/* Short description */
-		"Hashing 4096 bytes buffer with SHA256 algo, offset = 0",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
+		"TEE SHA Performance test (TA_SHA_SHA226)");
 
 
 /* ----------------------------------------------------------------------- */
@@ -113,20 +100,6 @@ static void xtest_tee_benchmark_2012(ADBG_Case_t *c)
 }
 
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_2011, xtest_tee_benchmark_2011,
-		/* Title */
-		"TEE AES Performance test (TA_AES_ECB)",
-		/* Short description */
-		"Short description...",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
+		"TEE AES Performance test (TA_AES_ECB)");
 ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_2012, xtest_tee_benchmark_2012,
-		/* Title */
-		"TEE AES Performance test (TA_AES_CBC)",
-		/* Short description */
-		"Short description...",
-		/* Requirement IDs */ "",
-		/* How to implement */ ""
-		);
-
+		"TEE AES Performance test (TA_AES_CBC)");

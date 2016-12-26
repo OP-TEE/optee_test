@@ -1653,196 +1653,36 @@ static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6016)
 
 
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6001, xtest_tee_test_6001,
-	/* Title */
-	"Test TEE_CreatePersistentObject",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6002, xtest_tee_test_6002,
-	/* Title */
-	"Test TEE_OpenPersistentObject",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6003, xtest_tee_test_6003,
-	/* Title */
-	"Test TEE_ReadObjectData",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6004, xtest_tee_test_6004,
-	/* Title */
-	"Test TEE_WriteObjectData",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6005, xtest_tee_test_6005,
-	/* Title */
-	"Test TEE_SeekObjectData",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6006, xtest_tee_test_6006,
-	/* Title */
-	"Test TEE_CloseAndDeletePersistentObject",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6007, xtest_tee_test_6007,
-	/* Title */
-	"Test TEE_TruncateObjectData",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6008, xtest_tee_test_6008,
-	/* Title */
-	"Test TEE_RenamePersistentObject",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6009, xtest_tee_test_6009,
-	/* Title */
-	"Test TEE Internal API Persistent Object Enumeration Functions",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-	);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6010, xtest_tee_test_6010,
-	/* Title */
-	"Test Storage",
-	/* Short description */
-	"Short description ...",
-	/* Requirement IDs */
-	"TEE-??",
-	/* How to implement */
-	"Description of how to implement ..."
-);
+ADBG_CASE_DEFINE(XTEST_TEE_6001, xtest_tee_test_6001,
+		 "Test TEE_CreatePersistentObject");
+ADBG_CASE_DEFINE(XTEST_TEE_6002, xtest_tee_test_6002,
+		 "Test TEE_OpenPersistentObject");
+ADBG_CASE_DEFINE(XTEST_TEE_6003, xtest_tee_test_6003,
+		 "Test TEE_ReadObjectData");
+ADBG_CASE_DEFINE(XTEST_TEE_6004, xtest_tee_test_6004,
+		 "Test TEE_WriteObjectData");
+ADBG_CASE_DEFINE(XTEST_TEE_6005, xtest_tee_test_6005,
+		 "Test TEE_SeekObjectData");
+ADBG_CASE_DEFINE(XTEST_TEE_6006, xtest_tee_test_6006,
+		 "Test TEE_CloseAndDeletePersistentObject");
+ADBG_CASE_DEFINE(XTEST_TEE_6007, xtest_tee_test_6007,
+		 "Test TEE_TruncateObjectData");
+ADBG_CASE_DEFINE(XTEST_TEE_6008, xtest_tee_test_6008,
+		 "Test TEE_RenamePersistentObject");
+ADBG_CASE_DEFINE(XTEST_TEE_6009, xtest_tee_test_6009,
+	"Test TEE Internal API Persistent Object Enumeration Functions");
+ADBG_CASE_DEFINE(XTEST_TEE_6010, xtest_tee_test_6010, "Test Storage");
 
 #ifdef WITH_GP_TESTS
-ADBG_CASE_DEFINE(
-    XTEST_TEE_6011, xtest_tee_test_6011,
-    /* Title */
-    "Test TEE GP TTA DS init objects",
-    /* Short description */
-    "Short description ...",
-    /* Requirement IDs */
-    "TEE-??",
-    /* How to implement */
-    "Description of how to implement ..."
-);
+ADBG_CASE_DEFINE(XTEST_TEE_6011, xtest_tee_test_6011,
+    "Test TEE GP TTA DS init objects");
 #endif
 
-ADBG_CASE_DEFINE(
-    XTEST_TEE_6012, xtest_tee_test_6012,
-    /* Title */
-    "Test TEE GP TTA DS init objects",
-    /* Short description */
-    "Short description ...",
-    /* Requirement IDs */
-    "TEE-??",
-    /* How to implement */
-    "Description of how to implement ..."
-);
-
-ADBG_CASE_DEFINE(
-    XTEST_TEE_6013, xtest_tee_test_6013,
-    /* Title */
-    "Key usage in Persistent objects",
-    /* Short description */
-    "Short description ...",
-    /* Requirement IDs */
-    "TEE-??",
-    /* How to implement */
-    "Description of how to implement ..."
-);
-
-ADBG_CASE_DEFINE(
-    XTEST_TEE_6014, xtest_tee_test_6014,
-    /* Title */
-    "Loop on Persistent objects",
-    /* Short description */
-    "Short description ...",
-    /* Requirement IDs */
-    "TEE-??",
-    /* How to implement */
-    "Description of how to implement ..."
-);
-
-ADBG_CASE_DEFINE(
-    XTEST_TEE_6015, xtest_tee_test_6015,
-    /* Title */
-    "Storage isolation",
-    /* Short description */
-    "TA #2 tries to open object created by TA #1, should fail",
-    /* Requirement IDs */
-    "",
-    /* How to implement */
-    ""
-);
-
-ADBG_CASE_DEFINE(
-	XTEST_TEE_6016, xtest_tee_test_6016,
-	/* Title */
-	"Storage concurency",
-	/* Short description */
-	"Multiple thread operate secure storage",
-	/* Requirement IDs */
-	"",
-	/* How to implement */
-	""
-);
+ADBG_CASE_DEFINE(XTEST_TEE_6012, xtest_tee_test_6012,
+		 "Test TEE GP TTA DS init objects");
+ADBG_CASE_DEFINE(XTEST_TEE_6013, xtest_tee_test_6013,
+		 "Key usage in Persistent objects");
+ADBG_CASE_DEFINE(XTEST_TEE_6014, xtest_tee_test_6014,
+		 "Loop on Persistent objects");
+ADBG_CASE_DEFINE(XTEST_TEE_6015, xtest_tee_test_6015, "Storage isolation");
+ADBG_CASE_DEFINE(XTEST_TEE_6016, xtest_tee_test_6016, "Storage concurency");

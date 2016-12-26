@@ -27,26 +27,9 @@ static void xtest_tee_test_10001(ADBG_Case_t *c);
 static void xtest_tee_test_10002(ADBG_Case_t *c);
 
 ADBG_CASE_DEFINE(XTEST_TEE_10001, xtest_tee_test_10001,
-		 /* Title */
-		 "Test TEE Internal API key derivation extensions",
-		 /* Short description */
-		 "Test non-standard cryptographic key derivation algorithms",
-		 /* Requirement IDs */
-		 "Linaro CARD-1661",
-		 /* How to implement */
-		 "Invoke key derivation functions with standard test vectors"
-		);
-
+		 "Test TEE Internal API key derivation extensions");
 ADBG_CASE_DEFINE(XTEST_TEE_10002, xtest_tee_test_10002,
-	/* Title */
-	"Secure Storage Key Manager API Self Test",
-	/* Short description */
-	"Test secure storage key manager functionality",
-	/* Requirement IDs */
-	"Linaro SWG-176",
-	/* How to implement */
-	"Invoke key manager self test function in test TA"
-	);
+	"Secure Storage Key Manager API Self Test");
 
 /*
  * HKDF test data from RFC 5869
