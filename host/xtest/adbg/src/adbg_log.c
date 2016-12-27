@@ -132,15 +132,6 @@ void Do_ADBG_LogHeading(unsigned Level, const char *const Format, ...)
 	}
 }
 
-void Do_ADBG_LogText(const char *const Text_p)
-{
-	static const ADBG_LogTableShapes_t Shapes = { ' ', ' ', ' ' };
-	ADBG_LogTable_t LogTable[2] = { { 3, NULL }, { 74, NULL } };
-
-	LogTable[1].Text_p = Text_p;
-	Do_ADBG_LogTableShapes(&Shapes, LogTable, 2);
-}
-
 void Do_ADBG_HexLog(
 	const void *const Buf_p,
 	const size_t Size,

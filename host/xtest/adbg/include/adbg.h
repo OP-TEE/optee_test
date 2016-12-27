@@ -352,8 +352,6 @@ __attribute__((__format__(__printf__, 1, 2)));
 void Do_ADBG_LogHeading(unsigned Level, const char *const Format_p, ...)
 __attribute__((__format__(__printf__, 2, 3)));
 
-void Do_ADBG_LogText(const char *const Text_p);
-
 void Do_ADBG_LogTable(const ADBG_LogTable_t *const TableRow_p,
 		      const size_t NumColumns);
 void Do_ADBG_LogTableLine(const ADBG_LogTable_t *const TableRow_p,
