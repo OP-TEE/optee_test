@@ -44,7 +44,6 @@ srcs := xtest_1000.c \
 	adbg/src/adbg_expect.c \
 	adbg/src/adbg_log.c \
 	adbg/src/adbg_run.c \
-	adbg/src/adbg_util.c \
 	adbg/src/security_utils_hex.c
 
 ifdef CFG_GP_PACKAGE_PATH

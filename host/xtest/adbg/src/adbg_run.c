@@ -91,15 +91,15 @@ static int ADBG_RunSuite(
 	     n++) {
 		const ADBG_Case_SuiteEntry_t *SuiteEntry_p =
 			&Runner_p->Suite_p->SuiteEntries_p[n];
+		const char *ti = SuiteEntry_p->CaseDefinition_p->TestID_p;
+
 		if (argc > 0) {
 			bool HaveMatch = false;
 			int i;
 
 			for (i = 0; i < argc; i++) {
-				if (ADBG_TestIDMatches(SuiteEntry_p->
-						       CaseDefinition_p->
-						       TestID_p,
-						       argv[i])) {
+
+				if (strstr(ti, argv[i])) {
 					HaveMatch = true;
 					break;
 				}
