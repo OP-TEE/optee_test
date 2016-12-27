@@ -141,22 +141,6 @@ void Do_ADBG_LogText(const char *const Text_p)
 	Do_ADBG_LogTableShapes(&Shapes, LogTable, 2);
 }
 
-void Do_ADBG_LogHelp(
-	const ADBG_HelpTable_t *const HelpTable_p,
-	const size_t HelpTableLength
-	)
-{
-	static const ADBG_LogTableShapes_t Shapes = { ' ', ' ', ' ' };
-	ADBG_LogTable_t Row[2] = { { 20, NULL }, { 50, NULL } };
-	size_t n;
-
-	for (n = 0; n < HelpTableLength; n++) {
-		Row[0].Text_p = HelpTable_p[n].Command_p;
-		Row[1].Text_p = HelpTable_p[n].Help_p;
-		Do_ADBG_LogTableShapes(&Shapes, Row, 2);
-	}
-}
-
 void Do_ADBG_HexLog(
 	const void *const Buf_p,
 	const size_t Size,
