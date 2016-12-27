@@ -42,18 +42,6 @@ bool ADBG_TestIDMatches(
 	return strstr(TestID_p, Argument_p) != NULL;
 }
 
-void *ADBG_ListMemAllocFunction(size_t Length)
-{
-	return HEAP_UNTYPED_ALLOC(Length);
-}
-
-void ADBG_ListMemFreeFunction(void *Memory_p)
-{
-	void *p = Memory_p;
-
-	HEAP_FREE(&p);
-}
-
 /*************************************************************************
  * 6. Definitions of internal functions
  ************************************************************************/

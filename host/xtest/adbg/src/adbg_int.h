@@ -87,8 +87,6 @@ typedef struct {
 /*************************************************************************
 * 3. Functions
 *************************************************************************/
-void *ADBG_ListMemAllocFunction(size_t Length);
-void  ADBG_ListMemFreeFunction(void *Memory_p);
 
 bool ADBG_Case_SubCaseIsMain(const ADBG_Case_t *const Case_p,
 			     const ADBG_SubCase_t *const SubCase_p);
