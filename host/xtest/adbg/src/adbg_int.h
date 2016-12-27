@@ -11,26 +11,17 @@
  * GNU General Public License for more details.
  */
 
-#ifndef ADBG_INT_H
-#define ADBG_INT_H
-#include <sys/queue.h>
-#include <sys/param.h>
-
+#ifndef __ADBG_INT_H
+#define __ADBG_INT_H
 #include <adbg.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/param.h>
+#include <sys/queue.h>
 
 #include "security_utils_hex.h"
-
-#include <sys/queue.h>
-
-#include <string.h>
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-
-/*************************************************************************
-* 2. Types, constants and external variables
-*************************************************************************/
 
 typedef struct ADBG_Result {
 	int NumTests;
@@ -74,11 +65,6 @@ typedef struct {
 	ADBG_SubCase_t *CurrentSubCase_p;
 } ADBG_SubCase_Iterator_t;
 
-
-/*************************************************************************
-* 3. Functions
-*************************************************************************/
-
 bool ADBG_Case_SubCaseIsMain(const ADBG_Case_t *const Case_p,
 			     const ADBG_SubCase_t *const SubCase_p);
 
@@ -96,4 +82,4 @@ bool ADBG_TestIDMatches(const char *const TestID_p,
 
 #define IDENTIFIER_NOT_USED(x) { if (sizeof(&x)) {} }
 
-#endif /* ADBG_INT_H */
+#endif /* __ADBG_INT_H */
