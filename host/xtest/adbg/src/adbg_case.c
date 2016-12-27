@@ -279,13 +279,6 @@ void Do_ADBG_EndSubCase(
 		ADBG_Case_GetParentSubCase(Case_p, SubCase_p);
 }
 
-void Do_ADBG_AbortSuite(
-	ADBG_Case_t *const Case_p
-	)
-{
-	Case_p->Result.AbortTestSuite = true;
-}
-
 /*************************************************************************
 * 6. Definition of internal functions
 *************************************************************************/

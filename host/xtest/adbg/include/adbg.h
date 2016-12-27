@@ -32,9 +32,6 @@ typedef struct {
 } ADBG_LogTableShapes_t;
 
 
-/* Typedef for function pointers used in the clients handle signal function. */
-typedef uint32_t (ADBG_SignalFunction_t)(uint8_t);
-
 /*
  * Case definitions
  */
@@ -181,18 +178,6 @@ void Do_ADBG_Assert(ADBG_Case_t *const Case_p, const char *const FileName_p,
 	Do_ADBG_ExpectNot(Case_p, __FILE__, __LINE__, \
 			  NotExpected, Got, #Got, EnumTable_p)
 
-#define ADBG_EXPECT_REQUEST_STATUS(Case_p, Expected, Got) \
-	ADBG_EXPECT_ENUM(Case_p, Expected, Got, ADBG_EnumTable_RequestStatus)
-
-#define ADBG_EXPECT_REQUEST_STATUS_OK(Case_p, Got) \
-	ADBG_EXPECT_REQUEST_STATUS(Case_p, REQUEST_OK, Got)
-
-#define ADBG_EXPECT_EVENT_STATUS(Case_p, Expected, Got) \
-	ADBG_EXPECT_ENUM(Case_p, Expected, Got, ADBG_EnumTable_EventStatus)
-
-#define ADBG_EXPECT_EVENT_STATUS_OK(Case_p, Got) \
-	ADBG_EXPECT_REQUEST_STATUS(Case_p, GS_EVENT_OK, Got)
-
 #define ADBG_EXPECT_BOOLEAN(Case_p, Expected, Got) \
 	ADBG_EXPECT_ENUM(Case_p, Expected, Got, ADBG_EnumTable_Boolean)
 
@@ -234,22 +219,6 @@ void Do_ADBG_Assert(ADBG_Case_t *const Case_p, const char *const FileName_p,
 
 #define ADBG_REQUIRE_ENUM(Case_p, Recovery, Expected, Got, EnumTable_p) {\
 	if (!ADBG_EXPECT_ENUM(Case_p, Expected, Got, EnumTable_p)) \
-		Recovery }
-
-#define ADBG_REQUIRE_REQUEST_STATUS(Case_p, Recovery, Expected, Got) {\
-	if (!ADBG_EXPECT_REQUEST_STATUS(Case_p, Expected, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_REQUEST_STATUS_OK(Case_p, Recovery, Got) {\
-	if (!ADBG_EXPECT_REQUEST_STATUS_OK(Case_p, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_EVENT_STATUS(Case_p, Recovery, Expected, Got) {\
-	if (!ADBG_EXPECT_EVENT_STATUS(Case_p, Expected, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_EVENT_STATUS_OK(Case_p, Recovery, Got) {\
-	if (!ADBG_EXPECT_EVENT_STATUS_OK(Case_p, Got)) \
 		Recovery }
 
 #define ADBG_REQUIRE_BOOLEAN(Case_p, Recovery, Expected, Got) {\
@@ -414,14 +383,6 @@ void Do_ADBG_HexLog(const void *const Buf_p, const size_t Size,
 /*
  * Suite functions
  */
-
-/**
- * Aborts the test suite after the current case has finished.
- */
-void Do_ADBG_AbortSuite(ADBG_Case_t *const Case_p);
-
-#define ADBG_CASE_ABORT() (return)
-
 
 int Do_ADBG_RunSuite(const ADBG_Suite_Definition_t *Suite_p, int argc,
 		     char *argv[]);
