@@ -20,18 +20,6 @@
 
 #define ADBG_STRING_LENGTH_MAX (1024)
 
-typedef struct {
-	size_t ColumnWidth;
-	const char *Text_p;
-} ADBG_LogTable_t;
-
-typedef struct {
-	char Corner;
-	char Vertical;
-	char Horizontal;
-} ADBG_LogTableShapes_t;
-
-
 /*
  * Case definitions
  */
@@ -348,21 +336,6 @@ void Do_ADBG_DeleteLog(void);
  */
 void Do_ADBG_Log(const char *const Format_p, ...)
 __attribute__((__format__(__printf__, 1, 2)));
-
-void Do_ADBG_LogHeading(unsigned Level, const char *const Format_p, ...)
-__attribute__((__format__(__printf__, 2, 3)));
-
-void Do_ADBG_LogTable(const ADBG_LogTable_t *const TableRow_p,
-		      const size_t NumColumns);
-void Do_ADBG_LogTableLine(const ADBG_LogTable_t *const TableRow_p,
-			  const size_t NumColumns);
-
-void Do_ADBG_LogTableShapes(const ADBG_LogTableShapes_t *const Shapes,
-			    const ADBG_LogTable_t *const TableRow_p,
-			    const size_t NumColumns);
-void Do_ADBG_LogTableShapesLine(const ADBG_LogTableShapes_t *const Shapes,
-				const ADBG_LogTable_t *const TableRow_p,
-				const size_t NumColumns);
 
 /**
  * Writes out the contents of buf_p formatted so that each line will
