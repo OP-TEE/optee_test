@@ -316,18 +316,6 @@ const char *Do_ADBG_GetEnumName(const int Value,
  */
 size_t Do_ADBG_GetNumberOfErrors(ADBG_Case_t *const Case_p);
 
-/*
- * Log functions
- */
-void Do_ADBG_FileSystemLog(const char *CmdBuf_p, const int *ArgIndex_p,
-			   int ArgsFound);
-
-void Do_ADBG_StartLog(void);
-
-void Do_ADBG_PrintLog(bool UseNormalPrintf, uint32_t Delay);
-
-void Do_ADBG_DeleteLog(void);
-
 /**
  * Writes a string to output.
  * String length max is defined by ADBG_STRING_LENGTH_MAX
