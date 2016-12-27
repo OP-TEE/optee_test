@@ -83,18 +83,6 @@ typedef struct {
 
 #define ADBG_SUITE_DEFINE_END() { NULL } };
 
-/*************************************************************************
-* 2.3 IDbg table definitions
-*************************************************************************/
-
-typedef struct {
-	const char *Command_p;
-	const char *Help_p;
-} ADBG_HelpTable_t;
-
-#define ADBG_IDBG_TBL_HELP(Command, Help) \
-	{ Command, Help },
-
 /*
  * Enum table definitions
  */
