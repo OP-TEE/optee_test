@@ -44,12 +44,11 @@
 void Do_ADBG_Log(const char *const Format, ...)
 {
 	va_list ap;
-	char buf[ADBG_STRING_LENGTH_MAX];
 
 	va_start(ap, Format);
-	vsnprintf(buf, sizeof(buf), Format, ap);
+	vprintf(Format, ap);
+	printf("\n");
 	va_end(ap);
-	printf("%s\n", buf);
 	fflush(stdout);
 }
 
