@@ -166,10 +166,8 @@ void Do_ADBG_BeginSubCase(
 	va_list ArgList;
 	char Title[80];
 
-	/*lint -save -e718 -e746 -e530 lint doesn't seem to know of va_start */
 	va_start(ArgList, FormatTitle_p);
-	/*lint -restore */
-	(void)ADBG_vsnprintf(Title, sizeof(Title), FormatTitle_p, ArgList);
+	vsnprintf(Title, sizeof(Title), FormatTitle_p, ArgList);
 	va_end(ArgList);
 
 	SubCase_p = ADBG_Case_CreateSubCase(Case_p, Title);
@@ -206,12 +204,8 @@ void Do_ADBG_EndSubCase(
 	if (FormatTitle_p == NULL) {
 		strcpy(Title, "NULL");
 	} else {
-		/*lint -save -e718 -e746 -e530 lint doesn't
-			seem to know of va_start */
 		va_start(ArgList, FormatTitle_p);
-		/*lint -restore */
-		(void)ADBG_vsnprintf(Title, sizeof(Title), FormatTitle_p,
-				     ArgList);
+		vsnprintf(Title, sizeof(Title), FormatTitle_p, ArgList);
 		va_end(ArgList);
 	}
 
@@ -317,18 +311,8 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 
 		/* Update parent SubCase */
 		Parent_p->Result.NumSubCases++;
-		/*
-		 * XXX 081112 EJENWIK
-		 * bug in snprintf when passing more
-		 * than one argument to snprintf.
-		 */
-		(void)ADBG_snprintf(PrefixTitle, sizeof(PrefixTitle),
-				    "%s",
-				    Parent_p->TestID_p);
-		(void)ADBG_snprintf(PrefixTitle + strlen(PrefixTitle),
-				    sizeof(PrefixTitle) - strlen(PrefixTitle),
-				    ".%d",
-				    Parent_p->Result.NumSubCases);
+		snprintf(PrefixTitle, sizeof(PrefixTitle), "%s.%d",
+			 Parent_p->TestID_p, Parent_p->Result.NumSubCases);
 		SubCase_p->TestID_p = SECUTIL_HEAP_STRDUP(PrefixTitle);
 		if (SubCase_p->TestID_p == NULL)
 			goto ErrorReturn;

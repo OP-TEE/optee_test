@@ -54,46 +54,6 @@ void ADBG_ListMemFreeFunction(void *Memory_p)
 	HEAP_FREE(&p);
 }
 
-int ADBG_snprintf(
-	char *Buffer_p,
-	size_t BufferSize,
-	const char *Format_p,
-	...
-	)
-{
-	va_list List;
-	int ReturnValue;
-
-	/*lint -save -e718 -e746 -e530 lint doesn't seem to know of va_start */
-	va_start(List, Format_p);
-	/*lint -restore */
-	ReturnValue = ADBG_vsnprintf(Buffer_p, BufferSize, Format_p, List);
-	va_end(List);
-	return ReturnValue;
-}
-
-int ADBG_vsnprintf(
-	char *Buffer_p,
-	size_t BufferSize,
-	const char *Format_p,
-	va_list List
-	)
-{
-	int Length;
-
-	Length = vsnprintf(Buffer_p, BufferSize, Format_p, List);
-
-	/*
-	 * The moses version of vsnprintf() doesn't seem to add
-	 * a terminating zero to the string if the result is too
-	 * large.
-	 */
-	if (Buffer_p != NULL && BufferSize > 0)
-		Buffer_p[BufferSize - 1] = '\0';
-
-	return Length;
-}
-
 /*************************************************************************
  * 6. Definitions of internal functions
  ************************************************************************/

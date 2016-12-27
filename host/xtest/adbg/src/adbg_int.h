@@ -102,12 +102,6 @@ ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p);
 
 void ADBG_Case_Delete(ADBG_Case_t *Case_p);
 
-int ADBG_snprintf(char *Buffer_p, size_t BufferSize, const char *Format_p,
-		  ...) __attribute__((__format__(__printf__, 3, 4)));
-
-int ADBG_vsnprintf(char *Buffer_p, size_t BufferSize, const char *Format_p,
-		   va_list List) __attribute__((__format__(__printf__, 3, 0)));
-
 bool ADBG_TestIDMatches(const char *const TestID_p,
 			const char *const Argument_p);
 
