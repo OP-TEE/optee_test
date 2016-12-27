@@ -37,30 +37,6 @@ static const char *ADBG_GetFileBase(const char *const FileName_p);
 /*************************************************************************
  * 5. Definition of external functions
  ************************************************************************/
-void Do_ADBG_Assert(
-	ADBG_Case_t *const Case_p,
-	const char *const FileName_p,
-	const int LineNumber,
-	const bool ExpressionOK,
-	const char *const Format_p, ...
-	)
-{
-	char Buffer[ADBG_STRING_LENGTH_MAX];
-	va_list List;
-
-	if (ADBG_AssertHelper(Case_p, FileName_p, LineNumber, ExpressionOK))
-		return;
-
-	/*lint -save -e718 -e746 -e530 lint doesn't seem to know of va_start */
-	va_start(List, Format_p);
-	/*lint -restore */
-	(void)vsnprintf(Buffer, sizeof(Buffer), Format_p, List);
-	va_end(List);
-
-	Do_ADBG_Log("%s:%d: %s",
-		    ADBG_GetFileBase(FileName_p), LineNumber, Buffer);
-}
-
 bool Do_ADBG_Expect(
 	ADBG_Case_t *const Case_p,
 	const char *const FileName_p,

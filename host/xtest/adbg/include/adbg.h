@@ -117,37 +117,6 @@ typedef ADBG_EnumEntry_t ADBG_EnumTable_t;
 
 ADBG_ENUM_TABLE_DECLARE(Boolean);
 
-#define ADBG_ASSERT_STRINGS_EQUAL(Case_p, Str1_p, Str2_p) \
-	Do_ADBG_Assert(Case_p, __FILE__, __LINE__, \
-		       Str1_p != NULL && Str2_p != NULL && \
-		       strcmp(Str1_p, Str2_p) == 0, \
-		       "Assertion \"%s\" == \"%s\" failed", \
-		       #Str1_p, #Str2_p)
-
-#define ADBG_ASSERT_EQUAL(Case_p, Buf1_p, Buf2_p, Length) \
-	Do_ADBG_Assert(Case_p, __FILE__, __LINE__, \
-		       memcmp(Buf1_p, Buf2_p, Length) == 0, \
-		       "Buffer equality of %s and %s Length %d failed", \
-		       #Buf1_p, #Buf2_p, Length)
-
-#define ADBG_ASSERT(Case_p, Expression) \
-	Do_ADBG_Assert(Case_p, __FILE__, __LINE__, Expression, \
-		       "Assertion %s failed", #Expression)
-
-/**
- * Explicitly add an error to the test case
- */
-#define ADBG_ERROR(Case_p) \
-	Do_ADBG_Assert(Case_p, __FILE__, __LINE__, False, \
-		       "Excplicitly added error")
-
-
-void Do_ADBG_Assert(ADBG_Case_t *const Case_p, const char *const FileName_p,
-		    const int LineNumber, const bool ExpressionOK,
-		    const char *const Format_p,
-		    ...) __attribute__((__format__(__printf__, 5, 6)));
-
-
 /*
  * Expect functions/macros
  */
