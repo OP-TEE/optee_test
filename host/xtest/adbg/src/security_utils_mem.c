@@ -37,19 +37,6 @@ static uint32_t MWC_Random(void *Pointer_p);
 /*************************************************************************
 * 5. Definition of external functions
 *************************************************************************/
-char *SecUtil_Heap_StrDup(
-	const char *const String_p,
-	const bool Unsafe,
-	const char *const File_p,
-	const unsigned int Line
-	)
-{
-	(void)&Unsafe;
-	(void)&File_p;
-	(void)&Line;
-	return strdup(String_p);
-}
-
 void SecUtil_WipeMemory(
 	void *const Buffer_p,
 	const size_t BufferLength

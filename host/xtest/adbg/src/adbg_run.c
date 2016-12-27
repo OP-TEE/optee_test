@@ -52,18 +52,17 @@ int Do_ADBG_RunSuite(
 {
 	ADBG_Runner_t *Runner_p;
 
-	Runner_p = HEAP_ALLOC(ADBG_Runner_t);
+	Runner_p = calloc(1, sizeof(*Runner_p));
 	if (Runner_p == NULL) {
-		Do_ADBG_Log("HEAP_ALLOC failed for Suite %s!",
+		Do_ADBG_Log("calloc failed for Suite %s!",
 			    Suite_p->SuiteID_p);
 		return -1;
 	}
-	memset(Runner_p, 0, sizeof(ADBG_Runner_t));
 	TAILQ_INIT(&Runner_p->CasesList);
 	Runner_p->Suite_p = Suite_p;
 
 	int ret = ADBG_RunSuite(Runner_p, argc, argv);
-	HEAP_FREE(&Runner_p);
+	free(Runner_p);
 	return ret;
 }
 

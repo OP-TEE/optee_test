@@ -49,21 +49,17 @@ ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p)
 {
 	ADBG_Case_t *Case_p;
 
-	Case_p = HEAP_ALLOC(ADBG_Case_t);
-	if (Case_p == NULL)
-		return NULL;
+	Case_p = calloc(1, sizeof(*Case_p));
+	if (Case_p)
+		Case_p->SuiteEntry_p = SuiteEntry_p;
 
-	memset(Case_p, 0, sizeof(ADBG_Case_t));
-	Case_p->SuiteEntry_p = SuiteEntry_p;
 	return Case_p;
 }
 
-void ADBG_Case_Delete(
-	ADBG_Case_t *Case_p
-	)
+void ADBG_Case_Delete(ADBG_Case_t *Case_p)
 {
 	ADBG_SubCase_Delete(Case_p->FirstSubCase_p);
-	HEAP_FREE(&Case_p);
+	free(Case_p);
 }
 
 bool ADBG_Case_SubCaseIsMain(
@@ -283,14 +279,13 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 {
 	ADBG_SubCase_t *SubCase_p;
 
-	SubCase_p = HEAP_ALLOC(ADBG_SubCase_t);
+	SubCase_p = calloc(1, sizeof(*SubCase_p));
 	if (SubCase_p == NULL)
 		goto ErrorReturn;
 
-	memset(SubCase_p, 0, sizeof(ADBG_SubCase_t));
 	TAILQ_INIT(&SubCase_p->SubCasesList);
 
-	SubCase_p->Title_p = SECUTIL_HEAP_STRDUP(Title_p);
+	SubCase_p->Title_p = strdup(Title_p);
 	if (SubCase_p->Title_p == NULL)
 		goto ErrorReturn;
 
@@ -299,8 +294,7 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 
 	if (SubCase_p->Parent_p == NULL) {
 		/* Main SubCase */
-		SubCase_p->TestID_p =
-			SECUTIL_HEAP_STRDUP(ADBG_Case_GetTestID(Case_p));
+		SubCase_p->TestID_p = strdup(ADBG_Case_GetTestID(Case_p));
 		if (SubCase_p->TestID_p == NULL)
 			goto ErrorReturn;
 
@@ -313,7 +307,7 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 		Parent_p->Result.NumSubCases++;
 		snprintf(PrefixTitle, sizeof(PrefixTitle), "%s.%d",
 			 Parent_p->TestID_p, Parent_p->Result.NumSubCases);
-		SubCase_p->TestID_p = SECUTIL_HEAP_STRDUP(PrefixTitle);
+		SubCase_p->TestID_p = strdup(PrefixTitle);
 		if (SubCase_p->TestID_p == NULL)
 			goto ErrorReturn;
 
@@ -348,9 +342,9 @@ static void ADBG_SubCase_Delete(
 			TAILQ_REMOVE(&SubCase_p->SubCasesList, s, Link);
 			ADBG_SubCase_Delete(s);
 		}
-		HEAP_FREE(&SubCase_p->TestID_p);
-		HEAP_FREE(&SubCase_p->Title_p);
-		HEAP_FREE(&SubCase_p);
+		free(SubCase_p->TestID_p);
+		free(SubCase_p->Title_p);
+		free(SubCase_p);
 	}
 }
 

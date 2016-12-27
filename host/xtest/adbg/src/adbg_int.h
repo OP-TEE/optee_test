@@ -95,11 +95,6 @@ void ADBG_Case_Delete(ADBG_Case_t *Case_p);
 bool ADBG_TestIDMatches(const char *const TestID_p,
 			const char *const Argument_p);
 
-#define HEAP_ALLOC(x) ((x *)malloc(sizeof(x)))
-#define HEAP_UNTYPED_ALLOC(x) malloc((x))
-#define HEAP_FREE(x) do { if (*(x) != NULL) { free(*(x)); *(x) = NULL; \
-			  } } while (0)
-
 #define IDENTIFIER_NOT_USED(x) { if (sizeof(&x)) {} }
 
 #endif /* ADBG_INT_H */
