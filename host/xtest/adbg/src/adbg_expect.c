@@ -270,14 +270,6 @@ bool Do_ADBG_ExpectComparePointer(
 	return Result;
 }
 
-
-
-size_t Do_ADBG_GetNumberOfErrors(ADBG_Case_t *const Case_p)
-{
-	return Case_p->CurrentSubCase_p->Result.NumFailedTests;
-}
-
-
 /*************************************************************************
  * 6. Definitions of internal functions
  ************************************************************************/

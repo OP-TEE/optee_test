@@ -307,16 +307,6 @@ const char *Do_ADBG_GetEnumName(const int Value,
 				const ADBG_EnumTable_t *const EnumTable_p);
 
 /**
- * Returns the number of accumulated errors in the current
- * subcase.
- *
- * @param Case_p  Pointer to the running test case.
- *
- * @return The number of accumulated errors
- */
-size_t Do_ADBG_GetNumberOfErrors(ADBG_Case_t *const Case_p);
-
-/**
  * Writes a string to output.
  * String length max is defined by ADBG_STRING_LENGTH_MAX
  *
