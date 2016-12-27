@@ -19,7 +19,6 @@
 #include <adbg.h>
 
 #include "security_utils_hex.h"
-#include "security_utils_mem.h"
 
 #include <sys/queue.h>
 
