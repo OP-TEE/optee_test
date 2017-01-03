@@ -34,13 +34,14 @@
 
 static TEE_UUID cryp_uuid = TA_CRYPT_UUID;
 
-static TEE_Result rpc_call_cryp(uint32_t nParamTypes, TEE_Param pParams[4],
-				uint32_t cmd)
+static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
+				TEE_Param pParams[4], uint32_t cmd)
 {
 	TEE_TASessionHandle cryp_session;
 	TEE_Result res;
 	uint32_t origin;
 	TEE_Param params[4];
+	size_t n;
 
 	uint32_t types =
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE,
@@ -57,37 +58,99 @@ static TEE_Result rpc_call_cryp(uint32_t nParamTypes, TEE_Param pParams[4],
 		return res;
 	}
 
-	res = TEE_InvokeTACommand(cryp_session, 0, cmd, nParamTypes,
-				  pParams, &origin);
+	types = nParamTypes;
+	if (sec_mem) {
+		TEE_MemFill(params, 0, sizeof(params));
+		for (n = 0; n < 4; n++) {
+			switch (TEE_PARAM_TYPE_GET(types, n)) {
+			case TEE_PARAM_TYPE_VALUE_INPUT:
+			case TEE_PARAM_TYPE_VALUE_INOUT:
+				params[n].value = pParams[n].value;
+				break;
 
+			case TEE_PARAM_TYPE_MEMREF_INPUT:
+			case TEE_PARAM_TYPE_MEMREF_OUTPUT:
+			case TEE_PARAM_TYPE_MEMREF_INOUT:
+				params[n].memref.buffer =
+					TEE_Malloc(pParams[n].memref.size, 0);
+				if (!params[n].memref.buffer)
+					TEE_Panic(0);
+				params[n].memref.size = pParams[n].memref.size;
+				if (TEE_PARAM_TYPE_GET(types, n) !=
+				    TEE_PARAM_TYPE_MEMREF_OUTPUT)
+					TEE_MemMove(params[n].memref.buffer,
+						    pParams[n].memref.buffer,
+						    pParams[n].memref.size);
+				break;
+			default:
+				break;
+			}
+		}
+	} else {
+		TEE_MemMove(params, pParams, sizeof(params));
+	}
+
+	res = TEE_InvokeTACommand(cryp_session, 0, cmd, types, params, &origin);
 	if (res != TEE_SUCCESS) {
-		EMSG("rpc_sha256 - TEE_InvokeTACommand returned 0x%x\n",
+		EMSG("rpc_call_cryp - TEE_InvokeTACommand returned 0x%x\n",
 		     (unsigned int)res);
 	}
 
 	TEE_CloseTASession(cryp_session);
 
+	if (sec_mem) {
+		for (n = 0; n < 4; n++) {
+			switch (TEE_PARAM_TYPE_GET(types, n)) {
+			case TEE_PARAM_TYPE_VALUE_INOUT:
+			case TEE_PARAM_TYPE_VALUE_OUTPUT:
+				pParams[n].value = params[n].value;
+				break;
+
+			case TEE_PARAM_TYPE_MEMREF_INPUT:
+			case TEE_PARAM_TYPE_MEMREF_OUTPUT:
+			case TEE_PARAM_TYPE_MEMREF_INOUT:
+				if (TEE_PARAM_TYPE_GET(types, n) !=
+				    TEE_PARAM_TYPE_MEMREF_INPUT)
+					TEE_MemMove(pParams[n].memref.buffer,
+						    params[n].memref.buffer,
+						    params[n].memref.size);
+				pParams[n].memref.size = params[n].memref.size;
+				TEE_Free(params[n].memref.buffer);
+				break;
+			default:
+				break;
+			}
+		}
+
+	}
+
 	return res;
 }
 
-TEE_Result rpc_sha224(uint32_t nParamTypes, TEE_Param pParams[4])
+TEE_Result rpc_sha224(bool sec_mem, uint32_t nParamTypes, TEE_Param pParams[4])
 {
-	return rpc_call_cryp(nParamTypes, pParams, TA_CRYPT_CMD_SHA224);
+	return rpc_call_cryp(sec_mem, nParamTypes, pParams,
+			     TA_CRYPT_CMD_SHA224);
 }
 
-TEE_Result rpc_sha256(uint32_t nParamTypes, TEE_Param pParams[4])
+TEE_Result rpc_sha256(bool sec_mem, uint32_t nParamTypes, TEE_Param pParams[4])
 {
-	return rpc_call_cryp(nParamTypes, pParams, TA_CRYPT_CMD_SHA256);
+	return rpc_call_cryp(sec_mem, nParamTypes, pParams,
+			     TA_CRYPT_CMD_SHA256);
 }
 
-TEE_Result rpc_aes256ecb_encrypt(uint32_t nParamTypes, TEE_Param pParams[4])
+TEE_Result rpc_aes256ecb_encrypt(bool sec_mem, uint32_t nParamTypes,
+				 TEE_Param pParams[4])
 {
-	return rpc_call_cryp(nParamTypes, pParams, TA_CRYPT_CMD_AES256ECB_ENC);
+	return rpc_call_cryp(sec_mem, nParamTypes, pParams,
+			     TA_CRYPT_CMD_AES256ECB_ENC);
 }
 
-TEE_Result rpc_aes256ecb_decrypt(uint32_t nParamTypes, TEE_Param pParams[4])
+TEE_Result rpc_aes256ecb_decrypt(bool sec_mem, uint32_t nParamTypes,
+				 TEE_Param pParams[4])
 {
-	return rpc_call_cryp(nParamTypes, pParams, TA_CRYPT_CMD_AES256ECB_DEC);
+	return rpc_call_cryp(sec_mem, nParamTypes, pParams,
+			     TA_CRYPT_CMD_AES256ECB_DEC);
 }
 
 TEE_Result rpc_open(void *session_context, uint32_t param_types,

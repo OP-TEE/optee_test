@@ -54,7 +54,7 @@ ADBG_CASE_DEFINE(regression, 1009, xtest_tee_test_1009, "TEE Wait");
 ADBG_CASE_DEFINE(regression, 1010, xtest_tee_test_1010,
 		"Invalid memory access");
 ADBG_CASE_DEFINE(regression, 1011, xtest_tee_test_1011,
-		"Test RPC features with User Crypt TA");
+		"Test TA-to-TA features with User Crypt TA");
 ADBG_CASE_DEFINE(regression, 1012, xtest_tee_test_1012,
 		"Test Single Instance Multi Session features with SIMS TA");
 ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
@@ -738,16 +738,34 @@ static void xtest_tee_test_1011(ADBG_Case_t *c)
 		TA_RPC_CMD_CRYPT_AES256ECB_ENC,
 		TA_RPC_CMD_CRYPT_AES256ECB_DEC
 	};
+	struct xtest_crypto_session cs_privmem = {
+		c, &session,
+		TA_RPC_CMD_CRYPT_PRIVMEM_SHA256,
+		TA_RPC_CMD_CRYPT_PRIVMEM_AES256ECB_ENC,
+		TA_RPC_CMD_CRYPT_PRIVMEM_AES256ECB_DEC
+	};
 	TEEC_UUID uuid = rpc_test_ta_uuid;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &uuid, NULL, &ret_orig)))
 		return;
 
+	Do_ADBG_BeginSubCase(c, "TA-to-TA via non-secure shared memory");
 	/*
-	 * Run the "complete crypto test suite" using RPC
+	 * Run the "complete crypto test suite" using TA-to-TA
+	 * communication
 	 */
 	xtest_crypto_test(&cs);
+	Do_ADBG_EndSubCase(c, "TA-to-TA via non-secure shared memory");
+
+	Do_ADBG_BeginSubCase(c, "TA-to-TA via TA private memory");
+	/*
+	 * Run the "complete crypto test suite" using TA-to-TA
+	 * communication via TA private memory.
+	 */
+	xtest_crypto_test(&cs_privmem);
+	Do_ADBG_EndSubCase(c, "TA-to-TA via TA private memory");
+
 	TEEC_CloseSession(&session);
 }
 
