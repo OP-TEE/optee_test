@@ -14,6 +14,7 @@
 #ifndef XML_CLIENT_API_H_
 #define XML_CLIENT_API_H_
 
+#include <compiler.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +48,7 @@ static uint32_t BIG_SIZE = 1024;
 
 static uint32_t IGNORE = 0xFEFEFEFE;
 static uint32_t VALUE01 = 0x01234567;
-static uint32_t VALUE02 = 0xFEDCBA98;
+static uint32_t VALUE02 __maybe_unused = 0xFEDCBA98;
 static uint32_t SIZE_OVER_MEMORY = 0xFFFFFFFE;
 static uint32_t SIZE_VALUE01 = sizeof(VALUE01);
 static uint32_t ZERO;
@@ -70,7 +71,7 @@ uint8_t *TEMP_MEM02;
  * Trusted Applications
  */
 /* "SMARTCSLTERRTOOS" */
-static TEEC_UUID UUID_TTA_answerErrorTo_OpenSession = {
+static TEEC_UUID UUID_TTA_answerErrorTo_OpenSession __maybe_unused = {
 	0x534D4152, 0x5443, 0x534C,
 	{ 0x54, 0x45, 0x52, 0x52, 0x54, 0x4F, 0x4F, 0x53 }
 };
@@ -80,7 +81,7 @@ static TEEC_UUID UUID_TTA_answerSuccessTo_OpenSession_Invoke = {
 	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x55 }
 };
 /* "SMARTCSLTOS4PARM" */
-static TEEC_UUID UUID_TTA_check_OpenSession_with_4_parameters = {
+static TEEC_UUID UUID_TTA_check_OpenSession_with_4_parameters __maybe_unused = {
 	0x534D4152, 0x5443, 0x534C,
 	{ 0x54, 0x4F, 0x53, 0x34, 0x50, 0x41, 0x52, 0x4D }
 };
@@ -172,9 +173,10 @@ static TEEC_Result RegisterSharedMemory(TEEC_Context *ctx,
 
 
 /* Assigns a and b to the value parameter */
-static void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
-						      size_t n, uint32_t a,
-						      uint32_t b)
+static inline void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
+							     size_t n,
+							     uint32_t a,
+							     uint32_t b)
 {
 	if (IGNORE != a)
 		op->params[n].value.a = a;
