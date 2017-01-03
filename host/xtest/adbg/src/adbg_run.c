@@ -174,12 +174,8 @@ static int ADBG_RunSuite(
 
 		ADBG_Case_IterateSubCase(Case_p, &Iterator);
 		while ((SubCase_p = ADBG_Case_NextSubCase(&Iterator)) != NULL) {
-			if (Case_p->Result.WhySkipped_p != NULL) {
-				Do_ADBG_Log("%s SKIPPED: \"%s\"",
-					    SubCase_p->TestID_p,
-					    Case_p->Result.WhySkipped_p);
-			} else if (SubCase_p->Result.NumFailedTests +
-				   SubCase_p->Result.NumFailedSubTests > 0) {
+			if (SubCase_p->Result.NumFailedTests +
+			    SubCase_p->Result.NumFailedSubTests > 0) {
 				if (SubCase_p->Result.FirstFailedFile_p !=
 				    NULL) {
 					Do_ADBG_Log(

@@ -33,7 +33,6 @@ typedef struct ADBG_Result {
 	int FirstFailedRow;
 	char const *FirstFailedFile_p;
 	bool AbortTestSuite;
-	const char *WhySkipped_p;
 } ADBG_Result_t;
 
 TAILQ_HEAD(ADBG_SubCaseHead, ADBG_SubCase);
