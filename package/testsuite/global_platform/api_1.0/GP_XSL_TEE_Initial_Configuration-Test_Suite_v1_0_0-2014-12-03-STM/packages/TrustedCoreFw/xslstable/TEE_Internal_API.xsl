@@ -179,13 +179,7 @@ static void xtest_tee_<xsl:value-of select="position()+8000" />(ADBG_Case_t *c)
 <xsl:variable name="position" select="position()+8000" />
 ADBG_CASE_DEFINE(XTEST_TEE_<xsl:value-of select="$position" />, xtest_tee_<xsl:value-of select="$position" /><xsl:text>,
                  /* Title */
-                 "</xsl:text><xsl:value-of select="substring(substring-after(./@name, '('), 0, 9)" /><xsl:text>",
-                 /* Short description */
-                 "</xsl:text><xsl:value-of select="substring-before(./@name, ' ')" /><xsl:text>",
-                 /* Requirement IDs */
-                 "</xsl:text><xsl:value-of select="./req[last()]/@name" /><xsl:text>",
-                 /* How to implement */
-                 "Description of how to implement ...");</xsl:text>
+                 "</xsl:text><xsl:value-of select="substring(substring-after(./@name, '('), 0, 9)" /><xsl:text>");</xsl:text>
 </xsl:for-each>
 </xsl:template>
 

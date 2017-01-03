@@ -64,27 +64,27 @@ xmlns:fn="http://www.w3.org/2005/xpath-functions" xmlns:xsl="http://www.w3.org/1
 #define ADBG_ENTRY_AUTO_GENERATED_TESTS()    \
 </xsl:text>
 <xsl:for-each select="initial-state/scenario">
-<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+7000" />, NULL)\
+<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+7000" />)\
 </xsl:for-each>
 <xsl:text>\
 </xsl:text>
 <xsl:for-each select="$doc2/package/initial-state/scenario">
-<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+7500" />, NULL)\
+<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+7500" />)\
 </xsl:for-each>
 <xsl:text>\
 </xsl:text>
 <xsl:for-each select="$doc3/package/initial-state/scenario">
-<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+8000" />, NULL)\
+<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+8000" />)\
 </xsl:for-each>
 <xsl:text>\
 </xsl:text>
 <xsl:for-each select="$doc4/package/initial-state/scenario">
-<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+8500" />, NULL)\
+<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+8500" />)\
 </xsl:for-each>
 <xsl:text>\
 </xsl:text>
 <xsl:for-each select="$doc5/package/initial-state/scenario">
-<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+9000" />, NULL)\
+<xsl:variable name="position" select="position()" />    ADBG_SUITE_ENTRY(XTEST_TEE_<xsl:value-of select="$position+9000" />)\
 </xsl:for-each>
 <xsl:text>
 /* end of entry declarations */
