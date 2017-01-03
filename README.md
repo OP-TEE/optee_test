@@ -60,18 +60,21 @@ Then the tests must be compiled with `CFG_GP_PACKAGE_PATH=<path>`.
 	# all xtest
 	boot and execute on your target
 	$ modprobe optee_armtz
+	$ ifconfig lo 127.0.0.1
 	$ tee-supplicant &
 	$ xtest
 
 	# single xtest
 	boot and execute on your target
 	$ modprobe optee_armtz
+	$ ifconfig lo 127.0.0.1
 	$ tee-supplicant &
 	$ xtest <testnumber> (i.e.: xtest 1001)
 
 	# family xtest (i.e.: Family 1000)
 	boot and execute on your target
 	$ modprobe optee_armtz
+	$ ifconfig lo 127.0.0.1
 	$ tee-supplicant &
 	$ xtest _<family> (i.e.: xtest _1)
 
