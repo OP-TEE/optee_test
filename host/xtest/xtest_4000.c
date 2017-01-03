@@ -42,29 +42,29 @@ static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4011(ADBG_Case_t *Case_p);
 
-ADBG_CASE_DEFINE(XTEST_TEE_4001, xtest_tee_test_4001,
+ADBG_CASE_DEFINE(regression, 4001, xtest_tee_test_4001,
 		"Test TEE Internal API hash operations");
-ADBG_CASE_DEFINE(XTEST_TEE_4002, xtest_tee_test_4002,
+ADBG_CASE_DEFINE(regression, 4002, xtest_tee_test_4002,
 		"Test TEE Internal API MAC operations");
-ADBG_CASE_DEFINE(XTEST_TEE_4003_NO_XTS, xtest_tee_test_4003_no_xts,
+ADBG_CASE_DEFINE(regression, 4003_NO_XTS, xtest_tee_test_4003_no_xts,
 		"Test TEE Internal API cipher operations without AES XTS");
-ADBG_CASE_DEFINE(XTEST_TEE_4003_XTS, xtest_tee_test_4003_xts,
+ADBG_CASE_DEFINE(regression, 4003_XTS, xtest_tee_test_4003_xts,
 		"Test TEE Internal API cipher operations for AES XTS");
-ADBG_CASE_DEFINE(XTEST_TEE_4004, xtest_tee_test_4004,
+ADBG_CASE_DEFINE(regression, 4004, xtest_tee_test_4004,
 		"Test TEE Internal API get random");
-ADBG_CASE_DEFINE(XTEST_TEE_4005, xtest_tee_test_4005,
+ADBG_CASE_DEFINE(regression, 4005, xtest_tee_test_4005,
 		"Test TEE Internal API Authenticated Encryption operations");
-ADBG_CASE_DEFINE(XTEST_TEE_4006, xtest_tee_test_4006,
+ADBG_CASE_DEFINE(regression, 4006, xtest_tee_test_4006,
 		"Test TEE Internal API Asymmetric Cipher operations");
-ADBG_CASE_DEFINE(XTEST_TEE_4007, xtest_tee_test_4007,
+ADBG_CASE_DEFINE(regression, 4007, xtest_tee_test_4007,
 		"Test TEE Internal API Generate key");
-ADBG_CASE_DEFINE(XTEST_TEE_4008, xtest_tee_test_4008,
+ADBG_CASE_DEFINE(regression, 4008, xtest_tee_test_4008,
 		"Test TEE Internal API Derive key");
-ADBG_CASE_DEFINE(XTEST_TEE_4009, xtest_tee_test_4009,
+ADBG_CASE_DEFINE(regression, 4009, xtest_tee_test_4009,
 		"Test TEE Internal API Derive key ECDH");
-ADBG_CASE_DEFINE(XTEST_TEE_4010, xtest_tee_test_4010,
+ADBG_CASE_DEFINE(regression, 4010, xtest_tee_test_4010,
 		"Test TEE Internal API create transient object (negative)");
-ADBG_CASE_DEFINE(XTEST_TEE_4011, xtest_tee_test_4011,
+ADBG_CASE_DEFINE(regression, 4011, xtest_tee_test_4011,
 		"Test TEE Internal API Bleichenbacher attack (negative)");
 
 static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,

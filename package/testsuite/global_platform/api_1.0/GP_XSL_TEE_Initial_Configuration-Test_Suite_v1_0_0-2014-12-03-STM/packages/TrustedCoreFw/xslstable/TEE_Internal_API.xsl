@@ -177,9 +177,7 @@ static void xtest_tee_<xsl:value-of select="position()+8000" />(ADBG_Case_t *c)
 </xsl:for-each>
 <xsl:for-each select="initial-state/scenario">
 <xsl:variable name="position" select="position()+8000" />
-ADBG_CASE_DEFINE(XTEST_TEE_<xsl:value-of select="$position" />, xtest_tee_<xsl:value-of select="$position" /><xsl:text>,
-                 /* Title */
-                 "</xsl:text><xsl:value-of select="substring(substring-after(./@name, '('), 0, 9)" /><xsl:text>");</xsl:text>
+ADBG_CASE_DEFINE(regression, <xsl:value-of select="$position" />, xtest_tee_<xsl:value-of select="$position" /><xsl:text>, "</xsl:text><xsl:value-of select="substring(substring-after(./@name, '('), 0, 9)" /><xsl:text>");</xsl:text>
 </xsl:for-each>
 </xsl:template>
 

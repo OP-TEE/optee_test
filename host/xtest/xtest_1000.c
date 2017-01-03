@@ -42,20 +42,22 @@ static void xtest_tee_test_1011(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1012(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
 
-ADBG_CASE_DEFINE(XTEST_TEE_1001, xtest_tee_test_1001, "Core self tests");
-ADBG_CASE_DEFINE(XTEST_TEE_1004, xtest_tee_test_1004, "Test User Crypt TA");
-ADBG_CASE_DEFINE(XTEST_TEE_1005, xtest_tee_test_1005, "Many sessions");
-ADBG_CASE_DEFINE(XTEST_TEE_1006, xtest_tee_test_1006, "Test Basic OS features");
-ADBG_CASE_DEFINE(XTEST_TEE_1007, xtest_tee_test_1007, "Test Panic");
-ADBG_CASE_DEFINE(XTEST_TEE_1008, xtest_tee_test_1008,
+ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
+ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
+ADBG_CASE_DEFINE(regression, 1005, xtest_tee_test_1005, "Many sessions");
+ADBG_CASE_DEFINE(regression, 1006, xtest_tee_test_1006,
+		"Test Basic OS features");
+ADBG_CASE_DEFINE(regression, 1007, xtest_tee_test_1007, "Test Panic");
+ADBG_CASE_DEFINE(regression, 1008, xtest_tee_test_1008,
 		"TEE internal client API");
-ADBG_CASE_DEFINE(XTEST_TEE_1009, xtest_tee_test_1009, "TEE Wait");
-ADBG_CASE_DEFINE(XTEST_TEE_1010, xtest_tee_test_1010, "Invalid memory access");
-ADBG_CASE_DEFINE(XTEST_TEE_1011, xtest_tee_test_1011,
+ADBG_CASE_DEFINE(regression, 1009, xtest_tee_test_1009, "TEE Wait");
+ADBG_CASE_DEFINE(regression, 1010, xtest_tee_test_1010,
+		"Invalid memory access");
+ADBG_CASE_DEFINE(regression, 1011, xtest_tee_test_1011,
 		"Test RPC features with User Crypt TA");
-ADBG_CASE_DEFINE(XTEST_TEE_1012, xtest_tee_test_1012,
+ADBG_CASE_DEFINE(regression, 1012, xtest_tee_test_1012,
 		"Test Single Instance Multi Session features with SIMS TA");
-ADBG_CASE_DEFINE(XTEST_TEE_1013, xtest_tee_test_1013,
+ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
 		"Test concurency with concurrent TA");
 
 struct xtest_crypto_session {

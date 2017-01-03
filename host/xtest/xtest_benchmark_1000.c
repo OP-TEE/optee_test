@@ -145,9 +145,9 @@ static void xtest_tee_benchmark_1003(ADBG_Case_t *c)
 	chunk_test(c, TA_STORAGE_BENCHMARK_CMD_TEST_REWRITE);
 }
 
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1001, xtest_tee_benchmark_1001,
+ADBG_CASE_DEFINE(benchmark, 1001, xtest_tee_benchmark_1001,
 		"TEE Trusted Storage Performance Test (WRITE)");
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1002, xtest_tee_benchmark_1002,
+ADBG_CASE_DEFINE(benchmark, 1002, xtest_tee_benchmark_1002,
 		"TEE Trusted Storage Performance Test (READ)");
-ADBG_CASE_DEFINE(XTEST_TEE_BENCHMARK_1003, xtest_tee_benchmark_1003,
+ADBG_CASE_DEFINE(benchmark, 1003, xtest_tee_benchmark_1003,
 		"TEE Trusted Storage Performance Test (REWRITE)");

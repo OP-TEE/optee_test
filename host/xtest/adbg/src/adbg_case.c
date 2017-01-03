@@ -45,13 +45,13 @@ static const char *ADBG_Case_GetTestID(ADBG_Case_t *Case_p);
 /*************************************************************************
 * 5. Definition of external functions
 *************************************************************************/
-ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p)
+ADBG_Case_t *ADBG_Case_New(const struct adbg_case_def *case_def)
 {
 	ADBG_Case_t *Case_p;
 
 	Case_p = calloc(1, sizeof(*Case_p));
 	if (Case_p)
-		Case_p->SuiteEntry_p = SuiteEntry_p;
+		Case_p->case_def = case_def;
 
 	return Case_p;
 }
@@ -362,5 +362,5 @@ static const char *ADBG_Case_GetTestID(ADBG_Case_t *Case_p)
 {
 	IDENTIFIER_NOT_USED(Case_p)
 
-	return Case_p->SuiteEntry_p->CaseDefinition_p->TestID_p;
+	return Case_p->case_def->TestID_p;
 }

@@ -665,31 +665,31 @@ static void xtest_tee_test_20523(ADBG_Case_t *c)
 
 }
 
-ADBG_CASE_DEFINE(XTEST_TEE_20001, xtest_tee_test_20001,
+ADBG_CASE_DEFINE(regression, 20001, xtest_tee_test_20001,
 	"Sanity Test Corrupt Meta Encrypted Key");
-ADBG_CASE_DEFINE(XTEST_TEE_20002, xtest_tee_test_20002,
+ADBG_CASE_DEFINE(regression, 20002, xtest_tee_test_20002,
 	"Sanity Test Corrupt Meta IV");
-ADBG_CASE_DEFINE(XTEST_TEE_20003, xtest_tee_test_20003,
+ADBG_CASE_DEFINE(regression, 20003, xtest_tee_test_20003,
 	"Sanity Test Corrupt Meta Tag");
-ADBG_CASE_DEFINE(XTEST_TEE_20004, xtest_tee_test_20004,
+ADBG_CASE_DEFINE(regression, 20004, xtest_tee_test_20004,
 	"Sanity Test Corrupt Meta Data");
-ADBG_CASE_DEFINE(XTEST_TEE_20021, xtest_tee_test_20021,
+ADBG_CASE_DEFINE(regression, 20021, xtest_tee_test_20021,
 	"Sanity Test Corrupt Meta File : first byte");
-ADBG_CASE_DEFINE(XTEST_TEE_20022, xtest_tee_test_20022,
+ADBG_CASE_DEFINE(regression, 20022, xtest_tee_test_20022,
 	"Sanity Test Corrupt Meta File : last byte");
-ADBG_CASE_DEFINE(XTEST_TEE_20023, xtest_tee_test_20023,
+ADBG_CASE_DEFINE(regression, 20023, xtest_tee_test_20023,
 	"Sanity Test Corrupt Meta File : random byte");
-ADBG_CASE_DEFINE(XTEST_TEE_20501, xtest_tee_test_20501,
+ADBG_CASE_DEFINE(regression, 20501, xtest_tee_test_20501,
 	"Sanity Test Corrupt Block IV");
-ADBG_CASE_DEFINE(XTEST_TEE_20502, xtest_tee_test_20502,
+ADBG_CASE_DEFINE(regression, 20502, xtest_tee_test_20502,
 	"Sanity Test Corrupt Block Tag");
-ADBG_CASE_DEFINE(XTEST_TEE_20503, xtest_tee_test_20503,
+ADBG_CASE_DEFINE(regression, 20503, xtest_tee_test_20503,
 	"Sanity Test Corrupt Block Data");
-ADBG_CASE_DEFINE(XTEST_TEE_20521, xtest_tee_test_20521,
+ADBG_CASE_DEFINE(regression, 20521, xtest_tee_test_20521,
 	"Sanity Test Corrupt Block File : first byte");
-ADBG_CASE_DEFINE(XTEST_TEE_20522, xtest_tee_test_20522,
+ADBG_CASE_DEFINE(regression, 20522, xtest_tee_test_20522,
 	"Sanity Test Corrupt Block File : last byte");
-ADBG_CASE_DEFINE(XTEST_TEE_20523, xtest_tee_test_20523,
+ADBG_CASE_DEFINE(regression, 20523, xtest_tee_test_20523,
 	"Sanity Test Corrupt Block File : random byte");
 
 #endif /* defined(CFG_REE_FS) */

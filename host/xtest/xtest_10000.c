@@ -26,9 +26,9 @@
 static void xtest_tee_test_10001(ADBG_Case_t *c);
 static void xtest_tee_test_10002(ADBG_Case_t *c);
 
-ADBG_CASE_DEFINE(XTEST_TEE_10001, xtest_tee_test_10001,
+ADBG_CASE_DEFINE(regression, 10001, xtest_tee_test_10001,
 		 "Test TEE Internal API key derivation extensions");
-ADBG_CASE_DEFINE(XTEST_TEE_10002, xtest_tee_test_10002,
+ADBG_CASE_DEFINE(regression, 10002, xtest_tee_test_10002,
 	"Secure Storage Key Manager API Self Test");
 
 /*

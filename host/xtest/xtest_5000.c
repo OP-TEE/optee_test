@@ -637,5 +637,5 @@ static void xtest_teec_TEE(ADBG_Case_t *c)
 	Register_sharedMemory_belowMaxSize(&connection);
 }
 
-ADBG_CASE_DEFINE(XTEST_TEE_5006, xtest_teec_TEE,
+ADBG_CASE_DEFINE(regression, 5006, xtest_teec_TEE,
 		"Tests for Global platform TEEC");

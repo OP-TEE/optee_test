@@ -50,7 +50,7 @@ struct ADBG_SubCase {
 
 /* Typedefed in t_adbg.h */
 struct ADBG_Case {
-	const ADBG_Case_SuiteEntry_t *SuiteEntry_p;
+	const struct adbg_case_def *case_def;
 
 	ADBG_SubCase_t *CurrentSubCase_p;
 	ADBG_SubCase_t *FirstSubCase_p;
@@ -72,7 +72,7 @@ void ADBG_Case_IterateSubCase(ADBG_Case_t *Case_p,
 
 ADBG_SubCase_t *ADBG_Case_NextSubCase(ADBG_SubCase_Iterator_t *Iterator_p);
 
-ADBG_Case_t *ADBG_Case_New(const ADBG_Case_SuiteEntry_t *SuiteEntry_p);
+ADBG_Case_t *ADBG_Case_New(const struct adbg_case_def *case_def);
 
 void ADBG_Case_Delete(ADBG_Case_t *Case_p);
 

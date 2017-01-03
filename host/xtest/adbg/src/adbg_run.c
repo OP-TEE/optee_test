@@ -75,10 +75,10 @@ static int ADBG_RunSuite(
 	char *argv[]
 	)
 {
-	size_t n;
 	ADBG_Case_t *Case_p;
 	size_t NumSkippedTestCases = 0;
 	int failed_test = 0;
+	struct adbg_case_def *case_def;
 
 	Do_ADBG_Log("######################################################");
 	Do_ADBG_Log("#");
@@ -86,20 +86,14 @@ static int ADBG_RunSuite(
 	Do_ADBG_Log("#");
 	Do_ADBG_Log("######################################################");
 
-	for (n = 0;
-	     Runner_p->Suite_p->SuiteEntries_p[n].CaseDefinition_p != NULL;
-	     n++) {
-		const ADBG_Case_SuiteEntry_t *SuiteEntry_p =
-			&Runner_p->Suite_p->SuiteEntries_p[n];
-		const char *ti = SuiteEntry_p->CaseDefinition_p->TestID_p;
-
+	TAILQ_FOREACH(case_def, &Runner_p->Suite_p->cases, link) {
 		if (argc > 0) {
 			bool HaveMatch = false;
 			int i;
 
 			for (i = 0; i < argc; i++) {
 
-				if (strstr(ti, argv[i])) {
+				if (strstr(case_def->TestID_p, argv[i])) {
 					HaveMatch = true;
 					break;
 				}
@@ -110,10 +104,10 @@ static int ADBG_RunSuite(
 			}
 		}
 
-		Case_p = ADBG_Case_New(SuiteEntry_p);
+		Case_p = ADBG_Case_New(case_def);
 		if (Case_p == NULL) {
 			Do_ADBG_Log("HEAP_ALLOC failed for Case %s!",
-				    SuiteEntry_p->CaseDefinition_p->TestID_p);
+				    case_def->TestID_p);
 			Runner_p->Result.AbortTestSuite = 1;
 			break;
 		}
@@ -121,18 +115,16 @@ static int ADBG_RunSuite(
 		TAILQ_INSERT_TAIL(&Runner_p->CasesList, Case_p, Link);
 
 		/* Start the parent test case */
-		Do_ADBG_BeginSubCase(Case_p, "%s",
-				     SuiteEntry_p->CaseDefinition_p->Title_p);
+		Do_ADBG_BeginSubCase(Case_p, "%s", case_def->Title_p);
 
-		SuiteEntry_p->CaseDefinition_p->Run_fp(Case_p);
+		case_def->Run_fp(Case_p);
 
 		/* End abondoned subcases */
 		while (Case_p->CurrentSubCase_p != Case_p->FirstSubCase_p)
 			Do_ADBG_EndSubCase(Case_p, NULL);
 
 		/* End the parent test case */
-		Do_ADBG_EndSubCase(Case_p, "%s",
-				   SuiteEntry_p->CaseDefinition_p->Title_p);
+		Do_ADBG_EndSubCase(Case_p, "%s", case_def->Title_p);
 
 		/* Sum up the errors */
 		Runner_p->Result.NumTests += Case_p->Result.NumTests +
@@ -150,7 +142,7 @@ static int ADBG_RunSuite(
 
 		if (Runner_p->Result.AbortTestSuite) {
 			Do_ADBG_Log("Test suite aborted by %s!",
-				    SuiteEntry_p->CaseDefinition_p->TestID_p);
+				    case_def->TestID_p);
 			break;
 		}
 	}

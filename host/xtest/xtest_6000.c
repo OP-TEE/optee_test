@@ -1723,38 +1723,38 @@ exit:
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6017)
 
-ADBG_CASE_DEFINE(XTEST_TEE_6001, xtest_tee_test_6001,
+ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
 		 "Test TEE_CreatePersistentObject");
-ADBG_CASE_DEFINE(XTEST_TEE_6002, xtest_tee_test_6002,
+ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
 		 "Test TEE_OpenPersistentObject");
-ADBG_CASE_DEFINE(XTEST_TEE_6003, xtest_tee_test_6003,
+ADBG_CASE_DEFINE(regression, 6003, xtest_tee_test_6003,
 		 "Test TEE_ReadObjectData");
-ADBG_CASE_DEFINE(XTEST_TEE_6004, xtest_tee_test_6004,
+ADBG_CASE_DEFINE(regression, 6004, xtest_tee_test_6004,
 		 "Test TEE_WriteObjectData");
-ADBG_CASE_DEFINE(XTEST_TEE_6005, xtest_tee_test_6005,
+ADBG_CASE_DEFINE(regression, 6005, xtest_tee_test_6005,
 		 "Test TEE_SeekObjectData");
-ADBG_CASE_DEFINE(XTEST_TEE_6006, xtest_tee_test_6006,
+ADBG_CASE_DEFINE(regression, 6006, xtest_tee_test_6006,
 		 "Test TEE_CloseAndDeletePersistentObject");
-ADBG_CASE_DEFINE(XTEST_TEE_6007, xtest_tee_test_6007,
+ADBG_CASE_DEFINE(regression, 6007, xtest_tee_test_6007,
 		 "Test TEE_TruncateObjectData");
-ADBG_CASE_DEFINE(XTEST_TEE_6008, xtest_tee_test_6008,
+ADBG_CASE_DEFINE(regression, 6008, xtest_tee_test_6008,
 		 "Test TEE_RenamePersistentObject");
-ADBG_CASE_DEFINE(XTEST_TEE_6009, xtest_tee_test_6009,
+ADBG_CASE_DEFINE(regression, 6009, xtest_tee_test_6009,
 	"Test TEE Internal API Persistent Object Enumeration Functions");
-ADBG_CASE_DEFINE(XTEST_TEE_6010, xtest_tee_test_6010, "Test Storage");
+ADBG_CASE_DEFINE(regression, 6010, xtest_tee_test_6010, "Test Storage");
 
 #ifdef WITH_GP_TESTS
-ADBG_CASE_DEFINE(XTEST_TEE_6011, xtest_tee_test_6011,
-    "Test TEE GP TTA DS init objects");
+ADBG_CASE_DEFINE(regression, 6011, xtest_tee_test_6011,
+		 "Test TEE GP TTA DS init objects");
 #endif
 
-ADBG_CASE_DEFINE(XTEST_TEE_6012, xtest_tee_test_6012,
+ADBG_CASE_DEFINE(regression, 6012, xtest_tee_test_6012,
 		 "Test TEE GP TTA DS init objects");
-ADBG_CASE_DEFINE(XTEST_TEE_6013, xtest_tee_test_6013,
+ADBG_CASE_DEFINE(regression, 6013, xtest_tee_test_6013,
 		 "Key usage in Persistent objects");
-ADBG_CASE_DEFINE(XTEST_TEE_6014, xtest_tee_test_6014,
+ADBG_CASE_DEFINE(regression, 6014, xtest_tee_test_6014,
 		 "Loop on Persistent objects");
-ADBG_CASE_DEFINE(XTEST_TEE_6015, xtest_tee_test_6015, "Storage isolation");
-ADBG_CASE_DEFINE(XTEST_TEE_6016, xtest_tee_test_6016, "Storage concurency");
-ADBG_CASE_DEFINE(XTEST_TEE_6017, xtest_tee_test_6017,
+ADBG_CASE_DEFINE(regression, 6015, xtest_tee_test_6015, "Storage isolation");
+ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
+ADBG_CASE_DEFINE(regression, 6017, xtest_tee_test_6017,
 		 "Test Persistent objects info");

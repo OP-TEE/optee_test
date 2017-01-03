@@ -13,10 +13,11 @@
 
 #ifndef ADBG_H
 #define ADBG_H
-#include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <sys/queue.h>
 
 #define ADBG_STRING_LENGTH_MAX (1024)
 
@@ -36,30 +37,35 @@ ADBG_CASE_DEFINE(TEST_1001, TEST_Test_1001,
 		);
 #endif
 
-#define ADBG_CASE_DEFINE(TestID, Run, Title) \
-	const ADBG_Case_Definition_t TestID = {#TestID, Title, Run, }
-
-#define ADBG_CASE_DECLARE(name) \
-	extern const ADBG_Case_Definition_t name
-
-
 typedef struct ADBG_Case ADBG_Case_t;
 
-
-typedef struct {
+typedef struct adbg_case_def {
 	const char *TestID_p;
 	const char *Title_p;
 	void (*Run_fp)(ADBG_Case_t *ADBG_Case_pp);
+	TAILQ_ENTRY(adbg_case_def) link;
 } ADBG_Case_Definition_t;
 
-typedef struct {
-	const ADBG_Case_Definition_t *CaseDefinition_p;
-} ADBG_Case_SuiteEntry_t;
+TAILQ_HEAD(adbg_case_def_head, adbg_case_def);
 
-typedef struct {
+typedef struct adbg_suite_def {
 	const char *SuiteID_p;
-	const ADBG_Case_SuiteEntry_t *SuiteEntries_p;
+	struct adbg_case_def_head cases;
 } ADBG_Suite_Definition_t;
+
+#define ADBG_CASE_DEFINE(Suite, TestID, Run, Title) \
+	__attribute__((constructor)) static void \
+	__adbg_test_case_ ## TestID(void) \
+	{ \
+		static ADBG_Case_Definition_t case_def = { \
+			.TestID_p = #Suite "_" #TestID, \
+			.Title_p = Title, \
+			.Run_fp = Run, \
+		}; \
+		\
+		TAILQ_INSERT_TAIL(&(ADBG_Suite_ ## Suite).cases, \
+				 &case_def, link); \
+	}
 
 /*
  * Suite definitions
@@ -69,19 +75,13 @@ typedef struct {
  * Declares a suite defined in a C-file.
  */
 #define ADBG_SUITE_DECLARE(Name) \
-	extern const ADBG_Suite_Definition_t ADBG_Suite_ ## Name;
+	extern ADBG_Suite_Definition_t ADBG_Suite_ ## Name
 
-#define ADBG_SUITE_DEFINE_BEGIN(Name) \
-	extern const ADBG_Case_SuiteEntry_t ADBG_SuiteEntries_ ## Name[]; \
-	const ADBG_Suite_Definition_t ADBG_Suite_ ## Name = \
-	{ #Name, ADBG_SuiteEntries_ ## Name }; \
-	const ADBG_Case_SuiteEntry_t ADBG_SuiteEntries_ ## Name[] = {
-/**
- * Defines a suite entry, this is the name of a case.
- */
-#define ADBG_SUITE_ENTRY(name) { &name },
-
-#define ADBG_SUITE_DEFINE_END() { NULL } };
+#define ADBG_SUITE_DEFINE(Name) \
+	ADBG_Suite_Definition_t ADBG_Suite_ ## Name = { \
+		.SuiteID_p = #Name, \
+		.cases = TAILQ_HEAD_INITIALIZER(ADBG_Suite_ ## Name.cases), \
+	}
 
 /*
  * Enum table definitions
