@@ -199,8 +199,8 @@ patch-package:
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Time/TTA_Time/code_files/TTA_Time.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Time/code_patches/v1_1_0_4-2014_11_07/TTA_Time.c.patch)
 
 define patch-filter-one
-	$(q)sed -i 's|^ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)|/\*ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)\*/|g' ${GP_XTEST_OUT_DIR}/xtest_main.c
-	$(q)sed -i 's|    ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)\\|    /\*ADBG_SUITE_ENTRY(XTEST_TEE_'${1}', NULL)\*/\\|g' ${GP_XTEST_OUT_DIR}/adbg_entry_declare.h
+	$(q)sed -i 's|^ADBG_SUITE_ENTRY(XTEST_TEE_'${1}')|/\*ADBG_SUITE_ENTRY(XTEST_TEE_'${1}')\*/|g' ${GP_XTEST_OUT_DIR}/xtest_main.c
+	$(q)sed -i 's|    ADBG_SUITE_ENTRY(XTEST_TEE_'${1}')\\|    /\*ADBG_SUITE_ENTRY(XTEST_TEE_'${1}')\*/\\|g' ${GP_XTEST_OUT_DIR}/adbg_entry_declare.h
 endef
 
 .PHONY: patch-filter
