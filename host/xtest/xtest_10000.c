@@ -280,11 +280,6 @@ static const uint8_t pbkdf2_3_dkm[] = {
 #define pbkdf2_4_password pbkdf2_1_password
 #define pbkdf2_4_salt pbkdf2_1_salt
 #define pbkdf2_4_iteration_count 16777216
-static const uint8_t pbkdf2_4_dkm[] = {
-	0xee, 0xfe, 0x3d, 0x61, 0xcd, 0x4d, 0xa4, 0xe4,
-	0xe9, 0x94, 0x5b, 0x3d, 0x6b, 0xa2, 0x15, 0x8c,
-	0x26, 0x34, 0xe9, 0x84
-};
 
 /* 5 */
 static const uint8_t pbkdf2_5_password[] = {
