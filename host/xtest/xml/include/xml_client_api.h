@@ -14,15 +14,13 @@
 #ifndef XML_CLIENT_API_H_
 #define XML_CLIENT_API_H_
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include "tee_client_api.h"
-#ifdef USER_SPACE
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <tee_client_api.h>
 #include <unistd.h>
-#endif
 
 #define CLIENT_APP01                    NULL
 
@@ -32,10 +30,8 @@
 
 #define OFFSET0 0
 
-#ifdef USER_SPACE
 /*Test data defines*/
 static pthread_t THREAD02;
-#endif
 
 static TEEC_SharedMemory *SHARE_MEM01;
 static TEEC_SharedMemory *SHARE_MEM02;
@@ -275,16 +271,11 @@ static void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
 			ADBG_EXPECT(c, (int)returnOrigin, ret_orig); \
 	} while (0)
 
-#ifdef USER_SPACE
 #define RequestCancellation(op) \
 	(void)ADBG_EXPECT(c, 0, \
 			  pthread_create(&THREAD02, NULL, cancellation_thread, \
 					 (void *)op)); \
 	(void)ADBG_EXPECT(c, 0, pthread_join(THREAD02, NULL));
-#else
-#define RequestCancellation(op) \
-	IDENTIFIER_NOT_USED(op)
-#endif
 
 struct ctx_thr {
 	ADBG_Case_t *c;
@@ -293,7 +284,6 @@ struct ctx_thr {
 
 static struct ctx_thr thr2_ctx;
 
-#ifdef USER_SPACE
 static void *context_thread(void *arg)
 {
 	/*
@@ -306,18 +296,12 @@ static void *context_thread(void *arg)
 
 	return NULL;
 }
-#endif
 
-#ifdef USER_SPACE
 #define ctx_init_finalize(t_ctx) \
 	(void)ADBG_EXPECT(c, 0, \
 			  pthread_create(&THREAD02, NULL, context_thread, \
 					 (void *)&t_ctx)); \
 	(void)ADBG_EXPECT(c, 0, pthread_join(THREAD02, NULL));
-#else
-#define ctx_init_finalize(t_ctx) \
-	IDENTIFIER_NOT_USED(t_ctx)
-#endif
 
 #ifdef WITH_GP_TESTS
 /*
@@ -339,13 +323,11 @@ static TEEC_UUID UUID_TTA_testingClientAPI = {
 	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x54 }
 };
 
-#ifdef USER_SPACE
 static void *cancellation_thread(void *arg)
 {
 	TEEC_RequestCancellation((TEEC_Operation *)arg);
 	return NULL;
 }
-#endif
 
 /* Assigns parent, offset and size to the memref parameter */
 static void TEEC_prepare_OperationEachParameter_memref(TEEC_Operation *op,

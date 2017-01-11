@@ -54,11 +54,9 @@ static TEEC_Operation *OPERATION01;
 /* Return ORIGIN */
 static uint32_t ret_orig;
 
-#ifdef USER_SPACE
 /*Test data defines*/
 static pthread_t THREAD01_DEFAULT;
 static pthread_t THREAD02;
-#endif
 
 #define BIT0_MASK 1
 #define BIT1_MASK 2
@@ -443,24 +441,17 @@ static TEEC_UUID UUID_TTA_testingInternalAPI_Time = {
 #define TEEC_SelectApp(a, b)    /*do nothing for now*/
 #define TEEC_createThread(a, b) /*do nothing for now*/
 
-#ifdef USER_SPACE
 static void *cancellation_thread(void *arg)
 {
 	TEEC_RequestCancellation((TEEC_Operation *)arg);
 	return NULL;
 }
-#endif
 
-#ifdef USER_SPACE
 #define RequestCancellation(op) \
 	(void)ADBG_EXPECT(c, 0, \
 			  pthread_create(&THREAD02, NULL, cancellation_thread, \
 					 (void *)op)); \
 	(void)ADBG_EXPECT(c, 0, pthread_join(THREAD02, NULL));
-#else
-#define RequestCancellation(op) \
-	IDENTIFIER_NOT_USED(op)
-#endif
 
 /*Allocates TEEC_SharedMemory inside of the TEE*/
 static TEEC_Result AllocateSharedMemory(TEEC_Context *ctx,

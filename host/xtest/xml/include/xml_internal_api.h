@@ -14,14 +14,11 @@
 #ifndef XML_INTERNAL_API_H_
 #define XML_INTERNAL_API_H_
 
+#include <pthread.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
-
-#ifdef USER_SPACE
-#include <pthread.h>
 #include <unistd.h>
-#endif
 
 #include <sys/types.h>
 #include "tee_client_api.h"
@@ -63,11 +60,9 @@
 
 #define TEE_ERROR_TOO_SHORT_BUFFER TEE_ERROR_SHORT_BUFFER
 
-#ifdef USER_SPACE
 /* Test data defines */
 static pthread_t THREAD01_DEFAULT;
 static pthread_t THREAD02;
-#endif
 
 static TEEC_SharedMemory *SHARE_MEM01;
 static TEEC_SharedMemory *SHARE_MEM02;
@@ -253,24 +248,17 @@ static TEEC_UUID UUID_Unknown = {
 #define TEEC_SelectApp(a, b)    /* do nothing for now */
 #define TEEC_createThread(a, b) /* do nothing for now */
 
-#ifdef USER_SPACE
 static void *cancellation_thread(void *arg)
 {
 	TEEC_RequestCancellation((TEEC_Operation *)arg);
 	return NULL;
 }
-#endif
 
-#ifdef USER_SPACE
 #define RequestCancellation(op) \
 	(void)ADBG_EXPECT(c, 0, \
 			  pthread_create(&THREAD02, NULL, cancellation_thread, \
 					 (void *)op)); \
 	(void)ADBG_EXPECT(c, 0, pthread_join(THREAD02, NULL));
-#else
-#define RequestCancellation(op) \
-	IDENTIFIER_NOT_USED(op)
-#endif
 
 /* Allocates TEEC_SharedMemory inside of the TEE */
 static TEEC_Result AllocateSharedMemory(TEEC_Context *ctx,

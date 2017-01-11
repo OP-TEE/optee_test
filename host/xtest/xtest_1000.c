@@ -11,16 +11,13 @@
  * GNU General Public License for more details.
  */
 
+#include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-
-#ifdef USER_SPACE
-#include <pthread.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#endif
+#include <unistd.h>
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
@@ -650,7 +647,6 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "Load corrupt TA");
 }
 
-#ifdef USER_SPACE
 static void *cancellation_thread(void *arg)
 {
 	/*
@@ -661,16 +657,13 @@ static void *cancellation_thread(void *arg)
 	TEEC_RequestCancellation(arg);
 	return NULL;
 }
-#endif
 
 static void xtest_tee_test_1009_subcase(ADBG_Case_t *c, const char *subcase,
                                         uint32_t timeout, bool cancel)
 {
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
-#ifdef USER_SPACE
 	pthread_t thr;
-#endif
 
 	Do_ADBG_BeginSubCase(c, "%s", subcase);
 	{
@@ -688,7 +681,6 @@ static void xtest_tee_test_1009_subcase(ADBG_Case_t *c, const char *subcase,
 			op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 			                                 TEEC_NONE,
 			                                 TEEC_NONE, TEEC_NONE);
-#ifdef USER_SPACE
 			if (cancel) {
 				(void)ADBG_EXPECT(c, 0,
 				      pthread_create(&thr, NULL,
@@ -701,17 +693,14 @@ static void xtest_tee_test_1009_subcase(ADBG_Case_t *c, const char *subcase,
 			                                  &op,
 			                                  &ret_orig));
 			} else
-#endif
 
 			(void)ADBG_EXPECT_TEEC_SUCCESS(c,
 			           TEEC_InvokeCommand(&session,
 			                              TA_OS_TEST_CMD_WAIT,
 			                              &op,
 			                              &ret_orig));
-#ifdef USER_SPACE
 			if (cancel)
 				(void)ADBG_EXPECT(c, 0, pthread_join(thr, NULL));
-#endif
 
 			TEEC_CloseSession(&session);
 		}
@@ -723,9 +712,7 @@ static void xtest_tee_test_1009(ADBG_Case_t *c)
 {
 	xtest_tee_test_1009_subcase(c, "TEE Wait 0.1s", 100, false);
 	xtest_tee_test_1009_subcase(c, "TEE Wait 0.5s", 500, false);
-#ifdef USER_SPACE
 	xtest_tee_test_1009_subcase(c, "TEE Wait 2s cancel", 2000, true);
-#endif
 	xtest_tee_test_1009_subcase(c, "TEE Wait 2s", 2000, false);
 }
 

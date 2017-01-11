@@ -14,15 +14,12 @@
 #ifndef XML_DATASTORAGE_API_H_
 #define XML_DATASTORAGE_API_H_
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-
-#ifdef USER_SPACE
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
-#endif
 
 #include "tee_client_api.h"
 #undef TA_UUID
@@ -108,10 +105,8 @@
 #define BUFFER_ATTRIBUTE 0
 #define VALUE_ATTRIBUTE 1
 
-#ifdef USER_SPACE
 /* Test data defines */
 static pthread_t THREAD01_DEFAULT;
-#endif
 
 /* Return ORIGIN */
 static uint32_t ret_orig;
