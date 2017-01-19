@@ -37,12 +37,8 @@ srcs := xtest_1000.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
 	adbg/src/adbg_log.c \
-	adbg/src/adbg_mts.c \
 	adbg/src/adbg_run.c \
-	adbg/src/adbg_util.c \
-	adbg/src/r_list_genutil.c \
 	adbg/src/security_utils_hex.c \
-	adbg/src/security_utils_mem.c \
 	aes_perf.c \
 	sha_perf.c
 
