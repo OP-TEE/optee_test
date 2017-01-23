@@ -466,7 +466,7 @@ static void test_modular_inv(void)
 
 void tb_modulus(void)
 {
-	const char *TEST_NAME = "Modulare arithmetics";
+	const char *TEST_NAME = "Modular arithmetic";
 
 	TB_HEADER(TEST_NAME);
 	test_modular_reduction();
