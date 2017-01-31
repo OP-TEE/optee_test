@@ -201,12 +201,14 @@ static void tee_deregister_buffer(struct tee_ctx *ctx, void *shm_ref)
 }
 
 static int inject_sdp_data(struct tee_ctx *ctx,
-		    void *in, size_t offset, size_t len, void *shm_ref)
+		    void *in, size_t offset, size_t len, void *shm_ref, int ind)
 {
 	TEEC_SharedMemory *shm = (TEEC_SharedMemory *)shm_ref;
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
+	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_INJECT :
+				TA_SDP_BASIC_CMD_INJECT;
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
@@ -220,8 +222,7 @@ static int inject_sdp_data(struct tee_ctx *ctx,
 	op.params[1].memref.size = len;
 	op.params[1].memref.offset = offset;
 
-	teerc = TEEC_InvokeCommand(&ctx->sess, TA_SDP_BASIC_CMD_INJECT, &op,
-								&err_origin);
+	teerc = TEEC_InvokeCommand(&ctx->sess, cmd, &op, &err_origin);
 	if (teerc != TEEC_SUCCESS)
 		fprintf(stderr, "Error: invoke SDP test TA (inject) failed %x %d\n",
 			teerc, err_origin);
@@ -230,12 +231,14 @@ static int inject_sdp_data(struct tee_ctx *ctx,
 }
 
 static int transform_sdp_data(struct tee_ctx *ctx,
-			size_t offset, size_t len, void *shm_ref)
+			size_t offset, size_t len, void *shm_ref, int ind)
 {
 	TEEC_SharedMemory *shm = (TEEC_SharedMemory *)shm_ref;
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
+	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_TRANSFORM :
+				TA_SDP_BASIC_CMD_TRANSFORM;
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INOUT,
@@ -244,8 +247,7 @@ static int transform_sdp_data(struct tee_ctx *ctx,
 	op.params[0].memref.size = len;
 	op.params[0].memref.offset = offset;
 
-	teerc = TEEC_InvokeCommand(&ctx->sess, TA_SDP_BASIC_CMD_TRANSFORM, &op,
-								&err_origin);
+	teerc = TEEC_InvokeCommand(&ctx->sess, cmd, &op, &err_origin);
 	if (teerc != TEEC_SUCCESS)
 		fprintf(stderr, "Error: invoke SDP test TA (transform) failed %x %d\n",
 			teerc, err_origin);
@@ -254,12 +256,14 @@ static int transform_sdp_data(struct tee_ctx *ctx,
 }
 
 static int dump_sdp_data(struct tee_ctx *ctx,
-		  void *out, size_t offset, size_t len, void *shm_ref)
+		  void *out, size_t offset, size_t len, void *shm_ref, int ind)
 {
 	TEEC_SharedMemory *shm = (TEEC_SharedMemory *)shm_ref;
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
+	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_DUMP :
+				TA_SDP_BASIC_CMD_DUMP;
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
@@ -272,8 +276,7 @@ static int dump_sdp_data(struct tee_ctx *ctx,
 	op.params[1].tmpref.buffer = out;
 	op.params[1].tmpref.size = len;
 
-	teerc = TEEC_InvokeCommand(&ctx->sess, TA_SDP_BASIC_CMD_DUMP, &op,
-								&err_origin);
+	teerc = TEEC_InvokeCommand(&ctx->sess, cmd, &op, &err_origin);
 	if (teerc != TEEC_SUCCESS)
 		fprintf(stderr, "Error: invoke SDP test TA (dump) failed %x %d\n",
 			teerc, err_origin);
@@ -364,6 +367,7 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 	int fd = -1;
 	size_t sdp_size = size;
 	size_t offset;
+	size_t loop_cnt;
 
 	if (!loop) {
 		fprintf(stderr, "Error: null loop value\n");
@@ -402,7 +406,7 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 	fd = -1;
 
 	/* invoke trusted application with secure buffer as memref parameter */
-	while (loop--) {
+	for (loop_cnt = loop; loop_cnt; loop_cnt--) {
 		/* get an buffer of random-like values */
 		if (get_random_bytes((char *)ref_buf, size))
 			goto out;
@@ -411,15 +415,15 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 		offset = (unsigned int)*ref_buf;
 
 		/* TA writes into SDP buffer */
-		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref))
+		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, 0))
 			goto out;
 
 		/* TA reads/writes into SDP buffer */
-		if (transform_sdp_data(ctx, offset, size, shm_ref))
+		if (transform_sdp_data(ctx, offset, size, shm_ref, 0))
 			goto out;
 
 		/* TA reads into SDP buffer */
-		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref))
+		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, 0))
 			goto out;
 
 		/* check dumped data are the expected ones */
@@ -428,6 +432,35 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 			goto out;
 		}
 	}
+
+	/* invoke trusted application with secure buffer as memref parameter */
+	for (loop_cnt = loop; loop_cnt; loop_cnt--) {
+		/* get an buffer of random-like values */
+		if (get_random_bytes((char *)ref_buf, size))
+			goto out;
+		memcpy(test_buf, ref_buf, size);
+		/* random offset [0 255] */
+		offset = (unsigned int)*ref_buf;
+
+		/* TA writes into SDP buffer */
+		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, 1))
+			goto out;
+
+		/* TA reads/writes into SDP buffer */
+		if (transform_sdp_data(ctx, offset, size, shm_ref, 1))
+			goto out;
+
+		/* TA reads into SDP buffer */
+		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, 1))
+			goto out;
+
+		/* check dumped data are the expected ones */
+		if (check_sdp_dumped(ctx, ref_buf, size, test_buf)) {
+			fprintf(stderr, "check SDP data: %d errors\n", err);
+			goto out;
+		}
+	}
+
 	err = 0;
 	verbose("%s: successed\n", __func__);
 out:

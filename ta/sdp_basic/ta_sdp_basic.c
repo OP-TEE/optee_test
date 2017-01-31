@@ -244,6 +244,38 @@ static TEE_Result cmd_dump(uint32_t types,
 	return rc;
 }
 
+static TEE_Result cmd_invoke(uint32_t nParamTypes,
+			     TEE_Param pParams[TEE_NUM_PARAMS],
+			     uint32_t nCommandID)
+{
+        const TEE_UUID uuid = TA_SDP_BASIC_UUID;
+        static TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+        uint32_t ret_orig;
+        TEE_Result res;
+
+	if (sess == TEE_HANDLE_NULL) {
+	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);
+		if (res != TEE_SUCCESS) {
+	                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED \n");
+	                goto cleanup_return;
+		}
+
+        }
+
+        res = TEE_InvokeTACommand(sess, 0, nCommandID, nParamTypes, pParams, &ret_orig);
+        if (res != TEE_SUCCESS) {
+                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d\n",
+								res, ret_orig);
+        }
+
+cleanup_return:
+	if (res != TEE_SUCCESS) {
+		TEE_CloseTASession(sess);
+		sess = TEE_HANDLE_NULL;
+	}
+        return res;
+}
+
 TEE_Result TA_CreateEntryPoint(void)
 {
 	return TEE_SUCCESS;
@@ -281,6 +313,14 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return cmd_transform(nParamTypes, pParams);
 	case TA_SDP_BASIC_CMD_DUMP:
 		return cmd_dump(nParamTypes, pParams);
+
+	case TA_SDP_BASIC_CMD_INVOKE_INJECT:
+		return cmd_invoke(nParamTypes, pParams, TA_SDP_BASIC_CMD_INJECT);
+	case TA_SDP_BASIC_CMD_INVOKE_TRANSFORM:
+		return cmd_invoke(nParamTypes, pParams, TA_SDP_BASIC_CMD_TRANSFORM);
+	case TA_SDP_BASIC_CMD_INVOKE_DUMP:
+		return cmd_invoke(nParamTypes, pParams, TA_SDP_BASIC_CMD_DUMP);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

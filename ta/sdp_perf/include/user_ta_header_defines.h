@@ -36,7 +36,7 @@
 				TA_FLAG_SECURE_DATA_PATH | \
 				TA_FLAG_CACHE_MAINTENANCE)
 
-#define TA_STACK_SIZE		(2 * 1024)
+#define TA_STACK_SIZE		(8 * 1024)
 #define TA_DATA_SIZE		(32 * 1024)
 
 #endif
