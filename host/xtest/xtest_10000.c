@@ -280,7 +280,7 @@ static const uint8_t pbkdf2_3_dkm[] = {
 #define pbkdf2_4_password pbkdf2_1_password
 #define pbkdf2_4_salt pbkdf2_1_salt
 #define pbkdf2_4_iteration_count 16777216
-static const uint8_t pbkdf2_4_dkm[] __maybe_unused = {
+static const uint8_t pbkdf2_4_dkm[] = {
 	0xee, 0xfe, 0x3d, 0x61, 0xcd, 0x4d, 0xa4, 0xe4,
 	0xe9, 0x94, 0x5b, 0x3d, 0x6b, 0xa2, 0x15, 0x8c,
 	0x26, 0x34, 0xe9, 0x84
@@ -585,9 +585,9 @@ out:
 static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 {
 	size_t n;
-#define TEST_PBKDF2_DATA(section, algo, id, oeb /* omit empty bufs */) \
+#define TEST_PBKDF2_DATA(level, section, algo, id, oeb /* omit empty bufs */) \
 	{ \
-		section, algo, \
+		level, section, algo, \
 		pbkdf2_##id##_password, sizeof(pbkdf2_##id##_password), \
 		(oeb && !sizeof(pbkdf2_##id##_salt)) ? NULL : pbkdf2_##id##_salt, sizeof(pbkdf2_##id##_salt), \
 		pbkdf2_##id##_iteration_count, \
@@ -595,10 +595,11 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 	}
 #define _TO_STR(n) #n
 #define TO_STR(n) _TO_STR(n)
-#define RFC6070_TEST(n) \
-	TEST_PBKDF2_DATA("RFC 6070 " TO_STR(n) " (HMAC-SHA1)", \
+#define RFC6070_TEST(l, n) \
+	TEST_PBKDF2_DATA(l, "RFC 6070 " TO_STR(n) " (HMAC-SHA1)", \
 			 TEE_ALG_PBKDF2_HMAC_SHA1_DERIVE_KEY, n, false)
 	static struct pbkdf2_case {
+		unsigned int level;
 		const char *subcase_name;
 		uint32_t algo;
 		const uint8_t *password;
@@ -609,11 +610,9 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 		const uint8_t *dkm;
 		size_t dkm_len;
 	} pbkdf2_cases[] = {
-		RFC6070_TEST(1), RFC6070_TEST(2), RFC6070_TEST(3),
-#if 0
-		RFC6070_TEST(4), /* Lengthy! (3 min on my PC / QEMU) */
-#endif
-		RFC6070_TEST(5), RFC6070_TEST(6)
+		RFC6070_TEST(0, 1), RFC6070_TEST(0, 2), RFC6070_TEST(0, 3),
+		RFC6070_TEST(15, 4), /* Lengthy! (2 min on HiKey @1.2GHz) */
+		RFC6070_TEST(0, 5), RFC6070_TEST(0, 6)
 	};
 	size_t max_size = 2048;
 
@@ -626,6 +625,9 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 		uint8_t out[2048];
 		size_t out_size;
 		const struct pbkdf2_case *pc = &pbkdf2_cases[n];
+
+		if (pc->level > level)
+			continue;
 
 		Do_ADBG_BeginSubCase(c, "PBKDF2 %s", pc->subcase_name);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
