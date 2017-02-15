@@ -79,6 +79,29 @@ static uint8_t data_01[] = {
 	0x01, 0x74, 0x9C, 0xD6, 0x36, 0xE7, 0xA8, 0x01
 };
 
+static uint32_t fs_id_for_tee_storage_private(void)
+{
+#if defined(CFG_REE_FS)
+	return TEE_STORAGE_PRIVATE_REE;
+#elif defined(CFG_RPMB_FS)
+	return TEE_STORAGE_PRIVATE_RPMB;
+#elif defined(CFG_SQL_FS)
+	return TEE_STORAGE_PRIVATE_SQL;
+#endif
+}
+
+static uint32_t real_id_for(uint32_t id)
+{
+	if (id == TEE_STORAGE_PRIVATE)
+		return fs_id_for_tee_storage_private();
+	return id;
+}
+
+static bool storage_is(uint32_t id1, uint32_t id2)
+{
+	return (real_id_for(id1) == real_id_for(id2));
+}
+
 static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
 			   uint32_t flags, uint32_t *obj, uint32_t storage_id)
 {
@@ -1723,6 +1746,97 @@ exit:
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6017)
 
+static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	TEEC_Session sess;
+	TEE_ObjectInfo obj_info1;
+	TEE_ObjectInfo obj_info2;
+	uint32_t obj;
+	uint32_t orig;
+	uint8_t block[32 * 1024];
+	size_t num_blocks;
+	size_t block_size;
+	size_t n;
+
+	if (storage_is(storage_id, TEE_STORAGE_PRIVATE_RPMB)) {
+		/* RPMB FS is a bit resource constrained */
+		num_blocks = 20;
+		block_size = 1024;
+	} else {
+		num_blocks = 50;
+		block_size = sizeof(block);
+	}
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE, 0, NULL,
+			  0, &obj, storage_id)))
+		goto exit;
+
+	for (n = 0; n < num_blocks; n++) {
+		memset(block, n, block_size);
+
+		Do_ADBG_Log("writing %zu", n);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			fs_write(&sess, obj, block, block_size)))
+			goto exit;
+	}
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_get_obj_info(&sess, obj, &obj_info1,
+				sizeof(TEE_ObjectInfo))))
+		goto exit;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		obj_info1.dataSize, ==, block_size * num_blocks))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_get_obj_info(&sess, obj, &obj_info2,
+				sizeof(TEE_ObjectInfo))))
+		goto exit;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		obj_info1.dataSize, ==, obj_info2.dataSize))
+		goto exit;
+
+	for (n = 0; n < num_blocks; n++) {
+		uint8_t br[block_size];
+		uint32_t count;
+
+		memset(block, n, block_size);
+
+		Do_ADBG_Log("reading %zu", n);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			fs_read(&sess, obj, br, sizeof(br), &count)))
+			goto exit;
+		if (!ADBG_EXPECT_BUFFER(c, block, block_size, br, count))
+			goto exit;
+	}
+
+	/* clean */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+exit:
+	TEEC_CloseSession(&sess);
+}
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6018)
+
 ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
 		 "Test TEE_CreatePersistentObject");
 ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
@@ -1758,3 +1872,4 @@ ADBG_CASE_DEFINE(regression, 6015, xtest_tee_test_6015, "Storage isolation");
 ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
 ADBG_CASE_DEFINE(regression, 6017, xtest_tee_test_6017,
 		 "Test Persistent objects info");
+ADBG_CASE_DEFINE(regression, 6018, xtest_tee_test_6018, "Large object");
