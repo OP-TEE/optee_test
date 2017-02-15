@@ -26,6 +26,7 @@
 #include <xtest_helpers.h>
 
 #include <tee_fs_key_manager.h>
+#include <fs_htree.h>
 #include <tee_client_api.h>
 #include <tee_api_defines_extensions.h>
 
@@ -34,21 +35,21 @@
 #include <tee_api_types.h>
 #include <util.h>
 
+#define BLOCK_SIZE	(4 * 1024)
+
 #define SIZE		1
 #define NUMELEM		1
 #define DUMPFILE 	0
 #define DUMPLIMIT 	128
 
-#define CORRUPT_META_KEY_OFFSET       offsetof(struct meta_header, encrypted_key)
-#define CORRUPT_META_IV_OFFSET        (offsetof(struct meta_header, common) + \
-				       offsetof(struct common_header, iv))
-#define CORRUPT_META_TAG_OFFSET       (offsetof(struct meta_header, common) + \
-				       offsetof(struct common_header, tag))
-#define CORRUPT_META_DATA_OFFSET      sizeof(struct meta_header)
+#define CORRUPT_META_KEY_OFFSET       offsetof(struct tee_fs_htree_image, enc_fek)
+#define CORRUPT_META_IV_OFFSET        offsetof(struct tee_fs_htree_image, iv)
+#define CORRUPT_META_TAG_OFFSET       offsetof(struct tee_fs_htree_image, tag)
+#define CORRUPT_META_DATA_OFFSET      offsetof(struct tee_fs_htree_image, imeta)
 
-#define CORRUPT_BLOCK_IV_OFFSET       offsetof(struct common_header, iv)
-#define CORRUPT_BLOCK_TAG_OFFSET      offsetof(struct common_header, tag)
-#define CORRUPT_BLOCK_DATA_OFFSET     sizeof(struct block_header)
+#define CORRUPT_BLOCK_IV_OFFSET       offsetof(struct tee_fs_htree_node_image, iv)
+#define CORRUPT_BLOCK_TAG_OFFSET      offsetof(struct tee_fs_htree_node_image, tag)
+#define CORRUPT_BLOCK_DATA_OFFSET     0
 
 #define CORRUPT_FILE_RAND_BYTE		1024*4096+2
 #define CORRUPT_FILE_FIRST_BYTE		1024*4096+1
@@ -58,11 +59,11 @@
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #endif
 
-#define XTEST_ENC_FS(level, data_len, meta, block_num, version) \
+#define XTEST_ENC_FS(level, data_len, meta, block_num, block_vers, node_vers) \
 	{ \
 	  level, \
 	  data_len, \
-	  meta, block_num, version \
+	  meta, block_num, block_vers, node_vers \
 	}
 
 enum meta {
@@ -89,35 +90,36 @@ struct xtest_enc_fs_case {
 	uint32_t data_len;
 	uint8_t meta;
 	uint8_t block_num;
-	uint8_t version;
+	uint8_t block_version;
+	uint8_t node_version;
 };
 
 static const struct xtest_enc_fs_case xtest_enc_fs_cases[] = {
-	XTEST_ENC_FS(1, 1, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 2, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 3, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 8, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 16, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 32, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 64, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 128, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 256, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 512, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 1024, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 2048, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 3072, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4094, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4095, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(0, 4097, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(0, 4097, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 4098, META0, BLOCK0, VERSION1),
-	XTEST_ENC_FS(1, 4098, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 1*4096, META0, BLOCK1, VERSION0),
-	XTEST_ENC_FS(1, 2*4096, META0, BLOCK2, VERSION0),
-	XTEST_ENC_FS(1, 3*4096, META0, BLOCK3, VERSION0),
-	XTEST_ENC_FS(1, 4*4096, META0, BLOCK3, VERSION0),
-	XTEST_ENC_FS(1, 4*4096, META0, BLOCK4, VERSION0),
+	XTEST_ENC_FS(1, 1, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 2, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 3, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 8, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 16, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 32, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 64, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 128, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 256, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 512, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 1024, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 2048, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 3072, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4094, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4095, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(0, 4097, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(0, 4097, META1, BLOCK1, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4098, META1, BLOCK0, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4098, META1, BLOCK1, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 1*4096, META1, BLOCK1, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 2*4096, META1, BLOCK2, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 3*4096, META1, BLOCK3, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4*4096, META1, BLOCK3, VERSION0, VERSION1),
+	XTEST_ENC_FS(1, 4*4096, META1, BLOCK4, VERSION0, VERSION1),
 };
 
 static TEEC_Result obj_open(TEEC_Session *sess, void *id, uint32_t id_size,
@@ -273,9 +275,85 @@ static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
         return 0;
 }
 
+static void get_offs_size(enum tee_fs_htree_type type, size_t idx,
+			  uint8_t vers, size_t *offs, size_t *size)
+{
+	const size_t node_size = sizeof(struct tee_fs_htree_node_image);
+	const size_t block_nodes = BLOCK_SIZE / (node_size * 2);
+	size_t pbn;
+	size_t bidx;
+	size_t sz;
+
+	/*
+	 * File layout
+	 *
+	 * phys block 0:
+	 * tee_fs_htree_image vers 0 @ offs = 0
+	 * tee_fs_htree_image vers 1 @ offs = sizeof(tee_fs_htree_image)
+	 *
+	 * phys block 1:
+	 * tee_fs_htree_node_image 0  vers 0 @ offs = 0
+	 * tee_fs_htree_node_image 0  vers 1 @ offs = node_size
+	 * tee_fs_htree_node_image 1  vers 0 @ offs = node_size * 2
+	 * tee_fs_htree_node_image 1  vers 1 @ offs = node_size * 3
+	 * ...
+	 * tee_fs_htree_node_image 61 vers 0 @ offs = node_size * 122
+	 * tee_fs_htree_node_image 61 vers 1 @ offs = node_size * 123
+	 *
+	 * phys block 2:
+	 * data block 0 vers 0
+	 *
+	 * phys block 3:
+	 * data block 0 vers 1
+	 *
+	 * ...
+	 * phys block 63:
+	 * data block 61 vers 0
+	 *
+	 * phys block 64:
+	 * data block 61 vers 1
+	 *
+	 * phys block 65:
+	 * tee_fs_htree_node_image 62  vers 0 @ offs = 0
+	 * tee_fs_htree_node_image 62  vers 1 @ offs = node_size
+	 * tee_fs_htree_node_image 63  vers 0 @ offs = node_size * 2
+	 * tee_fs_htree_node_image 63  vers 1 @ offs = node_size * 3
+	 * ...
+	 * tee_fs_htree_node_image 121 vers 0 @ offs = node_size * 122
+	 * tee_fs_htree_node_image 121 vers 1 @ offs = node_size * 123
+	 *
+	 * ...
+	 */
+
+	switch (type) {
+	case TEE_FS_HTREE_TYPE_HEAD:
+		*offs = sizeof(struct tee_fs_htree_image) * vers;
+		sz = sizeof(struct tee_fs_htree_image);
+		break;
+	case TEE_FS_HTREE_TYPE_NODE:
+		pbn = 1 + ((idx / block_nodes) * block_nodes * 2);
+		*offs = pbn * BLOCK_SIZE +
+			2 * node_size * (idx % block_nodes) +
+			node_size * vers;
+		sz = node_size;
+		break;
+	case TEE_FS_HTREE_TYPE_BLOCK:
+		bidx = 2 * idx + vers;
+		pbn = 2 + bidx + bidx / (block_nodes * 2 - 1);
+		*offs = pbn * BLOCK_SIZE;
+		sz = BLOCK_SIZE;
+		break;
+	default:
+		break;
+	}
+
+	if (size)
+		*size = sz;
+}
+
 static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		       uint32_t file_id_length,
-		       uint32_t offset, enum tee_fs_file_type file_type,
+		       uint32_t offset, enum tee_fs_htree_type type,
 		       uint8_t block_num, uint8_t version)
 {
 	char ta_dirname[32 + 1];
@@ -288,12 +366,7 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 	int i;
 	int num_corrupt_bytes = SIZE * NUMELEM;
 	size_t real_offset;
-	const size_t meta_block_size = sizeof(struct meta_header) +
-				       sizeof(struct tee_fs_file_meta);
-	const size_t meta_info_size = sizeof(struct meta_header) +
-				      sizeof(struct tee_fs_file_info);
-	const size_t block_size = sizeof(struct block_header) +
-				  BLOCK_FILE_SIZE;
+	size_t node_size = sizeof(struct tee_fs_htree_node_image);
 
 	memset(name, 0, sizeof(name));
 
@@ -310,26 +383,20 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		snprintf(name, sizeof(name), "/data/tee/%s/%s",
 			 ta_dirname, obj_filename);
 
-		real_offset = sizeof(uint32_t); /* meta counter */
-		if (file_type == META_FILE) {
-			real_offset += version * meta_block_size;
-		} else if (file_type == BLOCK_FILE) {
-			real_offset += meta_block_size * 2;
-			real_offset += (block_num * 2 + version) * block_size;
-		}
+		get_offs_size(type, block_num, version, &real_offset, NULL);
 
 		if (offset == CORRUPT_FILE_LAST_BYTE) {
-			if (file_type == META_FILE)
-				real_offset += meta_info_size;
+			if (type == TEE_FS_HTREE_TYPE_HEAD)
+				real_offset += node_size;
 			else
-				real_offset += block_size;
+				real_offset += BLOCK_SIZE;
 			real_offset -= num_corrupt_bytes;
 		} else if (offset == CORRUPT_FILE_RAND_BYTE) {
 			srand(time(NULL));
-			if (file_type == META_FILE)
-				real_offset += rand() % (meta_info_size - 1);
+			if (type == TEE_FS_HTREE_TYPE_HEAD)
+				real_offset += rand() % (node_size - 1);
 			else
-				real_offset += rand() % (block_size - 1);
+				real_offset += rand() % (BLOCK_SIZE - 1);
 			num_corrupt_bytes = 1;
 		} else if (offset != CORRUPT_FILE_FIRST_BYTE) {
 			real_offset += offset;
@@ -400,7 +467,7 @@ exit:
 }
 
 static void storage_corrupt(ADBG_Case_t *c,
-			    enum tee_fs_file_type file_type,
+			    enum tee_fs_htree_type file_type,
 			    uint32_t offset
 			   )
 {
@@ -410,7 +477,9 @@ static void storage_corrupt(ADBG_Case_t *c,
 	unsigned int error;
 	uint32_t obj_id;
 	uint32_t nb;
+	uint32_t f;
 	size_t n;
+	uint8_t vers;
 	char *filedata = NULL;
 
 
@@ -460,20 +529,21 @@ static void storage_corrupt(ADBG_Case_t *c,
 		else
 			goto exit;
 
-		if (file_type == META_FILE)
+		f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE_META;
+
+		if (file_type == TEE_FS_HTREE_TYPE_HEAD)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
 					     is_obj_present(&uuid, filename,
 					     ARRAY_SIZE(filename)));
 
-		if (file_type == BLOCK_FILE)
+		if (file_type == TEE_FS_HTREE_TYPE_BLOCK)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
 					     is_obj_present(&uuid, filename,
 					     ARRAY_SIZE(filename)));
 
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_open(&sess, filename, ARRAY_SIZE(filename),
-			    TEE_DATA_FLAG_ACCESS_READ |
-			    TEE_DATA_FLAG_ACCESS_WRITE_META, &obj_id));
+				     f, &obj_id));
 
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_read(&sess, obj_id, buffer, tv->data_len, &nb));
@@ -481,72 +551,77 @@ static void storage_corrupt(ADBG_Case_t *c,
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_close(&sess, obj_id));
 
+
 		switch (file_type) {
-		case META_FILE:
-		/* corrupt object */
-		if (!ADBG_EXPECT(c, TEE_SUCCESS,
-				obj_corrupt(&uuid, filename,
-					ARRAY_SIZE(filename), offset,
-					file_type, tv->meta, tv->meta)))
-			goto exit;	
-
-		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
-				obj_open(&sess, filename,
-					ARRAY_SIZE(filename),
-					TEE_DATA_FLAG_ACCESS_READ |
-					TEE_DATA_FLAG_ACCESS_WRITE_META,
-					&obj_id));
-
-		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
-				obj_open(&sess, filename,
-					ARRAY_SIZE(filename),
-					TEE_DATA_FLAG_ACCESS_READ |
-					TEE_DATA_FLAG_ACCESS_WRITE_META,
-					&obj_id));
-
-		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-				is_obj_present(&uuid, filename,
-					       ARRAY_SIZE(filename)));
-			break;
-
-		case BLOCK_FILE:
-		/* corrupt object */
-		if (!ADBG_EXPECT(c, TEE_SUCCESS,
+		case TEE_FS_HTREE_TYPE_HEAD:
+			/* corrupt object */
+			if (!ADBG_EXPECT(c, TEE_SUCCESS,
 					obj_corrupt(&uuid, filename,
-						ARRAY_SIZE(filename),
-						offset, file_type,
-						tv->block_num, tv->version)))
-			goto exit;
-
-		if ( tv->block_num == BLOCK0 ) {
-			ADBG_EXPECT(c, TEE_ERROR_CORRUPT_OBJECT,
-					obj_open(&sess, filename,
-						ARRAY_SIZE(filename),
-						TEE_DATA_FLAG_ACCESS_READ |
-						TEE_DATA_FLAG_ACCESS_WRITE_META,
-						&obj_id));
-		} else {
-			ADBG_EXPECT(c, TEE_SUCCESS,
-					obj_open(&sess, filename,
-						ARRAY_SIZE(filename),
-						TEE_DATA_FLAG_ACCESS_READ |
-						TEE_DATA_FLAG_ACCESS_WRITE_META,
-						&obj_id));
+						ARRAY_SIZE(filename), offset,
+						file_type, tv->meta, tv->meta)))
+				goto exit;
 
 			ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
+						obj_open(&sess, filename,
+							 ARRAY_SIZE(filename),
+							 f, &obj_id));
+
+			ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+						obj_open(&sess, filename,
+						ARRAY_SIZE(filename),
+						f, &obj_id));
+
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
+					is_obj_present(&uuid, filename,
+						       ARRAY_SIZE(filename)));
+			break;
+
+		case TEE_FS_HTREE_TYPE_NODE:
+		case TEE_FS_HTREE_TYPE_BLOCK:
+			if (file_type == TEE_FS_HTREE_TYPE_NODE)
+				vers = tv->node_version;
+			else
+				vers = tv->block_version;
+
+			/* corrupt object */
+			if (!ADBG_EXPECT(c, TEE_SUCCESS,
+				obj_corrupt(&uuid, filename,
+					    ARRAY_SIZE(filename),
+					    offset, file_type,
+					    tv->block_num, vers)))
+				goto exit;
+
+			/*
+			 * All nodes are currently verified when opening so
+			 * any corrupt node will be detected. This will
+			 * change if lazy loading of nodes is implemented.
+			 */
+			if (tv->block_num == BLOCK0 ||
+			    (file_type == TEE_FS_HTREE_TYPE_NODE &&
+			     tv->block_num <= BLOCK5)) {
+				ADBG_EXPECT(c, TEE_ERROR_CORRUPT_OBJECT,
+					    obj_open(&sess, filename,
+						     ARRAY_SIZE(filename),
+						     f, &obj_id));
+			} else {
+				ADBG_EXPECT(c, TEE_SUCCESS,
+					    obj_open(&sess, filename,
+						     ARRAY_SIZE(filename),
+						     f, &obj_id));
+
+				ADBG_EXPECT_TEEC_RESULT(c,
+					TEE_ERROR_CORRUPT_OBJECT,
 					obj_read(&sess, obj_id, buffer,
-						tv->data_len, &nb));
-		}
+						 tv->data_len, &nb));
+			}
 
-		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+			ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
 				obj_open(&sess, filename, ARRAY_SIZE(filename),
-					TEE_DATA_FLAG_ACCESS_READ |
-					TEE_DATA_FLAG_ACCESS_WRITE_META,
-					&obj_id));
+					 f, &obj_id));
 
-		ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-				is_obj_present(&uuid, filename,
-					       ARRAY_SIZE(filename)));
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
+					is_obj_present(&uuid, filename,
+						       ARRAY_SIZE(filename)));
 			break;
 
 		default:
@@ -568,21 +643,21 @@ exit:
 /* Corrupt Meta Encrypted Key */
 static void xtest_tee_test_20001(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_KEY_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_KEY_OFFSET
 			);
 }
 
 /* Corrupt Meta IV */
 static void xtest_tee_test_20002(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_IV_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_IV_OFFSET
 			);
 }
 
 /* Corrupt Meta Tag */
 static void xtest_tee_test_20003(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_META_TAG_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_TAG_OFFSET
 			);
 }
 
@@ -590,14 +665,14 @@ static void xtest_tee_test_20003(ADBG_Case_t *c)
 static void xtest_tee_test_20004(ADBG_Case_t *c)
 {
 	storage_corrupt(c,
-			META_FILE, CORRUPT_META_DATA_OFFSET
+			TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_DATA_OFFSET
 			);
 }
 
 /* Corrupt Meta File : first byte */
 static void xtest_tee_test_20021(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_FIRST_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_FIRST_BYTE
 			);
 
 }
@@ -605,7 +680,7 @@ static void xtest_tee_test_20021(ADBG_Case_t *c)
 /* Corrupt Meta File : last byte */
 static void xtest_tee_test_20022(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_LAST_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_LAST_BYTE
 			);
 
 }
@@ -613,7 +688,7 @@ static void xtest_tee_test_20022(ADBG_Case_t *c)
 /* Corrupt Meta File : random byte */
 static void xtest_tee_test_20023(ADBG_Case_t *c)
 {
-	storage_corrupt(c, META_FILE, CORRUPT_FILE_RAND_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_RAND_BYTE
 			);
 
 }
@@ -621,7 +696,7 @@ static void xtest_tee_test_20023(ADBG_Case_t *c)
 /* Corrupt Block IV */
 static void xtest_tee_test_20501(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_IV_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_NODE, CORRUPT_BLOCK_IV_OFFSET
 			);
 
 }
@@ -629,7 +704,7 @@ static void xtest_tee_test_20501(ADBG_Case_t *c)
 /* Corrupt Block Tag */
 static void xtest_tee_test_20502(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_TAG_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_NODE, CORRUPT_BLOCK_TAG_OFFSET
 			);
 }
 
@@ -637,14 +712,14 @@ static void xtest_tee_test_20502(ADBG_Case_t *c)
 static void xtest_tee_test_20503(ADBG_Case_t *c)
 {
 
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_BLOCK_DATA_OFFSET
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_BLOCK_DATA_OFFSET
 			);
 }
 
 /* Corrupt Block File : first byte */
 static void xtest_tee_test_20521(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_FIRST_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_FIRST_BYTE
 			);
 
 }
@@ -652,7 +727,7 @@ static void xtest_tee_test_20521(ADBG_Case_t *c)
 /* Corrupt Block File : last byte */
 static void xtest_tee_test_20522(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_LAST_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_LAST_BYTE
 			);
 
 }
@@ -660,7 +735,7 @@ static void xtest_tee_test_20522(ADBG_Case_t *c)
 /* Corrupt Block File : random byte */
 static void xtest_tee_test_20523(ADBG_Case_t *c)
 {
-	storage_corrupt(c, BLOCK_FILE, CORRUPT_FILE_RAND_BYTE
+	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_RAND_BYTE
 			);
 
 }
