@@ -306,6 +306,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	TEEC_Operation op;
 	int n0 = n;
 	struct timespec ts;
+	double sd;
 
 	vverbose("sha-perf version %s\n", TO_STR(VERSION));
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
@@ -354,9 +355,14 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 			vverbose("#");
 	}
 	vverbose("\n");
-	printf("min=%gμs max=%gμs mean=%gμs stddev=%gμs (%gMiB/s)\n",
+	sd = stddev(&stats);
+	printf("min=%gμs max=%gμs mean=%gμs stddev=%gμs (cv %g%%) (%gMiB/s)\n",
 	       stats.min/1000, stats.max/1000, stats.m/1000,
-	       stddev(&stats)/1000, mb_per_sec(size, stats.m));
+	       sd/1000, 100*sd/stats.m, mb_per_sec(size, stats.m));
+	verbose("2-sigma interval: %g..%gμs (%g..%gMiB/s)\n",
+		(stats.m-2*sd)/1000, (stats.m+2*sd)/1000,
+		mb_per_sec(size, stats.m+2*sd),
+		mb_per_sec(size, stats.m-2*sd));
 	free_shm();
 }
 
