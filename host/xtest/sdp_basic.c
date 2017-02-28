@@ -85,6 +85,22 @@ int allocate_ion_buffer(size_t size, int heap_id);
 
 #define DEFAULT_ION_HEAP_TYPE	ION_HEAP_TYPE_UNMAPPED
 
+enum test_target_ta {
+	TEST_NS_TO_TA,
+	TEST_NS_TO_PTA,
+	TEST_TA_TO_TA,
+	TEST_TA_TO_PTA,
+};
+
+/* use SelfTest pseudo TA from OP-TEE core */
+#define PTA_SELF_TEST_UUID \
+		{ 0xd96a5b40, 0xc3e5, 0x21e3, \
+			{ 0x87, 0x94, 0x10, 0x02, 0xa5, 0xd5, 0xc6, 0x1b } }
+
+#define PTA_SELF_TEST_CMD_INJECT_SDP		3
+#define PTA_SELF_TEST_CMD_TRANSFORM_SDP		4
+#define PTA_SELF_TEST_CMD_DUMP_SDP		5
+
 /*
  * Warm when nonsecure maps SDP buffer and found unexpected content.
  * Since mapping SDP buffers from nonsecure is unsafe, such accesses
@@ -149,20 +165,36 @@ static void finalize_tee_ctx(struct tee_ctx *ctx)
 	TEEC_FinalizeContext(&ctx->ctx);
 }
 
-static int create_tee_ctx(struct tee_ctx *ctx)
+static int create_tee_ctx(struct tee_ctx *ctx, enum test_target_ta target_ta)
 {
 	TEEC_Result teerc;
-	TEEC_UUID uuid = TA_SDP_BASIC_UUID;
+	TEEC_UUID ta_uuid = TA_SDP_BASIC_UUID;
+	TEEC_UUID pta_uuid = PTA_SELF_TEST_UUID;
+	TEEC_UUID *uuid;
 	uint32_t err_origin;
+
+	switch (target_ta) {
+	case TEST_NS_TO_TA:
+	case TEST_TA_TO_TA:
+	case TEST_TA_TO_PTA:
+		uuid = &ta_uuid;
+		break;
+	case TEST_NS_TO_PTA:
+		uuid = &pta_uuid;
+		break;
+	default:
+		return -1;
+	}
 
 	teerc = TEEC_InitializeContext(NULL, &ctx->ctx);
 	if (teerc != TEEC_SUCCESS)
 		return -1;
 
-	teerc = TEEC_OpenSession(&ctx->ctx, &ctx->sess, &uuid,
+	teerc = TEEC_OpenSession(&ctx->ctx, &ctx->sess, uuid,
 			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
 	if (teerc != TEEC_SUCCESS)
-		fprintf(stderr, "Error: open session to SDP test TA failed %x %d\n",
+		fprintf(stderr, "Error: open session to target test %s failed %x %d\n",
+			(target_ta == TEST_NS_TO_PTA) ? "pTA" : "TA",
 			teerc, err_origin);
 
 	return (teerc == TEEC_SUCCESS) ? 0 : -1;
@@ -207,8 +239,24 @@ static int inject_sdp_data(struct tee_ctx *ctx,
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
-	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_INJECT :
-				TA_SDP_BASIC_CMD_INJECT;
+	unsigned cmd;
+
+	switch (ind) {
+	case TEST_NS_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_INJECT;
+		break;
+	case TEST_TA_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_INVOKE_INJECT;
+		break;
+	case TEST_TA_TO_PTA:
+		cmd = TA_SDP_BASIC_CMD_PTA_INJECT;
+		break;
+	case TEST_NS_TO_PTA:
+		cmd = PTA_SELF_TEST_CMD_INJECT_SDP;
+		break;
+	default:
+		return -1;
+	}
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
@@ -237,8 +285,24 @@ static int transform_sdp_data(struct tee_ctx *ctx,
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
-	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_TRANSFORM :
-				TA_SDP_BASIC_CMD_TRANSFORM;
+	unsigned cmd;
+
+	switch (ind) {
+	case TEST_NS_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_TRANSFORM;
+		break;
+	case TEST_TA_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_INVOKE_TRANSFORM;
+		break;
+	case TEST_TA_TO_PTA:
+		cmd = TA_SDP_BASIC_CMD_PTA_TRANSFORM;
+		break;
+	case TEST_NS_TO_PTA:
+		cmd = PTA_SELF_TEST_CMD_TRANSFORM_SDP;
+		break;
+	default:
+		return -1;
+	}
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INOUT,
@@ -262,8 +326,24 @@ static int dump_sdp_data(struct tee_ctx *ctx,
 	TEEC_Result teerc;
 	TEEC_Operation op;
 	uint32_t err_origin;
-	unsigned cmd = ind ? TA_SDP_BASIC_CMD_INVOKE_DUMP :
-				TA_SDP_BASIC_CMD_DUMP;
+	unsigned cmd;
+
+	switch (ind) {
+	case TEST_NS_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_DUMP;
+		break;
+	case TEST_TA_TO_TA:
+		cmd = TA_SDP_BASIC_CMD_INVOKE_DUMP;
+		break;
+	case TEST_TA_TO_PTA:
+		cmd = TA_SDP_BASIC_CMD_PTA_DUMP;
+		break;
+	case TEST_NS_TO_PTA:
+		cmd = PTA_SELF_TEST_CMD_DUMP_SDP;
+		break;
+	default:
+		return -1;
+	}
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
@@ -357,7 +437,9 @@ static int get_random_bytes(char *out, size_t len)
 }
 
 
-static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset)
+static int sdp_basic_test(enum test_target_ta ta,
+			  size_t size, size_t loop, int ion_heap,
+			  int rnd_offset)
 {
 	struct tee_ctx *ctx = NULL;
 	unsigned char *test_buf = NULL;
@@ -396,7 +478,7 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 	ctx = malloc(sizeof(*ctx));
 	if (!ctx)
 		goto out;
-	if (create_tee_ctx(ctx))
+	if (create_tee_ctx(ctx, ta))
 		goto out;
 	if (tee_register_buffer(ctx, &shm_ref, fd))
 		goto out;
@@ -415,43 +497,15 @@ static int sdp_basic_test(size_t size, size_t loop, int ion_heap, int rnd_offset
 		offset = (unsigned int)*ref_buf;
 
 		/* TA writes into SDP buffer */
-		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, 0))
+		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, ta))
 			goto out;
 
 		/* TA reads/writes into SDP buffer */
-		if (transform_sdp_data(ctx, offset, size, shm_ref, 0))
+		if (transform_sdp_data(ctx, offset, size, shm_ref, ta))
 			goto out;
 
 		/* TA reads into SDP buffer */
-		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, 0))
-			goto out;
-
-		/* check dumped data are the expected ones */
-		if (check_sdp_dumped(ctx, ref_buf, size, test_buf)) {
-			fprintf(stderr, "check SDP data: %d errors\n", err);
-			goto out;
-		}
-	}
-
-	/* invoke trusted application with secure buffer as memref parameter */
-	for (loop_cnt = loop; loop_cnt; loop_cnt--) {
-		/* get an buffer of random-like values */
-		if (get_random_bytes((char *)ref_buf, size))
-			goto out;
-		memcpy(test_buf, ref_buf, size);
-		/* random offset [0 255] */
-		offset = (unsigned int)*ref_buf;
-
-		/* TA writes into SDP buffer */
-		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, 1))
-			goto out;
-
-		/* TA reads/writes into SDP buffer */
-		if (transform_sdp_data(ctx, offset, size, shm_ref, 1))
-			goto out;
-
-		/* TA reads into SDP buffer */
-		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, 1))
+		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, ta))
 			goto out;
 
 		/* check dumped data are the expected ones */
@@ -544,10 +598,21 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
-	verbose("Secure Data Path basic accesses from trusted applications\n");
-
 	warm_ns_access = 1;
-	if (sdp_basic_test(test_size, test_loop, ion_heap, rnd_offset))
+
+	verbose("\nSecure Data Path basic accesses: NS invokes SDP TA\n");
+	if (sdp_basic_test(TEST_NS_TO_TA,
+			   test_size, test_loop, ion_heap, rnd_offset))
+		return 1;
+
+	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP TA\n");
+	if (sdp_basic_test(TEST_TA_TO_TA,
+			   test_size, test_loop, ion_heap, rnd_offset))
+		return 1;
+
+	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP pTA\n");
+	if (sdp_basic_test(TEST_TA_TO_PTA,
+			   test_size, test_loop, ion_heap, rnd_offset))
 		return 1;
 
 	return 0;
