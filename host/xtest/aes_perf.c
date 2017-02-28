@@ -148,8 +148,7 @@ static const char *mode_str(uint32_t mode)
 static void usage(const char *progname, int keysize, int mode,
 				size_t size, int warmup, unsigned int l, unsigned int n)
 {
-	fprintf(stderr, "AES performance testing tool for OP-TEE (%s)\n\n",
-		TO_STR(VERSION));
+	fprintf(stderr, "AES performance testing tool for OP-TEE\n\n");
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "  %s -h\n", progname);
 	fprintf(stderr, "  %s [-v] [-m mode] [-k keysize] ", progname);
@@ -312,7 +311,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	TEEC_Operation op;
 	int n0 = n;
 
-	vverbose("aes-perf version %s\n", TO_STR(VERSION));
+	vverbose("aes-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -359,7 +358,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 			vverbose("#");
 	}
 	vverbose("\n");
-	printf("min=%gμs max=%gμs mean=%gμs stddev=%gμs (%gMiB/s)\n",
+	printf("min=%gus max=%gus mean=%gus stddev=%gus (%gMiB/s)\n",
 	       stats.min/1000, stats.max/1000, stats.m/1000,
 	       stddev(&stats)/1000, mb_per_sec(size, stats.m));
 	free_shm();
@@ -456,7 +455,6 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			return 1;
 		}
 	}
-
 
 	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
 					in_place, warmup, verbosity);
