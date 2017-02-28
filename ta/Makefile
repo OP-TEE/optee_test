@@ -25,6 +25,7 @@ TA_DIRS := create_fail_test \
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
+TA_DIRS += sdp_perf
 endif
 
 ifdef CFG_GP_PACKAGE_PATH

@@ -56,6 +56,7 @@ void usage(char *program)
 	printf("\n");
 #ifdef WITH_SECURE_DATA_PATH
 	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");
+	printf("\t--sdp-perf         AES performance tests over SDP buffers ('-h' for usage)\n");
 #endif
 	printf("\n");
 }
@@ -83,6 +84,8 @@ int main(int argc, char *argv[])
 #ifdef WITH_SECURE_DATA_PATH
 	else if (argc > 1 && !strcmp(argv[1], "--sdp-basic"))
 		return sdp_basic_runner_cmd_parser(argc-1, &argv[1]);
+	else if (argc > 1 && !strcmp(argv[1], "--sdp-perf"))
+		return sdp_perf_runner_cmd_parser(argc-1, &argv[1]);
 #endif
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
