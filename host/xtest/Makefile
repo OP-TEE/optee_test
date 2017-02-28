@@ -53,8 +53,6 @@ srcs += xtest_4000.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c
 
-CFLAGS += -D_GNU_SOURCE
-
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 

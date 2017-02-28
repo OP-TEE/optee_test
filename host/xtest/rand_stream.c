@@ -22,8 +22,7 @@
 #define STREAM_BUF_MIN_SIZE	4
 
 struct rand_stream {
-	struct random_data random_data;
-	char state_buf[128];
+	int32_t seed;
 	uint8_t word_buf[4];
 	size_t w_offs;
 	size_t sb_size;
@@ -42,12 +41,7 @@ struct rand_stream *rand_stream_alloc(int seed, size_t stream_buffer_size)
 	rs->sb_size = sb_size;;
 	rs->sb_offs = rs->sb_size;
 	rs->w_offs = sizeof(rs->word_buf);
-
-	if (initstate_r(seed, rs->state_buf, sizeof(rs->state_buf),
-			&rs->random_data)) {
-		free(rs);
-		return NULL;
-	}
+	rs->seed = seed;
 
 	return rs;
 }
@@ -62,6 +56,13 @@ static void get_random(struct rand_stream *rs, uint8_t *buf, size_t blen)
 	uint8_t *b = buf;
 	size_t l = blen;
 
+
+	/*
+	 * This function uses an LCG,
+	 * https://en.wikipedia.org/wiki/Linear_congruential_generator
+	 * to generate the byte stream.
+	 */
+
 	while (l) {
 		size_t t = MIN(sizeof(rs->word_buf) - rs->w_offs, l);
 
@@ -71,10 +72,8 @@ static void get_random(struct rand_stream *rs, uint8_t *buf, size_t blen)
 		b += t;
 
 		if (rs->w_offs == sizeof(rs->word_buf)) {
-			int32_t r;
-
-			random_r(&rs->random_data, &r);
-			memcpy(rs->word_buf, &r, sizeof(r));
+			rs->seed = rs->seed * 1103515245 + 12345;
+			memcpy(rs->word_buf, &rs->seed, sizeof(rs->seed));
 			rs->w_offs = 0;
 		}
 	}
