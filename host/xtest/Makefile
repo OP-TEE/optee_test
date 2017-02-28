@@ -55,6 +55,12 @@ srcs += xtest_4000.c \
 
 CFLAGS += -D_GNU_SOURCE
 
+ifeq ($(CFG_SECURE_DATA_PATH),y)
+CFLAGS += -DWITH_SECURE_DATA_PATH
+
+srcs += sdp_basic.c
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 
@@ -86,6 +92,9 @@ CFLAGS += -I../../ta/concurrent_large/include
 CFLAGS += -I../../ta/sha_perf/include
 CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
+ifeq ($(CFG_SECURE_DATA_PATH),y)
+CFLAGS += -I../../ta/sdp_basic/include
+endif
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical
 CFLAGS += -I../../ta/GP_TTA_Crypto
