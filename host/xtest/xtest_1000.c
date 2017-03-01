@@ -400,7 +400,11 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 }
 
 #ifndef TA_DIR
+# ifdef __ANDROID__
+#define TA_DIR "/system/lib/optee_armtz"
+# else
 #define TA_DIR "/lib/optee_armtz"
+# endif
 #endif
 
 #ifndef TA_TEST_DIR
