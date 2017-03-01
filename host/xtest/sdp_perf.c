@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Linaro Limited
+ * Copyright (c) 2015-2016, Linaro Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>
@@ -34,19 +32,66 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <tee_client_api.h>
+#include <tee_client_api_extensions.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <tee_client_api.h>
-#include "ta_aes_perf.h"
+#include "ta_sdp_perf.h"
 #include "crypto_common.h"
 
-/*
- * TEE client stuff
- */
+#include "include/uapi/linux/ion.h"
+
+#define DEFAULT_ION_HEAP_TYPE	ION_HEAP_TYPE_UNMAPPED
 
 static TEEC_Context ctx;
 static TEEC_Session sess;
+static int verbosity;
+
+int sdp_basic_test(size_t len, unsigned int loop, int verbosity);
+
+/*
+ * Resources in case using secure buffers.
+ *
+ * SDP_BUFFER_DISABLE		buffer not allocated in secure share memory
+ * SDP_BUFFER_REGISTER		secure buffer, registered to TEE at TA invoc.
+ * SDP_BUFFER_PREREGISTERED	secure buffer, registered once to TEE.
+ *
+ * Default tested decryption from TEE: nonsec input buf, secure output buf.
+ */
+#define SDP_BUFFER_DISABLE		0
+#define SDP_BUFFER_REGISTER		1
+#define SDP_BUFFER_PREREGISTERED	2
+
+static int input_sdp_buffer = SDP_BUFFER_DISABLE;
+static int input_sdp_fd;
+static int output_sdp_buffer = SDP_BUFFER_PREREGISTERED;
+static int output_sdp_fd;
+static int ion_heap = DEFAULT_ION_HEAP_TYPE;
+
+static const char *buf_status_str(int buf)
+{
+	static const char prereg[] = "Secure memory, registered once to TEE";
+	static const char reg[] = "Secure memory, registered at each TEE invoke";
+	static const char unsec[] = "Non secure memory";
+	static const char inval[] = "UNEXPECTED";
+
+	switch (buf) {
+	case SDP_BUFFER_PREREGISTERED:
+		return prereg;
+	case SDP_BUFFER_REGISTER:
+		return reg;
+	case SDP_BUFFER_DISABLE:
+		return unsec;
+	default:
+		return inval;
+	}
+}
+
 /*
  * in_shm and out_shm are both IN/OUT to support dynamically choosing
  * in_place == 1 or in_place == 0.
@@ -60,7 +105,7 @@ static TEEC_SharedMemory out_shm = {
 
 static void errx(const char *msg, TEEC_Result res)
 {
-	fprintf(stderr, "%s: 0x%08x", msg, res);
+	fprintf(stderr, "%s: 0x%08x\n", msg, res);
 	exit (1);
 }
 
@@ -73,7 +118,7 @@ static void check_res(TEEC_Result res, const char *errmsg)
 static void open_ta(void)
 {
 	TEEC_Result res;
-	TEEC_UUID uuid = TA_AES_PERF_UUID;
+	TEEC_UUID uuid = TA_SDP_PERF_UUID;
 	uint32_t err_origin;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
@@ -129,63 +174,91 @@ static double stddev(struct statistics *s)
 static const char *mode_str(uint32_t mode)
 {
 	switch (mode) {
-	case TA_AES_ECB:
+	case TA_SDP_ECB:
 		return "ECB";
-	case TA_AES_CBC:
+	case TA_SDP_CBC:
 		return "CBC";
-	case TA_AES_CTR:
+	case TA_SDP_CTR:
 		return "CTR";
-	case TA_AES_XTS:
+	case TA_SDP_XTS:
 		return "XTS";
 	default:
 		return "???";
 	}
 }
 
+/* reuse allocate_ion_buffer() from 'sdp_basic.c' */
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
 static void usage(const char *progname, int keysize, int mode,
-				size_t size, int warmup, unsigned int l, unsigned int n)
+				size_t size, int warmup,
+				unsigned int l, unsigned int n)
 {
-	fprintf(stderr, "AES performance testing tool for OP-TEE\n\n");
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "  %s -h\n", progname);
-	fprintf(stderr, "  %s [-v] [-m mode] [-k keysize] ", progname);
-	fprintf(stderr, "[-s bufsize] [-r] [-i] [-n loops] [-l iloops] \n");
-	fprintf(stderr, "[-w warmup_time]\n");
+	fprintf(stderr, "Usage: %s [OPTIONS]\n", progname);
+	fprintf(stderr, "Testing AES performance over OP-TEE SDP buffers\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -h    Print this help and exit\n");
-	fprintf(stderr, "  -i    Use same buffer for input and output (in ");
-	fprintf(stderr, "place)\n");
-	fprintf(stderr, "  -k    Key size in bits: 128, 192 or 256 [%u]\n",
-			keysize);
-	fprintf(stderr, "  -l    Inner loop iterations (TA calls ");
-	fprintf(stderr, "TEE_CipherUpdate() <x> times) [%u]\n", l);
-	fprintf(stderr, "  -m    AES mode: ECB, CBC, CTR, XTS [%s]\n",
-			mode_str(mode));
-	fprintf(stderr, "  -n    Outer loop iterations [%u]\n", n);
-	fprintf(stderr, "  -r    Get input data from /dev/urandom ");
-	fprintf(stderr, "(otherwise use zero-filled buffer)\n");
-	fprintf(stderr, "  -s    Buffer size (process <x> bytes at a time) ");
-	fprintf(stderr, "[%zu]\n", size);
-	fprintf(stderr, "  -v    Be verbose (use twice for greater effect)\n");
-	fprintf(stderr, "  -w    Warm-up time in seconds: execute a busy ");
-	fprintf(stderr, "loop before the test\n");
-	fprintf(stderr, "        to mitigate the effects of cpufreq etc. ");
-	fprintf(stderr, "[%u]\n", warmup);
+	fprintf(stderr, "  -h|--help Print this help and exit\n");
+	fprintf(stderr, "  -v        Be verbose (use twice for greater effect)\n");
+	fprintf(stderr, "  -m MODE   AES mode: ECB, CBC, CTR, XTS [%s]\n", mode_str(mode));
+	fprintf(stderr, "  -d        Test AES decryption instead of encryption\n");
+	fprintf(stderr, "  -k SIZE   Key size in bits: 128, 192 or 256 [%u]\n", keysize);
+	fprintf(stderr, "  -s SIZE   Test buffer size in bytes [%zu]\n", size);
+	fprintf(stderr, "  -l LOOP   Inner loop iterations (TA calls TEE_CipherUpdate() <x> times) [%u]\n", l);
+	fprintf(stderr, "  -n LOOP   Outer test loop iterations [%u]\n", n);
+	fprintf(stderr, "  -r        Get input data from /dev/urandom (otherwise use zero-filled buffer)\n");
+	fprintf(stderr, "  -I...     AES input test buffer management [%s]\n", buf_status_str(input_sdp_buffer));
+	fprintf(stderr, "  -O...     AES output test buffer management [%s]\n", buf_status_str(output_sdp_buffer));
+	fprintf(stderr, "            -Id / -Od : allocate a non secure buffer\n");
+	fprintf(stderr, "            -Ir / -Or : secure buffer, registered at each TA invokation\n");
+	fprintf(stderr, "            -IR / -OR : secure buffer, registered once in TEE\n");
+	fprintf(stderr, "  --ion-heap ID    set target ION heap ID [%d]\n", ion_heap);
+	fprintf(stderr, "  -i|--in-place    Use same buffer for input and output (decrypt in place)\n");
+	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds [%u]\n", warmup);
 }
 
+int allocate_ion_buffer(size_t size, int ion_heap);
+static int allocate_sdp_buffer(size_t size)
+{
+	return allocate_ion_buffer(size, ion_heap);
+}
+
+static void register_shm(TEEC_SharedMemory *shm, int fd)
+{
+	TEEC_Result res = TEEC_RegisterSharedMemoryFileDescriptor(&ctx, shm, fd);
+
+	check_res(res, "TEEC_RegisterSharedMemoryFileDescriptor");
+}
+
+/* initial test buffer allocation (eventual registering to TEEC) */
 static void alloc_shm(size_t sz, int in_place)
 {
 	TEEC_Result res;
 
-	in_shm.buffer = NULL;
-	in_shm.size = sz;
-	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
-	check_res(res, "TEEC_AllocateSharedMemory");
+	if (input_sdp_buffer != SDP_BUFFER_DISABLE) {
+		input_sdp_fd = allocate_sdp_buffer(sz);
+		if (input_sdp_buffer == SDP_BUFFER_PREREGISTERED) {
+			register_shm(&in_shm, input_sdp_fd);
+			close(input_sdp_fd);
+		}
+	} else {
+		in_shm.buffer = NULL;
+		in_shm.size = sz;
+		res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
+		check_res(res, "TEEC_AllocateSharedMemory");
+	}
 
-	if (!in_place) {
+	if (in_place)
+		return;
+
+	if (output_sdp_buffer != SDP_BUFFER_DISABLE) {
+		output_sdp_fd = allocate_sdp_buffer(sz);
+		if (output_sdp_buffer == SDP_BUFFER_PREREGISTERED) {
+			register_shm(&out_shm, output_sdp_fd);
+			close(output_sdp_fd);
+		}
+	} else {
 		out_shm.buffer = NULL;
 		out_shm.size = sz;
 		res = TEEC_AllocateSharedMemory(&ctx, &out_shm);
@@ -193,10 +266,21 @@ static void alloc_shm(size_t sz, int in_place)
 	}
 }
 
-static void free_shm(void)
+/* final test buffer release */
+static void free_shm(int in_place)
 {
-	TEEC_ReleaseSharedMemory(&in_shm);
-	TEEC_ReleaseSharedMemory(&out_shm);
+	if (input_sdp_buffer == SDP_BUFFER_PREREGISTERED)
+		close(input_sdp_buffer);
+	if (input_sdp_buffer != SDP_BUFFER_REGISTER)
+		TEEC_ReleaseSharedMemory(&in_shm);
+
+	if (in_place)
+		return;
+
+	if (output_sdp_buffer == SDP_BUFFER_PREREGISTERED)
+		close(output_sdp_buffer);
+	if (output_sdp_buffer != SDP_BUFFER_REGISTER)
+		TEEC_ReleaseSharedMemory(&out_shm);
 }
 
 static ssize_t read_random(void *in, size_t rsize)
@@ -217,8 +301,7 @@ static ssize_t read_random(void *in, size_t rsize)
 		return 1;
 	}
 	if ((size_t)s != rsize) {
-		printf("read: requested %zu bytes, got %zd\n",
-		       rsize, s);
+		verbose("read: requested %zu bytes, got %zd\n", rsize, s);
 	}
 
 	return 0;
@@ -242,22 +325,18 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return timespec_to_ns(end) - timespec_to_ns(start);
 }
 
-static uint64_t run_test_once(void *in, size_t size, TEEC_Operation *op,
-			  int random_in)
+static void run_feed_input(void *in, size_t size, int random_in)
 {
-	struct timespec t0, t1;
-	TEEC_Result res;
-	uint32_t ret_origin;
+	if (random_in && (input_sdp_buffer != SDP_BUFFER_DISABLE)) {
+		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
+						input_sdp_fd, 0);
 
-	if (random_in)
+		if (data != MAP_FAILED) {
+			read_random(data, size);
+			munmap(data, size);
+		}
+	} else if (random_in)
 		read_random(in, size);
-	get_current_time(&t0);
-	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PROCESS, op,
-				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand");
-	get_current_time(&t1);
-
-	return timespec_diff_ns(&t0, &t1);
 }
 
 static void prepare_key(int decrypt, int keysize, int mode)
@@ -272,7 +351,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 	op.params[0].value.a = decrypt;
 	op.params[0].value.b = keysize;
 	op.params[1].value.a = mode;
-	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PREPARE_KEY, &op,
+	res = TEEC_InvokeCommand(&sess, TA_SDP_PERF_CMD_PREPARE_KEY, &op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand");
 }
@@ -301,23 +380,25 @@ static double mb_per_sec(size_t size, double usec)
 }
 
 /* Encryption test: buffer of tsize byte. Run test n times. */
-void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
+static void sdp_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 				unsigned int n, unsigned int l, int random_in,
-				int in_place, int warmup, int verbosity)
+				int in_place, int warmup, int verbosity_level)
 {
-	uint64_t t;
 	struct statistics stats;
 	struct timespec ts;
 	TEEC_Operation op;
 	int n0 = n;
 
-	vverbose("aes-perf\n");
+	verbosity = verbosity_level;
+
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
 	}
-	vverbose("Clock resolution is %lu ns\n", ts.tv_sec*1000000000 +
-		ts.tv_nsec);
+	vverbose("Clock resolution is %lu ns\n",
+					ts.tv_sec * 1000000000 + ts.tv_nsec);
+	vverbose("input test buffer:  %s\n", buf_status_str(input_sdp_buffer));
+	vverbose("output test buffer: %s\n", buf_status_str(output_sdp_buffer));
 
 	open_ta();
 	prepare_key(decrypt, keysize, mode);
@@ -326,19 +407,26 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 
 	alloc_shm(size, in_place);
 
-	if (!random_in)
+	if (!random_in && (input_sdp_buffer != SDP_BUFFER_DISABLE)) {
+		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
+						input_sdp_fd, 0);
+
+		if (data == MAP_FAILED) {
+			printf("Warning: cannot mmap SDP input buffer\n");
+		} else {
+			memset(in_shm.buffer, 0, size);
+			munmap(data, size);
+		}
+	} else if (!random_in)
 		memset(in_shm.buffer, 0, size);
 
 	memset(&op, 0, sizeof(op));
-	/* Using INOUT to handle the case in_place == 1 */
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INOUT,
-					 TEEC_MEMREF_PARTIAL_INOUT,
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
+					 TEEC_MEMREF_PARTIAL_OUTPUT,
 					 TEEC_VALUE_INPUT, TEEC_NONE);
 	op.params[0].memref.parent = &in_shm;
-	op.params[0].memref.offset = 0;
 	op.params[0].memref.size = size;
 	op.params[1].memref.parent = in_place ? &in_shm : &out_shm;
-	op.params[1].memref.offset = 0;
 	op.params[1].memref.size = size;
 	op.params[2].value.a = l;
 
@@ -352,8 +440,31 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		do_warmup(warmup);
 
 	while (n-- > 0) {
-		t = run_test_once(in_shm.buffer, size, &op, random_in);
-		update_stats(&stats, t);
+		TEEC_Result res;
+		uint32_t ret_origin;
+		struct timespec t0, t1;
+
+		run_feed_input(in_shm.buffer, size, random_in);
+
+		get_current_time(&t0);
+
+		if (input_sdp_buffer == SDP_BUFFER_REGISTER)
+			register_shm(&in_shm, input_sdp_fd);
+		if (output_sdp_buffer == SDP_BUFFER_REGISTER)
+			register_shm(&out_shm, output_sdp_fd);
+
+		res = TEEC_InvokeCommand(&sess, TA_SDP_PERF_CMD_PROCESS,
+					 &op, &ret_origin);
+		check_res(res, "TEEC_InvokeCommand");
+
+		if (input_sdp_buffer == SDP_BUFFER_REGISTER)
+			TEEC_ReleaseSharedMemory(&in_shm);
+		if (output_sdp_buffer == SDP_BUFFER_REGISTER)
+			TEEC_ReleaseSharedMemory(&out_shm);
+
+		get_current_time(&t1);
+
+		update_stats(&stats, timespec_diff_ns(&t0, &t1));
 		if (n % (n0/10) == 0)
 			vverbose("#");
 	}
@@ -361,7 +472,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	printf("min=%gus max=%gus mean=%gus stddev=%gus (%gMiB/s)\n",
 	       stats.min/1000, stats.max/1000, stats.m/1000,
 	       stddev(&stats)/1000, mb_per_sec(size, stats.m));
-	free_shm();
+
+	free_shm(in_place);
 }
 
 #define NEXT_ARG(i) \
@@ -373,7 +485,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		} \
 	} while (0);
 
-int aes_perf_runner_cmd_parser(int argc, char *argv[])
+int sdp_perf_runner_cmd_parser(int argc, char *argv[])
 {
 	int i;
 
@@ -384,7 +496,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	size_t size = 1024;	/* Buffer size (-s) */
 	unsigned int n = CRYPTO_DEF_COUNT; /*Number of measurements (-n)*/
 	unsigned int l = CRYPTO_DEF_LOOPS; /* Inner loops (-l) */
-	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
+	int verbosity_level = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
 	int decrypt = 0;		/* Encrypt by default, -d to decrypt */
 	int keysize = AES_128;	/* AES key size (-k) */
 	int mode = TA_AES_ECB;	/* AES mode (-m) */
@@ -396,7 +508,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-h")) {
+		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			usage(argv[0], keysize, mode, size, warmup, l, n);
 			return 0;
 		}
@@ -404,7 +516,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-d")) {
 			decrypt = 1;
-		} else if (!strcmp(argv[i], "-i")) {
+		} else if (!strcmp(argv[i], "--in-place") ||
+			   !strcmp(argv[i], "-i")) {
 			in_place = 1;
 		} else if (!strcmp(argv[i], "-k")) {
 			NEXT_ARG(i);
@@ -422,13 +535,13 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-m")) {
 			NEXT_ARG(i);
 			if (!strcasecmp(argv[i], "ECB"))
-				mode = TA_AES_ECB;
+				mode = TA_SDP_ECB;
 			else if (!strcasecmp(argv[i], "CBC"))
-				mode = TA_AES_CBC;
+				mode = TA_SDP_CBC;
 			else if (!strcasecmp(argv[i], "CTR"))
-				mode = TA_AES_CTR;
+				mode = TA_SDP_CTR;
 			else if (!strcasecmp(argv[i], "XTS"))
-				mode = TA_AES_XTS;
+				mode = TA_SDP_XTS;
 			else {
 				fprintf(stderr, "%s, invalid mode\n",
 					argv[0]);
@@ -443,9 +556,25 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);
+		} else if (!strcmp(argv[i], "-IR")) {
+			input_sdp_buffer = SDP_BUFFER_PREREGISTERED;
+		} else if (!strcmp(argv[i], "-OR")) {
+			output_sdp_buffer = SDP_BUFFER_PREREGISTERED;
+		} else if (!strcmp(argv[i], "-Ir")) {
+			input_sdp_buffer = SDP_BUFFER_REGISTER;
+		} else if (!strcmp(argv[i], "-Or")) {
+			output_sdp_buffer = SDP_BUFFER_REGISTER;
+		} else if (!strcmp(argv[i], "-Id")) {
+			input_sdp_buffer = SDP_BUFFER_DISABLE;
+		} else if (!strcmp(argv[i], "-Od")) {
+			output_sdp_buffer = SDP_BUFFER_DISABLE;
 		} else if (!strcmp(argv[i], "-v")) {
-			verbosity++;
-		} else if (!strcmp(argv[i], "-w")) {
+			verbosity_level++;
+		} else if (!strcmp(argv[i], "--ion-heap")) {
+			NEXT_ARG(i);
+			ion_heap = atoi(argv[i]);
+		} else if (!strcmp(argv[i], "--warmup") ||
+			   !strcmp(argv[i], "-w")) {
 			NEXT_ARG(i);
 			warmup = atoi(argv[i]);
 		} else {
@@ -455,9 +584,16 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			return 1;
 		}
 	}
+	if (size & (16 - 1)) {
+		fprintf(stderr, "invalid buffer size argument, must be a multiple of 16\n\n");
+			usage(argv[0], keysize, mode, size, warmup, l, n);
+			return 1;
+	}
 
-	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
-					in_place, warmup, verbosity);
+	verbosity = verbosity_level;
+
+	sdp_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
+					in_place, warmup, verbosity_level);
 
 	return 0;
 }

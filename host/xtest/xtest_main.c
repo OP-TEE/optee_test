@@ -49,10 +49,15 @@ void usage(char *program)
 	printf("\t-h                 show usage\n");
 	printf("applets:\n");
 	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
-	printf("\t--sha perf -h      show usage of SHA performance testing tool\n");
+	printf("\t--sha-perf -h      show usage of SHA performance testing tool\n");
 	printf("\n");
 	printf("\t--aes-perf         AES performance testing tool for OP-TEE\n");
-	printf("\t--aes perf -h      show usage of AES performance testing tool\n");
+	printf("\t--aes-perf -h      show usage of AES performance testing tool\n");
+	printf("\n");
+#ifdef WITH_SECURE_DATA_PATH
+	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");
+	printf("\t--sdp-perf         AES performance tests over SDP buffers ('-h' for usage)\n");
+#endif
 	printf("\n");
 }
 
@@ -76,6 +81,12 @@ int main(int argc, char *argv[])
 		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
 	else if (argc > 1 && !strcmp(argv[1], "--aes-perf"))
 		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
+#ifdef WITH_SECURE_DATA_PATH
+	else if (argc > 1 && !strcmp(argv[1], "--sdp-basic"))
+		return sdp_basic_runner_cmd_parser(argc-1, &argv[1]);
+	else if (argc > 1 && !strcmp(argv[1], "--sdp-perf"))
+		return sdp_perf_runner_cmd_parser(argc-1, &argv[1]);
+#endif
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
 		switch (opt) {

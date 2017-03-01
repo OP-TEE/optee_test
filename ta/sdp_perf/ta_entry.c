@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright (c) 2016, Linaro Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,30 +25,49 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef USER_TA_HEADER_DEFINES_H
-#define USER_TA_HEADER_DEFINES_H
+#include <tee_ta_api.h>
 
-#include <stdint.h>
-#include <ta_os_test.h>
-#include <user_ta_header.h>
+#include "ta_sdp_perf.h"
+#include "ta_sdp_perf_priv.h"
 
-#define TA_UUID TA_OS_TEST_UUID
+TEE_Result TA_CreateEntryPoint(void)
+{
+	return TEE_SUCCESS;
+}
 
-#define TA_FLAGS (TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
-		  TA_FLAG_MULTI_SESSION)
+void TA_DestroyEntryPoint(void)
+{
+}
 
-#define TA_STACK_SIZE (8 * 1024)
-#define TA_DATA_SIZE (900 * 1024)
+TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
+				    TEE_Param pParams[TEE_NUM_PARAMS],
+				    void **ppSessionContext)
+{
+	(void)nParamTypes;
+	(void)pParams;
+	(void)ppSessionContext;
+	return TEE_SUCCESS;
+}
 
-#define TA_CURRENT_TA_EXT_PROPERTIES \
-	{ "myprop.true", USER_TA_PROP_TYPE_BOOL, &(const bool){ true } }, \
-	{ "myprop.42",   USER_TA_PROP_TYPE_U32,  &(const uint32_t){ 42 } }, \
-	{ "myprop.123",  USER_TA_PROP_TYPE_UUID, \
-		&(const TEE_UUID) {1, 2, 3 } }, \
-	{ "myprop.1234", USER_TA_PROP_TYPE_IDENTITY, \
-		&(const TEE_Identity) { 1, { 2, 3, 4 } } }, \
-	{ "myprop.hello", USER_TA_PROP_TYPE_STRING, \
-		"hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong" }, \
-	{ "myprop.binaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "SGVsbG8gd29ybGQh" },
-#endif
+void TA_CloseSessionEntryPoint(void *pSessionContext)
+{
+	(void)pSessionContext;
+	cmd_clean_res();
+}
+
+TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
+				      uint32_t nCommandID, uint32_t nParamTypes,
+				      TEE_Param pParams[TEE_NUM_PARAMS])
+{
+	(void)pSessionContext;
+
+	switch (nCommandID) {
+	case TA_SDP_PERF_CMD_PREPARE_KEY:
+		return cmd_prepare_key(nParamTypes, pParams);
+	case TA_SDP_PERF_CMD_PROCESS:
+		return cmd_process(nParamTypes, pParams);
+
+	default:
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+}

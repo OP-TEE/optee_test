@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright (c) 2016, Linaro Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,30 +25,28 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef USER_TA_HEADER_DEFINES_H
-#define USER_TA_HEADER_DEFINES_H
+#ifndef TA_SDP_PERF_H
+#define TA_SDP_PERF_H
 
-#include <stdint.h>
-#include <ta_os_test.h>
-#include <user_ta_header.h>
+#define TA_SDP_PERF_UUID { 0x12345678, 0x5b69, 0x11e4, \
+	{ 0x9d, 0xbb, 0x10, 0x1f, 0x74, 0xf0, 0x00, 0x66 } }
 
-#define TA_UUID TA_OS_TEST_UUID
+#define TA_SDP_PERF_CMD_PREPARE_KEY	0
+#define TA_SDP_PERF_CMD_PROCESS		1
 
-#define TA_FLAGS (TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
-		  TA_FLAG_MULTI_SESSION)
+/*
+ * Supported AES modes of operation
+ */
+#define TA_SDP_ECB	0
+#define TA_SDP_CBC	1
+#define TA_SDP_CTR	2
+#define TA_SDP_XTS	3
 
-#define TA_STACK_SIZE (8 * 1024)
-#define TA_DATA_SIZE (900 * 1024)
+/*
+ * AES key sizes
+ */
+#define AES_128	128
+#define AES_192	192
+#define AES_256	256
 
-#define TA_CURRENT_TA_EXT_PROPERTIES \
-	{ "myprop.true", USER_TA_PROP_TYPE_BOOL, &(const bool){ true } }, \
-	{ "myprop.42",   USER_TA_PROP_TYPE_U32,  &(const uint32_t){ 42 } }, \
-	{ "myprop.123",  USER_TA_PROP_TYPE_UUID, \
-		&(const TEE_UUID) {1, 2, 3 } }, \
-	{ "myprop.1234", USER_TA_PROP_TYPE_IDENTITY, \
-		&(const TEE_Identity) { 1, { 2, 3, 4 } } }, \
-	{ "myprop.hello", USER_TA_PROP_TYPE_STRING, \
-		"hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong" }, \
-	{ "myprop.binaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "SGVsbG8gd29ybGQh" },
-#endif
+#endif /* TA_SDP_PERF_H */

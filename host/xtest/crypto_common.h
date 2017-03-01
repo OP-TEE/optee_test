@@ -68,6 +68,9 @@ void sha_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity);
 
-
+#ifdef WITH_SECURE_DATA_PATH
+int sdp_basic_runner_cmd_parser(int argc, char *argv[]);
+int sdp_perf_runner_cmd_parser(int argc, char *argv[]);
+#endif
 
 #endif /* XTEST_CRYPTO_PERF_H */
