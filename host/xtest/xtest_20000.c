@@ -344,6 +344,8 @@ static void get_offs_size(enum tee_fs_htree_type type, size_t idx,
 		sz = BLOCK_SIZE;
 		break;
 	default:
+		*offs = -1UL;
+		sz = -1UL;
 		break;
 	}
 
@@ -384,6 +386,11 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 			 ta_dirname, obj_filename);
 
 		get_offs_size(type, block_num, version, &real_offset, NULL);
+		if (real_offset == -1UL) {
+			fprintf(stderr, "invalid type");
+			tee_res = TEEC_ERROR_BAD_PARAMETERS;
+			goto exit;
+		}
 
 		if (offset == CORRUPT_FILE_LAST_BYTE) {
 			if (type == TEE_FS_HTREE_TYPE_HEAD)
