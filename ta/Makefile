@@ -59,5 +59,5 @@ endef
 
 .PHONY: clean
 clean:
-	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) $@ &&) true
+	$(q)$(foreach dir,$(TA_DIRS), [ ! -d $(dir) ] || $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) $@ &&) true
 	$(q)$(foreach dir,$(TA_DIRS), $(call rm-build-subdir,$(dir));)
