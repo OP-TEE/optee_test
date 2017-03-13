@@ -34,12 +34,13 @@
 
 #include <ta_sdp_basic.h>
 
+/* pTA UUID and command IDs dumped from the OP-TEE core */
 #define PTA_SELF_TEST_UUID \
 		{ 0xd96a5b40, 0xc3e5, 0x21e3, \
 			{ 0x87, 0x94, 0x10, 0x02, 0xa5, 0xd5, 0xc6, 0x1b } }
 
 #define PTA_SELF_TEST_CMD_INJECT_SDP		3
-#define PTA_SELF_TEST_CMD_TRANSFORM_SDP	4
+#define PTA_SELF_TEST_CMD_TRANSFORM_SDP		4
 #define PTA_SELF_TEST_CMD_DUMP_SDP		5
 
 /*
@@ -67,7 +68,14 @@ static TEE_Result cmd_inject(uint32_t types,
 	if (params[sec_idx].memref.size < params[ns_idx].memref.size)
 		return TEE_ERROR_SHORT_BUFFER;
 
-	/* intentionally check the overall buffers permissions */
+	/*
+	 * We could rely on the TEE to provide consistent buffer/size values
+	 * to reference a buffer with a unique and consistent secure attribute
+	 * value. Hence it is safe enough (and more optimal) to test only the
+	 * secure attribute of a single byte of it. Yet, since the current
+	 * test does not deal with performance, let check the secure attribute
+	 * of each byte of the buffer.
+	 */
 	rc = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_ANY_OWNER |
 					 TEE_MEMORY_ACCESS_READ |
 					 TEE_MEMORY_ACCESS_NONSECURE,
@@ -112,7 +120,6 @@ static TEE_Result cmd_inject(uint32_t types,
 		    params[sec_idx].memref.size);
 
 #ifdef CFG_CACHE_API
-	/* flush data to physical memory */
 	rc = TEE_CacheFlush(params[sec_idx].memref.buffer,
 			    params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
@@ -139,7 +146,14 @@ static TEE_Result cmd_transform(uint32_t types,
 				     TEE_PARAM_TYPE_NONE))
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	/* intentionally check the overall buffers permissions */
+	/*
+	 * We could rely on the TEE to provide consistent buffer/size values
+	 * to reference a buffer with a unique and consistent secure attribute
+	 * value. Hence it is safe enough (and more optimal) to test only the
+	 * secure attribute of a single byte of it. Yet, since the current
+	 * test does not deal with performance, let check the secure attribute
+	 * of each byte of the buffer.
+	 */
 	rc = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_ANY_OWNER |
 					 TEE_MEMORY_ACCESS_READ |
 					 TEE_MEMORY_ACCESS_WRITE |
@@ -176,7 +190,6 @@ static TEE_Result cmd_transform(uint32_t types,
 			*p = ~(*p) + 1;
 
 #ifdef CFG_CACHE_API
-	/* flush data to physical memory */
 	rc = TEE_CacheFlush(params[0].memref.buffer,
 			    params[0].memref.size);
 	if (rc != TEE_SUCCESS) {
@@ -206,7 +219,14 @@ static TEE_Result cmd_dump(uint32_t types,
 	if (params[ns_idx].memref.size < params[sec_idx].memref.size)
 		return TEE_ERROR_SHORT_BUFFER;
 
-	/* intentionally check the overall buffers permissions */
+	/*
+	 * We could rely on the TEE to provide consistent buffer/size values
+	 * to reference a buffer with a unique and consistent secure attribute
+	 * value. Hence it is safe enough (and more optimal) to test only the
+	 * secure attribute of a single byte of it. Yet, since the current
+	 * test does not deal with performance, let check the secure attribute
+	 * of each byte of the buffer.
+	 */
 	rc = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_ANY_OWNER |
 					 TEE_MEMORY_ACCESS_WRITE |
 					 TEE_MEMORY_ACCESS_NONSECURE,
