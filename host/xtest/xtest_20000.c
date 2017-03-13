@@ -275,8 +275,8 @@ static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
         return 0;
 }
 
-static void get_offs_size(enum tee_fs_htree_type type, size_t idx,
-			  uint8_t vers, size_t *offs, size_t *size)
+static TEEC_Result get_offs_size(enum tee_fs_htree_type type, size_t idx,
+				 uint8_t vers, size_t *offs, size_t *size)
 {
 	const size_t node_size = sizeof(struct tee_fs_htree_node_image);
 	const size_t block_nodes = BLOCK_SIZE / (node_size * 2);
@@ -344,11 +344,14 @@ static void get_offs_size(enum tee_fs_htree_type type, size_t idx,
 		sz = BLOCK_SIZE;
 		break;
 	default:
+		return TEEC_ERROR_BAD_PARAMETERS;
 		break;
 	}
 
 	if (size)
 		*size = sz;
+
+	return TEEC_SUCCESS;
 }
 
 static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
@@ -383,7 +386,11 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 		snprintf(name, sizeof(name), "/data/tee/%s/%s",
 			 ta_dirname, obj_filename);
 
-		get_offs_size(type, block_num, version, &real_offset, NULL);
+		tee_res = get_offs_size(type, block_num, version, &real_offset, NULL);
+		if (tee_res != TEEC_SUCCESS) {
+			fprintf(stderr, "invalid type\n");
+			goto exit;
+		}
 
 		if (offset == CORRUPT_FILE_LAST_BYTE) {
 			if (type == TEE_FS_HTREE_TYPE_HEAD)
