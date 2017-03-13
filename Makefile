@@ -1,9 +1,11 @@
-ifneq ($O,)
-	out-dir := $O
+ifeq ($O,)
+out-dir := $(CURDIR)/out
 else
-	# If no build folder has been specified, then create all build files in
-	# the current directory under a folder named out.
-	out-dir := $(CURDIR)/out
+include scripts/common.mk
+out-dir := $(call strip-trailing-slashes-and-dots,$(O))
+ifeq ($(out-dir),)
+$(error invalid output directory (O=$(O)))
+endif
 endif
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
@@ -15,6 +17,8 @@ else
 	q :=
 	echo := @:
 endif
+# export 'q', used by sub-makefiles.
+export q
 
 # If _HOST or _TA specific compilers are not specified, then use CROSS_COMPILE
 CROSS_COMPILE_HOST ?= $(CROSS_COMPILE)
@@ -32,22 +36,20 @@ endif
 xtest:
 	$(q)$(MAKE) -C host/xtest CROSS_COMPILE="$(CROSS_COMPILE_HOST)" \
 			     --no-builtin-variables \
-			     q=$(q) \
-			     O=$(out-dir)/xtest \
+			     O=$(out-dir) \
 			     $@
 
 .PHONY: ta
 ta:
 	$(q)$(MAKE) -C ta CROSS_COMPILE="$(CROSS_COMPILE_TA)" \
-			  q=$(q) \
-			  O=$(out-dir)/ta \
+			  O=$(out-dir) \
 			  $@
 
 .PHONY: clean
 ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 clean:
-	$(q)$(MAKE) -C host/xtest O=$(out-dir)/xtest q=$(q) $@
-	$(q)$(MAKE) -C ta O=$(out-dir)/ta q=$(q) $@
+	$(q)$(MAKE) -C host/xtest O=$(out-dir) $@
+	$(q)$(MAKE) -C ta O=$(out-dir) $@
 else
 clean:
 	$(q)echo "TA_DEV_KIT_DIR is not correctly defined"

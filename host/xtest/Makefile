@@ -1,8 +1,11 @@
 # Normally this makefile shouldn't be called directly and we expect the output
 # path to be on a certain location to fit together with the other OP-TEE
 # gits and helper scripts.
-ifeq ($O,)
-$(error output path should be specified when calling this makefile)
+
+include ../../scripts/common.mk
+out-dir := $(call strip-trailing-slashes-and-dots,$(O))
+ifeq ($(out-dir),)
+$(error invalid output directory (O=$(O)))
 endif
 
 include $(TA_DEV_KIT_DIR)/host_include/conf.mk
@@ -62,7 +65,7 @@ srcs  += xtest_7500.c \
 	 xtest_9000.c
 endif
 
-objs 	:= $(patsubst %.c,$(O)/%.o, $(srcs))
+objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
@@ -142,16 +145,24 @@ LDFLAGS += -lpthread -lm
 all: xtest
 
 xtest: $(objs)
-	@echo "  LD      $(O)/$@"
-	$(q)@$(CC) -o $(O)/$@ $+ $(LDFLAGS)
+	@echo "  LD      $(out-dir)/xtest/$@"
+	$(q)@$(CC) -o $(out-dir)/xtest/$@ $+ $(LDFLAGS)
 
-$(O)/%.o: $(CURDIR)/%.c
-	$(q)mkdir -p $(O)/adbg/src
+$(out-dir)/xtest/%.o: $(CURDIR)/%.c
+	$(q)mkdir -p $(out-dir)/xtest/adbg/src
 	@echo '  CC      $<'
 	$(q)$(CC) $(CFLAGS) -c $< -o $@
 
+RMDIR := rmdir --ignore-fail-on-non-empty
+define rm-build-dirs
+	$(q)for d in $1; do $(RMDIR) $(out-dir)/xtest/$$d 2> /dev/null; true; done
+	$(q)$(RMDIR) $(out-dir)/xtest 2> /dev/null; true
+	$(q)$(RMDIR) $(out-dir) 2> /dev/null; true
+endef
+
 .PHONY: clean
 clean:
-	@echo '  CLEAN $(O)'
-	$(q)rm -f $(O)/xtest
+	@echo '  CLEAN $(out-dir)'
+	$(q)rm -f $(out-dir)/xtest/xtest
 	$(q)$(foreach obj,$(objs), rm -f $(obj))
+	$(call rm-build-dirs,adbg/src adbg)
