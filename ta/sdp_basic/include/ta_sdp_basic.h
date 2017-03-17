@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Linaro Limited
+ * Copyright (c) 2016, Linaro Limited
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,51 +25,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XTEST_CRYPTO_COMMON_H
-#define XTEST_CRYPTO_COMMON_H
+#ifndef TA_SDP_BASIC_H
+#define TA_SDP_BASIC_H
 
-#include "ta_aes_perf.h"
-#include "ta_sha_perf.h"
+#define TA_SDP_BASIC_UUID { 0x12345678, 0x5b69, 0x11e4, \
+	{ 0x9d, 0xbb, 0x10, 0x1f, 0x74, 0xf0, 0x00, 0x99 } }
 
+#define TA_SDP_BASIC_CMD_INJECT		0
+#define TA_SDP_BASIC_CMD_TRANSFORM	1
+#define TA_SDP_BASIC_CMD_DUMP		2
 
-
-
-#define AES_PERF_INPLACE 0
-
-#define CRYPTO_DEF_LOOPS 1 /* Default amount of inner loops */
-
-#define CRYPTO_USE_RANDOM 1 /* Get input data from /dev/urandom */
-#define CRYPTO_NOT_RANDOM 0
-
-#define CRYPTO_DEF_WARMUP 2 /* Start with a 2-second busy loop  */
-#define CRYPTO_DEF_COUNT 5000	/* Default number of measurements */
-#define CRYPTO_DEF_VERBOSITY 0
-
-
-#define _verbose(lvl, ...)			\
-	do {					\
-		if (verbosity >= lvl) {		\
-			printf(__VA_ARGS__);	\
-			fflush(stdout);		\
-		}				\
-	} while (0)
-
-#define verbose(...)  _verbose(1, __VA_ARGS__)
-#define vverbose(...) _verbose(2, __VA_ARGS__)
-
-
-int aes_perf_runner_cmd_parser(int argc, char *argv[]);
-void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
-				unsigned int n, unsigned int l, int random_in,
-				int in_place, int warmup, int verbosity);
-
-int sha_perf_runner_cmd_parser(int argc, char *argv[]);
-void sha_perf_run_test(int algo, size_t size, unsigned int n,
-				unsigned int l, int random_in, int offset,
-				int warmup, int verbosity);
-
-#ifdef CFG_SECURE_DATA_PATH
-int sdp_basic_runner_cmd_parser(int argc, char *argv[]);
-#endif
-
-#endif /* XTEST_CRYPTO_PERF_H */
+#endif /* TA_SDP_BASIC_H */

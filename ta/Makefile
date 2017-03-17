@@ -26,6 +26,10 @@ TA_DIRS := create_fail_test \
 	   aes_perf \
 	   socket
 
+ifeq ($(CFG_SECURE_DATA_PATH),y)
+TA_DIRS += sdp_basic
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 TA_DIRS += GP_TTA_Arithmetical \
 	   GP_TTA_Crypto \
