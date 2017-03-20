@@ -39,7 +39,8 @@ void usage(char *program);
 
 void usage(char *program)
 {
-	printf("Usage: %s <options> <test_id>\n", program);
+	printf("Usage: %s <options> [[-w] <test-id>]...\n", program);
+	printf("       %s <applet> [options...]\n", program);
 	printf("\n");
 	printf("options:\n");
 	printf("\t-d <device-type>   default not set, use any\n");
@@ -47,6 +48,12 @@ void usage(char *program)
 	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
 	printf("\t                   default value = %s\n", gsuitename);
 	printf("\t-h                 show usage\n");
+	printf("\t[-w] <test-id>     the name(s) of the tests to be run. A substring match is\n");
+	printf("\t                   performed, unless -w (wildcard) is given in which case\n");
+	printf("\t                   the following <test-id> is parsed as a shell wildcard.\n");
+	printf("\t                   If no <test-id> is given, all tests are run.\n");
+	printf("\t                   Test names are formatted like: <test_suite>_<id>, where\n");
+	printf("\t                   <id> is a 4- or 5-digit number\n");
 	printf("applets:\n");
 	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
 	printf("\t--sha-perf -h      show usage of SHA performance testing tool\n");
@@ -58,6 +65,14 @@ void usage(char *program)
 	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");
 #endif
 	printf("\n");
+	printf("examples:\n");
+	printf("\txtest 4001 4003\n");
+	printf("\t                   run regression tests 4001 and 4003\n");
+	printf("\txtest -w '*2\?\?\?'\n");
+	printf("\t                   run regression tests in the 2k series (but not the 20k ones)\n");
+	printf("\txtest -w '200[13]' 4002\n");
+	printf("\t                   run regression tests 2001, 2003 and 4002\n");
+	printf("\n");
 }
 
 int main(int argc, char *argv[])
@@ -67,6 +82,7 @@ int main(int argc, char *argv[])
 	int ret;
 	char *p = (char *)glevel;
 	char *test_suite = (char *)gsuitename;
+	bool wildcard = false;
 
 	opterr = 0;
 
@@ -99,13 +115,31 @@ int main(int argc, char *argv[])
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case '?':
+			if (optopt == 'w') {
+				/*
+				 * -w is not an option processed here, it is
+				 * part of the test IDs
+				 */
+				optind--;
+				goto next;
+			}
+			/* option not recognized */
+			usage(argv[0]);
+			return -1;
 		default:
 			usage(argv[0]);
 			return -1;
  		}
-
-	for (index = optind; index < argc; index++)
-		printf("Test ID: %s\n", argv[index]);
+next:
+	for (index = optind; index < argc; index++) {
+		if (!strcmp(argv[index], "-w")) {
+			wildcard = true;
+			continue;
+		}
+		printf("Test ID: %s%s\n", wildcard ? "-w " : "", argv[index]);
+		wildcard = false;
+	}
 
 	if (p)
 		level = atoi(p);

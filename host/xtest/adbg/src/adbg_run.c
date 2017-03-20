@@ -15,6 +15,7 @@
  * 1. Includes
  ************************************************************************/
 #include "adbg_int.h"
+#include <fnmatch.h>
 
 /*************************************************************************
  * 2. Definition of external constants and variables
@@ -89,14 +90,27 @@ static int ADBG_RunSuite(
 	TAILQ_FOREACH(case_def, &Runner_p->Suite_p->cases, link) {
 		if (argc > 0) {
 			bool HaveMatch = false;
+			bool wildcard = false;
 			int i;
 
 			for (i = 0; i < argc; i++) {
 
-				if (strstr(case_def->TestID_p, argv[i])) {
-					HaveMatch = true;
-					break;
+				if (!strcmp(argv[i], "-w")) {
+					wildcard = true;
+					continue;
 				}
+				if (wildcard) {
+					if (!fnmatch(argv[i],
+						    case_def->TestID_p, 0))
+						HaveMatch = true;
+						wildcard = false;
+				} else {
+					if (strstr(case_def->TestID_p,
+						   argv[i]))
+						HaveMatch = true;
+				}
+				if (HaveMatch)
+					break;
 			}
 			if (!HaveMatch) {
 				NumSkippedTestCases++;
@@ -150,11 +164,19 @@ static int ADBG_RunSuite(
 	Do_ADBG_Log("+-----------------------------------------------------");
 	if (argc > 0) {
 		int i;
+		bool wildcard;
 
-		for (i = 0; i < argc; i++)
+		for (i = 0; i < argc; i++) {
+			if (!strcmp(argv[i], "-w")) {
+				wildcard = true;
+				continue;
+			}
 			Do_ADBG_Log(
-				"Result of testsuite %s filtered by \"%s\":",
-				Runner_p->Suite_p->SuiteID_p, argv[i]);
+				"Result of testsuite %s filtered by \"%s%s\":",
+				Runner_p->Suite_p->SuiteID_p,
+				wildcard ? "-w " : "", argv[i]);
+			wildcard = false;
+		}
 	} else {
 		Do_ADBG_Log("Result of testsuite %s:",
 			    Runner_p->Suite_p->SuiteID_p);
