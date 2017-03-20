@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include <errno.h>
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -440,9 +441,19 @@ static FILE *open_ta_file(const TEEC_UUID *uuid, const char *mode,
 			  bool for_write)
 {
 	char buf[PATH_MAX];
+	FILE *ret;
 
 	uuid_to_full_name(buf, sizeof(buf), uuid, for_write);
-	return fopen(buf, mode);
+	ret = fopen(buf, mode);
+	if (ret && for_write)
+		if (chmod(buf, 0666)) {
+			fprintf(stderr, "chmod(\"%s\"): %s",
+					buf, strerror(errno));
+			printf("chmod error! This test will fail if " \
+				"tee-supplicant does not have permission " \
+				"to load this TA file!\n");
+		}
+	return ret;
 }
 
 static bool rm_file(const TEEC_UUID *uuid)
