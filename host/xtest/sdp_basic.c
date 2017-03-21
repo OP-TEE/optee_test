@@ -598,5 +598,10 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 			   test_size, test_loop, ion_heap, rnd_offset))
 		return 1;
 
+	verbose("\nSecure Data Path basic accesses: NS invokes SDP pTA (shall fail)\n");
+	if (sdp_basic_test(TEST_NS_TO_PTA,
+			   test_size, test_loop, ion_heap, rnd_offset))
+		verbose("-> false negative: pTAs refuse SDP memref from NS clients.\n");
+
 	return 0;
 }
