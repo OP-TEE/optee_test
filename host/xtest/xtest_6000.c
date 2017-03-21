@@ -309,6 +309,21 @@ static TEEC_Result fs_alloc_enum(TEEC_Session *sess, uint32_t *e)
 	return res;
 }
 
+static TEEC_Result fs_reset_enum(TEEC_Session *sess, uint32_t e)
+{
+	TEEC_Result res;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	op.params[0].value.a = e;
+	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_RESET_ENUM, &op, &org);
+
+	return res;
+}
+
 static TEEC_Result fs_free_enum(TEEC_Session *sess, uint32_t e)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -1310,6 +1325,14 @@ seek_write_read_out:
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o2));
 
 	Do_ADBG_EndSubCase(c, "Rename Access Conflict");
+
+	Do_ADBG_BeginSubCase(c, "AllocPersistentObjectEnumerator + "
+				"ResetPersistentObjectEnumerator");
+	e = TEE_HANDLE_NULL;
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_alloc_enum(&sess, &e));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_reset_enum(&sess, e));
+	Do_ADBG_EndSubCase(c, "AllocPersistentObjectEnumerator + "
+			      "ResetPersistentObjectEnumerator");
 
 	Do_ADBG_BeginSubCase(c, "StartPersistentObjectEnumerator ItemNotFound");
 	e = TEE_HANDLE_NULL;
