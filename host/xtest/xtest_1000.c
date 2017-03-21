@@ -23,6 +23,7 @@
 #include "xtest_helpers.h"
 #include <signed_hdr.h>
 
+#include <pta_invoke_tests.h>
 #include <ta_crypt.h>
 #include <ta_os_test.h>
 #include <ta_create_fail_test.h>
@@ -259,9 +260,7 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
 
-#define CMD_SELF_TESTS  2
-
-	res = xtest_teec_open_session(&session, &sta_test_ta_uuid, NULL,
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
 				      &ret_orig);
 	/*
 	 * If the static TA (which is optional) isn't available, skip this
@@ -271,7 +270,7 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		return;
 
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
-		&session, CMD_SELF_TESTS, NULL, &ret_orig));
+		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
 	TEEC_CloseSession(&session);
 }
 
