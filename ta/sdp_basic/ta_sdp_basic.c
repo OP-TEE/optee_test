@@ -25,14 +25,15 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <pta_invoke_tests.h>
 #include <string.h>
+#include <ta_sdp_basic.h>
 #include <tee_api.h>
 #include <tee_internal_api_extensions.h>
 #include <tee_internal_api.h>
 #include <tee_ta_api.h>
 #include <trace.h>
 
-#include <ta_sdp_basic.h>
 
 /*
  * Basic Secure Data Path access test commands:
@@ -295,6 +296,38 @@ cleanup_return:
         return res;
 }
 
+static TEE_Result cmd_invoke_pta(uint32_t nParamTypes,
+			     TEE_Param pParams[TEE_NUM_PARAMS],
+			     uint32_t nCommandID)
+{
+        const TEE_UUID uuid = PTA_INVOKE_TESTS_UUID;
+        static TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+        uint32_t ret_orig;
+        TEE_Result res;
+
+	if (sess == TEE_HANDLE_NULL) {
+	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);
+		if (res != TEE_SUCCESS) {
+	                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED \n");
+	                goto cleanup_return;
+		}
+
+        }
+
+        res = TEE_InvokeTACommand(sess, 0, nCommandID, nParamTypes, pParams, &ret_orig);
+        if (res != TEE_SUCCESS) {
+                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d\n",
+								res, ret_orig);
+        }
+
+cleanup_return:
+	if (res != TEE_SUCCESS) {
+		TEE_CloseTASession(sess);
+		sess = TEE_HANDLE_NULL;
+	}
+        return res;
+}
+
 TEE_Result TA_CreateEntryPoint(void)
 {
 	return TEE_SUCCESS;
@@ -339,6 +372,13 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return cmd_invoke(nParamTypes, pParams, TA_SDP_BASIC_CMD_TRANSFORM);
 	case TA_SDP_BASIC_CMD_INVOKE_DUMP:
 		return cmd_invoke(nParamTypes, pParams, TA_SDP_BASIC_CMD_DUMP);
+
+	case TA_SDP_BASIC_CMD_PTA_INJECT:
+		return cmd_invoke_pta(nParamTypes, pParams, PTA_INVOKE_TESTS_CMD_COPY_NSEC_TO_SEC);
+	case TA_SDP_BASIC_CMD_PTA_TRANSFORM:
+		return cmd_invoke_pta(nParamTypes, pParams, PTA_INVOKE_TESTS_CMD_READ_MODIFY_SEC);
+	case TA_SDP_BASIC_CMD_PTA_DUMP:
+		return cmd_invoke_pta(nParamTypes, pParams, PTA_INVOKE_TESTS_CMD_COPY_SEC_TO_NSEC);
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
