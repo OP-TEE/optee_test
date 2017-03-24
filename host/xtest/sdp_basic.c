@@ -436,7 +436,7 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 
 	fd = allocate_ion_buffer(sdp_size, ion_heap);
 	if (fd < 0) {
-		verbose("Failed to allocate SDP buffer (%lu bytes) in ION heap %d: %d\n",
+		verbose("Failed to allocate SDP buffer (%zu bytes) in ION heap %d: %d\n",
 				sdp_size, ion_heap, fd);
 		goto out;
 	}
