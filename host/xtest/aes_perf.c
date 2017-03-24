@@ -148,8 +148,7 @@ static const char *mode_str(uint32_t mode)
 static void usage(const char *progname, int keysize, int mode,
 				size_t size, int warmup, unsigned int l, unsigned int n)
 {
-	fprintf(stderr, "AES performance testing tool for OP-TEE (%s)\n\n",
-		TO_STR(VERSION));
+	fprintf(stderr, "AES performance testing tool for OP-TEE\n\n");
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "  %s -h\n", progname);
 	fprintf(stderr, "  %s [-v] [-m mode] [-k keysize] ", progname);
@@ -313,7 +312,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	int n0 = n;
 	double sd;
 
-	vverbose("aes-perf version %s\n", TO_STR(VERSION));
+	vverbose("aes-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -356,18 +355,18 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	while (n-- > 0) {
 		t = run_test_once(in_shm.buffer, size, &op, random_in);
 		update_stats(&stats, t);
-		if (n % (n0/10) == 0)
+		if (n % (n0 / 10) == 0)
 			vverbose("#");
 	}
 	vverbose("\n");
 	sd = stddev(&stats);
-	printf("min=%gμs max=%gμs mean=%gμs stddev=%gμs (cv %g%%) (%gMiB/s)\n",
-	       stats.min/1000, stats.max/1000, stats.m/1000,
-	       sd/1000, 100*sd/stats.m, mb_per_sec(size, stats.m));
-	verbose("2-sigma interval: %g..%gμs (%g..%gMiB/s)\n",
-		(stats.m-2*sd)/1000, (stats.m+2*sd)/1000,
-		mb_per_sec(size, stats.m+2*sd),
-		mb_per_sec(size, stats.m-2*sd));
+	printf("min=%gus max=%gus mean=%gus stddev=%gus (cv %g%%) (%gMiB/s)\n",
+	       stats.min / 1000, stats.max / 1000, stats.m / 1000,
+	       sd / 1000, 100 * sd / stats.m, mb_per_sec(size, stats.m));
+	verbose("2-sigma interval: %g..%gus (%g..%gMiB/s)\n",
+		(stats.m - 2 * sd) / 1000, (stats.m + 2 * sd) / 1000,
+		mb_per_sec(size, stats.m + 2 * sd),
+		mb_per_sec(size, stats.m - 2 * sd));
 	free_shm();
 }
 
@@ -375,7 +374,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	do { \
 		if (++i == argc) { \
 			fprintf(stderr, "%s: %s: missing argument\n", \
-				argv[0], argv[i-1]); \
+				argv[0], argv[i - 1]); \
 			return 1; \
 		} \
 	} while (0);
@@ -462,7 +461,6 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			return 1;
 		}
 	}
-
 
 	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
 					in_place, warmup, verbosity);

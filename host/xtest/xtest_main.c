@@ -49,10 +49,10 @@ void usage(char *program)
 	printf("\t-h                 show usage\n");
 	printf("applets:\n");
 	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
-	printf("\t--sha perf -h      show usage of SHA performance testing tool\n");
+	printf("\t--sha-perf -h      show usage of SHA performance testing tool\n");
 	printf("\n");
 	printf("\t--aes-perf         AES performance testing tool for OP-TEE\n");
-	printf("\t--aes perf -h      show usage of AES performance testing tool\n");
+	printf("\t--aes-perf -h      show usage of AES performance testing tool\n");
 	printf("\n");
 #ifdef CFG_SECURE_DATA_PATH
 	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");

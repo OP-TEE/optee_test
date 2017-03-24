@@ -286,8 +286,8 @@ static double mb_per_sec(size_t size, double usec)
 }
 
 /* Hash test: buffer of size byte. Run test n times.
- * Entry point for running SHA benchmark 
- * Params: 
+ * Entry point for running SHA benchmark
+ * Params:
  * algo - Algorithm
  * size - Buffer size
  * n - Number of measurements
@@ -295,10 +295,10 @@ static double mb_per_sec(size_t size, double usec)
  * random_in - Get input from /dev/urandom
  * offset - Buffer offset wrt. alloc-ed address
  * warmup - Start with a-second busy loop
- * verbosity - Verbosity level 
+ * verbosity - Verbosity level
  * */
-extern void sha_perf_run_test(int algo, size_t size, unsigned int n, 
-				unsigned int l, int random_in, int offset, 
+extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
+				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity)
 {
 	uint64_t t;
@@ -308,7 +308,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	struct timespec ts;
 	double sd;
 
-	vverbose("sha-perf version %s\n", TO_STR(VERSION));
+	vverbose("sha-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -318,8 +318,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 
 	open_ta();
 	prepare_op(algo);
-	
-	
+
 	alloc_shm(size, algo, offset);
 
 	if (!random_in)
@@ -351,27 +350,26 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	while (n-- > 0) {
 		t = run_test_once((uint8_t *)in_shm.buffer + offset, size, random_in, &op);
 		update_stats(&stats, t);
-		if (n % (n0/10) == 0)
+		if (n % (n0 / 10) == 0)
 			vverbose("#");
 	}
 	vverbose("\n");
 	sd = stddev(&stats);
-	printf("min=%gμs max=%gμs mean=%gμs stddev=%gμs (cv %g%%) (%gMiB/s)\n",
-	       stats.min/1000, stats.max/1000, stats.m/1000,
-	       sd/1000, 100*sd/stats.m, mb_per_sec(size, stats.m));
-	verbose("2-sigma interval: %g..%gμs (%g..%gMiB/s)\n",
-		(stats.m-2*sd)/1000, (stats.m+2*sd)/1000,
-		mb_per_sec(size, stats.m+2*sd),
-		mb_per_sec(size, stats.m-2*sd));
+	printf("min=%gus max=%gus mean=%gus stddev=%gus (cv %g%%) (%gMiB/s)\n",
+	       stats.min / 1000, stats.max / 1000, stats.m / 1000,
+	       sd / 1000, 100 * sd / stats.m, mb_per_sec(size, stats.m));
+	verbose("2-sigma interval: %g..%gus (%g..%gMiB/s)\n",
+		(stats.m - 2 * sd) / 1000, (stats.m + 2 * sd) / 1000,
+		mb_per_sec(size, stats.m + 2 * sd),
+		mb_per_sec(size, stats.m - 2 * sd));
 	free_shm();
 }
 
-static void usage(const char *progname, 
+static void usage(const char *progname,
 				/* Default params */
 				int algo, size_t size, int warmup, int l, int n)
 {
-	fprintf(stderr, "SHA performance testing tool for OP-TEE (%s)\n\n",
-		TO_STR(VERSION));
+	fprintf(stderr, "SHA performance testing tool for OP-TEE\n\n");
 	fprintf(stderr, "Usage:\n");
 	fprintf(stderr, "  %s -h\n", progname);
 	fprintf(stderr, "  %s [-v] [-a algo] ", progname);
@@ -400,7 +398,7 @@ static void usage(const char *progname,
 	do { \
 		if (++i == argc) { \
 			fprintf(stderr, "%s: %s: missing argument\n", \
-				argv[0], argv[i-1]); \
+				argv[0], argv[i - 1]); \
 			return 1; \
 		} \
 	} while (0);
@@ -410,7 +408,6 @@ static void usage(const char *progname,
 extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 {
 	int i;
-	
 	/* Command line params */
 	size_t size = 1024;	/* Buffer size (-s) */
 	unsigned int n = CRYPTO_DEF_COUNT;/* Number of measurements (-n)*/
@@ -422,7 +419,6 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 	/* Start with a 2-second busy loop (-w) */
 	int warmup = CRYPTO_DEF_WARMUP;
 	int offset = 0; /* Buffer offset wrt. alloc'ed address (-u) */
-
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
@@ -475,7 +471,7 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 			return 1;
 		}
 	}
-	
+
 	sha_perf_run_test(algo, size, n, l, random_in, offset, warmup, verbosity);
 
 	return 0;
