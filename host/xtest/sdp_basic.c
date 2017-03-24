@@ -37,9 +37,9 @@
 #include <tee_client_api_extensions.h>
 #include <unistd.h>
 
-#include "include/uapi/linux/ion.h"
-#include "ta_sdp_basic.h"
 #include "crypto_common.h"
+#include "sdp_basic.h"
+#include "xtest_test.h"
 
 /*
  * SDP basic test setup overview.
@@ -76,21 +76,6 @@ static int verbosity = 1;
 struct tee_ctx {
 	TEEC_Context ctx;
 	TEEC_Session sess;
-};
-
-/* exported to xtest */
-int allocate_ion_buffer(size_t size, int heap_id);
-
-/* non zero value forces buffer to be mappeable from nonsecure */
-#define BUF_MUST_MAP	0
-
-#define DEFAULT_ION_HEAP_TYPE	ION_HEAP_TYPE_UNMAPPED
-
-enum test_target_ta {
-	TEST_NS_TO_TA,
-	TEST_NS_TO_PTA,
-	TEST_TA_TO_TA,
-	TEST_TA_TO_PTA,
 };
 
 int allocate_ion_buffer(size_t size, int heap_id)
@@ -153,8 +138,6 @@ static void finalize_tee_ctx(struct tee_ctx *ctx)
 static int create_tee_ctx(struct tee_ctx *ctx, enum test_target_ta target_ta)
 {
 	TEEC_Result teerc;
-	TEEC_UUID ta_uuid = TA_SDP_BASIC_UUID;
-	TEEC_UUID pta_uuid = PTA_INVOKE_TESTS_UUID;
 	TEEC_UUID *uuid;
 	uint32_t err_origin;
 
@@ -162,10 +145,10 @@ static int create_tee_ctx(struct tee_ctx *ctx, enum test_target_ta target_ta)
 	case TEST_NS_TO_TA:
 	case TEST_TA_TO_TA:
 	case TEST_TA_TO_PTA:
-		uuid = &ta_uuid;
+		uuid = &sdp_basic_ta_uuid;
 		break;
 	case TEST_NS_TO_PTA:
-		uuid = &pta_uuid;
+		uuid = &pta_invoke_tests_ta_uuid;
 		break;
 	default:
 		return -1;
@@ -422,9 +405,8 @@ static int get_random_bytes(char *out, size_t len)
 }
 
 
-static int sdp_basic_test(enum test_target_ta ta,
-			  size_t size, size_t loop, int ion_heap,
-			  int rnd_offset)
+int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
+		   int ion_heap, int rnd_offset)
 {
 	struct tee_ctx *ctx = NULL;
 	unsigned char *test_buf = NULL;

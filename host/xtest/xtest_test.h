@@ -127,6 +127,7 @@ extern const TEEC_UUID concurrent_ta_uuid;
 extern const TEEC_UUID concurrent_large_ta_uuid;
 extern const TEEC_UUID storage_benchmark_ta_uuid;
 extern const TEEC_UUID socket_ta_uuid;
+extern const TEEC_UUID sdp_basic_ta_uuid;
 extern char *_device;
 
 #endif /*XTEST_TEST_H*/

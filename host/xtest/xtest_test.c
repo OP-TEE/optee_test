@@ -29,6 +29,7 @@
 #include <__tee_isocket_defines.h>
 #include <__tee_tcpsocket_defines.h>
 #include <__tee_udpsocket_defines.h>
+#include <ta_sdp_basic.h>
 #ifdef WITH_GP_TESTS
 #include <tee_api_types.h>
 #include <TTA_DS_protocol.h>
@@ -100,6 +101,7 @@ const TEEC_UUID concurrent_ta_uuid = TA_CONCURRENT_UUID;
 const TEEC_UUID concurrent_large_ta_uuid = TA_CONCURRENT_LARGE_UUID;
 const TEEC_UUID storage_benchmark_ta_uuid = TA_STORAGE_BENCHMARK_UUID;
 const TEEC_UUID socket_ta_uuid = TA_SOCKET_UUID;
+const TEEC_UUID sdp_basic_ta_uuid = TA_SDP_BASIC_UUID;
 #ifdef WITH_GP_TESTS
 const TEEC_UUID gp_tta_ds_uuid = TA_TTA_DS_UUID;
 #endif
