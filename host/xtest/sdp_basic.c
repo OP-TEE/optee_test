@@ -138,7 +138,7 @@ static void finalize_tee_ctx(struct tee_ctx *ctx)
 static int create_tee_ctx(struct tee_ctx *ctx, enum test_target_ta target_ta)
 {
 	TEEC_Result teerc;
-	TEEC_UUID *uuid;
+	const TEEC_UUID *uuid;
 	uint32_t err_origin;
 
 	switch (target_ta) {
