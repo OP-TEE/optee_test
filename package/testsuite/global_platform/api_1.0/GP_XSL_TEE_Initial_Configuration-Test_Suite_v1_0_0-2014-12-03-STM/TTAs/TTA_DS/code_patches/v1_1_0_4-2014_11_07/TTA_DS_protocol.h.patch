@@ -1,5 +1,5 @@
---- TTA_DS_protocol.h.ori	2015-02-02 14:09:02.722617469 +0100
-+++ TTA_DS_protocol.h	2015-02-02 14:09:21.962746491 +0100
+--- TTA_DS_protocol.h.orig	2012-10-24 08:31:00.000000000 +0200
++++ TTA_DS_protocol.h	2017-03-30 14:46:56.057776854 +0200
 @@ -1,6 +1,6 @@
  
  /** Trusted Application Identifier **/
@@ -8,3 +8,21 @@
  
  #define TRUSTED_APP_ERROR_UNKNOWN_COMMAND                            0x00000001
  #define TRUSTED_APP_ERROR_BAD_PARAMETERS                             0x00000002
+@@ -98,7 +98,7 @@
+    char pObjectIDBuffer[], 
+    uint32_t nObjectIDBufferLen, 
+    char pObjectIDTable[MAX_NUMBER_OF_OBJECTS][TEE_OBJECT_ID_MAX_LEN], 
+-   size_t pObjectIDLenTable[], 
++   uint32_t pObjectIDLenTable[], 
+    uint32_t nObjectCount );
+ uint32_t retrieveUint32FromBuffer(char buffer[]);
+ TEE_ObjectHandle createPersistentObject_SetAccess(void *pObjectID, uint32_t nObjectIDSize, TEE_ObjectHandle  nObjectOrigin, uint32_t nFlags);
+@@ -109,7 +109,7 @@
+                         uint32_t buff_len,   /* size of the buffer to write to the stream */
+                         uint32_t* start,     /* output start offset */
+                         uint32_t* len);      /* length of what to read */
+-void objectWipeOut(char *pObjectID, size_t nObjectIDLen);
++void objectWipeOut(char *pObjectID, uint32_t nObjectIDLen);
+ TEE_Result CmdAllocateTransientChain(
+    void*       pSessionContext,
+    uint32_t    nParamTypes,

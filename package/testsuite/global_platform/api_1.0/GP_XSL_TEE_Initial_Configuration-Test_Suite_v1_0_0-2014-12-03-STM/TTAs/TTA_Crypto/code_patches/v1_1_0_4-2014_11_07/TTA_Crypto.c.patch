@@ -1,23 +1,83 @@
 --- TTA_Crypto.c.orig	2012-10-23 16:25:21.000000000 +0200
-+++ TTA_Crypto.c	2015-07-22 11:12:01.458463753 +0200
-@@ -154,7 +154,7 @@
++++ TTA_Crypto.c	2017-03-30 14:39:05.936589767 +0200
+@@ -123,7 +123,7 @@
+    SLogTrace("TA_CloseSessionEntryPoint");
+ 
+    /* Free the instance data - if not already freed via a call to CmdFreeAllKeysAndOperations */
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+ 
+    if(pCryptoData != NULL){
+       if(pCryptoData->Operation1 != TEE_HANDLE_NULL)
+@@ -154,9 +154,9 @@
  TEE_OperationHandle getOperation(uint32_t lopId)
  {
     TEE_CryptoData *pCryptoData;
 -   TEE_OperationHandle operation;
 +   TEE_OperationHandle operation = TEE_HANDLE_NULL;
     
-    pCryptoData = TEE_GetInstanceData();
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
     if(lopId == 1)
-@@ -204,7 +204,7 @@
+       operation = (pCryptoData->Operation1);
+    else if(lopId == 2)
+@@ -173,7 +173,7 @@
+ {
+    TEE_CryptoData *pCryptoData;
+ 
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+ 
+    return pCryptoData->Attribute;
+ }
+@@ -182,7 +182,7 @@
+ {
+    TEE_CryptoData *pCryptoData;
+ 
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+ 
+    return pCryptoData->AttributeCount;
+ }
+@@ -191,7 +191,7 @@
+ {
+    TEE_CryptoData *pCryptoData;
+    
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+ 
+    if(lopId == 1)
+       (pCryptoData->Operation1) = TEE_HANDLE_NULL;
+@@ -204,9 +204,9 @@
  TEE_ObjectHandle getKey(uint32_t lkeyId)
  {
     TEE_CryptoData *pCryptoData;
 -   TEE_ObjectHandle key;
 +   TEE_ObjectHandle key = TEE_HANDLE_NULL;
     
-    pCryptoData = TEE_GetInstanceData();
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
     if(lkeyId == 1)
+       key = (pCryptoData->Key1);
+    else if(lkeyId == 2)
+@@ -310,7 +310,7 @@
+    nObjectType = pParams[0].value.a;
+    nMaxObjectSize = pParams[0].value.b;
+    /* Retrieve the pointer to the structure */
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+    
+    SLogTrace("CmdInitObjectWithKeys: Before TEE_AllocateTransientObject object1");
+    if(pParams[3].value.a == 1)
+@@ -371,7 +371,7 @@
+    }
+    else
+    {  
+-      pCryptoData = TEE_GetInstanceData();
++      pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+       
+       if(pCryptoData->Operation1 != TEE_HANDLE_NULL){
+          TEE_FreeOperation((pCryptoData->Operation1));
 @@ -415,7 +415,7 @@
  {
     /* VARIABLES */
@@ -27,16 +87,18 @@
     
     /* CODE */
     if((TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_INPUT) &&         /* .a &.b : [in] algorithm & mode */
-@@ -430,7 +430,7 @@
+@@ -430,8 +430,8 @@
        SLogError("CmdAllocateOperation: operation id not correct");
        return TRUSTED_APP_ERROR_BAD_PARAMETERS;
     }
 -   
+-   pCryptoData = TEE_GetInstanceData();
 +
-    pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
     if(pParams[3].value.a == 1)
        nTempResult = TEE_AllocateOperation(&pCryptoData->Operation1, pParams[0].value.a, pParams[0].value.b, pParams[1].value.a);
-@@ -699,6 +699,84 @@
+    else if(pParams[3].value.a == 2)
+@@ -699,6 +699,83 @@
  }
  
  /**
@@ -57,7 +119,6 @@
 +{
 +   /* VARIABLES */
 +   TEE_OperationHandle operation;
-+   TEE_OperationInfo operationInfo;
 +   TEE_OperationInfoMultiple *operationInfoMultiple;
 +   TEE_Result res;
 +   uint32_t key_num;
@@ -121,7 +182,25 @@
   *  Function CmdDigestUpdate:
   *  Description:
   *    The function is called with:
-@@ -1570,6 +1648,8 @@
+@@ -1422,7 +1499,7 @@
+    pAttribBufferFromClient = (uint8_t*)pParams[2].memref.buffer;
+    
+    /* Retrieve the pointer to the structure */
+-   pCryptoData = TEE_GetInstanceData();
++   pCryptoData = (TEE_CryptoData *)TEE_GetInstanceData();
+ 
+    /*****************************************************
+    *
+@@ -1486,7 +1563,7 @@
+    TEE_Attribute nAttribute;
+    TEE_OperationInfo nOperInfo;
+    unsigned char pDerivedKey[128];  /* 1024 bytes */
+-   size_t nDerivedKeyLen = sizeof(pDerivedKey);
++   uint32_t nDerivedKeyLen = sizeof(pDerivedKey);
+    TEE_Result nTempResult;
+ 
+    /* CODE */
+@@ -1570,6 +1647,8 @@
           return CmdSetOperationKey2(pSessionContext, nParamTypes, pParams);
        case CMD_CopyOperation:
           return CmdCopyOperation(pSessionContext, nParamTypes, pParams);

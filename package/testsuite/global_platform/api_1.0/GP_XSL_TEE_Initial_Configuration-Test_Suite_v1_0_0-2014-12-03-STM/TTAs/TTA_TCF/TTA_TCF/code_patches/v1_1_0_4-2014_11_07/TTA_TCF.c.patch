@@ -1,0 +1,56 @@
+--- TTA_TCF.c.orig	2017-03-30 15:07:39.953742721 +0200
++++ TTA_TCF.c	2017-03-30 15:06:40.266121485 +0200
+@@ -66,7 +66,7 @@
+ #include "tee_internal_api.h"
+ #include "TTA_TCF.h"
+ #include "TTA_TCF_common_protocol.h"
+-
++#include <assert.h>
+ 
+ /* ----------------------------------------------------------------------------
+  *   Trusted Application Entry Points
+@@ -190,7 +190,7 @@
+    return true;   // Identities are identical
+ }
+ 
+-bool areBinaryBlocksIdentical(const char *BinaryBlock1, size_t nLength1, const char *BinaryBlock2, size_t nLength2) // returns false if not identical, true otherwise
++bool areBinaryBlocksIdentical(const char *BinaryBlock1, uint32_t nLength1, const char *BinaryBlock2, uint32_t nLength2) // returns false if not identical, true otherwise
+ {
+    uint32_t i = 0;
+ 
+@@ -589,10 +589,10 @@
+    TEE_PropSetHandle nEnum;
+    TEE_PropSetHandle nPropSet;
+    char pPropName[PROPERTY_NAME_MAX_SIZE];
+-   size_t nPropNameSize = 0;
++   uint32_t nPropNameSize = 0;
+    char pOutputString1[PROPERTY_OUTPUT_STRING_MAX_SIZE], pOutputString2[PROPERTY_OUTPUT_STRING_MAX_SIZE];
+-   size_t nOutputString1Length = 0;
+-   size_t nOutputString2Length = 0;
++   uint32_t nOutputString1Length = 0;
++   uint32_t nOutputString2Length = 0;
+    bool nOutputBool1;
+    bool nOutputBool2;
+    uint32_t nOutputInt1;
+@@ -694,6 +694,7 @@
+ {
+    /** VARIABLES **/
+    TEE_Result cmdResult;
++   TEE_PropSetHandle nPropSet;
+ 
+    /** CODE **/
+    if (TEE_PARAM_TYPE_GET(nParamTypes, 0) != TEE_PARAM_TYPE_VALUE_OUTPUT)
+@@ -705,8 +706,11 @@
+    /* Read the output parameters */
+ 
+    /* if output data is correct */
+-   cmdResult = TEE_AllocatePropertyEnumerator((TEE_PropSetHandle*) &pParams[0].value.a);
+-
++   cmdResult = TEE_AllocatePropertyEnumerator(&nPropSet);
++#ifdef __LP64__
++   assert(!((uintptr_t)nPropSet >> 32));
++#endif
++   pParams[0].value.a = (uint32_t)(uintptr_t)nPropSet;
+    return cmdResult;
+ }
+ 

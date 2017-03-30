@@ -1,5 +1,5 @@
---- TTA_DS.c.ori	2012-10-24 08:33:24.000000000 +0200
-+++ TTA_DS.c	2015-04-22 23:06:41.520077876 +0200
+--- TTA_DS.c.orig	2012-10-24 08:33:24.000000000 +0200
++++ TTA_DS.c	2017-03-30 14:45:57.674128382 +0200
 @@ -22,7 +22,7 @@
   *       - updated persistent object management when using TEE_DATA_FLAG_ACCESS_WRITE_META (exclusive access)
   *    18/09/2012 : v1.1
@@ -9,7 +9,25 @@
   *    24/09/2012 : v1.2
   *       - some persistent objects are not cleared after panics so they are now wipped clean during the open session.
   *    24/09/2012 : v1.3
-@@ -249,6 +249,8 @@
+@@ -153,7 +153,7 @@
+    SLogTrace("TA_CloseSessionEntryPoint");
+ }
+ 
+-bool isObjectInTable(char pObjectIDBuffer[], uint32_t nObjectIDBufferLen, char pObjectIDTable[MAX_NUMBER_OF_OBJECTS][TEE_OBJECT_ID_MAX_LEN], size_t pObjectIDLenTable[], uint32_t nObjectCount )
++bool isObjectInTable(char pObjectIDBuffer[], uint32_t nObjectIDBufferLen, char pObjectIDTable[MAX_NUMBER_OF_OBJECTS][TEE_OBJECT_ID_MAX_LEN], uint32_t pObjectIDLenTable[], uint32_t nObjectCount )
+ {
+    uint32_t i;
+ 
+@@ -181,7 +181,7 @@
+ {
+    /* VARIABLES */
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
+    uint32_t i;
+@@ -249,12 +249,14 @@
              init = INITIAL_DATA_BUFFER_SIZE;    /* to check that 00 are inserted in the stream */
           length = offset2 + buff_len;           /* to include the 00 in the out buffer */
           break;
@@ -18,6 +36,13 @@
     }
     *start = init;
     *len = length;
+ }
+ 
+-void objectWipeOut(char *pObjectID, size_t nObjectIDLen)
++void objectWipeOut(char *pObjectID, uint32_t nObjectIDLen)
+ {
+    TEE_Result nTempResult;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD;
 @@ -266,7 +268,7 @@
           &nObject1);
  
@@ -290,7 +315,7 @@
   *    - Param#1   : buffer of uint32_t that contains successively attributeID|buffer offset|length)
   *    - Param#2   : buffer containing all the key values one after the other
   *    - Param#3.a : option in the test for coverage
-@@ -686,8 +688,8 @@
+@@ -686,15 +688,15 @@
                       nobject_invalid = (TEE_ObjectHandle)0xFFFFDEAD,
                       nTargetObject = (TEE_ObjectHandle)0xFFFFDEAD;
     TEE_Result nTempResult;
@@ -300,7 +325,25 @@
 +   uint32_t *pAttrVector = NULL;
     uint32_t nAttribID, nAttribIDTemp;
     uint32_t nOffset;
-    size_t nLength;
+-   size_t nLength;
++   uint32_t nLength;
+    uint32_t i;
+    uint32_t nTestOption = 0;
+    void *pAttribBuffer;
+-   size_t nAttribBufferSize = 0;
++   uint32_t nAttribBufferSize = 0;
+    uint8_t *pAttribBufferFromClient;
+ 
+    char pObjectID[] = "objectPersistent";                /* for persistent object */
+@@ -752,7 +754,7 @@
+          {
+             nAttribID = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3));                /* retrieve all the data relevant for the attribute */
+             nOffset = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 1));
+-            nLength = (size_t)retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
++            nLength = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
+ 
+             if(nTestOption == CASE_INIT_ATTRIBUTE_PANIC)
+                nAttribID = nAttribID | 0x20000000;             /* creates an error in attributeID, describes a value --> panic */
 @@ -774,13 +776,13 @@
  
     /* Allocate a fresh transient object */
@@ -327,7 +370,15 @@
           return nTempResult;
        }
     }
-@@ -870,7 +872,7 @@
+@@ -863,14 +865,14 @@
+    {
+       nAttribIDTemp = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3));                /* retrieve all the data relevant for the attribute */
+       nOffset = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 1));
+-      nLength = (size_t)retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
++      nLength = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
+       nAttribBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;
+ 
+       switch(nTestOption)
        {
           case CASE_GET_OBJECT_BUFFER_ATTRIB_BIT28:
              /* force the object to protect its protected attributes */
@@ -372,6 +423,15 @@
           break;
     }
  
+@@ -986,7 +988,7 @@
+    {
+       nAttribIDTemp = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3));                /* retrieve all the data relevant for the attribute */
+       nOffset = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 1));
+-      nLength = (size_t)retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
++      nLength = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
+       nAttribBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;                                         /* set the buffer length to its max size */
+ 
+       nTargetObject = nobject2;
 @@ -1022,7 +1024,7 @@
   *  Function CmdGenerateKey:
   *  Description:
@@ -381,7 +441,7 @@
   *    - Param#1   : buffer of uint32_t that contains successively attributeID|buffer offset|length)
   *    - Param#2   : buffer containing all the key values one after the other
   *    - Param#3.a & .b : option in the test for coverage and GenerateKey keysize parameter
-@@ -1038,7 +1040,7 @@
+@@ -1038,11 +1040,11 @@
                       nobject2 = (TEE_ObjectHandle)0xFFFFDEAD,
                       nTargetObject = (TEE_ObjectHandle)0xFFFFDEAD;
     TEE_Result nTempResult;
@@ -390,6 +450,20 @@
     uint32_t *pAttrVector;
     uint32_t nAttribID;
     uint32_t nOffset;
+-   size_t nLength;
++   uint32_t nLength;
+    uint32_t i;
+    uint32_t nTestOption = 0, nKeySize = 0;
+    uint8_t *pAttribBufferFromClient;
+@@ -1097,7 +1099,7 @@
+          {
+             nAttribID = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3));                /* retrieve all the data relevant for the attribute */
+             nOffset = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 1));
+-            nLength = (size_t)retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
++            nLength = retrieveUint32FromBuffer((char*)(pAttrVector + i * 3 + 2));
+ 
+             SLogTrace("CmdGenerateKey: Before TEE_InitRefAttribute");
+             TEE_InitRefAttribute(&pattrib[i], nAttribID, (void*)(pAttribBufferFromClient + nOffset), nLength);      /* initialize the attribute */
 @@ -1106,9 +1108,9 @@
     }
     /* Allocate a fresh transient object */
@@ -411,6 +485,15 @@
  
     TEE_FreeTransientObject(nobject1);
     return nTempResult;
+@@ -1173,7 +1175,7 @@
+    uint32_t nObjectID1Size = 7;
+    uint32_t nTargetObjectIDSize;
+    uint32_t i;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObjectAttribute = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
 @@ -1228,7 +1230,7 @@
                             &nObject1);
  
@@ -420,6 +503,15 @@
  
     TEE_Free(pInitialData);
     return nTempResult;
+@@ -1250,7 +1252,7 @@
+    char pObjectID[] = "object1";
+    uint32_t nObjectIDSize = 7;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle nObject1 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
+    uint32_t i;
 @@ -1273,7 +1275,7 @@
           &nObject1);
  
@@ -429,6 +521,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1291,7 +1293,7 @@
+    uint8_t* pInitialData;
+    uint32_t nObjectIDSize = 7;
+    uint32_t i;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
 @@ -1304,8 +1306,8 @@
     /* CODE */
     for(i = 0; i < INITIAL_DATA_BUFFER_SIZE; i++)
@@ -452,6 +553,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1344,7 +1346,7 @@
+    char pObjectID[] = "object1";
+    uint32_t nObjectIDSize = 7;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult, nTempResult2;
 @@ -1400,7 +1402,7 @@
        if(nTempResult2 != TEE_SUCCESS)
              return nTempResult;                 /* if there was an error when opening the object */
@@ -461,6 +571,15 @@
     }
  
     pInitialData = TEE_Malloc(INITIAL_DATA_BUFFER_SIZE, 0);
+@@ -1450,7 +1452,7 @@
+    uint32_t nObjectID2Size = 7;
+    uint32_t i;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
 @@ -1501,7 +1503,7 @@
           return TEE_ERROR_GENERIC;
     }
@@ -470,6 +589,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1518,7 +1520,7 @@
+    char pObjectID1[] = "object1";
+    uint32_t nObjectID1Size = 7;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult, nTempResult2;
 @@ -1599,7 +1601,7 @@
           &nObject1);
     if(nTempResult2 != TEE_SUCCESS)
@@ -479,6 +607,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1622,7 +1624,7 @@
+    uint32_t nObjectID3Size = 16;
+    uint32_t nTargetObjectIDSize;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nTargetObject = (TEE_ObjectHandle)0xFFFFDEAD;
 @@ -1681,7 +1683,7 @@
                                (void*) pObjectID1, nObjectID1Size,
                                TEE_DATA_FLAG_ACCESS_WRITE_META,
@@ -488,6 +625,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1700,7 +1702,7 @@
+    char pObjectID2[] = "object2";
+    uint32_t nObjectID2Size = 7;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
 @@ -1740,15 +1742,15 @@
  
     if(nTempResult != TEE_SUCCESS)
@@ -507,6 +653,15 @@
  
     TEE_Free(pInitialData);
  
+@@ -1767,7 +1769,7 @@
+    uint32_t nObjectID1Size = 7;
+    uint32_t nObjectID2Size = 16;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    TEE_ObjectHandle nObject1 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
+    uint32_t i;
 @@ -1799,7 +1801,7 @@
     /* rename the object */
     nTempResult = TEE_RenamePersistentObject(nObject1, (void*)pObjectID2, nObjectID2Size);
@@ -516,6 +671,21 @@
  
     TEE_Free(pInitialData);
  
+@@ -1820,11 +1822,11 @@
+    uint32_t nObjectID2Size = 16;
+    uint32_t nObjectID3Size = 8;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    char pObjectIDTable[MAX_NUMBER_OF_OBJECTS][TEE_OBJECT_ID_MAX_LEN];
+-   size_t nObjectIDLenTable[MAX_NUMBER_OF_OBJECTS];
++   uint32_t nObjectIDLenTable[MAX_NUMBER_OF_OBJECTS];
+    char pObjectIDBuffer[TEE_OBJECT_ID_MAX_LEN];
+-   size_t nObjectIDBufferLen = TEE_OBJECT_ID_MAX_LEN;
++   uint32_t nObjectIDBufferLen = TEE_OBJECT_ID_MAX_LEN;
+    TEE_ObjectHandle  nObject1 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject2 = (TEE_ObjectHandle)0xFFFFDEAD,
+                      nObject3 = (TEE_ObjectHandle)0xFFFFDEAD;
 @@ -1902,7 +1904,7 @@
  
     if(nTempResult != TEE_SUCCESS)
@@ -549,6 +719,15 @@
  
    TEE_Free(pInitialData);
  
+@@ -1970,7 +1972,7 @@
+    char pObjectID1[] = "object1";
+    uint32_t nObjectID1Size = 7, i;
+    uint8_t* pInitialData;
+-   size_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
++   uint32_t nInitialDataLen = INITIAL_DATA_BUFFER_SIZE;
+    /* if we leave nObject1 unitialized, a compiler may zero-initialize it in which case the TEE will (correctly) not panic as it equal to a TEE_HANDLE_NULL */
+    TEE_ObjectHandle nObject1 = (TEE_ObjectHandle)0xFFFFDEAD;
+    TEE_Result nTempResult;
 @@ -1988,7 +1990,7 @@
     }
  
@@ -576,15 +755,36 @@
  
     return TEE_SUCCESS;
  }
-@@ -2166,7 +2168,7 @@
+@@ -2084,7 +2086,7 @@
+    TEE_ObjectEnumHandle nObjectEnumerator = (TEE_ObjectEnumHandle)0xFFFFDEAD;
+    TEE_ObjectInfo nObjectInfo;
+    char pObjectID1[TEE_OBJECT_ID_MAX_LEN];
+-   size_t nObjectID1Size = 0;
++   uint32_t nObjectID1Size = 0;
+ 
+    /* CODE */
+    TEE_GetNextPersistentObject(nObjectEnumerator, &nObjectInfo, pObjectID1, &nObjectID1Size);
+@@ -2101,7 +2103,7 @@
+    TEE_ObjectEnumHandle nObjectEnumerator;
+    TEE_ObjectInfo nObjectInfo;
+    char pObjectID1[TEE_OBJECT_ID_MAX_LEN];
+-   size_t nObjectID1Size = 0;
++   uint32_t nObjectID1Size = 0;
+    TEE_Result nTempResult;
+ 
+    /* CODE */
+@@ -2166,9 +2168,9 @@
  {
     /* VARIABLES */
     TEE_ObjectHandle pobject = (TEE_ObjectHandle)0xFFFFDEAD;
 -   uint32_t nObjectType, nMaxObjectSize;
 +   uint32_t nObjectType, nMaxKeySize;
     void* pBuffer;
-    size_t nBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;
+-   size_t nBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;
++   uint32_t nBufferSize = BIG_ATTRIBUTE_BUFFER_SIZE;
     TEE_Result nTempResult;
+ 
+    pBuffer = TEE_Malloc(BIG_ATTRIBUTE_BUFFER_SIZE, 0);
 @@ -2176,16 +2178,16 @@
  	return TRUSTED_APP_ERROR_MALLOC_FAILED;
  

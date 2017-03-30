@@ -682,7 +682,7 @@ static TEEC_Result Invoke_Crypto_AllocateOperation(
 	op.params[0].value.a = algo;
 	op.params[0].value.b = mode;
 	op.params[1].value.a = obj_size1 + obj_size2;
-	op.params[3].value.a = (uint32_t)*oph;
+	op.params[3].value.a = handle_to_u32(*oph);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
 					 TEEC_NONE, TEEC_VALUE_INPUT);
@@ -716,7 +716,7 @@ static TEEC_Result Invoke_Crypto_GetOperationInfo(
 	uint32_t ret_orig;
 	uint32_t mask_handle_state = 0;
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INOUT, TEEC_VALUE_OUTPUT,
 					 TEEC_VALUE_OUTPUT, TEEC_VALUE_OUTPUT);
 
@@ -776,8 +776,8 @@ static TEEC_Result Invoke_Crypto_GetOperationInfoMultiple(
 	obuf_size = ((key_exp * 2) + 2) * 4;
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, obuf_size,
 			       TEEC_MEM_OUTPUT, mem01_exit)
+	op.params[0].value.a = handle_to_u32(*oph);
 
-	op.params[0].value.a = (uint32_t)*oph;
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -833,7 +833,7 @@ static TEEC_Result Invoke_Crypto_ResetOperation(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 
@@ -853,7 +853,7 @@ static TEEC_Result Invoke_Crypto_FreeAllKeysAndOperations(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 
@@ -974,7 +974,7 @@ static TEEC_Result Invoke_Crypto_InitObjectWithKeys(
 	 */
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, 60)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(2, 0, SHARE_MEM02, tmp_offset)
-	op.params[3].value.a = (uint32_t)*obh;
+	op.params[3].value.a = handle_to_u32(*obh);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
 					 TEEC_MEMREF_PARTIAL_INPUT,
@@ -1014,8 +1014,8 @@ static TEEC_Result Invoke_Crypto_SetOperationKey(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
-	op.params[0].value.b = (uint32_t)*obh;
+	op.params[0].value.a = handle_to_u32(*oph);
+	op.params[0].value.b = handle_to_u32(*obh);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
@@ -1045,9 +1045,9 @@ static TEEC_Result Invoke_Crypto_SetOperationKey2(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
-	op.params[0].value.b = (uint32_t)*obh1;
-	op.params[1].value.a = (uint32_t)*obh2;
+	op.params[0].value.a = handle_to_u32(*oph);
+	op.params[0].value.b = handle_to_u32(*obh1);
+	op.params[1].value.a = handle_to_u32(*obh2);
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
 					 TEEC_NONE, TEEC_NONE);
 
@@ -1075,8 +1075,8 @@ static TEEC_Result Invoke_Crypto_DeriveKey(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
-	op.params[0].value.b = (uint32_t)*obh;
+	op.params[0].value.a = handle_to_u32(*oph);
+	op.params[0].value.b = handle_to_u32(*obh);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
@@ -1110,7 +1110,7 @@ static TEEC_Result Invoke_Crypto_AEInit(
 					TEEC_MEM_INPUT, nonce_length,
 					nonce_val, mem01_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	op.params[0].value.b = in_tag_len;
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
@@ -1154,7 +1154,7 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_encryption(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, DS_BIG_SIZE,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -1218,7 +1218,7 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_decryption(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, partd_length)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
 		then Param[3].memref.size=1*/
@@ -1272,7 +1272,7 @@ static TEEC_Result Invoke_Crypto_AEUpdateAAD(
 					TEEC_MEM_INPUT, aad_length,
 					aad_data, mem01_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 
@@ -1316,7 +1316,7 @@ static TEEC_Result Invoke_Crypto_AEEncryptFinal(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM03, partd_length,
 			       TEEC_MEM_OUTPUT, mem03_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	switch (case_buf) {
@@ -1424,7 +1424,7 @@ static TEEC_Result Invoke_Crypto_AEDecryptFinal(
 			BIT_CHANGE(*(uint32_t *)SHARE_MEM03->buffer, 4);
 	}
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(2, 0, SHARE_MEM03,
@@ -1551,7 +1551,7 @@ static TEEC_Result Invoke_Crypto_DigestUpdate(
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 
@@ -1585,7 +1585,7 @@ static TEEC_Result Invoke_Crypto_DigestDoFinal(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	if (case_buf == OUTPUT_BUFFER_TOO_SHORT) {
@@ -1656,7 +1656,7 @@ static TEEC_Result Invoke_Crypto_AsymmetricSignDigest(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      saved_digest.size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -1732,7 +1732,7 @@ static TEEC_Result Invoke_Crypto_AsymmetricVerifyDigest(
 		}
 	}
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      saved_digest.size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM02,
@@ -1771,7 +1771,7 @@ static TEEC_Result Invoke_Crypto_AsymmetricEncrypt(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -1827,7 +1827,7 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 	size_t initial_size;
-	char *expected_res;
+	const char *expected_res;
 	size_t expected_size;
 
 	/* Fill SharedMem1 with buffer_asym_encrypted */
@@ -1839,7 +1839,7 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      buffer_asym_encrypted.size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -1905,8 +1905,8 @@ static TEEC_Result Invoke_Crypto_CopyOperation(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*dst_oph;
-	op.params[0].value.b = (uint32_t)*src_oph;
+	op.params[0].value.a = handle_to_u32(*dst_oph);
+	op.params[0].value.b = handle_to_u32(*src_oph);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
@@ -1928,7 +1928,7 @@ static TEEC_Result Invoke_Crypto_MACInit(
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM06, iv_len,
 					TEEC_MEM_INPUT, iv_len, iv, mem06_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM06, iv_len)
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
@@ -1966,7 +1966,7 @@ static TEEC_Result Invoke_Crypto_MACUpdate(
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 
@@ -2015,7 +2015,7 @@ static TEEC_Result Invoke_Crypto_MACCompareFinal(
 		}
 	}
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(2, 0, SHARE_MEM02, mac.size)
@@ -2054,7 +2054,7 @@ static TEEC_Result Invoke_Crypto_MACComputeFinal(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fdata_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	if (case_buf == OUTPUT_BUFFER_TOO_SHORT) {
@@ -2116,7 +2116,7 @@ static TEEC_Result Invoke_Crypto_CipherInit(
 	ALLOCATE_AND_FILL_SHARED_MEMORY(CONTEXT01, SHARE_MEM01, iv_len,
 					TEEC_MEM_INPUT, iv_len, iv, mem01_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 
@@ -2161,7 +2161,7 @@ static TEEC_Result Invoke_Crypto_CipherUpdate(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -2228,7 +2228,7 @@ static TEEC_Result Invoke_Crypto_CipherDoFinal(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM02, fulld_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 	/*if $IN_caseBuffer$ = OUTPUT_BUFFER_TOO_SHORT(2)
@@ -2307,7 +2307,7 @@ static TEEC_Result Invoke_Crypto_FreeOperation(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	op.params[0].value.a = (uint32_t)*oph;
+	op.params[0].value.a = handle_to_u32(*oph);
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	res = TEEC_InvokeCommand(s, cmd_id, &op, &ret_orig);
@@ -2339,7 +2339,7 @@ static TEEC_Result calculate_digest(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, data_length,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 					      SHARE_MEM04->size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM05,
@@ -2409,7 +2409,7 @@ static TEEC_Result sign_digest(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, 512,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	if (in_dgst->size != 0) {
 		SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 						      in_dgst->size)
@@ -2484,7 +2484,7 @@ static bool verify_digest(
 					TEEC_MEM_INPUT,
 					in_sdgst->size, in_sdgst->buffer, mem05_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 					      saved_digest.size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM05, in_sdgst->size)
@@ -2554,7 +2554,7 @@ static TEEC_Result mac_compute_final(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, fdata_length,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 					      SHARE_MEM04->size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM05,
@@ -2622,7 +2622,7 @@ static TEEC_Result cipher_do_final(
 					saved_cipher_iv.buffer,
 					mem04_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 					      saved_cipher_iv.size)
 
@@ -2646,7 +2646,7 @@ static TEEC_Result cipher_do_final(
 	ALLOCATE_SHARED_MEMORY(CONTEXT01, SHARE_MEM05, fdata_length,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
-	op.params[0].value.a = (uint32_t)op1;
+	op.params[0].value.a = handle_to_u32(op1);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM04,
 					      SHARE_MEM04->size)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM05,

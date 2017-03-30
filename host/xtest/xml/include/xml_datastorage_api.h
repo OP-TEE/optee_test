@@ -675,7 +675,7 @@ static TEEC_UUID UUID_TTA_testingInternalAPI_dataStorage = {
 					    connectionMethod, connectionData, \
 					    operation, &ret_orig)); \
 		if ((returnOrigin != 0) && \
-		    ((int)returnOrigin != TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
+		    (returnOrigin != TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
 			ADBG_EXPECT(c, (int)returnOrigin, ret_orig); \
 		else \
 			ADBG_EXPECT_NOT(c, (int)returnOrigin, ret_orig); \

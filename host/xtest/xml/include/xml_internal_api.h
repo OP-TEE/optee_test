@@ -327,7 +327,7 @@ static TEEC_Result Invoke_GetPropertyAsXXX_withoutEnum(
 				       TEEC_MEM_OUTPUT, mem02_exit)
 	}
 
-	op.params[0].value.a = (uint32_t)propSet;
+	op.params[0].value.a = handle_to_u32(propSet);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01, nameLen)
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(2, 0, SHARE_MEM02,
 					      SHARE_MEM02->size)
@@ -592,7 +592,7 @@ static TEEC_Result Invoke_StartPropertyEnumerator(
 	uint32_t org;
 
 	op.params[0].value.a = enumerator;
-	op.params[1].value.a = (uint32_t)propSet;
+	op.params[1].value.a = handle_to_u32(propSet);
 
 	op.paramTypes = TEEC_PARAM_TYPES(
 		TEEC_VALUE_INPUT, TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE);

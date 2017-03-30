@@ -207,6 +207,8 @@ ADBG_CASE_DEFINE(regression, <xsl:value-of select="$position" />, xtest_tee_<xsl
 </xsl:when>
 <xsl:when test="(../type/@name='ALL_TEE_NAMES' and ./@name='NULL')"><xsl:text>_device</xsl:text>
 </xsl:when>
+<xsl:when test="(../type/@name='ALL_RETURN_ORIGINS' and ./@name='NULL')"><xsl:text>0</xsl:text>
+</xsl:when>
 <xsl:otherwise>
 <!--xsl:text>&amp;</xsl:text--><xsl:value-of select="./@name" />
 </xsl:otherwise>

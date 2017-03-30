@@ -14,6 +14,8 @@
 #ifndef XML_COMMON_API_H_
 #define XML_COMMON_API_H_
 
+#include <assert.h>
+
 /*Helper functions/macros*/
 #define IDENTIFIER_NOT_USED(x) { if (sizeof(&x)) {} }
 
@@ -49,5 +51,15 @@
 	op.params[parameterNumber].memref.offset = sharedMemoryOffset; \
 	op.params[parameterNumber].memref.size = sharedMemorySize; \
 	op.params[parameterNumber].memref.parent = sharedMemory;
+
+static uint32_t _handle_to_u32(unsigned long h)
+{
+#ifdef __LP64__
+        assert(!(h >> 32));
+#endif
+        return (uint32_t)(h & 0xFFFFFFFF);
+}
+
+#define handle_to_u32(h) _handle_to_u32((unsigned long)h)
 
 #endif /* XML_COMMON_API_H_ */

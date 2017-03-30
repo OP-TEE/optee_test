@@ -1,0 +1,11 @@
+--- TTA_testingClientAPI.c.orig	2017-03-30 08:39:33.427602417 +0200
++++ TTA_testingClientAPI.c	2017-03-30 08:40:06.979413695 +0200
+@@ -66,7 +66,7 @@
+    SLogTrace("TA_DestroyEntryPoint");
+    
+    // release the memory allocated to the invoke structure
+-   TEE_Free(TEE_GetInstanceData());
++   TEE_Free((void *)TEE_GetInstanceData());
+ }
+ 
+ /**

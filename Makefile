@@ -81,18 +81,9 @@ GP_XTEST_IN_DIR=${GP_XTEST_OUT_DIR}/global_platform/${CFG_GP_API}
 GP_USERTA_DIR=$(CURDIR)/ta
 
 define patch-file
-	@if [ ! -e ${1} ]; then \
-		echo "Error: File to patch is unknown: $1"; \
-		return 1; \
-	fi
-	@if [ ! -e ${2} ]; then \
-		echo "Error: Patch to apply is unknown: $2"; \
-		return 1; \
-	fi
 	@if [ ! -e ${1}.orig ]; then \
-		patch -N -b ${1} < ${2}; \
-	else \
-		echo "Warning: Patch already applied on `basename $1`"; \
+		echo "  PATCH   ${1}"; \
+		patch -s -N -b ${1} < ${2}; \
 	fi
 endef
 
@@ -112,8 +103,14 @@ define mv-package
 	fi
 endef
 
+define rm-file
+	@if [ -e ${1} ]; then echo "  RM      ${1}"; rm -f ${1}; fi
+endef
+
 define patch-xalan
-	$(q)rm -f ${GP_XTEST_OUT_DIR}/${3} ${GP_XTEST_OUT_DIR}/${3}.orig
+	$(call rm-file,${GP_XTEST_OUT_DIR}/${3})
+	$(call rm-file,${GP_XTEST_OUT_DIR}/${3}.orig)
+	@echo "  XALAN   ${GP_XTEST_OUT_DIR}/${3}"
 	$(q)xalan -in ${GP_XTEST_IN_DIR}/${1} -xsl ${GP_XTEST_IN_DIR}/${2} -out ${GP_XTEST_OUT_DIR}/${3}
 endef
 
@@ -125,32 +122,38 @@ define patch-cp-ta
 	$(q)cp -p $(CFG_GP_XSL_PACKAGE_PATH)/${2}/* $(GP_USERTA_DIR)/${3}
 endef
 
+define copy-file
+	@echo "  CP      ${2}/$$(basename ${1})"
+	$(q)cp -p ${1} ${2}
+endef
+
 .PHONY: patch-generate-host
 patch-generate-host: patch-package
-	@echo "INFO: Generate host tests"
-	$(q) mkdir -p ${GP_XTEST_IN_DIR} ${GP_XTEST_IN_DIR}
-	$(q)find ${CFG_GP_PACKAGE_PATH}/packages -type f -name "*.xml" -exec cp -p {} ${GP_XTEST_IN_DIR} \;
-	$(q)find ${CFG_GP_XSL_PACKAGE_PATH}/packages -type f -name "*.xsl" -exec cp -p {} ${GP_XTEST_IN_DIR} \;
+	$(q)mkdir -p ${GP_XTEST_IN_DIR} ${GP_XTEST_IN_DIR}
+	$(call copy-file,${CFG_GP_PACKAGE_PATH}/packages/ClientAPI/xmlStable/TEE.xml,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_PACKAGE_PATH}/packages/DataStorage/xmlStable/TEE_DataStorage_API.xml,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_PACKAGE_PATH}/packages/TrustedCoreFw/xmlStable/TEE_Internal_API.xml,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_PACKAGE_PATH}/packages/Time_Arithmetical/xmlStable/TEE_TimeArithm_API.xml,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_PACKAGE_PATH}/packages/Crypto/xmlStable/TEE_Crypto_API.xml,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_XSL_PACKAGE_PATH}/packages/ClientAPI/xslstable/TEE.xsl,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_XSL_PACKAGE_PATH}/packages/DataStorage/xslstable/TEE_DataStorage_API.xsl,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_XSL_PACKAGE_PATH}/packages/TrustedCoreFw/xslstable/TEE_Internal_API.xsl,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_XSL_PACKAGE_PATH}/packages/Time_Arithmetical/xslstable/TEE_TimeArithm_API.xsl,${GP_XTEST_IN_DIR})
+	$(call copy-file,${CFG_GP_XSL_PACKAGE_PATH}/packages/Crypto/xslstable/TEE_Crypto_API.xsl,${GP_XTEST_IN_DIR})
 	$(call patch-xalan,TEE.xml,TEE.xsl,xtest_7000_gp.c)
 	$(call patch-xalan,TEE_DataStorage_API.xml,TEE_DataStorage_API.xsl,xtest_7500.c)
 	$(call patch-xalan,TEE_Internal_API.xml,TEE_Internal_API.xsl,xtest_8000.c)
 	$(call patch-xalan,TEE_TimeArithm_API.xml,TEE_TimeArithm_API.xsl,xtest_8500.c)
 	$(call patch-xalan,TEE_Crypto_API.xml,TEE_Crypto_API.xsl,xtest_9000.c)
-	@echo "INFO: Patch host tests"
-	# $(q)sed -i '752 c\    xtest_tee_deinit();\n' ${GP_XTEST_OUT_DIR}/xtest_7000.c
-	# $(q)sed -i '1076 c\    xtest_tee_deinit();\n' ${GP_XTEST_OUT_DIR}/xtest_8000.c
-	# $(q)sed -i '2549 c\    xtest_tee_deinit();\n' ${GP_XTEST_OUT_DIR}/xtest_8500.c
-	# $(q)sed -i '246 c\    xtest_tee_deinit();\n' ${GP_XTEST_OUT_DIR}/xtest_9000.c
 	$(call patch-file,host/xtest/xtest_9000.c,${CFG_GP_XSL_PACKAGE_PATH}/host/xtest/xtest_9000.c.patch)
 
 .PHONY: patch-generate-ta
 patch-generate-ta: patch-package
-	@echo "INFO: Generate TA"
 	$(call patch-cp-ta,TTAs/TTA_Arithmetical/TTA_Arithmetical/code_files,TTAs/TTA_Arithmetical/code_files,GP_TTA_Arithmetical)
 	$(call patch-cp-ta,TTAs/TTA_DS/TTA_DS/code_files,TTAs/TTA_DS/code_files,GP_TTA_DS)
 	$(call patch-cp-ta,TTAs/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files,TTAs/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files,GP_TTA_answerErrorTo_Invoke)
 	$(call patch-cp-ta,TTAs/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files,TTAs/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files,GP_TTA_check_OpenSession_with_4_parameters)
-	$(q) cp $(CFG_GP_PACKAGE_PATH)/TTAs/TTA_ClientAPI/ta_check_OpenSession_with_4_parameters/code_files/TTA_check_OpenSession_with_4_parameters_protocol.h $(GP_USERTA_DIR)/GP_TTA_check_OpenSession_with_4_parameters
+	$(call copy-file, $(CFG_GP_PACKAGE_PATH)/TTAs/TTA_ClientAPI/ta_check_OpenSession_with_4_parameters/code_files/TTA_check_OpenSession_with_4_parameters_protocol.h,$(GP_USERTA_DIR)/GP_TTA_check_OpenSession_with_4_parameters)
 	$(call patch-cp-ta,TTAs/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files,TTAs/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files,GP_TTA_answerErrorTo_OpenSession)
 	$(call patch-cp-ta,TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_files,TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_files,GP_TTA_testingClientAPI)
 	$(call patch-cp-ta,TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files,TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files,GP_TTA_answerSuccessTo_OpenSession_Invoke)
@@ -165,7 +168,6 @@ patch-generate-ta: patch-package
 # Patch the GP package
 .PHONY: patch-package
 patch-package:
-	@echo "INFO: Patch provided tests"
 	$(q)mkdir -p ${CFG_GP_PACKAGE_PATH}/packages
 	$(call mv-package,${CFG_GP_PACKAGE_PATH}/ClientAPI)
 	$(call mv-package,${CFG_GP_PACKAGE_PATH}/Crypto)
@@ -179,9 +181,10 @@ patch-package:
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/packages/TrustedCoreFw/xmlStable/TEE_Internal_API.xml,${CFG_GP_XSL_PACKAGE_PATH}/packages/TrustedCoreFw/xmlpatch/v1_1_0_4-2014_11_07/TEE_Internal_API.xml.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Arithmetical/code_patches/v1_1_0_4-2014_11_07/TTA_Arithmetical.c.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Arithmetical/code_patches/v1_1_0_4-2014_11_07/TTA_Arithmetical_protocol.h.patch)
-	# $(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/ta_check_OpenSession_with_4_parameters/code_files/TTA_check_OpenSession_with_4_parameters_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_patches/v1_1_0_4-2014_11_07/TTA_check_OpenSession_with_4_parameters_protocol.h.patch)
+	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/ta_check_OpenSession_with_4_parameters/code_files/TTA_check_OpenSession_with_4_parameters_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_patches/v1_1_0_4-2014_11_07/TTA_check_OpenSession_with_4_parameters_protocol.h.patch)
+	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_files/TTA_testingClientAPI.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_patches/v1_1_0_4-2014_11_07/TTA_testingClientAPI.c.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_files/TTA_testingClientAPI_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_testingClientAPI/code_patches/v1_1_0_4-2014_11_07/TTA_testingClientAPI_protocol.h.patch)
-	# $(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/TTA_answerSuccessTo_OpenSession_Invoke_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_patches/v1_1_0_4-2014_11_07/TTA_answerSuccessTo_OpenSession_Invoke_protocol.h.patch)
+	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/TTA_answerSuccessTo_OpenSession_Invoke_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_patches/v1_1_0_4-2014_11_07/TTA_answerSuccessTo_OpenSession_Invoke_protocol.h.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/TTA_answerErrorTo_OpenSession_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_patches/v1_1_0_4-2014_11_07/TTA_answerErrorTo_OpenSession_protocol.h.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/TTA_answerErrorTo_Invoke_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_patches/v1_1_0_4-2014_11_07/TTA_answerErrorTo_Invoke_protocol.h.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Crypto/code_patches/v1_1_0_4-2014_11_07/TTA_Crypto.c.patch)
@@ -194,17 +197,18 @@ patch-package:
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/TTA_TCF_MultipleInstanceTA.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_patches/v1_1_0_4-2014_11_07/TTA_TCF_MultipleInstanceTA.c.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/TTA_TCF_SingleInstanceTA.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_SingleInstanceTA/code_patches/v1_1_0_4-2014_11_07/TTA_TCF_SingleInstanceTA.c.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF/code_patches/v1_1_0_4-2014_11_07/TTA_TCF.h.patch)
+	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF/code_patches/v1_1_0_4-2014_11_07/TTA_TCF.c.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/TTA_TCF_SingleInstanceTA_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_TCF/TTA_TCF_SingleInstanceTA/code_patches/v1_1_0_4-2014_11_07/TTA_TCF_SingleInstanceTA_protocol.h.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Time/TTA_Time/code_files/TTA_Time_protocol.h,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Time/code_patches/v1_1_0_4-2014_11_07/TTA_Time_protocol.h.patch)
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Time/TTA_Time/code_files/TTA_Time.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Time/code_patches/v1_1_0_4-2014_11_07/TTA_Time.c.patch)
 
 define patch-filter-one
+	@echo "  SED     ${GP_XTEST_OUT_DIR}/$2"
 	$(q)sed -i 's|^\(ADBG_CASE_DEFINE(regression,\) $1,\(.*\)$$|/\*\1 $1,\2\*/|g' ${GP_XTEST_OUT_DIR}/$2
 endef
 
 .PHONY: patch-filter
 patch-filter:
-	@echo "INFO: Filter some tests"
 	$(call patch-filter-one,7038,xtest_7000_gp.c)
 	$(call patch-filter-one,7522,xtest_7500.c)
 	$(call patch-filter-one,7538,xtest_7500.c)
