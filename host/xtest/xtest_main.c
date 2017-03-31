@@ -50,7 +50,8 @@ void usage(char *program)
 	printf("\n");
 	printf("options:\n");
 	printf("\t-d <device-type>   TEE device path. Default not set (use any)\n");
-	printf("\t-l <level>         Test suite level: [0-15]\n");
+	printf("\t-l <level>         Test level [0-15].  Values higher than 0 enable\n");
+	printf("\t                   optional tests. Default: 0. All tests: 15.\n");
 	printf("\t-t <test_suite>    Available test suites: regression benchmark");
 #ifdef WITH_GP_TESTS
 	printf(" gp");
@@ -58,8 +59,8 @@ void usage(char *program)
 	printf("\n");
 	printf("\t                   To run several suites, use multiple names\n");
 	printf("\t                   separated by a '+' (program exits when a\n");
-	printf("\t                   suite fails\n");
-	printf("\t                   Default value = %s\n", gsuitename);
+	printf("\t                   suite fails).\n");
+	printf("\t                   Default value: '%s'\n", gsuitename);
 	printf("\t-h                 Show usage\n");
 	printf("applets:\n");
 	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
