@@ -199,7 +199,7 @@ patch-package:
 	$(call patch-file,${CFG_GP_PACKAGE_PATH}/TTAs/TTA_Time/TTA_Time/code_files/TTA_Time.c,${CFG_GP_XSL_PACKAGE_PATH}/TTAs/TTA_Time/code_patches/v1_1_0_4-2014_11_07/TTA_Time.c.patch)
 
 define patch-filter-one
-	$(q)sed -i 's|^\(ADBG_CASE_DEFINE(regression,\) $1,\(.*\)$$|/\*\1 $1,\2\*/|g' ${GP_XTEST_OUT_DIR}/$2
+	$(q)sed -i 's|^\(ADBG_CASE_DEFINE(gp,\) $1,\(.*\)$$|/\*\1 $1,\2\*/|g' ${GP_XTEST_OUT_DIR}/$2
 endef
 
 .PHONY: patch-filter

@@ -27,13 +27,20 @@
 #include "crypto_common.h"
 
 
-ADBG_SUITE_DEFINE(regression);
 ADBG_SUITE_DEFINE(benchmark);
+#ifdef WITH_GP_TESTS
+ADBG_SUITE_DEFINE(gp);
+#endif
+ADBG_SUITE_DEFINE(regression);
 
 char *_device = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
-static const char gsuitename[] = "regression";
+#ifdef WITH_GP_TESTS
+static char gsuitename[] = "regression+gp";
+#else
+static char gsuitename[] = "regression";
+#endif
 
 void usage(char *program);
 
@@ -44,7 +51,11 @@ void usage(char *program)
 	printf("options:\n");
 	printf("\t-d <device-type>   default not set, use any\n");
 	printf("\t-l <level>         test suite level: [0-15]\n");
-	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
+	printf("\t-t <test_suite>    available test suites: regression benchmark");
+#ifdef WITH_GP_TESTS
+	printf(" gp");
+#endif
+	printf("\n");
 	printf("\t                   default value = %s\n", gsuitename);
 	printf("\t-h                 show usage\n");
 	printf("applets:\n");
@@ -67,6 +78,7 @@ int main(int argc, char *argv[])
 	int ret;
 	char *p = (char *)glevel;
 	char *test_suite = (char *)gsuitename;
+	char *token;
 
 	opterr = 0;
 
@@ -117,15 +129,29 @@ int main(int argc, char *argv[])
 
 	xtest_teec_ctx_init();
 
-	if (strcmp(test_suite, "regression") == 0)
-		ret = Do_ADBG_RunSuite(&ADBG_Suite_regression,
-				       argc - optind, argv + optind);
-	else if (strcmp(test_suite, "benchmark") == 0)
-		ret = Do_ADBG_RunSuite(&ADBG_Suite_benchmark,
-				       argc - optind, argv + optind);
-	else {
-		fprintf(stderr, "No test suite found: %s\n", test_suite);
-		ret = -1;
+	for (token = test_suite; ; token = NULL) {
+
+		token = strtok(token, "+");
+		if (!token)
+			break;
+
+		if (strcmp(token, "regression") == 0)
+			ret = Do_ADBG_RunSuite(&ADBG_Suite_regression,
+					       argc - optind, argv + optind);
+		else if (strcmp(token, "benchmark") == 0)
+			ret = Do_ADBG_RunSuite(&ADBG_Suite_benchmark,
+					       argc - optind, argv + optind);
+#ifdef WITH_GP_TESTS
+		else if (strcmp(token, "gp") == 0)
+			ret = Do_ADBG_RunSuite(&ADBG_Suite_gp,
+					       argc - optind, argv + optind);
+#endif
+		else {
+			fprintf(stderr, "Unkown test suite: %s\n", token);
+			ret = -1;
+		}
+		if (ret < 0)
+			break;
 	}
 
 	xtest_teec_ctx_deinit();
