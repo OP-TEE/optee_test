@@ -28,33 +28,32 @@ ifdef CFG_GP_PACKAGE_PATH
 GP := _gp
 endif
 
-srcs := xtest_1000.c
+srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
-srcs += xtest_2000.c \
+srcs += regression_2000.c \
 	sock_server.c \
 	rand_stream.c
 endif
 
-srcs += xtest_4000.c \
-	xtest_5000.c \
-	xtest_6000.c \
-	xtest_7000$(GP).c \
-	xtest_10000.c \
-	xtest_20000.c \
-	xtest_benchmark_1000.c \
-	xtest_benchmark_2000.c \
-	xtest_helpers.c \
-	xtest_main.c \
-	xtest_test.c \
-	sha_perf.c \
-	aes_perf.c \
-	adbg/src/adbg_case.c \
+srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
 	adbg/src/adbg_log.c \
 	adbg/src/adbg_run.c \
-	adbg/src/security_utils_hex.c
+	adbg/src/security_utils_hex.c \
+	aes_perf.c \
+	benchmark_1000.c \
+	benchmark_2000.c \
+	regression_4000.c \
+	regression_5000.c \
+	regression_6000.c \
+	regression_10000.c \
+	regression_20000.c \
+	sha_perf.c \
+	xtest_helpers.c \
+	xtest_main.c \
+	xtest_test.c
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
@@ -63,10 +62,11 @@ endif
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 
-srcs  += xtest_7500.c \
-	 xtest_8000.c \
-	 xtest_8500.c \
-	 xtest_9000.c
+srcs  += gp_7000.c \
+	 gp_7500.c \
+	 gp_8000.c \
+	 gp_8500.c \
+	 gp_9000.c
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
