@@ -24,10 +24,6 @@ OBJCOPY		?= $(CROSS_COMPILE)objcopy
 OBJDUMP		?= $(CROSS_COMPILE)objdump
 READELF		?= $(CROSS_COMPILE)readelf
 
-ifdef CFG_GP_PACKAGE_PATH
-GP := _gp
-endif
-
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
