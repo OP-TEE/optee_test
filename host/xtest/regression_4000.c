@@ -24,7 +24,7 @@
 #include <utee_defines.h>
 #include <util.h>
 
-#include <xtest_4000_data.h>
+#include <regression_4000_data.h>
 #include <nist/186-2ecdsatestvectors.h>
 
 #include <assert.h>

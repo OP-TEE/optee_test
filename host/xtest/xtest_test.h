@@ -17,8 +17,11 @@
 #include <adbg.h>
 #include <tee_client_api.h>
 
-ADBG_SUITE_DECLARE(regression);
 ADBG_SUITE_DECLARE(benchmark);
+#ifdef WITH_GP_TESTS
+ADBG_SUITE_DECLARE(gp);
+#endif
+ADBG_SUITE_DECLARE(regression);
 
 /* TEEC_Result */
 ADBG_ENUM_TABLE_DECLARE(TEEC_Result);
