@@ -49,24 +49,23 @@ void usage(char *program)
 	printf("Usage: %s <options> <test_id>\n", program);
 	printf("\n");
 	printf("options:\n");
-	printf("\t-d <device-type>   default not set, use any\n");
-	printf("\t-l <level>         test suite level: [0-15]\n");
-	printf("\t-t <test_suite>    available test suites: regression benchmark");
+	printf("\t-d <device-type>   TEE device path. Default not set (use any)\n");
+	printf("\t-l <level>         Test suite level: [0-15]\n");
+	printf("\t-t <test_suite>    Available test suites: regression benchmark");
 #ifdef WITH_GP_TESTS
 	printf(" gp");
 #endif
 	printf("\n");
-	printf("\t                   default value = %s\n", gsuitename);
-	printf("\t-h                 show usage\n");
+	printf("\t                   To run several suites, use multiple names\n");
+	printf("\t                   separated by a '+' (program exits when a\n");
+	printf("\t                   suite fails\n");
+	printf("\t                   Default value = %s\n", gsuitename);
+	printf("\t-h                 Show usage\n");
 	printf("applets:\n");
-	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
-	printf("\t--sha-perf -h      show usage of SHA performance testing tool\n");
-	printf("\n");
-	printf("\t--aes-perf         AES performance testing tool for OP-TEE\n");
-	printf("\t--aes-perf -h      show usage of AES performance testing tool\n");
-	printf("\n");
+	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
+	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
 #ifdef CFG_SECURE_DATA_PATH
-	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");
+	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
 	printf("\n");
 }
@@ -135,14 +134,14 @@ int main(int argc, char *argv[])
 		if (!token)
 			break;
 
-		if (strcmp(token, "regression") == 0)
+		if (!strcmp(token, "regression"))
 			ret = Do_ADBG_RunSuite(&ADBG_Suite_regression,
 					       argc - optind, argv + optind);
-		else if (strcmp(token, "benchmark") == 0)
+		else if (!strcmp(token, "benchmark"))
 			ret = Do_ADBG_RunSuite(&ADBG_Suite_benchmark,
 					       argc - optind, argv + optind);
 #ifdef WITH_GP_TESTS
-		else if (strcmp(token, "gp") == 0)
+		else if (!strcmp(token, "gp"))
 			ret = Do_ADBG_RunSuite(&ADBG_Suite_gp,
 					       argc - optind, argv + optind);
 #endif
