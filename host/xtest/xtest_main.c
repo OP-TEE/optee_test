@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 {
 	int opt;
 	int index;
+	TEEC_Result tee_res;
 	int ret;
 	char *p = (char *)glevel;
 	char *test_suite = (char *)gsuitename;
@@ -115,7 +116,11 @@ int main(int argc, char *argv[])
 
 	printf("\nTEE test application started with device [%s]\n", _device);
 
-	xtest_teec_ctx_init();
+	tee_res = xtest_teec_ctx_init();
+	if (tee_res != TEEC_SUCCESS) {
+		fprintf(stderr, "Failed to open TEE context: 0x%x\n", token);
+		return -1;
+	}
 
 	if (strcmp(test_suite, "regression") == 0)
 		ret = Do_ADBG_RunSuite(&ADBG_Suite_regression,
