@@ -46,6 +46,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
 #ifdef CFG_SECURE_DATA_PATH
 static void xtest_tee_test_1014(ADBG_Case_t *Case_p);
 #endif
+static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
@@ -68,6 +69,8 @@ ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
 ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
 		"Test secure data path against SDP TAs and pTAs");
 #endif
+ADBG_CASE_DEFINE(regression, 1015, xtest_tee_test_1015,
+		"FS hash-tree corner cases");
 
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
@@ -1118,3 +1121,24 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "SDP: NonSecure client invokes SDP pTA (should fail)");
 }
 #endif
+
+static void xtest_tee_test_1015(ADBG_Case_t *c)
+{
+	TEEC_Result res;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	/*
+	 * If the static TA (which is optional) isn't available, skip this
+	 * test.
+	 */
+	if (res != TEEC_SUCCESS)
+		return;
+
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_FS_HTREE,
+				   NULL, &ret_orig));
+	TEEC_CloseSession(&session);
+}
