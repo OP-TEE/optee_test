@@ -289,6 +289,8 @@ void Do_ADBG_HexLog(const void *const Buf_p, const size_t Size,
 
 int Do_ADBG_RunSuite(const ADBG_Suite_Definition_t *Suite_p, int argc,
 		     char *argv[]);
+int Do_ADBG_AppendToSuite(ADBG_Suite_Definition_t *Dest_p,
+			  ADBG_Suite_Definition_t *Source_p);
 
 /*
  * SubCase functions

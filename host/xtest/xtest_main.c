@@ -71,36 +71,6 @@ void usage(char *program)
 	printf("\n");
 }
 
-static int move_suite(ADBG_Suite_Definition_t *dest,
-		      ADBG_Suite_Definition_t *suite)
-{
-	char *p;
-	size_t size;
-
-	/* Append name of 'suite' to name of 'dest' */
-	size = strlen(suite->SuiteID_p);
-	if (dest->SuiteID_p) {
-		size += strlen(dest->SuiteID_p);
-		/* '+' */
-		size += 1;
-	}
-	/* '\0' */
-	size += 1;
-	p = malloc(size);
-	if (!p) {
-		fprintf(stderr, "malloc failed\n");
-		return -1;
-	}
-	if (dest->SuiteID_p)
-		snprintf(p, size, "%s+%s", dest->SuiteID_p, suite->SuiteID_p);
-	else
-		strncpy(p, suite->SuiteID_p, size);
-	free((void *)dest->SuiteID_p);
-	dest->SuiteID_p = p;
-
-	TAILQ_CONCAT(&dest->cases, &suite->cases, link);
-}
-
 int main(int argc, char *argv[])
 {
 	int opt;
@@ -169,12 +139,12 @@ int main(int argc, char *argv[])
 			break;
 
 		if (!strcmp(token, "regression"))
-			ret = move_suite(&all, &ADBG_Suite_regression);
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_regression);
 		else if (!strcmp(token, "benchmark"))
-			ret = move_suite(&all, &ADBG_Suite_benchmark);
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_benchmark);
 #ifdef WITH_GP_TESTS
 		else if (!strcmp(token, "gp"))
-			ret = move_suite(&all, &ADBG_Suite_gp);
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_gp);
 #endif
 		else {
 			fprintf(stderr, "Unkown test suite: %s\n", token);
@@ -188,7 +158,7 @@ int main(int argc, char *argv[])
 	ret = Do_ADBG_RunSuite(&all, argc - optind, argv + optind);
 
 err:
-	free(all.SuiteID_p);
+	free((void *)all.SuiteID_p);
 	xtest_teec_ctx_deinit();
 
 	printf("TEE test application done!\n");
