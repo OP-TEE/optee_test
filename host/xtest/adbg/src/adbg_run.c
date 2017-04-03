@@ -66,6 +66,38 @@ int Do_ADBG_RunSuite(
 	return ret;
 }
 
+int Do_ADBG_AppendToSuite(
+	ADBG_Suite_Definition_t *Dest_p,
+	ADBG_Suite_Definition_t *Source_p
+	)
+{
+	char *p;
+	size_t size;
+
+	/* Append name of 'Source_p' to name of 'Dest_p' */
+	size = strlen(Source_p->SuiteID_p);
+	if (Dest_p->SuiteID_p) {
+		size += strlen(Dest_p->SuiteID_p);
+		size += 1; /* '+' */
+	}
+	size += 1; /* '\0' */
+	p = malloc(size);
+	if (!p) {
+		fprintf(stderr, "malloc failed\n");
+		return -1;
+	}
+	if (Dest_p->SuiteID_p)
+		snprintf(p, size, "%s+%s", Dest_p->SuiteID_p,
+			 Source_p->SuiteID_p);
+	else
+		strncpy(p, Source_p->SuiteID_p, size);
+	free((void *)Dest_p->SuiteID_p);
+	Dest_p->SuiteID_p = p;
+
+	TAILQ_CONCAT(&Dest_p->cases, &Source_p->cases, link);
+	return 0;
+}
+
 /*************************************************************************
  * 6. Definitions of internal functions
  ************************************************************************/

@@ -27,13 +27,20 @@
 #include "crypto_common.h"
 
 
-ADBG_SUITE_DEFINE(regression);
 ADBG_SUITE_DEFINE(benchmark);
+#ifdef WITH_GP_TESTS
+ADBG_SUITE_DEFINE(gp);
+#endif
+ADBG_SUITE_DEFINE(regression);
 
 char *_device = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
-static const char gsuitename[] = "regression";
+#ifdef WITH_GP_TESTS
+static char gsuitename[] = "regression+gp";
+#else
+static char gsuitename[] = "regression";
+#endif
 
 void usage(char *program);
 
@@ -42,20 +49,24 @@ void usage(char *program)
 	printf("Usage: %s <options> <test_id>\n", program);
 	printf("\n");
 	printf("options:\n");
-	printf("\t-d <device-type>   default not set, use any\n");
-	printf("\t-l <level>         test suite level: [0-15]\n");
-	printf("\t-t <test_suite>    available test suite: regression, benchmark\n");
-	printf("\t                   default value = %s\n", gsuitename);
-	printf("\t-h                 show usage\n");
+	printf("\t-d <device-type>   TEE device path. Default not set (use any)\n");
+	printf("\t-l <level>         Test level [0-15].  Values higher than 0 enable\n");
+	printf("\t                   optional tests. Default: 0. All tests: 15.\n");
+	printf("\t-t <test_suite>    Available test suites: regression benchmark");
+#ifdef WITH_GP_TESTS
+	printf(" gp");
+#endif
+	printf("\n");
+	printf("\t                   To run several suites, use multiple names\n");
+	printf("\t                   separated by a '+' (program exits when a\n");
+	printf("\t                   suite fails).\n");
+	printf("\t                   Default value: '%s'\n", gsuitename);
+	printf("\t-h                 Show usage\n");
 	printf("applets:\n");
-	printf("\t--sha-perf         SHA performance testing tool for OP-TEE\n");
-	printf("\t--sha-perf -h      show usage of SHA performance testing tool\n");
-	printf("\n");
-	printf("\t--aes-perf         AES performance testing tool for OP-TEE\n");
-	printf("\t--aes-perf -h      show usage of AES performance testing tool\n");
-	printf("\n");
+	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
+	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
 #ifdef CFG_SECURE_DATA_PATH
-	printf("\t--sdp-basic        Basic Secure Data Path test setup for OP-TEE ('-h' for usage)\n");
+	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
 	printf("\n");
 }
@@ -68,6 +79,9 @@ int main(int argc, char *argv[])
 	int ret;
 	char *p = (char *)glevel;
 	char *test_suite = (char *)gsuitename;
+	char *token;
+	ADBG_Suite_Definition_t all = { .SuiteID_p = NULL,
+				.cases = TAILQ_HEAD_INITIALIZER(all.cases), };
 
 	opterr = 0;
 
@@ -122,17 +136,34 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (strcmp(test_suite, "regression") == 0)
-		ret = Do_ADBG_RunSuite(&ADBG_Suite_regression,
-				       argc - optind, argv + optind);
-	else if (strcmp(test_suite, "benchmark") == 0)
-		ret = Do_ADBG_RunSuite(&ADBG_Suite_benchmark,
-				       argc - optind, argv + optind);
-	else {
-		fprintf(stderr, "No test suite found: %s\n", test_suite);
-		ret = -1;
+	/* Concatenate all the selected suites into 'all' */
+	for (token = test_suite; ; token = NULL) {
+
+		token = strtok(token, "+");
+		if (!token)
+			break;
+
+		if (!strcmp(token, "regression"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_regression);
+		else if (!strcmp(token, "benchmark"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_benchmark);
+#ifdef WITH_GP_TESTS
+		else if (!strcmp(token, "gp"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_gp);
+#endif
+		else {
+			fprintf(stderr, "Unkown test suite: %s\n", token);
+			ret = -1;
+		}
+		if (ret < 0)
+			goto err;
 	}
 
+	/* Run the tests */
+	ret = Do_ADBG_RunSuite(&all, argc - optind, argv + optind);
+
+err:
+	free((void *)all.SuiteID_p);
 	xtest_teec_ctx_deinit();
 
 	printf("TEE test application done!\n");

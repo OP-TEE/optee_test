@@ -59,7 +59,7 @@ static uint32_t ZERO;
 #define TEEC_MEM_INOUT 0x00000003
 
 /* "ItIsNotTotosTEEs" */
-const char *INVALID_NOT_EXISTING_TEE = "ItIsNotTotosTEEs\0";
+static const char *INVALID_NOT_EXISTING_TEE = "ItIsNotTotosTEEs\0";
 
 /** ALL_TEMPORARY_MEMORIES */
 uint8_t *TEMP_MEM01;
