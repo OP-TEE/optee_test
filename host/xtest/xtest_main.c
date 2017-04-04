@@ -13,6 +13,7 @@
  */
 
 #include <err.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,7 +119,8 @@ int main(int argc, char *argv[])
 
 	tee_res = xtest_teec_ctx_init();
 	if (tee_res != TEEC_SUCCESS) {
-		fprintf(stderr, "Failed to open TEE context: 0x%x\n", token);
+		fprintf(stderr, "Failed to open TEE context: 0x%" PRIx32 "\n",
+								tee_res);
 		return -1;
 	}
 
