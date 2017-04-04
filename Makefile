@@ -209,7 +209,7 @@ patch-filter:
 	@# 7001-7010, 7013, 7016-7019 are in regression_7000.c already
 	$(foreach n,7001 7002 7003 7004 7005 7006 7007 7008 7009 7010 7013 7016 7017 7018 7019,$(call patch-filter-one,$(n),gp_7000.c))
 	$(call patch-filter-one,7038,gp_7000.c)
-	$(foreach n,7538 7540 7546 7557 7559 7577 7641 7642 7643 7644 7686,$(call patch-filter-one,$(n),gp_7500.c))
+	$(foreach n,7522 7538 7540 7546 7557 7559 7577 7641 7642 7643 7644 7686,$(call patch-filter-one,$(n),gp_7500.c))
 	$(foreach n,8025 8030 8058 8059 8066,$(call patch-filter-one,$(n),gp_8000.c))
 	$(foreach n,8614 8643 8644 8673 8674,$(call patch-filter-one,$(n),gp_8500.c))
 	$(foreach n,9001 9072 9073 9075 9079 9080 9082 9085 9086 9088 9090 9091 9093 9095 9096 9098 9099 9109 9110 9160 9174 9195 9196 9204 9239,$(call patch-filter-one,$(n),gp_9000.c))
