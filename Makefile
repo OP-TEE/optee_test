@@ -200,59 +200,19 @@ patch-package:
 
 define patch-filter-one
 	$(q)sed -i 's|^\(ADBG_CASE_DEFINE(gp,\) $1,\(.*\)$$|/\*\1 $1,\2\*/|g' ${GP_XTEST_OUT_DIR}/$2
+
 endef
 
 .PHONY: patch-filter
 patch-filter:
-	@echo "INFO: Filter some tests"
+	@echo "INFO: Filter out some tests"
+	@# 7001-7010, 7013, 7016-7019 are in regression_7000.c already
+	$(foreach n,7001 7002 7003 7004 7005 7006 7007 7008 7009 7010 7013 7016 7017 7018 7019,$(call patch-filter-one,$(n),gp_7000.c))
 	$(call patch-filter-one,7038,gp_7000.c)
-	$(call patch-filter-one,7522,gp_7500.c)
-	$(call patch-filter-one,7538,gp_7500.c)
-	$(call patch-filter-one,7540,gp_7500.c)
-	$(call patch-filter-one,7546,gp_7500.c)
-	$(call patch-filter-one,7557,gp_7500.c)
-	$(call patch-filter-one,7559,gp_7500.c)
-	$(call patch-filter-one,7577,gp_7500.c)
-	$(call patch-filter-one,7641,gp_7500.c)
-	$(call patch-filter-one,7642,gp_7500.c)
-	$(call patch-filter-one,7643,gp_7500.c)
-	$(call patch-filter-one,7644,gp_7500.c)
-	$(call patch-filter-one,7686,gp_7500.c)
-	$(call patch-filter-one,8025,gp_8000.c)
-	$(call patch-filter-one,8030,gp_8000.c)
-	$(call patch-filter-one,8058,gp_8000.c)
-	$(call patch-filter-one,8059,gp_8000.c)
-	$(call patch-filter-one,8066,gp_8000.c)
-	$(call patch-filter-one,8614,gp_8500.c)
-	$(call patch-filter-one,8643,gp_8500.c)
-	$(call patch-filter-one,8644,gp_8500.c)
-	$(call patch-filter-one,8673,gp_8500.c)
-	$(call patch-filter-one,8674,gp_8500.c)
-	$(call patch-filter-one,9001,gp_9000.c)
-	$(call patch-filter-one,9072,gp_9000.c)
-	$(call patch-filter-one,9073,gp_9000.c)
-	$(call patch-filter-one,9075,gp_9000.c)
-	$(call patch-filter-one,9079,gp_9000.c)
-	$(call patch-filter-one,9080,gp_9000.c)
-	$(call patch-filter-one,9082,gp_9000.c)
-	$(call patch-filter-one,9085,gp_9000.c)
-	$(call patch-filter-one,9086,gp_9000.c)
-	$(call patch-filter-one,9088,gp_9000.c)
-	$(call patch-filter-one,9090,gp_9000.c)
-	$(call patch-filter-one,9091,gp_9000.c)
-	$(call patch-filter-one,9093,gp_9000.c)
-	$(call patch-filter-one,9095,gp_9000.c)
-	$(call patch-filter-one,9096,gp_9000.c)
-	$(call patch-filter-one,9098,gp_9000.c)
-	$(call patch-filter-one,9099,gp_9000.c)
-	$(call patch-filter-one,9109,gp_9000.c)
-	$(call patch-filter-one,9110,gp_9000.c)
-	$(call patch-filter-one,9160,gp_9000.c)
-	$(call patch-filter-one,9174,gp_9000.c)
-	$(call patch-filter-one,9195,gp_9000.c)
-	$(call patch-filter-one,9196,gp_9000.c)
-	$(call patch-filter-one,9204,gp_9000.c)
-	$(call patch-filter-one,9239,gp_9000.c)
+	$(foreach n,7538 7540 7546 7557 7559 7577 7641 7642 7643 7644 7686,$(call patch-filter-one,$(n),gp_7500.c))
+	$(foreach n,8025 8030 8058 8059 8066,$(call patch-filter-one,$(n),gp_8000.c))
+	$(foreach n,8614 8643 8644 8673 8674,$(call patch-filter-one,$(n),gp_8500.c))
+	$(foreach n,9001 9072 9073 9075 9079 9080 9082 9085 9086 9088 9090 9091 9093 9095 9096 9098 9099 9109 9110 9160 9174 9195 9196 9204 9239,$(call patch-filter-one,$(n),gp_9000.c))
 
 .PHONY: patch
 patch: patch-openssl patch-generate-host patch-generate-ta
