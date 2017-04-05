@@ -648,28 +648,28 @@ exit:
 }
 
 /* Corrupt Meta Encrypted Key */
-static void xtest_tee_test_20001(ADBG_Case_t *c)
+static void xtest_tee_test_9001(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_KEY_OFFSET
 			);
 }
 
 /* Corrupt Meta IV */
-static void xtest_tee_test_20002(ADBG_Case_t *c)
+static void xtest_tee_test_9002(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_IV_OFFSET
 			);
 }
 
 /* Corrupt Meta Tag */
-static void xtest_tee_test_20003(ADBG_Case_t *c)
+static void xtest_tee_test_9003(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_TAG_OFFSET
 			);
 }
 
 /* Corrupt Meta Data */
-static void xtest_tee_test_20004(ADBG_Case_t *c)
+static void xtest_tee_test_9004(ADBG_Case_t *c)
 {
 	storage_corrupt(c,
 			TEE_FS_HTREE_TYPE_HEAD, CORRUPT_META_DATA_OFFSET
@@ -677,7 +677,7 @@ static void xtest_tee_test_20004(ADBG_Case_t *c)
 }
 
 /* Corrupt Meta File : first byte */
-static void xtest_tee_test_20021(ADBG_Case_t *c)
+static void xtest_tee_test_9021(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_FIRST_BYTE
 			);
@@ -685,7 +685,7 @@ static void xtest_tee_test_20021(ADBG_Case_t *c)
 }
 
 /* Corrupt Meta File : last byte */
-static void xtest_tee_test_20022(ADBG_Case_t *c)
+static void xtest_tee_test_9022(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_LAST_BYTE
 			);
@@ -693,7 +693,7 @@ static void xtest_tee_test_20022(ADBG_Case_t *c)
 }
 
 /* Corrupt Meta File : random byte */
-static void xtest_tee_test_20023(ADBG_Case_t *c)
+static void xtest_tee_test_9023(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_HEAD, CORRUPT_FILE_RAND_BYTE
 			);
@@ -701,7 +701,7 @@ static void xtest_tee_test_20023(ADBG_Case_t *c)
 }
 
 /* Corrupt Block IV */
-static void xtest_tee_test_20501(ADBG_Case_t *c)
+static void xtest_tee_test_9501(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_NODE, CORRUPT_BLOCK_IV_OFFSET
 			);
@@ -709,14 +709,14 @@ static void xtest_tee_test_20501(ADBG_Case_t *c)
 }
 
 /* Corrupt Block Tag */
-static void xtest_tee_test_20502(ADBG_Case_t *c)
+static void xtest_tee_test_9502(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_NODE, CORRUPT_BLOCK_TAG_OFFSET
 			);
 }
 
 /* Corrupt Block Data */
-static void xtest_tee_test_20503(ADBG_Case_t *c)
+static void xtest_tee_test_9503(ADBG_Case_t *c)
 {
 
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_BLOCK_DATA_OFFSET
@@ -724,7 +724,7 @@ static void xtest_tee_test_20503(ADBG_Case_t *c)
 }
 
 /* Corrupt Block File : first byte */
-static void xtest_tee_test_20521(ADBG_Case_t *c)
+static void xtest_tee_test_9521(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_FIRST_BYTE
 			);
@@ -732,7 +732,7 @@ static void xtest_tee_test_20521(ADBG_Case_t *c)
 }
 
 /* Corrupt Block File : last byte */
-static void xtest_tee_test_20522(ADBG_Case_t *c)
+static void xtest_tee_test_9522(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_LAST_BYTE
 			);
@@ -740,38 +740,38 @@ static void xtest_tee_test_20522(ADBG_Case_t *c)
 }
 
 /* Corrupt Block File : random byte */
-static void xtest_tee_test_20523(ADBG_Case_t *c)
+static void xtest_tee_test_9523(ADBG_Case_t *c)
 {
 	storage_corrupt(c, TEE_FS_HTREE_TYPE_BLOCK, CORRUPT_FILE_RAND_BYTE
 			);
 
 }
 
-ADBG_CASE_DEFINE(regression, 20001, xtest_tee_test_20001,
+ADBG_CASE_DEFINE(regression, 9001, xtest_tee_test_9001,
 	"Sanity Test Corrupt Meta Encrypted Key");
-ADBG_CASE_DEFINE(regression, 20002, xtest_tee_test_20002,
+ADBG_CASE_DEFINE(regression, 9002, xtest_tee_test_9002,
 	"Sanity Test Corrupt Meta IV");
-ADBG_CASE_DEFINE(regression, 20003, xtest_tee_test_20003,
+ADBG_CASE_DEFINE(regression, 9003, xtest_tee_test_9003,
 	"Sanity Test Corrupt Meta Tag");
-ADBG_CASE_DEFINE(regression, 20004, xtest_tee_test_20004,
+ADBG_CASE_DEFINE(regression, 9004, xtest_tee_test_9004,
 	"Sanity Test Corrupt Meta Data");
-ADBG_CASE_DEFINE(regression, 20021, xtest_tee_test_20021,
+ADBG_CASE_DEFINE(regression, 9021, xtest_tee_test_9021,
 	"Sanity Test Corrupt Meta File : first byte");
-ADBG_CASE_DEFINE(regression, 20022, xtest_tee_test_20022,
+ADBG_CASE_DEFINE(regression, 9022, xtest_tee_test_9022,
 	"Sanity Test Corrupt Meta File : last byte");
-ADBG_CASE_DEFINE(regression, 20023, xtest_tee_test_20023,
+ADBG_CASE_DEFINE(regression, 9023, xtest_tee_test_9023,
 	"Sanity Test Corrupt Meta File : random byte");
-ADBG_CASE_DEFINE(regression, 20501, xtest_tee_test_20501,
+ADBG_CASE_DEFINE(regression, 9501, xtest_tee_test_9501,
 	"Sanity Test Corrupt Block IV");
-ADBG_CASE_DEFINE(regression, 20502, xtest_tee_test_20502,
+ADBG_CASE_DEFINE(regression, 9502, xtest_tee_test_9502,
 	"Sanity Test Corrupt Block Tag");
-ADBG_CASE_DEFINE(regression, 20503, xtest_tee_test_20503,
+ADBG_CASE_DEFINE(regression, 9503, xtest_tee_test_9503,
 	"Sanity Test Corrupt Block Data");
-ADBG_CASE_DEFINE(regression, 20521, xtest_tee_test_20521,
+ADBG_CASE_DEFINE(regression, 9521, xtest_tee_test_9521,
 	"Sanity Test Corrupt Block File : first byte");
-ADBG_CASE_DEFINE(regression, 20522, xtest_tee_test_20522,
+ADBG_CASE_DEFINE(regression, 9522, xtest_tee_test_9522,
 	"Sanity Test Corrupt Block File : last byte");
-ADBG_CASE_DEFINE(regression, 20523, xtest_tee_test_20523,
+ADBG_CASE_DEFINE(regression, 9523, xtest_tee_test_9523,
 	"Sanity Test Corrupt Block File : random byte");
 
 #endif /* defined(CFG_REE_FS) */

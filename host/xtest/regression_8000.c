@@ -23,12 +23,12 @@
 #define WITH_CONCAT_KDF 1
 #define WITH_PBKDF2 1
 
-static void xtest_tee_test_10001(ADBG_Case_t *c);
-static void xtest_tee_test_10002(ADBG_Case_t *c);
+static void xtest_tee_test_8001(ADBG_Case_t *c);
+static void xtest_tee_test_8002(ADBG_Case_t *c);
 
-ADBG_CASE_DEFINE(regression, 10001, xtest_tee_test_10001,
+ADBG_CASE_DEFINE(regression, 8001, xtest_tee_test_8001,
 		 "Test TEE Internal API key derivation extensions");
-ADBG_CASE_DEFINE(regression, 10002, xtest_tee_test_10002,
+ADBG_CASE_DEFINE(regression, 8002, xtest_tee_test_8002,
 	"Secure Storage Key Manager API Self Test");
 
 /*
@@ -723,7 +723,7 @@ static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 	return res;
 }
 
-static void xtest_tee_test_10001(ADBG_Case_t *c)
+static void xtest_tee_test_8001(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
@@ -747,7 +747,7 @@ static void xtest_tee_test_10001(ADBG_Case_t *c)
 }
 
 /* secure storage key manager self test */
-static void xtest_tee_test_10002(ADBG_Case_t *c)
+static void xtest_tee_test_8002(ADBG_Case_t *c)
 {
 	TEEC_Result res;
 	TEEC_Session sess;
