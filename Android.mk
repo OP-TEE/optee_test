@@ -15,6 +15,9 @@ VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown
 # We set the default value to an invalid path.
 TA_DEV_KIT_DIR ?= ../invalid_include_path
 
+# Not sure why this isn't being set for me.
+TA_DEV_KIT_DIR := optee/optee_os/out/arm-plat-hikey/export-ta_arm64
+
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
 include $(CLEAR_VARS)
