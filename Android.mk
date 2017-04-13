@@ -21,33 +21,33 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := xtest
 LOCAL_SHARED_LIBRARIES := libteec
 
-srcs := xtest_1000.c
+srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
-srcs += xtest_2000.c \
+srcs += regression_2000.c \
 	sock_server.c \
 	rand_stream.c
 endif
 
-srcs += xtest_4000.c \
-	xtest_5000.c \
-	xtest_6000.c \
-	xtest_7000.c \
-	xtest_10000.c \
-	xtest_20000.c \
-	xtest_benchmark_1000.c \
-	xtest_benchmark_2000.c \
-	xtest_helpers.c \
-	xtest_main.c \
-	xtest_test.c \
-	adbg/src/adbg_case.c \
+srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
 	adbg/src/adbg_log.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c \
 	aes_perf.c \
-	sha_perf.c
+	benchmark_1000.c \
+	benchmark_2000.c \
+	regression_4000.c \
+	regression_5000.c \
+	regression_6000.c \
+	regression_7000.c \
+	regression_8000.c \
+	regression_9000.c \
+	sha_perf.c \
+	xtest_helpers.c \
+	xtest_main.c \
+	xtest_test.c
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
