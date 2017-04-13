@@ -216,21 +216,6 @@ static TEEC_Result obj_close(TEEC_Session *sess, uint32_t obj)
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_CLOSE, &op, &org);
 }
 
-static int get_obj_filename(void *file_id, uint32_t file_id_length,
-			    char *buffer, uint32_t len)
-{
-	char *p = buffer;
-	uint32_t i;
-
-	if (file_id == NULL || buffer == NULL)
-		return 0;
-
-	for (i=0; i<file_id_length; i++)
-		p += snprintf(p, len, "%02X", ((uint8_t *)file_id)[i]);
-
-	return p-buffer;
-}
-
 static void dump_file(FILE * fd __attribute__ ((unused)))
 {
 #if DUMPFILE == 1
@@ -256,23 +241,14 @@ static void dump_file(FILE * fd __attribute__ ((unused)))
 #endif
 }
 
-static int is_obj_present(TEEC_UUID *p_uuid, void *file_id,
-                          uint32_t file_id_length)
+static int is_obj_present(uint32_t file_id)
 {
-        char ta_dirname[32 + 1];
-        char obj_filename[2*file_id_length + 1];
         char path[PATH_MAX];
         struct stat sb;
 
-        if (ree_fs_get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
-            get_obj_filename(file_id, file_id_length, obj_filename,
-			     sizeof(obj_filename))) {
-		snprintf(path, sizeof(path), "/data/tee/%s/%s",
-			ta_dirname, obj_filename);
+	snprintf(path, sizeof(path), "/data/tee/%" PRIu32, file_id);
 
-                return !stat(path, &sb);
-        }
-        return 0;
+	return !stat(path, &sb);
 }
 
 static TEEC_Result get_offs_size(enum tee_fs_htree_type type, size_t idx,
@@ -354,13 +330,10 @@ static TEEC_Result get_offs_size(enum tee_fs_htree_type type, size_t idx,
 	return TEEC_SUCCESS;
 }
 
-static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
-		       uint32_t file_id_length,
-		       uint32_t offset, enum tee_fs_htree_type type,
-		       uint8_t block_num, uint8_t version)
+static TEEC_Result obj_corrupt(uint32_t file_id, uint32_t offset,
+			       enum tee_fs_htree_type type, uint8_t block_num,
+			       uint8_t version)
 {
-	char ta_dirname[32 + 1];
-	char obj_filename[2*file_id_length + 1];
 	char name[PATH_MAX];
 	FILE *fd = NULL;
 	uint8_t bytes[SIZE * NUMELEM];
@@ -373,98 +346,92 @@ static TEEC_Result obj_corrupt(TEEC_UUID *p_uuid, void *file_id,
 
 	memset(name, 0, sizeof(name));
 
-	if (ree_fs_get_ta_dirname(p_uuid, ta_dirname, sizeof(ta_dirname)) &&
-	    get_obj_filename(file_id, file_id_length, obj_filename,
-			     sizeof(obj_filename))) {
+	/*
+	 * read the byte at the given offset,
+	 * do a bitwise negation,
+	 * and rewrite this value at the same offset
+	 */
 
-		/*
-		 * read the byte at the given offset,
-		 * do a bitwise negation,
-		 * and rewrite this value at the same offset
-		 */
+	snprintf(name, sizeof(name), "/data/tee/%" PRIu32, file_id);
 
-		snprintf(name, sizeof(name), "/data/tee/%s/%s",
-			 ta_dirname, obj_filename);
-
-		tee_res = get_offs_size(type, block_num, version, &real_offset, NULL);
-		if (tee_res != TEEC_SUCCESS) {
-			fprintf(stderr, "invalid type\n");
-			goto exit;
-		}
-
-		if (offset == CORRUPT_FILE_LAST_BYTE) {
-			if (type == TEE_FS_HTREE_TYPE_HEAD)
-				real_offset += node_size;
-			else
-				real_offset += BLOCK_SIZE;
-			real_offset -= num_corrupt_bytes;
-		} else if (offset == CORRUPT_FILE_RAND_BYTE) {
-			srand(time(NULL));
-			if (type == TEE_FS_HTREE_TYPE_HEAD)
-				real_offset += rand() % (node_size - 1);
-			else
-				real_offset += rand() % (BLOCK_SIZE - 1);
-			num_corrupt_bytes = 1;
-		} else if (offset != CORRUPT_FILE_FIRST_BYTE) {
-			real_offset += offset;
-		}
-
-		fd = fopen(name, "r+");
-		if (!fd) {
-			fprintf(stderr, "fopen(\"%s\"): %s",
-					name, strerror(errno));
-			tee_res = TEEC_ERROR_ACCESS_DENIED;
-			goto exit;
-		}
-
-		dump_file(fd);
-
-		if (0 != fseek(fd, real_offset, SEEK_SET)) {
-			fprintf(stderr, "fseek(%zu): %s",
-					real_offset, strerror(errno));
-			tee_res = TEEC_ERROR_BAD_PARAMETERS;
-			goto exit;
-		}
-
-		res = fread(bytes, 1, num_corrupt_bytes, fd);
-		if (res != num_corrupt_bytes) {
-			fprintf(stderr, "fread(%d): res=%d\n",
-					num_corrupt_bytes, res);
-			tee_res = TEEC_ERROR_SHORT_BUFFER;
-			goto exit;
-		}
-
-		printf("o Corrupt %s\n", name);
-		printf("o Byte offset: %zu (0x%04zX)\n", real_offset, real_offset);
-		printf("Old value:");
-		for (i = 0; i < num_corrupt_bytes; i++) {
-			printf(" 0x%02x", bytes[i]);
-			bytes[i] += 1;
-		}
-		printf("\n");
-
-		printf("New value:");
-		for (i = 0; i < num_corrupt_bytes; i++)
-			printf(" 0x%02x", bytes[i]);
-		printf("\n");
-
-		if (0 != fseek(fd, real_offset, SEEK_SET)) {
-			fprintf(stderr, "fseek(%zu): %s",
-					real_offset, strerror(errno));
-			tee_res = TEEC_ERROR_BAD_PARAMETERS;
-			goto exit;
-		}
-
-		res = fwrite(bytes, 1, num_corrupt_bytes, fd);
-		if (res != num_corrupt_bytes) {
-			fprintf(stderr, "fwrite(%d): res=%d\n",
-					num_corrupt_bytes, res);
-			tee_res = TEEC_ERROR_SHORT_BUFFER;
-			goto exit;
-		}
-
-		dump_file(fd);
+	tee_res = get_offs_size(type, block_num, version, &real_offset, NULL);
+	if (tee_res != TEEC_SUCCESS) {
+		fprintf(stderr, "invalid type\n");
+		goto exit;
 	}
+
+	if (offset == CORRUPT_FILE_LAST_BYTE) {
+		if (type == TEE_FS_HTREE_TYPE_HEAD)
+			real_offset += node_size;
+		else
+			real_offset += BLOCK_SIZE;
+		real_offset -= num_corrupt_bytes;
+	} else if (offset == CORRUPT_FILE_RAND_BYTE) {
+		srand(time(NULL));
+		if (type == TEE_FS_HTREE_TYPE_HEAD)
+			real_offset += rand() % (node_size - 1);
+		else
+			real_offset += rand() % (BLOCK_SIZE - 1);
+		num_corrupt_bytes = 1;
+	} else if (offset != CORRUPT_FILE_FIRST_BYTE) {
+		real_offset += offset;
+	}
+
+	fd = fopen(name, "r+");
+	if (!fd) {
+		fprintf(stderr, "fopen(\"%s\"): %s",
+				name, strerror(errno));
+		tee_res = TEEC_ERROR_ACCESS_DENIED;
+		goto exit;
+	}
+
+	dump_file(fd);
+
+	if (0 != fseek(fd, real_offset, SEEK_SET)) {
+		fprintf(stderr, "fseek(%zu): %s",
+				real_offset, strerror(errno));
+		tee_res = TEEC_ERROR_BAD_PARAMETERS;
+		goto exit;
+	}
+
+	res = fread(bytes, 1, num_corrupt_bytes, fd);
+	if (res != num_corrupt_bytes) {
+		fprintf(stderr, "fread(%d): res=%d\n",
+				num_corrupt_bytes, res);
+		tee_res = TEEC_ERROR_SHORT_BUFFER;
+		goto exit;
+	}
+
+	printf("o Corrupt %s\n", name);
+	printf("o Byte offset: %zu (0x%04zX)\n", real_offset, real_offset);
+	printf("Old value:");
+	for (i = 0; i < num_corrupt_bytes; i++) {
+		printf(" 0x%02x", bytes[i]);
+		bytes[i] += 1;
+	}
+	printf("\n");
+
+	printf("New value:");
+	for (i = 0; i < num_corrupt_bytes; i++)
+		printf(" 0x%02x", bytes[i]);
+	printf("\n");
+
+	if (0 != fseek(fd, real_offset, SEEK_SET)) {
+		fprintf(stderr, "fseek(%zu): %s",
+				real_offset, strerror(errno));
+		tee_res = TEEC_ERROR_BAD_PARAMETERS;
+		goto exit;
+	}
+
+	res = fwrite(bytes, 1, num_corrupt_bytes, fd);
+	if (res != num_corrupt_bytes) {
+		fprintf(stderr, "fwrite(%d): res=%d\n",
+				num_corrupt_bytes, res);
+		tee_res = TEEC_ERROR_SHORT_BUFFER;
+		goto exit;
+	}
+
+	dump_file(fd);
 
 exit:
 	if (fd)
@@ -508,8 +475,12 @@ static void storage_corrupt(ADBG_Case_t *c,
 
 		char buffer[tv->data_len];
 		char filename[20];
+		uint32_t file_id = 0;
 		size_t p;
 		uint8_t data_byte = 0;
+
+		if (!ADBG_EXPECT_BOOLEAN(c, false, is_obj_present(file_id)))
+			goto exit;
 
 		memset(filename, 0, sizeof(filename));
 
@@ -540,13 +511,11 @@ static void storage_corrupt(ADBG_Case_t *c,
 
 		if (file_type == TEE_FS_HTREE_TYPE_HEAD)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
-					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename)));
+					     is_obj_present(file_id));
 
 		if (file_type == TEE_FS_HTREE_TYPE_BLOCK)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=,
-					     is_obj_present(&uuid, filename,
-					     ARRAY_SIZE(filename)));
+					     is_obj_present(file_id));
 
 		ADBG_EXPECT(c, TEE_SUCCESS,
 			    obj_open(&sess, filename, ARRAY_SIZE(filename),
@@ -563,9 +532,8 @@ static void storage_corrupt(ADBG_Case_t *c,
 		case TEE_FS_HTREE_TYPE_HEAD:
 			/* corrupt object */
 			if (!ADBG_EXPECT(c, TEE_SUCCESS,
-					obj_corrupt(&uuid, filename,
-						ARRAY_SIZE(filename), offset,
-						file_type, tv->meta, tv->meta)))
+					 obj_corrupt(file_id, offset, file_type,
+						     tv->meta, tv->meta)))
 				goto exit;
 
 			ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
@@ -579,8 +547,7 @@ static void storage_corrupt(ADBG_Case_t *c,
 						f, &obj_id));
 
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-					is_obj_present(&uuid, filename,
-						       ARRAY_SIZE(filename)));
+					is_obj_present(file_id));
 			break;
 
 		case TEE_FS_HTREE_TYPE_NODE:
@@ -592,9 +559,7 @@ static void storage_corrupt(ADBG_Case_t *c,
 
 			/* corrupt object */
 			if (!ADBG_EXPECT(c, TEE_SUCCESS,
-				obj_corrupt(&uuid, filename,
-					    ARRAY_SIZE(filename),
-					    offset, file_type,
+				obj_corrupt(file_id, offset, file_type,
 					    tv->block_num, vers)))
 				goto exit;
 
@@ -627,8 +592,7 @@ static void storage_corrupt(ADBG_Case_t *c,
 					 f, &obj_id));
 
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==,
-					is_obj_present(&uuid, filename,
-						       ARRAY_SIZE(filename)));
+					is_obj_present(file_id));
 			break;
 
 		default:
