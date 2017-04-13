@@ -1498,48 +1498,6 @@ static void xtest_tee_test_6014_single(ADBG_Case_t *c, uint32_t storage_id)
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6014)
 
-static int get_ta_storage_path(TEEC_UUID *p_uuid, char *buffer, uint32_t len)
-{
-	int s;
-
-	if (!p_uuid || !buffer)
-		return -1;
-
-	s = snprintf(buffer, len, "/data/tee/");
-	if (s < 0 || s >= (int)len)
-		return -1;
-
-	len -= s;
-	buffer += s;
-
-	s = ree_fs_get_ta_dirname(p_uuid, buffer, len);
-	return s;
-}
-
-static int rename_data_dir(TEEC_UUID *old, TEEC_UUID *nw)
-{
-	char opath[150];
-	char npath[150];
-	int s;
-
-	s = get_ta_storage_path(old, opath, sizeof(opath));
-	if (s < 0 || s >= (int)sizeof(opath)) {
-		s = -1;
-		goto exit;
-	}
-	s = get_ta_storage_path(nw, npath, sizeof(npath));
-	if (s < 0 || s >= (int)sizeof(opath)) {
-		s = -1;
-		goto exit;
-	}
-	s = rename(opath, npath);
-exit:
-	if (s < 0)
-		fprintf(stderr, "Warning: could not rename %s -> %s\n", opath,
-			npath);
-	return s;
-}
-
 static void xtest_tee_test_6015_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
@@ -1547,8 +1505,6 @@ static void xtest_tee_test_6015_single(ADBG_Case_t *c, uint32_t storage_id)
 	uint32_t orig;
 	uint32_t obj;
 	uint32_t obj2;
-	TEEC_UUID uuid = TA_STORAGE_UUID;
-	TEEC_UUID uuid2 = TA_STORAGE2_UUID;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
@@ -1573,27 +1529,6 @@ static void xtest_tee_test_6015_single(ADBG_Case_t *c, uint32_t storage_id)
 		fs_open(&sess2, file_01, sizeof(file_01),
 			TEE_DATA_FLAG_ACCESS_READ, &obj2, storage_id)))
 		goto clean;
-
-	if (storage_id == TEE_STORAGE_PRIVATE_REE) {
-		/*
-		 * When the storage backend is the REE filesystem, we can
-		 * simulate a hack attempt by renaming the TA storage. Should
-		 * be detected by the TEE.
-		 */
-		if (rename_data_dir(&uuid, &uuid2) < 0)
-			goto clean;
-
-		/* TA #2 tries to open the object created by TA #1 */
-		ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
-			fs_open(&sess2, file_01, sizeof(file_01),
-				TEE_DATA_FLAG_ACCESS_READ, &obj2, storage_id));
-		/*
-		 * At this point, the TEE is expected to have removed the
-		 * corrupt object, so there is no need to try and restore the
-		 * directory name.
-		 */
-		goto exit;
-	}
 
 clean:
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
