@@ -19,6 +19,16 @@
 /*************************************************************************
  * 2. Definition of external constants and variables
  ************************************************************************/
+#ifndef TAILQ_CONCAT
+#define	TAILQ_CONCAT(head1, head2, field) do { \
+	if (!TAILQ_EMPTY(head2)) { \
+	*(head1)->tqh_last = (head2)->tqh_first; \
+	(head2)->tqh_first->field.tqe_prev = (head1)->tqh_last; \
+	(head1)->tqh_last = (head2)->tqh_last; \
+	TAILQ_INIT((head2)); \
+	} \
+} while (/*CONSTCOND*/0)
+#endif
 
 /*************************************************************************
  * 3. File scope types, constants and variables
