@@ -251,6 +251,18 @@ static int is_obj_present(uint32_t file_id)
 	return !stat(path, &sb);
 }
 
+static bool obj_unlink(uint32_t file_id)
+{
+        char path[PATH_MAX];
+
+	snprintf(path, sizeof(path), "/data/tee/%" PRIu32, file_id);
+	if (unlink(path)) {
+		fprintf(stderr, "unlink(\"%s\"): %s", path, strerror(errno));
+		return false;
+	}
+	return true;
+}
+
 static TEEC_Result get_offs_size(enum tee_fs_htree_type type, size_t idx,
 				 uint8_t vers, size_t *offs, size_t *size)
 {
@@ -711,6 +723,59 @@ static void xtest_tee_test_9523(ADBG_Case_t *c)
 
 }
 
+static void xtest_tee_test_9524(ADBG_Case_t *c)
+{
+	TEEC_Context ctx;
+	TEEC_Session sess;
+	TEEC_UUID uuid = TA_STORAGE_UUID;
+	uint32_t error;
+	char filename[] = "file";
+	uint32_t file_id = 0;
+	uint32_t obj_id;
+	char filedata[] = "data";
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InitializeContext(_device, &ctx)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_OpenSession(&ctx, &sess, &uuid,
+				 TEEC_LOGIN_PUBLIC, NULL, NULL, &error)))
+		goto final_ctx;
+
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, ==, is_obj_present(file_id)))
+		goto close_sess;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		    obj_create(&sess, filename, ARRAY_SIZE(filename),
+			TEE_DATA_FLAG_ACCESS_WRITE, 0, filedata,
+			sizeof(filedata), &obj_id)))
+		goto close_sess;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, obj_close(&sess, obj_id)))
+		goto close_sess;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, 0, !=, is_obj_present(file_id)))
+		goto close_sess;
+
+	if (!ADBG_EXPECT_TRUE(c, obj_unlink(file_id)))
+		goto close_sess;
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_CORRUPT_OBJECT,
+		obj_open(&sess, filename, ARRAY_SIZE(filename),
+			 TEE_DATA_FLAG_ACCESS_READ, &obj_id)))
+		goto close_sess;
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+		obj_open(&sess, filename, ARRAY_SIZE(filename),
+			 TEE_DATA_FLAG_ACCESS_READ, &obj_id));
+
+close_sess:
+	TEEC_CloseSession(&sess);
+final_ctx:
+	TEEC_FinalizeContext(&ctx);
+}
+
 ADBG_CASE_DEFINE(regression, 9001, xtest_tee_test_9001,
 	"Sanity Test Corrupt Meta Encrypted Key");
 ADBG_CASE_DEFINE(regression, 9002, xtest_tee_test_9002,
@@ -737,5 +802,7 @@ ADBG_CASE_DEFINE(regression, 9522, xtest_tee_test_9522,
 	"Sanity Test Corrupt Block File : last byte");
 ADBG_CASE_DEFINE(regression, 9523, xtest_tee_test_9523,
 	"Sanity Test Corrupt Block File : random byte");
+ADBG_CASE_DEFINE(regression, 9524, xtest_tee_test_9524,
+	"Sanity Test Remove file");
 
 #endif /* defined(CFG_REE_FS) */
