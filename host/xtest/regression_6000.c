@@ -37,9 +37,6 @@ static uint32_t storage_ids[] = {
 #ifdef CFG_RPMB_FS
 	TEE_STORAGE_PRIVATE_RPMB,
 #endif
-#ifdef CFG_SQL_FS
-	TEE_STORAGE_PRIVATE_SQL,
-#endif
 };
 
 static uint8_t file_00[] = {
@@ -85,8 +82,6 @@ static uint32_t fs_id_for_tee_storage_private(void)
 	return TEE_STORAGE_PRIVATE_REE;
 #elif defined(CFG_RPMB_FS)
 	return TEE_STORAGE_PRIVATE_RPMB;
-#elif defined(CFG_SQL_FS)
-	return TEE_STORAGE_PRIVATE_SQL;
 #endif
 }
 
