@@ -71,14 +71,12 @@
  * secure data.
  */
 
-static int verbosity = 1;
-
 struct tee_ctx {
 	TEEC_Context ctx;
 	TEEC_Session sess;
 };
 
-int allocate_ion_buffer(size_t size, int heap_id)
+int allocate_ion_buffer(size_t size, int heap_id, int verbosity)
 {
 	struct ion_allocation_data alloc_data;
 	struct ion_handle_data hdl_data;
@@ -406,7 +404,7 @@ static int get_random_bytes(char *out, size_t len)
 
 
 int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
-		   int ion_heap, int rnd_offset)
+		   int ion_heap, int rnd_offset, int verbosity)
 {
 	struct tee_ctx *ctx = NULL;
 	unsigned char *test_buf = NULL;
@@ -434,7 +432,7 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 		goto out;
 	}
 
-	fd = allocate_ion_buffer(sdp_size, ion_heap);
+	fd = allocate_ion_buffer(sdp_size, ion_heap, verbosity);
 	if (fd < 0) {
 		verbose("Failed to allocate SDP buffer (%zu bytes) in ION heap %d: %d\n",
 				sdp_size, ion_heap, fd);
@@ -534,6 +532,7 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 	size_t test_loop = 1000;
 	int ion_heap = DEFAULT_ION_HEAP_TYPE;
 	int rnd_offset = 1;
+	int verbosity = 1;
 	int i;
 
 	/* Parse command line */
@@ -567,22 +566,22 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 
 	verbose("\nSecure Data Path basic accesses: NS invokes SDP TA\n");
 	if (sdp_basic_test(TEST_NS_TO_TA,
-			   test_size, test_loop, ion_heap, rnd_offset))
+			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
 		return 1;
 
 	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP TA\n");
 	if (sdp_basic_test(TEST_TA_TO_TA,
-			   test_size, test_loop, ion_heap, rnd_offset))
+			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
 		return 1;
 
 	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP pTA\n");
 	if (sdp_basic_test(TEST_TA_TO_PTA,
-			   test_size, test_loop, ion_heap, rnd_offset))
+			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
 		return 1;
 
 	verbose("\nSecure Data Path basic accesses: NS invokes SDP pTA (shall fail)\n");
 	if (sdp_basic_test(TEST_NS_TO_PTA,
-			   test_size, test_loop, ion_heap, rnd_offset))
+			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
 		verbose("-> false negative: pTAs refuse SDP memref from NS clients.\n");
 
 	return 0;

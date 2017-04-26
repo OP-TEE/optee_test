@@ -40,9 +40,9 @@ enum test_target_ta {
 	TEST_TA_TO_PTA,
 };
 
-int allocate_ion_buffer(size_t size, int heap_id);
+int allocate_ion_buffer(size_t size, int heap_id, int verbosity);
 int sdp_basic_test(enum test_target_ta ta,
 			  size_t size, size_t loop, int ion_heap,
-			  int rnd_offset);
+			  int rnd_offset, int verbosity);
 
 #endif /* XTEST_SDP_BASIC_H */

@@ -1098,25 +1098,25 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 
 	test = TEST_NS_TO_TA;
 	Do_ADBG_BeginSubCase(c, "SDP: NonSecure client invokes a SDP TA");
-	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset);
+	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NonSecure client invokes a SDP TA");
 
 	test = TEST_TA_TO_TA;
 	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a SDP TA");
-	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset);
+	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP TA");
 
 	test = TEST_TA_TO_PTA;
 	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a SDP pTA");
-	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset);
+	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP pTA");
 
 	test = TEST_NS_TO_PTA;
 	Do_ADBG_BeginSubCase(c, "SDP: NonSecure client invokes SDP pTA (should fail)");
-	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset);
+	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 1, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NonSecure client invokes SDP pTA (should fail)");
 }
