@@ -460,6 +460,12 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
+	if (size & (16 - 1)) {
+		fprintf(stderr, "invalid buffer size argument, must be a multiple of 16\n\n");
+			usage(argv[0], keysize, mode, size, warmup, l, n);
+			return 1;
+	}
+
 	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
 					in_place, warmup, verbosity);
 
