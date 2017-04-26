@@ -207,7 +207,7 @@ static void usage(const char *progname, int keysize, int mode,
 {
 	fprintf(stderr, "Usage: %s [-h]\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-i] [-k SIZE]", progname);
-	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r] [-s SIZE]");
+	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r|--no-inited] [-s SIZE]");
 	fprintf(stderr, " [-v [-v]] [-w SEC]");
 #ifdef CFG_SECURE_DATA_PATH
 	fprintf(stderr, " [--sdp [-Id|-Ir|-IR] [-Od|-Or|-OR] [--ion-heap ID]]");
@@ -223,7 +223,8 @@ static void usage(const char *progname, int keysize, int mode,
 	fprintf(stderr, "  -l LOOP       Inner loop iterations (TA calls TEE_CipherUpdate() <x> times) [%u]\n", l);
 	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS [%s]\n", mode_str(mode));
 	fprintf(stderr, "  -n LOOP       Outer test loop iterations [%u]\n", n);
-	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all-zeros)\n");
+	fprintf(stderr, "  --not-inited  Do not initialize input buffer content.\n");
+	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all zeros)\n");
 	fprintf(stderr, "  -s SIZE       Test buffer size in bytes [%zu]\n", size);
 	fprintf(stderr, "  -v            Be verbose (use twice for greater effect)\n");
 	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds: execute a busy loop before\n");
@@ -405,17 +406,25 @@ static double mb_per_sec(size_t size, double usec)
 	return (1000000000/usec)*((double)size/(1024*1024));
 }
 
-
-static void run_feed_input(void *in, size_t size, int random_in)
+static void feed_input(void *in, size_t size, int random)
 {
-	if (!random_in)
-		return;
-
-	if (!is_sdp_test)
+	if (random)
 		read_random(in, size);
+	else
+		memset(in, 0, size);
+}
+
+static void run_feed_input(void *in, size_t size, int random)
+{
+	if (!is_sdp_test) {
+		feed_input(in, size, random);
+		return;
+	}
 
 #ifdef CFG_SECURE_DATA_PATH
-	if (input_buffer != BUFFER_SHM_ALLOCATED) {
+	if (input_buffer == BUFFER_SHM_ALLOCATED) {
+		feed_input(in, size, random);
+	} else {
 		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
 						input_sdp_fd, 0);
 
@@ -423,15 +432,16 @@ static void run_feed_input(void *in, size_t size, int random_in)
 			perror("failed to map input buffer");
 			exit(-1);
 		}
-		read_random(data, size);
+		feed_input(data, size, random);
 		munmap(data, size);
 	}
 #endif
 }
 
+
 /* Encryption test: buffer of tsize byte. Run test n times. */
 void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
-				unsigned int n, unsigned int l, int random_in,
+				unsigned int n, unsigned int l, int input_data_init,
 				int in_place, int warmup, int verbosity)
 {
 	struct statistics stats;
@@ -458,22 +468,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	memset(&stats, 0, sizeof(stats));
 
 	alloc_buffers(size, in_place, verbosity);
-
-	if (input_buffer == BUFFER_SHM_ALLOCATED && !random_in)
-		memset(in_shm.buffer, 0, size);
-#ifdef CFG_SECURE_DATA_PATH
-	else {
-		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
-						input_sdp_fd, 0);
-
-		if (data == MAP_FAILED) {
-			perror("failed to map input buffer");
-			exit(-1);
-		}
-		memset(in_shm.buffer, 0, size);
-		munmap(data, size);
-	}
-#endif
+	if (input_data_init == CRYPTO_USE_ZEROS)
+		run_feed_input(in_shm.buffer, size, 0);
 
 	memset(&op, 0, sizeof(op));
 	/* Using INOUT to handle the case in_place == 1 */
@@ -488,7 +484,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 
 	verbose("Starting test: %s, %scrypt, keysize=%u bits, size=%zu bytes, ",
 		mode_str(mode), (decrypt ? "de" : "en"), keysize, size);
-	verbose("random=%s, ", yesno(random_in));
+	verbose("random=%s, ", yesno(input_data_init == CRYPTO_USE_RANDOM));
 	verbose("in place=%s, ", yesno(in_place));
 	verbose("inner loops=%u, loops=%u, warm-up=%u s\n", l, n, warmup);
 
@@ -500,7 +496,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		uint32_t ret_origin;
 		struct timespec t0, t1;
 
-		run_feed_input(in_shm.buffer, size, random_in);
+		if (input_data_init == CRYPTO_USE_RANDOM)
+			run_feed_input(in_shm.buffer, size, 1);
 
 		get_current_time(&t0);
 
@@ -565,7 +562,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	int keysize = AES_128;	/* AES key size (-k) */
 	int mode = TA_AES_ECB;	/* AES mode (-m) */
 	/* Get input data from /dev/urandom (-r) */
-	int random_in = CRYPTO_USE_RANDOM;
+	int input_data_init = CRYPTO_USE_ZEROS;
 	/* Use same buffer for in and out (-i) */
 	int in_place = AES_PERF_INPLACE;
 	int warmup = CRYPTO_DEF_WARMUP;	/* Start with a 2-second busy loop (-w) */
@@ -617,7 +614,19 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			n = atoi(argv[i]);
 		} else if (!strcmp(argv[i], "--random") ||
 			   !strcmp(argv[i], "-r")) {
-			random_in = 1;
+			if (input_data_init == CRYPTO_NOT_INITED) {
+				perror("--random is not compatible with --not-inited\n");
+				usage(argv[0], keysize, mode, size, warmup, l, n);
+				return 1;
+			}
+			input_data_init = CRYPTO_USE_RANDOM;
+		} else if (!strcmp(argv[i], "--not-inited")) {
+			if (input_data_init == CRYPTO_USE_RANDOM) {
+				perror("--random is not compatible with --not-inited\n");
+				usage(argv[0], keysize, mode, size, warmup, l, n);
+				return 1;
+			}
+			input_data_init = CRYPTO_NOT_INITED;
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);
@@ -671,7 +680,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	}
 
 
-	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
+	aes_perf_run_test(mode, keysize, decrypt, size, n, l, input_data_init,
 					in_place, warmup, verbosity);
 
 	return 0;

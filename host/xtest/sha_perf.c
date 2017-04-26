@@ -239,8 +239,9 @@ static uint64_t run_test_once(void *in, size_t size,  int random_in, TEEC_Operat
 	TEEC_Result res;
 	uint32_t ret_origin;
 
-	if (random_in)
+	if (random_in == CRYPTO_USE_RANDOM)
 		read_random(in, size);
+
 	get_current_time(&t0);
 	res = TEEC_InvokeCommand(&sess, TA_SHA_PERF_CMD_PROCESS, op,
 				 &ret_origin);
@@ -324,7 +325,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 
 	alloc_shm(size, algo, offset);
 
-	if (!random_in)
+	if (random_in == CRYPTO_USE_ZEROS)
 		memset((uint8_t *)in_shm.buffer + offset, 0, size);
 
 	memset(&op, 0, sizeof(op));
@@ -342,7 +343,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 
 	verbose("Starting test: %s, size=%zu bytes, ",
 		algo_str(algo), size);
-	verbose("random=%s, ", yesno(random_in));
+	verbose("random=%s, ", yesno(random_in == CRYPTO_USE_RANDOM));
 	verbose("unaligned=%s, ", yesno(offset));
 	verbose("inner loops=%u, loops=%u, warm-up=%u s\n", l, n, warmup);
 
@@ -411,7 +412,7 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
 	int algo = TA_SHA_SHA1;	/* Algorithm (-a) */
 	/* Get input data from /dev/urandom (-r) */
-	int random_in = CRYPTO_USE_RANDOM;
+	int random_in = CRYPTO_USE_ZEROS;
 	/* Start with a 2-second busy loop (-w) */
 	int warmup = CRYPTO_DEF_WARMUP;
 	int offset = 0; /* Buffer offset wrt. alloc'ed address (-u) */
@@ -450,7 +451,7 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 			n = atoi(argv[i]);
 		} else if (!strcmp(argv[i], "--random") ||
 			   !strcmp(argv[i], "-r")) {
-			random_in = 1;
+			random_in = CRYPTO_USE_RANDOM;
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);

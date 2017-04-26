@@ -38,8 +38,9 @@
 
 #define CRYPTO_DEF_LOOPS 1 /* Default amount of inner loops */
 
+#define CRYPTO_USE_ZEROS  0 /* Init input data to zero */
 #define CRYPTO_USE_RANDOM 1 /* Get input data from /dev/urandom */
-#define CRYPTO_NOT_RANDOM 0
+#define CRYPTO_NOT_INITED 2 /* Input data are not initialized */
 
 #define CRYPTO_DEF_WARMUP 2 /* Start with a 2-second busy loop  */
 #define CRYPTO_DEF_COUNT 5000	/* Default number of measurements */
