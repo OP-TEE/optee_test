@@ -58,16 +58,19 @@ static TEEC_SharedMemory out_shm = {
 	.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT
 };
 
-static void errx(const char *msg, TEEC_Result res)
+static void errx(const char *msg, TEEC_Result res, uint32_t *orig)
 {
 	fprintf(stderr, "%s: 0x%08x", msg, res);
+	if (orig)
+		fprintf(stderr, " (orig=%d)", (int)*orig);
+	fprintf(stderr, "\n");
 	exit (1);
 }
 
-static void check_res(TEEC_Result res, const char *errmsg)
+static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 {
 	if (res != TEEC_SUCCESS)
-		errx(errmsg, res);
+		errx(errmsg, res, orig);
 }
 
 static void open_ta(void)
@@ -77,11 +80,11 @@ static void open_ta(void)
 	uint32_t err_origin;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
-	check_res(res,"TEEC_InitializeContext");
+	check_res(res, "TEEC_InitializeContext", NULL);
 
 	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL,
 			       NULL, &err_origin);
-	check_res(res,"TEEC_OpenSession");
+	check_res(res, "TEEC_OpenSession", &err_origin);
 }
 
 /*
@@ -183,13 +186,13 @@ static void alloc_shm(size_t sz, int in_place)
 	in_shm.buffer = NULL;
 	in_shm.size = sz;
 	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
-	check_res(res, "TEEC_AllocateSharedMemory");
+	check_res(res, "TEEC_AllocateSharedMemory", NULL);
 
 	if (!in_place) {
 		out_shm.buffer = NULL;
 		out_shm.size = sz;
 		res = TEEC_AllocateSharedMemory(&ctx, &out_shm);
-		check_res(res, "TEEC_AllocateSharedMemory");
+		check_res(res, "TEEC_AllocateSharedMemory", NULL);
 	}
 }
 
@@ -254,7 +257,7 @@ static uint64_t run_test_once(void *in, size_t size, TEEC_Operation *op,
 	get_current_time(&t0);
 	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PROCESS, op,
 				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand");
+	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 	get_current_time(&t1);
 
 	return timespec_diff_ns(&t0, &t1);
@@ -274,7 +277,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 	op.params[1].value.a = mode;
 	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PREPARE_KEY, &op,
 				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand");
+	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 }
 
 static void do_warmup(int warmup)
