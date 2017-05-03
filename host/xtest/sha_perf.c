@@ -25,8 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <adbg.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>
@@ -34,11 +33,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <tee_client_api.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <adbg.h>
-#include <tee_client_api.h>
 #include "crypto_common.h"
 
 /*
@@ -372,29 +372,22 @@ static void usage(const char *progname,
 				/* Default params */
 				int algo, size_t size, int warmup, int l, int n)
 {
-	fprintf(stderr, "SHA performance testing tool for OP-TEE\n\n");
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "  %s -h\n", progname);
-	fprintf(stderr, "  %s [-v] [-a algo] ", progname);
-	fprintf(stderr, "[-s bufsize] [-r] [-n loops] [-l iloops] ");
-	fprintf(stderr, "[-w warmup_time]\n");
+	fprintf(stderr, "Usage: %s [-h]\n", progname);
+	fprintf(stderr, "Usage: %s [-a ALGO] [-l LOOP] [-n LOOP] [-r] [-s SIZE]", progname);
+	fprintf(stderr, " [-v [-v]] [-w SEC]\n");
+	fprintf(stderr, "SHA performance testing tool for OP-TEE\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -h    Print this help and exit\n");
-	fprintf(stderr, "  -l    Inner loop iterations (TA hashes ");
-	fprintf(stderr, "the buffer <x> times) [%u]\n", l);
-	fprintf(stderr, "  -a    Algorithm (SHA1, SHA224, SHA256, SHA384, ");
-	fprintf(stderr, "SHA512) [%s]\n", algo_str(algo));
-	fprintf(stderr, "  -n    Outer loop iterations [%u]\n", n);
-	fprintf(stderr, "  -r    Get input data from /dev/urandom ");
-	fprintf(stderr, "(otherwise use zero-filled buffer)\n");
-	fprintf(stderr, "  -s    Buffer size (process <x> bytes at a time) ");
-	fprintf(stderr, "[%zu]\n", size);
-	fprintf(stderr, "  -u    Use unaligned buffer (odd address)\n");
-	fprintf(stderr, "  -v    Be verbose (use twice for greater effect)\n");
-	fprintf(stderr, "  -w    Warm-up time in seconds: execute a busy ");
-	fprintf(stderr, "loop before the test\n");
-	fprintf(stderr, "        to mitigate the effects of cpufreq etc. ");
-	fprintf(stderr, "[%u]\n", warmup);
+	fprintf(stderr, "  -a ALGO          Algorithm (SHA1, SHA224, SHA256, SHA384, SHA512) [%s]\n", algo_str(algo));
+	fprintf(stderr, "  -h|--help Print this help and exit\n");
+	fprintf(stderr, "  -l LOOP          Inner loop iterations (TA calls TEE_DigestDoFinal() <x> times) [%u]\n", l);
+	fprintf(stderr, "  -n LOOP          Outer test loop iterations [%u]\n", n);
+	fprintf(stderr, "  -r|--random      Get input data from /dev/urandom (default:  all-zeros)\n");
+	fprintf(stderr, "  -s SIZE          Test buffer size in bytes [%zu]\n", size);
+	fprintf(stderr, "  -u|--unalign     Use unaligned buffer (odd address)\n");
+	fprintf(stderr, "  -v               Be verbose (use twice for greater effect)\n");
+	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds: execute a busy loop before\n");
+	fprintf(stderr, "                   the test to mitigate the effects of cpufreq etc. [%u]\n", warmup);
 }
 
 #define NEXT_ARG(i) \
@@ -425,7 +418,7 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-h")) {
+		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			usage(argv[0], algo, size, warmup, l, n);
 			return 0;
 		}
@@ -455,16 +448,19 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-n")) {
 			NEXT_ARG(i);
 			n = atoi(argv[i]);
-		} else if (!strcmp(argv[i], "-r")) {
+		} else if (!strcmp(argv[i], "--random") ||
+			   !strcmp(argv[i], "-r")) {
 			random_in = 1;
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);
-		} else if (!strcmp(argv[i], "-u")) {
+		} else if (!strcmp(argv[i], "--unalign") ||
+			   !strcmp(argv[i], "-u")) {
 			offset = 1;
 		} else if (!strcmp(argv[i], "-v")) {
 			verbosity++;
-		} else if (!strcmp(argv[i], "-w")) {
+		} else if (!strcmp(argv[i], "--warmup") ||
+			   !strcmp(argv[i], "-w")) {
 			NEXT_ARG(i);
 			warmup = atoi(argv[i]);
 		} else {

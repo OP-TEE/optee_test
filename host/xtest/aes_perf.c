@@ -25,8 +25,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdint.h>
@@ -34,11 +32,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <ta_aes_perf.h>
+#include <tee_client_api.h>
 #include <time.h>
 #include <unistd.h>
 
-#include <tee_client_api.h>
-#include "ta_aes_perf.h"
 #include "crypto_common.h"
 
 /*
@@ -151,32 +153,25 @@ static const char *mode_str(uint32_t mode)
 static void usage(const char *progname, int keysize, int mode,
 				size_t size, int warmup, unsigned int l, unsigned int n)
 {
-	fprintf(stderr, "AES performance testing tool for OP-TEE\n\n");
-	fprintf(stderr, "Usage:\n");
-	fprintf(stderr, "  %s -h\n", progname);
-	fprintf(stderr, "  %s [-v] [-m mode] [-k keysize] ", progname);
-	fprintf(stderr, "[-s bufsize] [-r] [-i] [-n loops] [-l iloops] \n");
-	fprintf(stderr, "[-w warmup_time]\n");
+	fprintf(stderr, "Usage: %s [-h]\n", progname);
+	fprintf(stderr, "Usage: %s [-d] [-i] [-k SIZE]", progname);
+	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r] [-s SIZE]");
+	fprintf(stderr, " [-v [-v]] [-w SEC]\n");
+	fprintf(stderr, "AES performance testing tool for OP-TEE\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -h    Print this help and exit\n");
-	fprintf(stderr, "  -i    Use same buffer for input and output (in ");
-	fprintf(stderr, "place)\n");
-	fprintf(stderr, "  -k    Key size in bits: 128, 192 or 256 [%u]\n",
-			keysize);
-	fprintf(stderr, "  -l    Inner loop iterations (TA calls ");
-	fprintf(stderr, "TEE_CipherUpdate() <x> times) [%u]\n", l);
-	fprintf(stderr, "  -m    AES mode: ECB, CBC, CTR, XTS [%s]\n",
-			mode_str(mode));
-	fprintf(stderr, "  -n    Outer loop iterations [%u]\n", n);
-	fprintf(stderr, "  -r    Get input data from /dev/urandom ");
-	fprintf(stderr, "(otherwise use zero-filled buffer)\n");
-	fprintf(stderr, "  -s    Buffer size (process <x> bytes at a time) ");
-	fprintf(stderr, "[%zu]\n", size);
-	fprintf(stderr, "  -v    Be verbose (use twice for greater effect)\n");
-	fprintf(stderr, "  -w    Warm-up time in seconds: execute a busy ");
-	fprintf(stderr, "loop before the test\n");
-	fprintf(stderr, "        to mitigate the effects of cpufreq etc. ");
-	fprintf(stderr, "[%u]\n", warmup);
+	fprintf(stderr, "  -d            Test AES decryption instead of encryption\n");
+	fprintf(stderr, "  -h|--help     Print this help and exit\n");
+	fprintf(stderr, "  -i|--in-place Use same buffer for input and output (decrypt in place)\n");
+	fprintf(stderr, "  -k SIZE       Key size in bits: 128, 192 or 256 [%u]\n", keysize);
+	fprintf(stderr, "  -l LOOP       Inner loop iterations (TA calls TEE_CipherUpdate() <x> times) [%u]\n", l);
+	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS [%s]\n", mode_str(mode));
+	fprintf(stderr, "  -n LOOP       Outer test loop iterations [%u]\n", n);
+	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all-zeros)\n");
+	fprintf(stderr, "  -s SIZE       Test buffer size in bytes [%zu]\n", size);
+	fprintf(stderr, "  -v            Be verbose (use twice for greater effect)\n");
+	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds: execute a busy loop before\n");
+	fprintf(stderr, "                   the test to mitigate the effects of cpufreq etc. [%u]\n", warmup);
 }
 
 static void alloc_shm(size_t sz, int in_place)
@@ -220,8 +215,7 @@ static ssize_t read_random(void *in, size_t rsize)
 		return 1;
 	}
 	if ((size_t)s != rsize) {
-		printf("read: requested %zu bytes, got %zd\n",
-		       rsize, s);
+		printf("read: requested %zu bytes, got %zd\n", rsize, s);
 	}
 
 	return 0;
@@ -320,8 +314,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		perror("clock_getres");
 		return;
 	}
-	vverbose("Clock resolution is %lu ns\n", ts.tv_sec*1000000000 +
-		ts.tv_nsec);
+	vverbose("Clock resolution is %lu ns\n",
+					ts.tv_sec * 1000000000 + ts.tv_nsec);
 
 	open_ta();
 	prepare_key(decrypt, keysize, mode);
@@ -339,10 +333,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 					 TEEC_MEMREF_PARTIAL_INOUT,
 					 TEEC_VALUE_INPUT, TEEC_NONE);
 	op.params[0].memref.parent = &in_shm;
-	op.params[0].memref.offset = 0;
 	op.params[0].memref.size = size;
 	op.params[1].memref.parent = in_place ? &in_shm : &out_shm;
-	op.params[1].memref.offset = 0;
 	op.params[1].memref.size = size;
 	op.params[2].value.a = l;
 
@@ -405,7 +397,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
-		if (!strcmp(argv[i], "-h")) {
+		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			usage(argv[0], keysize, mode, size, warmup, l, n);
 			return 0;
 		}
@@ -413,7 +405,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-d")) {
 			decrypt = 1;
-		} else if (!strcmp(argv[i], "-i")) {
+		} else if (!strcmp(argv[i], "--in-place") ||
+			   !strcmp(argv[i], "-i")) {
 			in_place = 1;
 		} else if (!strcmp(argv[i], "-k")) {
 			NEXT_ARG(i);
@@ -447,14 +440,16 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-n")) {
 			NEXT_ARG(i);
 			n = atoi(argv[i]);
-		} else if (!strcmp(argv[i], "-r")) {
+		} else if (!strcmp(argv[i], "--random") ||
+			   !strcmp(argv[i], "-r")) {
 			random_in = 1;
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);
 		} else if (!strcmp(argv[i], "-v")) {
 			verbosity++;
-		} else if (!strcmp(argv[i], "-w")) {
+		} else if (!strcmp(argv[i], "--warmup") ||
+			   !strcmp(argv[i], "-w")) {
 			NEXT_ARG(i);
 			warmup = atoi(argv[i]);
 		} else {
