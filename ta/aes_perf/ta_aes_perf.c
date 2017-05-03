@@ -25,6 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <tee_internal_api_extensions.h>
 #include <tee_internal_api.h>
 #include <tee_ta_api.h>
 #include <string.h>
@@ -46,9 +47,60 @@ static int use_iv;
 
 static TEE_OperationHandle crypto_op = NULL;
 
+static bool is_inbuf_a_secure_memref(TEE_Param *param)
+{
+	TEE_Result res;
 
+	/*
+	 * Check secure attribute for the referenced buffer
+	 * Trust core on validity of the memref size: test only 1st byte
+	 * instead of the overall buffer, and if it's not secure, assume
+	 * the buffer is nonsecure.
+	 */
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_ANY_OWNER |
+					 TEE_MEMORY_ACCESS_READ |
+					 TEE_MEMORY_ACCESS_SECURE,
+					 param->memref.buffer, 1);
+	return (res == TEE_SUCCESS);
+}
 
-TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
+static bool is_outbuf_a_secure_memref(TEE_Param *param)
+{
+	TEE_Result res;
+
+	/*
+	 * Check secure attribute for the referenced buffer
+	 * Trust core on validity of the memref size: test only 1st byte
+	 * instead of the overall buffer, and if it's not secure, assume
+	 * the buffer is nonsecure.
+	 */
+	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_ANY_OWNER |
+					 TEE_MEMORY_ACCESS_WRITE |
+					 TEE_MEMORY_ACCESS_SECURE,
+					 param->memref.buffer, 1);
+	return (res == TEE_SUCCESS);
+}
+
+#if defined(CFG_CACHE_API)
+static TEE_Result flush_memref_buffer(TEE_Param *param)
+{
+	TEE_Result res;
+
+	res = TEE_CacheFlush(param->memref.buffer,
+			     param->memref.size);
+	CHECK(res, "TEE_CacheFlush(in)", return res;);
+	return res;
+}
+#else
+static __maybe_unused TEE_Result flush_memref_buffer(TEE_Param *param __unused)
+{
+	return TEE_SUCCESS;
+}
+#endif /* CFG_CACHE_API */
+
+TEE_Result cmd_process(uint32_t param_types,
+		       TEE_Param params[TEE_NUM_PARAMS],
+		       bool use_sdp)
 {
 	TEE_Result res;
 	int n;
@@ -59,9 +111,38 @@ TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 						   TEE_PARAM_TYPE_MEMREF_INOUT,
 						   TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE);
+	bool secure_in;
+	bool secure_out = false;
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (use_sdp) {
+		/*
+		 * Whatever is expected as memory reference, it is mandatory
+		 * for SDP aware trusted applications of safely indentify all
+		 * memory reference parameters. Hence these tests must be part
+		 * of the performance test setup.
+		 */
+		secure_in = is_inbuf_a_secure_memref(&params[0]);
+		secure_out = is_outbuf_a_secure_memref(&params[1]);
+
+		/*
+		 * We could invalidate only the caches. We prefer to flush
+		 * them in case 2 sub-buffers are accessed by TAs from a single
+		 * allocated SDP memory buffer, and those are not cache-aligned.
+		 * Invalidating might cause data loss in cache lines. Hence
+		 * rather flush them all before accessing (in read or write).
+		 */
+		if (secure_in) {
+			res = flush_memref_buffer(&params[0]);
+			CHECK(res, "pre-flush in memref param", return res;);
+		}
+		if (secure_out) {
+			res = flush_memref_buffer(&params[1]);
+			CHECK(res, "pre-flush out memref param", return res;);
+		}
+	}
 
 	in = params[0].memref.buffer;
 	insz = params[0].memref.size;
@@ -73,6 +154,13 @@ TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 		res = TEE_CipherUpdate(crypto_op, in, insz, out, &outsz);
 		CHECK(res, "TEE_CipherUpdate", return res;);
 	}
+
+	if (secure_out) {
+		/* intentionally flush output data from cache for SDP buffers */
+		res = flush_memref_buffer(&params[1]);
+		CHECK(res, "post-flush out memref param", return res;);
+	}
+
 	return TEE_SUCCESS;
 }
 

@@ -76,7 +76,14 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return cmd_prepare_key(nParamTypes, pParams);
 
 	case TA_AES_PERF_CMD_PROCESS:
-		return cmd_process(nParamTypes, pParams);
+		return cmd_process(nParamTypes, pParams, false);
+	case TA_AES_PERF_CMD_PROCESS_SDP:
+#ifdef CFG_SECURE_DATA_PATH
+		return cmd_process(nParamTypes, pParams, true);
+#else
+		EMSG("Invalid SDP commands: TA was built without SDP support");
+		return TEE_ERROR_NOT_SUPPORTED;
+#endif
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

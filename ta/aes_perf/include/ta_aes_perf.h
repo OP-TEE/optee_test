@@ -37,6 +37,7 @@
 
 #define TA_AES_PERF_CMD_PREPARE_KEY	0
 #define TA_AES_PERF_CMD_PROCESS		1
+#define TA_AES_PERF_CMD_PROCESS_SDP	2
 
 /*
  * Supported AES modes of operation

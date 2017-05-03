@@ -38,10 +38,62 @@
 #include <sys/types.h>
 #include <ta_aes_perf.h>
 #include <tee_client_api.h>
+#include <tee_client_api_extensions.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "crypto_common.h"
+
+#ifdef CFG_SECURE_DATA_PATH
+#include "sdp_basic.h"
+
+static int input_sdp_fd;
+static int output_sdp_fd;
+static int ion_heap = DEFAULT_ION_HEAP_TYPE;
+
+/*  re-use the allocate_ion_buffer() from sdp_basic.c */
+int allocate_ion_buffer(size_t size, int heap_id, int verbosity);
+#endif /* CFG_SECURE_DATA_PATH */
+
+/*
+ * Type of buffer used for the performance tests
+ *
+ * BUFFER_UNSPECIFIED		test did not specify target buffer to use
+ * BUFFER_SHM_ALLOCATED		buffer allocated in TEE SHM.
+ * BUFFER_SECURE_REGISTER	secure buffer, registered to TEE at TA invoc.
+ * BUFFER_SECURE_PREREGISTERED	secure buffer, registered once to TEE.
+ */
+enum buffer_types {
+	BUFFER_UNSPECIFIED = 0,
+	BUFFER_SHM_ALLOCATED,
+	BUFFER_SECURE_REGISTER,		/* requires SDP */
+	BUFFER_SECURE_PREREGISTERED,	/* requires SDP */
+};
+
+static enum buffer_types input_buffer = BUFFER_UNSPECIFIED;
+static enum buffer_types output_buffer = BUFFER_UNSPECIFIED;
+
+static const char *buf_type_str(int buf_type)
+ {
+	static const char sec_prereg[] = "Secure memory, registered once to TEE";
+	static const char sec_reg[] = "Secure memory, registered at each TEE invoke";
+	static const char ns_alloc[] = "Non secure memory";
+	static const char inval[] = "UNEXPECTED";
+
+	switch (buf_type) {
+	case BUFFER_SECURE_PREREGISTERED:
+		return sec_prereg;
+	case BUFFER_SECURE_REGISTER:
+		return sec_reg;
+	case BUFFER_SHM_ALLOCATED:
+		return ns_alloc;
+	default:
+		return inval;
+	}
+}
+
+/* Are we running a SDP test: default to NO (is_sdp_test == 0) */
+static int is_sdp_test;
 
 /*
  * TEE client stuff
@@ -156,7 +208,11 @@ static void usage(const char *progname, int keysize, int mode,
 	fprintf(stderr, "Usage: %s [-h]\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-i] [-k SIZE]", progname);
 	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r] [-s SIZE]");
-	fprintf(stderr, " [-v [-v]] [-w SEC]\n");
+	fprintf(stderr, " [-v [-v]] [-w SEC]");
+#ifdef CFG_SECURE_DATA_PATH
+	fprintf(stderr, " [--sdp [-Id|-Ir|-IR] [-Od|-Or|-OR] [--ion-heap ID]]");
+#endif
+	fprintf(stderr, "\n");
 	fprintf(stderr, "AES performance testing tool for OP-TEE\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
@@ -172,29 +228,98 @@ static void usage(const char *progname, int keysize, int mode,
 	fprintf(stderr, "  -v            Be verbose (use twice for greater effect)\n");
 	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds: execute a busy loop before\n");
 	fprintf(stderr, "                   the test to mitigate the effects of cpufreq etc. [%u]\n", warmup);
+#ifdef CFG_SECURE_DATA_PATH
+	fprintf(stderr, "Secure data path specific options:\n");
+	fprintf(stderr, "  --sdp          Run the AES test in the scope fo a Secure Data Path test TA\n");
+	fprintf(stderr, "  --ion-heap ID  Set ION heap ID where to allocate secure buffers [%d]\n", ion_heap);
+	fprintf(stderr, "  -I...          AES input test buffer management:\n");
+	fprintf(stderr, "      -Id         allocate a non secure buffer (default)\n");
+	fprintf(stderr, "      -Ir         allocate a secure buffer, registered at each TA invocation\n");
+	fprintf(stderr, "      -IR         allocate a secure buffer, registered once in TEE\n");
+	fprintf(stderr, "  -O...          AES output test buffer management:\n");
+	fprintf(stderr, "      -Od         allocate a non secure buffer (default if \"--sdp\" is not set)\n");
+	fprintf(stderr, "      -Or         allocated a secure buffer, registered at each TA invocation\n");
+	fprintf(stderr, "      -OR         allocated a secure buffer, registered once in TEE (default if \"--sdp\")\n");
+#endif
 }
 
-static void alloc_shm(size_t sz, int in_place)
+#ifdef CFG_SECURE_DATA_PATH
+static void register_shm(TEEC_SharedMemory *shm, int fd)
+{
+	TEEC_Result res = TEEC_RegisterSharedMemoryFileDescriptor(&ctx, shm, fd);
+
+	check_res(res, "TEEC_RegisterSharedMemoryFileDescriptor", NULL);
+}
+#endif
+
+static void allocate_shm(TEEC_SharedMemory *shm, size_t sz)
 {
 	TEEC_Result res;
 
-	in_shm.buffer = NULL;
-	in_shm.size = sz;
-	res = TEEC_AllocateSharedMemory(&ctx, &in_shm);
+	shm->buffer = NULL;
+	shm->size = sz;
+	res = TEEC_AllocateSharedMemory(&ctx, shm);
 	check_res(res, "TEEC_AllocateSharedMemory", NULL);
-
-	if (!in_place) {
-		out_shm.buffer = NULL;
-		out_shm.size = sz;
-		res = TEEC_AllocateSharedMemory(&ctx, &out_shm);
-		check_res(res, "TEEC_AllocateSharedMemory", NULL);
-	}
 }
 
-static void free_shm(void)
+/* initial test buffer allocation (eventual registering to TEEC) */
+static void alloc_buffers(size_t sz, int in_place, int verbosity)
 {
-	TEEC_ReleaseSharedMemory(&in_shm);
-	TEEC_ReleaseSharedMemory(&out_shm);
+	(void)verbosity;
+
+	if (input_buffer == BUFFER_SHM_ALLOCATED)
+		allocate_shm(&in_shm, sz);
+#ifdef CFG_SECURE_DATA_PATH
+	else {
+		input_sdp_fd = allocate_ion_buffer(sz, ion_heap, verbosity);
+		if (input_buffer == BUFFER_SECURE_PREREGISTERED) {
+			register_shm(&in_shm, input_sdp_fd);
+			close(input_sdp_fd);
+		}
+	}
+#endif
+
+	if (in_place)
+		return;
+
+	if (output_buffer == BUFFER_SHM_ALLOCATED)
+		allocate_shm(&out_shm, sz);
+#ifdef CFG_SECURE_DATA_PATH
+	else {
+		output_sdp_fd = allocate_ion_buffer(sz, ion_heap, verbosity);
+		if (output_buffer == BUFFER_SECURE_PREREGISTERED) {
+			register_shm(&out_shm, output_sdp_fd);
+			close(output_sdp_fd);
+		}
+	}
+#endif
+}
+
+static void free_shm(int in_place)
+{
+	(void)in_place;
+
+	if (input_buffer == BUFFER_SHM_ALLOCATED &&
+	    output_buffer == BUFFER_SHM_ALLOCATED) {
+		TEEC_ReleaseSharedMemory(&in_shm);
+		TEEC_ReleaseSharedMemory(&out_shm);
+		return;
+	}
+
+#ifdef CFG_SECURE_DATA_PATH
+	if (input_buffer == BUFFER_SECURE_PREREGISTERED)
+		close(input_sdp_fd);
+	if (input_buffer != BUFFER_SECURE_REGISTER)
+		TEEC_ReleaseSharedMemory(&in_shm);
+
+	if (in_place)
+		return;
+
+	if (output_buffer == BUFFER_SECURE_PREREGISTERED)
+		close(output_sdp_fd);
+	if (output_buffer != BUFFER_SECURE_REGISTER)
+		TEEC_ReleaseSharedMemory(&out_shm);
+#endif /* CFG_SECURE_DATA_PATH */
 }
 
 static ssize_t read_random(void *in, size_t rsize)
@@ -239,29 +364,12 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return timespec_to_ns(end) - timespec_to_ns(start);
 }
 
-static uint64_t run_test_once(void *in, size_t size, TEEC_Operation *op,
-			  int random_in)
-{
-	struct timespec t0, t1;
-	TEEC_Result res;
-	uint32_t ret_origin;
-
-	if (random_in)
-		read_random(in, size);
-	get_current_time(&t0);
-	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PROCESS, op,
-				 &ret_origin);
-	check_res(res, "TEEC_InvokeCommand", &ret_origin);
-	get_current_time(&t1);
-
-	return timespec_diff_ns(&t0, &t1);
-}
-
 static void prepare_key(int decrypt, int keysize, int mode)
 {
 	TEEC_Result res;
 	uint32_t ret_origin;
 	TEEC_Operation op;
+	uint32_t cmd = TA_AES_PERF_CMD_PREPARE_KEY;
 
 	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
@@ -269,7 +377,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 	op.params[0].value.a = decrypt;
 	op.params[0].value.b = keysize;
 	op.params[1].value.a = mode;
-	res = TEEC_InvokeCommand(&sess, TA_AES_PERF_CMD_PREPARE_KEY, &op,
+	res = TEEC_InvokeCommand(&sess, cmd, &op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 }
@@ -297,19 +405,43 @@ static double mb_per_sec(size_t size, double usec)
 	return (1000000000/usec)*((double)size/(1024*1024));
 }
 
+
+static void run_feed_input(void *in, size_t size, int random_in)
+{
+	if (!random_in)
+		return;
+
+	if (!is_sdp_test)
+		read_random(in, size);
+
+#ifdef CFG_SECURE_DATA_PATH
+	if (input_buffer != BUFFER_SHM_ALLOCATED) {
+		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
+						input_sdp_fd, 0);
+
+		if (data == MAP_FAILED) {
+			perror("failed to map input buffer");
+			exit(-1);
+		}
+		read_random(data, size);
+		munmap(data, size);
+	}
+#endif
+}
+
 /* Encryption test: buffer of tsize byte. Run test n times. */
 void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 				unsigned int n, unsigned int l, int random_in,
 				int in_place, int warmup, int verbosity)
 {
-	uint64_t t;
 	struct statistics stats;
 	struct timespec ts;
 	TEEC_Operation op;
 	int n0 = n;
 	double sd;
+	uint32_t cmd = is_sdp_test ? TA_AES_PERF_CMD_PROCESS_SDP :
+				     TA_AES_PERF_CMD_PROCESS;
 
-	vverbose("aes-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -317,15 +449,31 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	vverbose("Clock resolution is %lu ns\n",
 					ts.tv_sec * 1000000000 + ts.tv_nsec);
 
+	vverbose("input test buffer:  %s\n", buf_type_str(input_buffer));
+	vverbose("output test buffer: %s\n", buf_type_str(output_buffer));
+
 	open_ta();
 	prepare_key(decrypt, keysize, mode);
 
 	memset(&stats, 0, sizeof(stats));
 
-	alloc_shm(size, in_place);
+	alloc_buffers(size, in_place, verbosity);
 
-	if (!random_in)
+	if (input_buffer == BUFFER_SHM_ALLOCATED && !random_in)
 		memset(in_shm.buffer, 0, size);
+#ifdef CFG_SECURE_DATA_PATH
+	else {
+		char *data = mmap(NULL, size, PROT_WRITE, MAP_SHARED,
+						input_sdp_fd, 0);
+
+		if (data == MAP_FAILED) {
+			perror("failed to map input buffer");
+			exit(-1);
+		}
+		memset(in_shm.buffer, 0, size);
+		munmap(data, size);
+	}
+#endif
 
 	memset(&op, 0, sizeof(op));
 	/* Using INOUT to handle the case in_place == 1 */
@@ -348,8 +496,35 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		do_warmup(warmup);
 
 	while (n-- > 0) {
-		t = run_test_once(in_shm.buffer, size, &op, random_in);
-		update_stats(&stats, t);
+		TEEC_Result res;
+		uint32_t ret_origin;
+		struct timespec t0, t1;
+
+		run_feed_input(in_shm.buffer, size, random_in);
+
+		get_current_time(&t0);
+
+#ifdef CFG_SECURE_DATA_PATH
+		if (input_buffer == BUFFER_SECURE_REGISTER)
+			register_shm(&in_shm, input_sdp_fd);
+		if (output_buffer == BUFFER_SECURE_REGISTER)
+			register_shm(&out_shm, output_sdp_fd);
+#endif
+
+		res = TEEC_InvokeCommand(&sess, cmd,
+					 &op, &ret_origin);
+		check_res(res, "TEEC_InvokeCommand", &ret_origin);
+
+#ifdef CFG_SECURE_DATA_PATH
+		if (input_buffer == BUFFER_SECURE_REGISTER)
+			TEEC_ReleaseSharedMemory(&in_shm);
+		if (output_buffer == BUFFER_SECURE_REGISTER)
+			TEEC_ReleaseSharedMemory(&out_shm);
+#endif
+
+		get_current_time(&t1);
+
+		update_stats(&stats, timespec_diff_ns(&t0, &t1));
 		if (n % (n0 / 10) == 0)
 			vverbose("#");
 	}
@@ -362,7 +537,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		(stats.m - 2 * sd) / 1000, (stats.m + 2 * sd) / 1000,
 		mb_per_sec(size, stats.m + 2 * sd),
 		mb_per_sec(size, stats.m - 2 * sd));
-	free_shm();
+	free_shm(in_place);
 }
 
 #define NEXT_ARG(i) \
@@ -446,6 +621,25 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-s")) {
 			NEXT_ARG(i);
 			size = atoi(argv[i]);
+#ifdef CFG_SECURE_DATA_PATH
+		} else if (!strcmp(argv[i], "--sdp")) {
+			is_sdp_test = 1;
+		} else if (!strcmp(argv[i], "-IR")) {
+			input_buffer = BUFFER_SECURE_PREREGISTERED;
+		} else if (!strcmp(argv[i], "-OR")) {
+			output_buffer = BUFFER_SECURE_PREREGISTERED;
+		} else if (!strcmp(argv[i], "-Ir")) {
+			input_buffer = BUFFER_SECURE_REGISTER;
+		} else if (!strcmp(argv[i], "-Or")) {
+			output_buffer = BUFFER_SECURE_REGISTER;
+		} else if (!strcmp(argv[i], "-Id")) {
+			input_buffer = BUFFER_SHM_ALLOCATED;
+		} else if (!strcmp(argv[i], "-Od")) {
+			output_buffer = BUFFER_SHM_ALLOCATED;
+		} else if (!strcmp(argv[i], "--ion-heap")) {
+			NEXT_ARG(i);
+			ion_heap = atoi(argv[i]);
+#endif
 		} else if (!strcmp(argv[i], "-v")) {
 			verbosity++;
 		} else if (!strcmp(argv[i], "--warmup") ||
@@ -465,6 +659,17 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			usage(argv[0], keysize, mode, size, warmup, l, n);
 			return 1;
 	}
+
+	if (input_buffer == BUFFER_UNSPECIFIED)
+		input_buffer = BUFFER_SHM_ALLOCATED;
+
+	if (output_buffer == BUFFER_UNSPECIFIED) {
+		if (is_sdp_test)
+			output_buffer = BUFFER_SECURE_PREREGISTERED;
+		else
+			output_buffer = BUFFER_SHM_ALLOCATED;
+	}
+
 
 	aes_perf_run_test(mode, keysize, decrypt, size, n, l, random_in,
 					in_place, warmup, verbosity);
