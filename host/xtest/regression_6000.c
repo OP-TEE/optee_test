@@ -1713,7 +1713,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	if (storage_is(storage_id, TEE_STORAGE_PRIVATE_RPMB)) {
 		/* RPMB FS is a bit resource constrained */
-		num_blocks = 20;
+		num_blocks = 10;
 		block_size = 1024;
 	} else {
 		num_blocks = 40;
