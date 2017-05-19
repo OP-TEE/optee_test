@@ -481,10 +481,7 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 	}
 
 	err = 0;
-	verbose("%s: successed\n", __func__);
 out:
-	if (err)
-		verbose("test failed\n");
 	if (fd >= 0)
 		close(fd);
 	if (shm_ref)
@@ -526,6 +523,14 @@ static void usage(const char *progname, size_t size, int loop, int ion_heap)
 		} \
 	} while (0);
 
+#define CHECK_RESULT(_res, _exp, _action) \
+	if ((_res) == (_exp)) { \
+		verbose("Test passed\n"); \
+	} else { \
+		verbose("Test failed!\n"); \
+		_action; \
+	}
+
 int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 {
 	size_t test_size = 5000;
@@ -533,6 +538,7 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 	int ion_heap = DEFAULT_ION_HEAP_TYPE;
 	int rnd_offset = 1;
 	int verbosity = 1;
+	int err;
 	int i;
 
 	/* Parse command line */
@@ -564,25 +570,29 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
-	verbose("\nSecure Data Path basic accesses: NS invokes SDP TA\n");
-	if (sdp_basic_test(TEST_NS_TO_TA,
-			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
-		return 1;
+	verbose("\nSecure Data Path basic access: "
+		"NS invokes SDP TA\n");
+	err = sdp_basic_test(TEST_NS_TO_TA, test_size, test_loop, ion_heap,
+			     rnd_offset, verbosity);
+	CHECK_RESULT(err, 0, return 1);
 
-	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP TA\n");
-	if (sdp_basic_test(TEST_TA_TO_TA,
-			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
-		return 1;
+	verbose("\nSecure Data Path basic access: "
+		"SDP TA invokes SDP TA\n");
+	err = sdp_basic_test(TEST_TA_TO_TA, test_size, test_loop, ion_heap,
+			     rnd_offset, verbosity);
+	CHECK_RESULT(err, 0, return 1);
 
-	verbose("\nSecure Data Path basic accesses: SDP TA invokes SDP pTA\n");
-	if (sdp_basic_test(TEST_TA_TO_PTA,
-			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
-		return 1;
+	verbose("\nSecure Data Path basic access: "
+		"SDP TA invokes SDP pTA\n");
+	err = sdp_basic_test(TEST_TA_TO_PTA, test_size, test_loop, ion_heap,
+			     rnd_offset, verbosity);
+	CHECK_RESULT(err, 0, return 1);
 
-	verbose("\nSecure Data Path basic accesses: NS invokes SDP pTA (shall fail)\n");
-	if (sdp_basic_test(TEST_NS_TO_PTA,
-			   test_size, test_loop, ion_heap, rnd_offset, verbosity))
-		verbose("-> false negative: pTAs refuse SDP memref from NS clients.\n");
+	verbose("\nSecure Data Path basic access: "
+		"NS invokes SDP pTA (shall fail)\n");
+	err = sdp_basic_test(TEST_NS_TO_PTA, test_size, test_loop, ion_heap,
+			     rnd_offset, verbosity);
+	CHECK_RESULT(err, 1, return 1);
 
 	return 0;
 }
