@@ -428,10 +428,14 @@ out:
 
 static void Allocate_sharedMemory_maxSize(struct xtest_session *cs)
 {
+	uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
+
+	if (size_max == ULONG_MAX)
+		return;
+
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, allocate max size");
 	{
-		uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
 		TEEC_SharedMemory shm;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -454,12 +458,16 @@ out:
 
 static void Allocate_sharedMemory_belowMaxSize(struct xtest_session *cs)
 {
+	unsigned long long size_below = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
+
+	if (size_below == ULONG_MAX - 1)
+		return;
+
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
 			     "allocate just below max size");
 	{
 		TEEC_SharedMemory shm;
-		uint32_t size_below = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -482,13 +490,17 @@ out:
 
 static void Allocate_sharedMemory_aboveMaxSize(struct xtest_session *cs)
 {
+	unsigned long long size_above = TEEC_CONFIG_SHAREDMEM_MAX_SIZE + 1;
+
+	if (size_above == ULONG_MAX - 1)
+		return;
+
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
 			     "allocate just above max size");
 	{
 		TEEC_Result res;
 		TEEC_SharedMemory shm;
-		uint32_t size_above = TEEC_CONFIG_SHAREDMEM_MAX_SIZE + 1;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -512,9 +524,13 @@ out:
 
 static void Register_sharedMemory_maxSize(struct xtest_session *cs)
 {
+	unsigned long long size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
+
+	if (size_max == ULONG_MAX)
+		return;
+
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_maxSize");
 	{
-		uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
 		uint8_t val[size_max];
 		TEEC_SharedMemory shm;
 
@@ -566,9 +582,13 @@ out:
 
 static void Register_sharedMemory_belowMaxSize(struct xtest_session *cs)
 {
+	unsigned long long size_belowMax = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
+
+	if (size_belowMax == ULONG_MAX - 1)
+		return;
+
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_belowMaxSize");
 	{
-		uint32_t size_belowMax = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
 		uint8_t val[size_belowMax];
 		TEEC_SharedMemory shm;
 
