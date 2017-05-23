@@ -68,6 +68,12 @@ struct xtest_session {
 		} \
 	} while (0)
 
+/* Maximal value to be tested on TEEC_CONFIG_SHAREDMEM_MAX_SIZE tests: 512kB */
+#define TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE	0x80000
+#ifndef MIN
+#define MIN(a, b)		((a) < (b) ? (a) : (b))
+#endif
+
 /* Initiates the memory and allocates size uint32_t. */
 
 /* Registers the TEEC_SharedMemory to the TEE. */
@@ -428,11 +434,8 @@ out:
 
 static void Allocate_sharedMemory_maxSize(struct xtest_session *cs)
 {
-	uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
-
-	/* TEE Client API  v1.0: shall be at least 512kB */
-	if (size_max == ULONG_MAX)
-		size_max = 0x80000;
+	uint32_t size_max = MIN(TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE,
+				TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
 
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, allocate max size");
@@ -459,11 +462,8 @@ out:
 
 static void Allocate_sharedMemory_belowMaxSize(struct xtest_session *cs)
 {
-	unsigned long long size_below = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
-
-	/* TEE Client API  v1.0: shall be at least 512kB */
-	if (size_below == ULONG_MAX - 1)
-		size_below = 0x80000;
+	uint32_t size_below = MIN(TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE,
+				  TEEC_CONFIG_SHAREDMEM_MAX_SIZE) - 1;
 
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
@@ -492,12 +492,8 @@ out:
 
 static void Allocate_sharedMemory_aboveMaxSize(struct xtest_session *cs)
 {
-	unsigned long long size_above = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
-
-	if (size_above == ULONG_MAX)
-		return;
-
-	size_above++;
+	uint32_t size_above = MIN(TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE,
+				  TEEC_CONFIG_SHAREDMEM_MAX_SIZE) + 1;
 
 	Do_ADBG_BeginSubCase(cs->c,
 			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
@@ -528,11 +524,8 @@ out:
 
 static void Register_sharedMemory_maxSize(struct xtest_session *cs)
 {
-	unsigned long long size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
-
-	/* TEE Client API  v1.0: shall be at least 512kB */
-	if (size_max == ULONG_MAX)
-		size_max = 0x80000;
+	uint32_t size_max = MIN(TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE,
+				TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
 
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_maxSize");
 	{
@@ -562,7 +555,7 @@ static void Register_sharedMemory_aboveMaxSize(struct xtest_session *cs)
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_aboveMaxSize");
 	{
 		TEEC_Result res;
-		uint32_t size_aboveMax = 0xffffffff;
+		uint32_t size_aboveMax = UINT32_MAX;
 		uint8_t val[1];
 		TEEC_SharedMemory shm;
 
@@ -587,11 +580,8 @@ out:
 
 static void Register_sharedMemory_belowMaxSize(struct xtest_session *cs)
 {
-	unsigned long long size_belowMax = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
-
-	/* TEE Client API  v1.0: shall be at least 512kB */
-	if (size_belowMax == ULONG_MAX - 1)
-		size_belowMax = 0x80000;
+	uint32_t size_belowMax = MIN(TEEC_CONFIG_SHAREDMEM_MAX_SIZE,
+			     TEE_CLIENT_API_LOWER_SHM_BUFFER_MAX_SIZE) - 1;
 
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_belowMaxSize");
 	{
