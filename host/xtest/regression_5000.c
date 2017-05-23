@@ -426,12 +426,16 @@ out:
 	Do_ADBG_EndSubCase(cs->c, "RegisterSameMemory_twice");
 }
 
-static void Allocate_sharedMemory_maxSize(struct xtest_session *cs)
+#ifndef MIN
+#define MIN(a,b)	((a) < (b) ? (a) : (b))
+#endif
+
+static void Allocate_sharedMemory_32k(struct xtest_session *cs)
 {
-	Do_ADBG_BeginSubCase(cs->c,
-			     "Allocate_sharedMemory_MaxSize_Above_and_Below, allocate max size");
+	Do_ADBG_BeginSubCase(cs->c, "Allocate_sharedMemory_32k");
 	{
-		uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
+		uint32_t size = MIN(32 * 1024,
+				    TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
 		TEEC_SharedMemory shm;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -439,7 +443,7 @@ static void Allocate_sharedMemory_maxSize(struct xtest_session *cs)
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
-			AllocateSharedMemory(&cs->context, &shm, size_max,
+			AllocateSharedMemory(&cs->context, &shm, size,
 					     TEEC_MEM_INPUT)))
 			goto out_final;
 
@@ -448,74 +452,16 @@ out_final:
 		TEEC_FinalizeContext(&cs->context);
 	}
 out:
-	Do_ADBG_EndSubCase(cs->c,
-			   "Allocate_sharedMemory_MaxSize_Above_and_Below, allocate max size");
+	Do_ADBG_EndSubCase(cs->c, "Allocate_sharedMemory_32k");
 }
 
-static void Allocate_sharedMemory_belowMaxSize(struct xtest_session *cs)
+static void Register_sharedMemory_32k(struct xtest_session *cs)
 {
-	Do_ADBG_BeginSubCase(cs->c,
-			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
-			     "allocate just below max size");
+	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_32k");
 	{
-		TEEC_SharedMemory shm;
-		uint32_t size_below = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
-
-		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
-			goto out;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
-			AllocateSharedMemory(&cs->context, &shm, size_below,
-					     TEEC_MEM_INPUT)))
-			goto out_final;
-
-		TEEC_ReleaseSharedMemory(&shm);
-out_final:
-		TEEC_FinalizeContext(&cs->context);
-	}
-out:
-	Do_ADBG_EndSubCase(cs->c,
-			   "Allocate_sharedMemory_MaxSize_Above_and_Below, "
-			   "allocate just below max size");
-}
-
-static void Allocate_sharedMemory_aboveMaxSize(struct xtest_session *cs)
-{
-	Do_ADBG_BeginSubCase(cs->c,
-			     "Allocate_sharedMemory_MaxSize_Above_and_Below, "
-			     "allocate just above max size");
-	{
-		TEEC_Result res;
-		TEEC_SharedMemory shm;
-		uint32_t size_above = TEEC_CONFIG_SHAREDMEM_MAX_SIZE + 1;
-
-		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
-			goto out;
-
-		res = AllocateSharedMemory(&cs->context, &shm, size_above,
-					   TEEC_MEM_INPUT);
-
-		ADBG_EXPECT_TRUE(cs->c, res == TEEC_ERROR_OUT_OF_MEMORY ||
-				 res == TEEC_SUCCESS);
-
-		if (res == TEEC_SUCCESS)
-			TEEC_ReleaseSharedMemory(&shm);
-		TEEC_FinalizeContext(&cs->context);
-	}
-out:
-	Do_ADBG_EndSubCase(cs->c,
-			   "Allocate_sharedMemory_MaxSize_Above_and_Below, "
-			   "allocate just above max size");
-}
-
-static void Register_sharedMemory_maxSize(struct xtest_session *cs)
-{
-	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_maxSize");
-	{
-		uint32_t size_max = TEEC_CONFIG_SHAREDMEM_MAX_SIZE;
-		uint8_t val[size_max];
+		uint32_t size = MIN(32 * 1024,
+				    TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
+		uint8_t val[size];
 		TEEC_SharedMemory shm;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -524,7 +470,7 @@ static void Register_sharedMemory_maxSize(struct xtest_session *cs)
 
 		shm.buffer = val;
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
-			RegisterSharedMemory(&cs->context, &shm, size_max,
+			RegisterSharedMemory(&cs->context, &shm, size,
 					     TEEC_MEM_INPUT)))
 			goto out_final;
 
@@ -533,61 +479,7 @@ out_final:
 		TEEC_FinalizeContext(&cs->context);
 	}
 out:
-	Do_ADBG_EndSubCase(cs->c, "Register_sharedMemory_maxSize");
-}
-
-static void Register_sharedMemory_aboveMaxSize(struct xtest_session *cs)
-{
-	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_aboveMaxSize");
-	{
-		TEEC_Result res;
-		uint32_t size_aboveMax = 0xffffffff;
-		uint8_t val[1];
-		TEEC_SharedMemory shm;
-
-		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
-			goto out;
-
-		shm.buffer = val;
-		res = RegisterSharedMemory(&cs->context, &shm, size_aboveMax,
-					   TEEC_MEM_INPUT);
-
-		ADBG_EXPECT_TRUE(cs->c, res == TEEC_ERROR_OUT_OF_MEMORY ||
-				 res == TEEC_SUCCESS);
-
-		if (res == TEEC_SUCCESS)
-			TEEC_ReleaseSharedMemory(&shm);
-		TEEC_FinalizeContext(&cs->context);
-	}
-out:
-	Do_ADBG_EndSubCase(cs->c, "Register_sharedMemory_aboveMaxSize");
-}
-
-static void Register_sharedMemory_belowMaxSize(struct xtest_session *cs)
-{
-	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_belowMaxSize");
-	{
-		uint32_t size_belowMax = TEEC_CONFIG_SHAREDMEM_MAX_SIZE - 1;
-		uint8_t val[size_belowMax];
-		TEEC_SharedMemory shm;
-
-		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			    TEEC_InitializeContext(_device, &cs->context)))
-			goto out;
-
-		shm.buffer = val;
-		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
-			RegisterSharedMemory(&cs->context, &shm, size_belowMax,
-					     TEEC_MEM_INPUT)))
-			goto out_final;
-
-		TEEC_ReleaseSharedMemory(&shm);
-out_final:
-		TEEC_FinalizeContext(&cs->context);
-	}
-out:
-	Do_ADBG_EndSubCase(cs->c, "Register_sharedMemory_belowMaxSize");
+	Do_ADBG_EndSubCase(cs->c, "Register_sharedMemory_32k");
 }
 
 static void xtest_teec_TEE(ADBG_Case_t *c)
@@ -624,17 +516,9 @@ static void xtest_teec_TEE(ADBG_Case_t *c)
 
 	RegisterSameMemory_twice(&connection);
 
-	Allocate_sharedMemory_maxSize(&connection);
+	Allocate_sharedMemory_32k(&connection);
 
-	Allocate_sharedMemory_belowMaxSize(&connection);
-
-	Allocate_sharedMemory_aboveMaxSize(&connection);
-
-	Register_sharedMemory_maxSize(&connection);
-
-	Register_sharedMemory_aboveMaxSize(&connection);
-
-	Register_sharedMemory_belowMaxSize(&connection);
+	Register_sharedMemory_32k(&connection);
 }
 
 ADBG_CASE_DEFINE(regression, 5006, xtest_teec_TEE,
