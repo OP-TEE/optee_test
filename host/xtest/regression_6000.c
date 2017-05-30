@@ -1716,7 +1716,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 		num_blocks = 10;
 		block_size = 1024;
 	} else {
-		num_blocks = 40;
+		num_blocks = 20;
 		block_size = sizeof(block);
 	}
 
