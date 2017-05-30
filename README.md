@@ -30,9 +30,6 @@ It makes use of the following environment variables:
 * `TA_DEV_KIT_DIR`: the path to the Trusted Application Dev Kit.
   It can be found in optee_os repository, once optee_os has been compiled.
 * `O`: the output repository
-* When the application is compiled in 32bits mode,
-  `CFG_ARM32=y` must be set.
-
 
 #### Extended test (Global Platform tests)
 Developers can purchase the
@@ -53,6 +50,12 @@ This will:
 * Patches `xtest_7000.c`, adding new tests.
 
 Then the tests must be compiled with `CFG_GP_PACKAGE_PATH=<path>`.
+
+It makes use of the following environment variable:
+* `COMPILE_NS_USER`: `32` or `64` if application shall be compiled in 32 bits
+  mode on in 64 bits mode. If `COMPILE_NS_USER` is not specificed, build relies
+  on `CFG_ARM32_core=y` from OP-TEE core build to assume applications are in
+  32 bits mode, Otherwise, 64 bits mode is assumed.
 
 
 ### HOWTO run xtest

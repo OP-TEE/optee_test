@@ -110,7 +110,7 @@ CFLAGS += -I../../ta/GP_TTA_testingClientAPI
 CFLAGS += -Ifor_gp/include
 
 # by default, the client application is compiled as the kernel of optee-os
-ifeq ($(CFG_ARM32),y)
+ifeq ($(CFG_ARM32_core),y)
 COMPILE_NS_USER ?= 32
 else
 COMPILE_NS_USER ?= 64
