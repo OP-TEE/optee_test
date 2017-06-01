@@ -2755,6 +2755,9 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 						&out_size)))
 					goto out;
 				out_offs += out_size;
+				if (ae_cases[n].algo == TEE_ALG_AES_GCM)
+					ADBG_EXPECT_COMPARE_UNSIGNED(c,
+					  out_size, ==, ae_cases[n].in_incr);
 			}
 		} else {
 			if (ae_cases[n].ctx != NULL) {
@@ -2765,6 +2768,9 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 						&out_size)))
 					goto out;
 				out_offs += out_size;
+				if (ae_cases[n].algo == TEE_ALG_AES_GCM)
+					ADBG_EXPECT_COMPARE_UNSIGNED(c,
+					  out_size, ==, ae_cases[n].in_incr);
 			}
 		}
 
