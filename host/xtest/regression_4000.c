@@ -2375,6 +2375,10 @@ static void xtest_tee_test_4003_no_xts(ADBG_Case_t *c)
 				&out_size)))
 			goto out;
 
+		if (ciph_cases[n].algo == TEE_ALG_AES_CTR)
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+				ciph_cases[n].in_incr);
+
 		out_offs += out_size;
 		out_size = sizeof(out) - out_offs;
 
