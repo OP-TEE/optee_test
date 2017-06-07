@@ -38,13 +38,5 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_params_access_rights(uint32_t p_types, TEE_Param params[4]);
 TEE_Result ta_entry_wait(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_entry_mfw_apply_ddr_rules(uint32_t param_types,
-					TEE_Param params[4]);
-TEE_Result ta_entry_mfw_apply_esram_rules(uint32_t param_types,
-					  TEE_Param params[4]);
-TEE_Result ta_entry_mfw_buffer_is_firewalled(uint32_t param_types,
-					     TEE_Param params[4]);
-TEE_Result ta_entry_mfw_cache_mainenance(uint32_t param_types,
-					 TEE_Param params[4]);
 
 #endif /*OS_TEST_H */

@@ -42,8 +42,4 @@
 #define TA_OS_TEST_CMD_WAIT                 9
 #define TA_OS_TEST_CMD_BAD_MEM_ACCESS       10
 
-/* TA_MEM_FIREWALL commands TA_OS_TEST_MFW_CMD_BASE + TA_MEM_FIREWALL_CMD_* */
-#define TA_OS_TEST_MFW_CMD_BASE         11
-#define TA_OS_TEST_MFW_CMD_LAST         16
-
 #endif /*TA_OS_TEST_H */
