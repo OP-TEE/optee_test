@@ -47,6 +47,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1014(ADBG_Case_t *Case_p);
 #endif
 static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
+static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
@@ -71,6 +72,8 @@ ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
 #endif
 ADBG_CASE_DEFINE(regression, 1015, xtest_tee_test_1015,
 		"FS hash-tree corner cases");
+ADBG_CASE_DEFINE(regression, 1016, xtest_tee_test_1016,
+		"Test TA to TA transfers (in/out/inout memrefs on the stack)");
 
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
@@ -1140,5 +1143,26 @@ static void xtest_tee_test_1015(ADBG_Case_t *c)
 	ADBG_EXPECT_TEEC_SUCCESS(c,
 		TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_FS_HTREE,
 				   NULL, &ret_orig));
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_1016(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+		                        &ret_orig)))
+		return;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TA2TA_MEMREF, &op,
+				   &ret_orig));
+
 	TEEC_CloseSession(&session);
 }

@@ -917,3 +917,125 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 
 	return TEE_SUCCESS;
 }
+
+static void incr_values(size_t bufsize, uint8_t *a, uint8_t *b, uint8_t *c)
+{
+	size_t i;
+
+	for (i = 0; i < bufsize; i++) {
+		a[i]++; b[i]++; c[i]++;
+	}
+}
+
+TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
+{
+	static const TEE_UUID test_uuid = TA_OS_TEST_UUID;
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	TEE_Param l_params[4] = { { {0} } };
+	size_t bufsize = 2 * 1024;
+	uint8_t in[bufsize];
+	uint8_t inout[bufsize];
+	uint8_t out[bufsize];
+	TEE_Result res;
+	uint32_t ret_orig;
+	uint32_t l_pts;
+	size_t i;
+	(void)params;
+
+	if (param_types != TEE_PARAM_TYPES(0, 0, 0, 0))
+		return TEE_ERROR_GENERIC;
+
+	res = TEE_OpenTASession(&test_uuid, 0, 0, NULL, &sess, &ret_orig);
+	if (res != TEE_SUCCESS) {
+		EMSG("TEE_OpenTASession failed");
+		goto cleanup_return;
+	}
+
+	l_pts = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+				TEE_PARAM_TYPE_MEMREF_INOUT,
+				TEE_PARAM_TYPE_MEMREF_OUTPUT, 0);
+	l_params[0].memref.buffer = in;
+	l_params[0].memref.size = bufsize;
+	l_params[1].memref.buffer = inout;
+	l_params[1].memref.size = bufsize;
+	l_params[2].memref.buffer = out;
+	l_params[2].memref.size = bufsize;
+
+	/* Initialize buffers */
+	for (i = 0; i < bufsize; i++) {
+		in[i] = 5;
+		inout[i] = 10;
+		out[i] = 0;
+	}
+
+	/*
+	 * TA will compute: out = ++inout + in
+	 * Expected values after this step: in: 5, inout: 11, out: 16
+	 */
+	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
+				  l_pts, l_params, &ret_orig);
+	if (res != TEE_SUCCESS) {
+		EMSG("TEE_InvokeTACommand failed");
+		goto cleanup_return;
+	}
+	
+	/*
+	 * Increment all values by one.
+	 * Expected values after this step: in: 6, inout: 12, out: 17
+	 */
+	incr_values(bufsize, in, inout, out);
+
+	/*
+	 * TA will compute: out = ++inout + in
+	 * Expected values after this step: in: 6, inout: 13, out: 19
+	 */
+	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
+				  l_pts, l_params, &ret_orig);
+	if (res != TEE_SUCCESS) {
+		EMSG("TEE_InvokeTACommand failed");
+		goto cleanup_return;
+	}
+
+	/* Check the actual values */
+	for (i = 0; i < bufsize; i++) {
+		if (in[i] != 6 || inout[i] != 13 || out[i] != 19) {
+			EMSG("Unexpected value in buffer(s)");
+			DHEXDUMP(in, bufsize);
+			DHEXDUMP(inout, bufsize);
+			DHEXDUMP(out, bufsize);
+			return TEE_ERROR_GENERIC;
+		}
+	}
+
+cleanup_return:
+	TEE_CloseTASession(sess);
+	return res;
+}
+
+TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
+{
+	uint8_t *in;
+	uint8_t *inout;
+	uint8_t *out;
+	size_t bufsize;
+	size_t i;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_INOUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT, 0))
+		return TEE_ERROR_GENERIC;
+
+	bufsize = params[0].memref.size;
+	if (params[1].memref.size != bufsize ||
+	    params[2].memref.size != bufsize)
+		return TEE_ERROR_GENERIC;
+
+	in = params[0].memref.buffer;
+	inout = params[1].memref.buffer;
+	out = params[2].memref.buffer;
+
+	for (i = 0; i < bufsize; i++)
+		out[i] = ++inout[i] + in[i];
+
+	return TEE_SUCCESS;
+}
