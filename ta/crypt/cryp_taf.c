@@ -34,7 +34,10 @@ do {                                             \
 		return TEE_ERROR_BAD_PARAMETERS; \
 } while (0)
 
-#define VAL2HANDLE(v) (void *)(uintptr_t)(v)
+/* pointers in 32-bit fields passed as an offset to ta_head */
+extern const void *ta_head;
+#define VAL2HANDLE(v) (void *)(uintptr_t)(v == TEE_HANDLE_NULL ? v : v + (uintptr_t)&ta_head)
+#define HANDLE2VAL(h) (uint32_t)(h == TEE_HANDLE_NULL ? (uintptr_t)h : (uintptr_t)((uintptr_t)h - (uintptr_t)&ta_head))
 
 TEE_Result ta_entry_allocate_operation(uint32_t param_type, TEE_Param params[4])
 {
@@ -49,7 +52,7 @@ TEE_Result ta_entry_allocate_operation(uint32_t param_type, TEE_Param params[4])
 	res = TEE_AllocateOperation(&op,
 				    params[0].value.b, params[1].value.a,
 				    params[1].value.b);
-	params[0].value.a = (uintptr_t)op;
+	params[0].value.a = HANDLE2VAL(op);
 	return res;
 }
 
@@ -294,7 +297,7 @@ TEE_Result ta_entry_allocate_transient_object(uint32_t param_type,
 	res = TEE_AllocateTransientObject(params[0].value.a, params[0].value.b,
 					  &o);
 	if (res == TEE_SUCCESS)
-		params[1].value.a = (uint32_t)(uintptr_t)o;
+		params[1].value.a = HANDLE2VAL(o);
 	return res;
 }
 
