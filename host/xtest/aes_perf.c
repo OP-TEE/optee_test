@@ -452,6 +452,16 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	uint32_t cmd = is_sdp_test ? TA_AES_PERF_CMD_PROCESS_SDP :
 				     TA_AES_PERF_CMD_PROCESS;
 
+	if (input_buffer == BUFFER_UNSPECIFIED)
+		input_buffer = BUFFER_SHM_ALLOCATED;
+
+	if (output_buffer == BUFFER_UNSPECIFIED) {
+		if (is_sdp_test)
+			output_buffer = BUFFER_SECURE_PREREGISTERED;
+		else
+			output_buffer = BUFFER_SHM_ALLOCATED;
+	}
+
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -667,16 +677,6 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		fprintf(stderr, "invalid buffer size argument, must be a multiple of 16\n\n");
 			usage(argv[0], keysize, mode, size, warmup, l, n);
 			return 1;
-	}
-
-	if (input_buffer == BUFFER_UNSPECIFIED)
-		input_buffer = BUFFER_SHM_ALLOCATED;
-
-	if (output_buffer == BUFFER_UNSPECIFIED) {
-		if (is_sdp_test)
-			output_buffer = BUFFER_SECURE_PREREGISTERED;
-		else
-			output_buffer = BUFFER_SHM_ALLOCATED;
 	}
 
 
