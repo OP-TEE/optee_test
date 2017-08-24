@@ -76,17 +76,18 @@ struct tee_ctx {
 	TEEC_Session sess;
 };
 
-int allocate_ion_buffer(size_t size, int heap_id, int verbosity)
+int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
 {
+	struct ion_heap_query query_data;
+	struct ion_heap_data heap_data[32];
 	struct ion_allocation_data alloc_data;
-	struct ion_handle_data hdl_data;
-	struct ion_fd_data fd_data;
 	int ion;
 	int fd = -1;
+	unsigned int idx;
 
 	ion = open("/dev/ion", O_RDWR);
 	if (ion < 0) {
-		fprintf(stderr, "Error; failed to open /dev/ion\n");
+		fprintf(stderr, "Error: failed to open /dev/ion\n");
 		verbose("Seems no ION heap is available.\n");
 		verbose("To test ION allocation you can enable\n");
 		verbose("CONFIG_ION and CONFIG_ION_DUMMY in your\n");
@@ -94,31 +95,43 @@ int allocate_ion_buffer(size_t size, int heap_id, int verbosity)
 		return fd;
 	}
 
-	if (heap_id < 0)
-		heap_id = DEFAULT_ION_HEAP_TYPE;
+	if (heap_type_id < 0)
+		heap_type_id = DEFAULT_ION_HEAP_TYPE;
 
-	verbose("Allocate in ION heap '%s'\n",
-		heap_id == ION_HEAP_TYPE_SYSTEM ? "system" :
-		heap_id == ION_HEAP_TYPE_SYSTEM_CONTIG ? "system contig" :
-		heap_id == ION_HEAP_TYPE_CARVEOUT ? "carveout" :
-		heap_id == ION_HEAP_TYPE_CHUNK ? "chunk" :
-		heap_id == ION_HEAP_TYPE_DMA ? "dma" :
-		heap_id == ION_HEAP_TYPE_UNMAPPED ? "unmapped" :
-		"custom");
+	memset(&query_data, 0, sizeof(query_data));
+	if (ioctl(ion, ION_IOC_HEAP_QUERY, &query_data) < 0) {
+		fprintf(stderr, "Error: failed to query the number of heaps\n");
+		goto out;
+	}
+
+	query_data.heaps = (__u64)(unsigned long)&heap_data;
+	if (ioctl(ion, ION_IOC_HEAP_QUERY, &query_data) < 0) {
+		fprintf(stderr, "Error: failed to query heaps data\n");
+		goto out;
+	}
+
+	for (idx = 0; idx < query_data.cnt; idx++)
+		if (heap_data[idx].type == (unsigned int)heap_type_id)
+			break;
+	if (idx == query_data.cnt) {
+		fprintf(stderr, "Error: target heap type %d not found\n",
+				heap_type_id);
+		goto out;
+	}
+
+	verbose("Allocate in ION heap '%s' (type=%u, id=%u)\n",
+		heap_data[idx].name, heap_data[idx].type,
+		heap_data[idx].heap_id);
 
 	alloc_data.len = size;
-	alloc_data.align = 0;
 	alloc_data.flags = 0;
-	alloc_data.heap_id_mask = 1 << heap_id;
-	if (ioctl(ion, ION_IOC_ALLOC, &alloc_data) == -1)
+	alloc_data.heap_id_mask = 1 << heap_data[idx].heap_id;
+	if (ioctl(ion, ION_IOC_ALLOC, &alloc_data) < 0) {
+		fprintf(stderr, "Error: failed to allocate in target heap\n");
 		goto out;
+	}
 
-	fd_data.handle = alloc_data.handle;
-	if (ioctl(ion, ION_IOC_SHARE, &fd_data) != -1)
-		fd = fd_data.fd;
-
-	hdl_data.handle = alloc_data.handle;
-	(void)ioctl(ion, ION_IOC_FREE, &hdl_data);
+	fd = alloc_data.fd;
 out:
 	close(ion);
 	return fd;
