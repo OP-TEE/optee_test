@@ -26,6 +26,7 @@
  */
 
 #include <tee_ta_api.h>
+#include <trace.h>
 
 #include "ta_aes_perf.h"
 #include "ta_aes_perf_priv.h"
