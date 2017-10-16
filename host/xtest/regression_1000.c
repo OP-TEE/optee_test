@@ -33,6 +33,7 @@
 #include <sdp_basic.h>
 
 static void xtest_tee_test_1001(ADBG_Case_t *Case_p);
+static void xtest_tee_test_1002(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1004(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1005(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1006(ADBG_Case_t *Case_p);
@@ -50,6 +51,7 @@ static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
+ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
 ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
 ADBG_CASE_DEFINE(regression, 1005, xtest_tee_test_1005, "Many sessions");
 ADBG_CASE_DEFINE(regression, 1006, xtest_tee_test_1006,
@@ -287,6 +289,46 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
 	TEEC_CloseSession(&session);
 }
+
+static void xtest_tee_test_1002(ADBG_Case_t *c)
+{
+	TEEC_Result res;
+	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig;
+	uint8_t buf[16 * 1024];
+	uint8_t exp_sum = 0;
+	size_t n;
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	/*
+	 * If the pseudo TA (which is optional) isn't available, skip this
+	 * test.
+	 */
+	if (res != TEEC_SUCCESS)
+		return;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.size = sizeof(buf);
+	op.params[0].tmpref.buffer = buf;
+
+	for (n = 0; n < sizeof(buf); n++)
+		buf[n] = n + 1;
+	for (n = 0; n < sizeof(buf); n++)
+		exp_sum += buf[n];
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
+		&session, PTA_INVOKE_TESTS_CMD_PARAMS, &op, &ret_orig)))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_SIGNED(c, exp_sum, ==, buf[0]);
+out:
+	TEEC_CloseSession(&session);
+}
+
+
 
 static void xtest_tee_test_1004(ADBG_Case_t *c)
 {
