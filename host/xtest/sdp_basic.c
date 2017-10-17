@@ -158,11 +158,13 @@ static int create_tee_ctx(struct tee_ctx *ctx, enum test_target_ta target_ta)
 
 	teerc = TEEC_OpenSession(&ctx->ctx, &ctx->sess, uuid,
 			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
-	if (teerc != TEEC_SUCCESS)
+	if (teerc != TEEC_SUCCESS) {
 		fprintf(stderr, "Error: open session to target test %s failed %x %d\n",
 			(target_ta == TEST_NS_TO_PTA) ? "pTA" : "TA",
 			teerc, err_origin);
 
+		TEEC_FinalizeContext(&ctx->ctx);
+	}
 	return (teerc == TEEC_SUCCESS) ? 0 : -1;
 }
 
@@ -429,24 +431,24 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 	ref_buf = malloc(size);
 	if (!test_buf || !ref_buf) {
 		verbose("failed to allocate memory\n");
-		goto out;
+		goto bail1;
 	}
 
 	fd = allocate_ion_buffer(sdp_size, ion_heap, verbosity);
 	if (fd < 0) {
 		verbose("Failed to allocate SDP buffer (%zu bytes) in ION heap %d: %d\n",
 				sdp_size, ion_heap, fd);
-		goto out;
+		goto bail1;
 	}
 
 	/* register secure buffer to TEE */
 	ctx = malloc(sizeof(*ctx));
 	if (!ctx)
-		goto out;
+		goto bail1;
 	if (create_tee_ctx(ctx, ta))
-		goto out;
+		goto bail1;
 	if (tee_register_buffer(ctx, &shm_ref, fd))
-		goto out;
+		goto bail2;
 
 	/* release registered fd: tee should still hold refcount on resource */
 	close(fd);
@@ -456,37 +458,38 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 	for (loop_cnt = loop; loop_cnt; loop_cnt--) {
 		/* get an buffer of random-like values */
 		if (get_random_bytes((char *)ref_buf, size))
-			goto out;
+			goto bail2;
 		memcpy(test_buf, ref_buf, size);
 		/* random offset [0 255] */
 		offset = (unsigned int)*ref_buf;
 
 		/* TA writes into SDP buffer */
 		if (inject_sdp_data(ctx, test_buf, offset, size, shm_ref, ta))
-			goto out;
+			goto bail2;
 
 		/* TA reads/writes into SDP buffer */
 		if (transform_sdp_data(ctx, offset, size, shm_ref, ta))
-			goto out;
+			goto bail2;
 
 		/* TA reads into SDP buffer */
 		if (dump_sdp_data(ctx, test_buf, offset, size, shm_ref, ta))
-			goto out;
+			goto bail2;
 
 		/* check dumped data are the expected ones */
 		if (check_sdp_dumped(ctx, ref_buf, size, test_buf)) {
 			fprintf(stderr, "check SDP data: %d errors\n", err);
-			goto out;
+			goto bail2;
 		}
 	}
 
 	err = 0;
-out:
+bail2:
 	if (fd >= 0)
 		close(fd);
 	if (shm_ref)
 		tee_deregister_buffer(ctx, shm_ref);
 	finalize_tee_ctx(ctx);
+bail1:
 	free(ctx);
 	free(ref_buf);
 	free(test_buf);
