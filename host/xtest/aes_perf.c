@@ -194,6 +194,8 @@ static const char *mode_str(uint32_t mode)
 		return "CTR";
 	case TA_AES_XTS:
 		return "XTS";
+	case TA_AES_GCM:
+		return "GCM";
 	default:
 		return "???";
 	}
@@ -221,7 +223,7 @@ static void usage(const char *progname, int keysize, int mode,
 	fprintf(stderr, "  -i|--in-place Use same buffer for input and output (decrypt in place)\n");
 	fprintf(stderr, "  -k SIZE       Key size in bits: 128, 192 or 256 [%u]\n", keysize);
 	fprintf(stderr, "  -l LOOP       Inner loop iterations (TA calls TEE_CipherUpdate() <x> times) [%u]\n", l);
-	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS [%s]\n", mode_str(mode));
+	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS, GCM [%s]\n", mode_str(mode));
 	fprintf(stderr, "  -n LOOP       Outer test loop iterations [%u]\n", n);
 	fprintf(stderr, "  --not-inited  Do not initialize input buffer content.\n");
 	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all zeros)\n");
@@ -613,6 +615,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 				mode = TA_AES_CTR;
 			else if (!strcasecmp(argv[i], "XTS"))
 				mode = TA_AES_XTS;
+			else if (!strcasecmp(argv[i], "GCM"))
+				mode = TA_AES_GCM;
 			else {
 				fprintf(stderr, "%s, invalid mode\n",
 					argv[0]);

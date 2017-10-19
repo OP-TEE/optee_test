@@ -41,11 +41,14 @@
 		}					\
 	} while(0)
 
+#define TAG_LEN	128
+
 static uint8_t iv[] = { 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
 			0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF };
 static int use_iv;
 
 static TEE_OperationHandle crypto_op = NULL;
+static uint32_t algo;
 
 static bool is_inbuf_a_secure_memref(TEE_Param *param)
 {
@@ -150,9 +153,17 @@ TEE_Result cmd_process(uint32_t param_types,
 	outsz = params[1].memref.size;
 	n = params[2].value.a;
 
-	while (n--) {
-		res = TEE_CipherUpdate(crypto_op, in, insz, out, &outsz);
-		CHECK(res, "TEE_CipherUpdate", return res;);
+	if (algo == TEE_ALG_AES_GCM) {
+		while (n--) {
+			res = TEE_AEUpdate(crypto_op, in, insz, out, &outsz);
+			CHECK(res, "TEE_AEUpdate", return res;);
+		}
+	} else {
+		while (n--) {
+			res = TEE_CipherUpdate(crypto_op, in, insz,
+					       out, &outsz);
+			CHECK(res, "TEE_CipherUpdate", return res;);
+		}
 	}
 
 	if (secure_out) {
@@ -173,7 +184,8 @@ TEE_Result cmd_prepare_key(uint32_t param_types, TEE_Param params[4])
 	uint32_t mode;
 	uint32_t op_keysize;
 	uint32_t keysize;
-	uint32_t algo;
+	const uint8_t *ivp;
+	size_t ivlen;
 	static uint8_t aes_key[] = { 0x00, 0x01, 0x02, 0x03,
 				     0x04, 0x05, 0x06, 0x07,
 				     0x08, 0x09, 0x0A, 0x0B,
@@ -220,6 +232,10 @@ TEE_Result cmd_prepare_key(uint32_t param_types, TEE_Param params[4])
 		use_iv = 1;
 		op_keysize *= 2;
 		break;
+	case TA_AES_GCM:
+		algo = TEE_ALG_AES_GCM;
+		use_iv = 1;
+		break;
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
@@ -260,12 +276,20 @@ TEE_Result cmd_prepare_key(uint32_t param_types, TEE_Param params[4])
 
 	TEE_FreeTransientObject(hkey);
 
-	if (use_iv)
-		TEE_CipherInit(crypto_op, iv, sizeof(iv));
-	else
-		TEE_CipherInit(crypto_op, NULL, 0);
+	if (use_iv) {
+		ivp = iv;
+		ivlen = sizeof(iv);
+	} else {
+		ivp = NULL;
+		ivlen = 0;
+	}
 
-	return TEE_SUCCESS;
+	if (algo == TEE_ALG_AES_GCM) {
+		return TEE_AEInit(crypto_op, ivp, ivlen, TAG_LEN, 0, 0);
+	} else {
+		TEE_CipherInit(crypto_op, ivp, ivlen);
+		return TEE_SUCCESS;
+	}
 }
 
 void cmd_clean_res(void)
