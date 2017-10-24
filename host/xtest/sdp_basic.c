@@ -41,6 +41,8 @@
 #include "sdp_basic.h"
 #include "xtest_test.h"
 
+#include "include/uapi/linux/ion_old.h"
+
 /*
  * SDP basic test setup overview.
  *
@@ -76,6 +78,37 @@ struct tee_ctx {
 	TEEC_Session sess;
 };
 
+/*
+ * Old ION API to allocate and export a buffer
+ */
+static int allocate_ion_buffer_old_api(size_t size, int heap_type_id, int ion)
+{
+	struct ion0_allocation_data alloc_data;
+	struct ion0_handle_data hdl_data;
+	struct ion0_fd_data fd_data;
+	int fd = -1;
+
+	alloc_data.len = size;
+	alloc_data.align = 0;
+	alloc_data.flags = 0;
+	alloc_data.heap_id_mask = 1 << heap_type_id;
+	if (ioctl(ion, ION0_IOC_ALLOC, &alloc_data) == -1) {
+		fprintf(stderr, "Error: old ION allocate API failed\n");
+		return fd;
+	}
+
+	fd_data.handle = alloc_data.handle;
+	if (ioctl(ion, ION0_IOC_SHARE, &fd_data) != -1)
+		fd = fd_data.fd;
+	else
+		fprintf(stderr, "Error: old ION share API failed\n");
+
+	hdl_data.handle = alloc_data.handle;
+	(void)ioctl(ion, ION0_IOC_FREE, &hdl_data);
+
+	return fd;
+}
+
 int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
 {
 	struct ion_heap_query query_data;
@@ -106,7 +139,8 @@ int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
 
 	query_data.heaps = (__u64)(unsigned long)&heap_data;
 	if (ioctl(ion, ION_IOC_HEAP_QUERY, &query_data) < 0) {
-		fprintf(stderr, "Error: failed to query heaps data\n");
+		fprintf(stderr, "Info: can't query heaps data, try old API\n");
+		fd = allocate_ion_buffer_old_api(size, heap_type_id, ion);
 		goto out;
 	}
 
