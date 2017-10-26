@@ -38,17 +38,6 @@ ADBG_ENUM_TABLE_DECLARE(TEEC_ErrorOrigin);
 #define ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, exp, got) \
 	ADBG_EXPECT_ENUM(c, exp, got, ADBG_EnumTable_TEEC_ErrorOrigin)
 
-/* bass_return_code */
-ADBG_ENUM_TABLE_DECLARE(bass_return_code);
-
-#define ADBG_EXPECT_BASS_RETURN_CODE(c, exp, got) \
-	ADBG_EXPECT_ENUM(c, exp, got, ADBG_EnumTable_bass_return_code)
-
-#define ADBG_EXPECT_BASS_RC_SUCCESS(c, got) \
-	ADBG_EXPECT_ENUM(c, BASS_RC_SUCCESS, got, \
-			 ADBG_EnumTable_bass_return_code)
-
-
 extern const char crypt_user_ta[];
 extern const unsigned int crypt_user_ta_size;
 
