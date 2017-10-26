@@ -272,14 +272,14 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
 
+	/* Pseudo TA is optional: warn and nicely exit if not found */
 	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
 				      &ret_orig);
-	/*
-	 * If the static TA (which is optional) isn't available, skip this
-	 * test.
-	 */
-	if (res != TEEC_SUCCESS)
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1001 -   skip test, pseudo TA not found");
 		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
 		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
@@ -296,14 +296,14 @@ static void xtest_tee_test_1002(ADBG_Case_t *c)
 	uint8_t exp_sum = 0;
 	size_t n;
 
+	/* Pseudo TA is optional: warn and nicely exit if not found */
 	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
 				      &ret_orig);
-	/*
-	 * If the pseudo TA (which is optional) isn't available, skip this
-	 * test.
-	 */
-	if (res != TEEC_SUCCESS)
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1002 -   skip test, pseudo TA not found");
 		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
@@ -1169,14 +1169,14 @@ static void xtest_tee_test_1015(ADBG_Case_t *c)
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig;
 
+	/* Pseudo TA is optional: warn and nicely exit if not found */
 	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
 				      &ret_orig);
-	/*
-	 * If the static TA (which is optional) isn't available, skip this
-	 * test.
-	 */
-	if (res != TEEC_SUCCESS)
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1015 -   skip test, pseudo TA not found");
 		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	ADBG_EXPECT_TEEC_SUCCESS(c,
 		TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_FS_HTREE,
