@@ -181,8 +181,7 @@ static void xtest_crypto_test(struct xtest_crypto_session *cs)
 	}
 	Do_ADBG_EndSubCase(cs->c, "SHA-256 test, 3 bytes input");
 
-	Do_ADBG_BeginSubCase(cs->c,
-			     "AES-256 ECB encrypt test, 32 bytes input, with fixed key");
+	Do_ADBG_BeginSubCase(cs->c, "AES-256 ECB encrypt (32B, fixed key)");
 	{
 		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 		static const uint8_t in[] = {
@@ -222,11 +221,9 @@ static void xtest_crypto_test(struct xtest_crypto_session *cs)
 			Do_ADBG_HexLog(out, sizeof(out), 16);
 		}
 	}
-	Do_ADBG_EndSubCase(cs->c,
-			   "AES-256 ECB encrypt test, 32 bytes input, with fixed key");
+	Do_ADBG_EndSubCase(cs->c, "AES-256 ECB encrypt (32B, fixed key)");
 
-	Do_ADBG_BeginSubCase(cs->c,
-			     "AES-256 ECB decrypt test, 32 bytes input, with fixed key");
+	Do_ADBG_BeginSubCase(cs->c, "AES-256 ECB decrypt (32B, fixed key)");
 	{
 		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 		static const uint8_t in[] = {
@@ -266,8 +263,7 @@ static void xtest_crypto_test(struct xtest_crypto_session *cs)
 			Do_ADBG_HexLog(out, sizeof(out), 16);
 		}
 	}
-	Do_ADBG_EndSubCase(cs->c,
-			   "AES-256 ECB decrypt test, 32 bytes input, with fixed key");
+	Do_ADBG_EndSubCase(cs->c, "AES-256 ECB decrypt (32B, fixed key)");
 }
 
 static void xtest_tee_test_1001(ADBG_Case_t *c)
@@ -1160,10 +1156,10 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP pTA");
 
 	test = TEST_NS_TO_PTA;
-	Do_ADBG_BeginSubCase(c, "SDP: NonSecure client invokes SDP pTA (should fail)");
+	Do_ADBG_BeginSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
 	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 1, ret);
-	Do_ADBG_EndSubCase(c, "SDP: NonSecure client invokes SDP pTA (should fail)");
+	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
 }
 #endif
 
