@@ -644,5 +644,11 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 1, return 1);
 
+	/* 
+	 * Make sure this string is printed after all subtests has been running.
+	 * This string is used by automatic testing. I.e., we are searching for
+	 * this string to figure out whether the SDP tests passed or not.
+	 */
+	fprintf(stdout, "All SDP test cases passed!\n");
 	return 0;
 }
