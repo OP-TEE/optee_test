@@ -1406,17 +1406,22 @@ static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
 	uint32_t orig;
 	uint32_t obj;
 
+	/*
+	 * create the object a first time (forced through with overwrite attribute)
+	 */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
 		return;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create_overwrite(&sess, file_04, sizeof(file_04), storage_id)))
-		goto exit;
+		goto bail1;
 
 	TEEC_CloseSession(&sess);
 
-	/* re-create the same */
+	/*
+	 * re-create the object two times with overwrite attribute
+	 */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
 		return;
@@ -1424,25 +1429,45 @@ static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create_overwrite(&sess, file_04, sizeof(file_04),
 				    storage_id)))
-		goto exit;
+		goto bail1;
 
-	/*
-	 * recreate it with an object, and remove it so that xtest 6009
-	 * can be replayed
-	 */
-	 if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+	/* re-create it with an object */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		fs_create(&sess, file_04, sizeof(file_04),
 			  TEE_DATA_FLAG_ACCESS_WRITE |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META |
 			  TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj,
 			  storage_id)))
-			goto exit;
+		goto bail2;
 
-	/* clean */
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
-		goto exit;
+	TEEC_CloseSession(&sess);
 
-exit:
+	/*
+	 * re-create it again without overwrite flag: should fail and
+	 * existing object should not be altered.
+	 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ACCESS_CONFLICT,
+		fs_create(&sess, file_04, sizeof(file_04),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, NULL, 0, &obj,
+			  storage_id)))
+		goto bail2;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_04, sizeof(file_04),
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj,
+			storage_id)))
+		goto bail1;
+
+bail2:
+	/* remove the object so that xtest 600x can be replayed */
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+bail1:
 	TEEC_CloseSession(&sess);
 }
 
