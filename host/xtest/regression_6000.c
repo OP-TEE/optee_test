@@ -1815,6 +1815,87 @@ exit:
 
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6018)
 
+static void xtest_tee_test_6019_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	TEEC_Session sess;
+	TEEC_Session sess2;
+	uint32_t orig;
+	uint32_t obj;
+	uint32_t obj2;
+	uint8_t out[10] = { 0 };
+	uint32_t count;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&sess2, &storage2_ta_uuid, NULL,
+					&orig)))
+		goto exit3;
+
+	/* TA #1 creates a persistent object */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META |
+			  TEE_DATA_FLAG_OVERWRITE, 0, data_00,
+			  sizeof(data_00), &obj, storage_id)))
+		goto exit2;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit1;
+
+	/* TA #2 creates a persistent object */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess2, file_01, sizeof(file_01),
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META |
+			  TEE_DATA_FLAG_OVERWRITE, 0, data_01,
+			  sizeof(data_01), &obj2, storage_id)))
+		goto exit1;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess2, obj2)))
+		goto exit;
+
+	/* TA #1 open and read */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* verify */
+	(void)ADBG_EXPECT_BUFFER(c, data_00, 10, out, count);
+
+	/* TA #2 open and read */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess2, file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj2, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess2, obj2, out, 10, &count)))
+		goto exit;
+
+	/* verify */
+	(void)ADBG_EXPECT_BUFFER(c, data_01, 10, out, count);
+
+exit:
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess2, obj2));
+exit1:
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+exit2:
+	TEEC_CloseSession(&sess2);
+exit3:
+	TEEC_CloseSession(&sess);
+}
+
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6019)
+
 ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
 		 "Test TEE_CreatePersistentObject");
 ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
@@ -1851,3 +1932,4 @@ ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
 ADBG_CASE_DEFINE(regression, 6017, xtest_tee_test_6017,
 		 "Test Persistent objects info");
 ADBG_CASE_DEFINE(regression, 6018, xtest_tee_test_6018, "Large object");
+ADBG_CASE_DEFINE(regression, 6019, xtest_tee_test_6019, "Storage independence");
