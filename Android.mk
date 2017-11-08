@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)
 
 ## include variants like TA_DEV_KIT_DIR
-## and target of BUILD_OPTEE_OS
+## and OPTEE_BIN
 INCLUDE_FOR_BUILD_TA := false
 include $(BUILD_OPTEE_MK)
 INCLUDE_FOR_BUILD_TA :=
@@ -79,10 +79,11 @@ LOCAL_CFLAGS += -include conf.h
 LOCAL_CFLAGS += -pthread
 LOCAL_CFLAGS += -g3
 
-## target BUILD_OPTEE_OS is defined in the common ta build
-## mk file included before, and this BUILD_OPTEE_OS will
-## help to generate the header files under $(TA_DEV_KIT_DIR)/host_include
-LOCAL_ADDITIONAL_DEPENDENCIES := BUILD_OPTEE_OS
+## $(OPTEE_BIN) is the path of tee.bin like
+## out/target/product/hikey/optee/arm-plat-hikey/core/tee.bin
+## it will be generated after build the optee_os with target BUILD_OPTEE_OS
+## which is defined in the common ta build mk file included before,
+LOCAL_ADDITIONAL_DEPENDENCIES := $(OPTEE_BIN)
 
 include $(BUILD_EXECUTABLE)
 
