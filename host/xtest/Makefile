@@ -52,6 +52,10 @@ srcs +=	adbg/src/adbg_case.c \
 	xtest_main.c \
 	xtest_test.c
 
+ifeq ($(CFG_SECSTOR_TA_MGMT_PTA),y)
+srcs += install_ta.c
+endif
+
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
 endif
