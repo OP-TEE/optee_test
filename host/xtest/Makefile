@@ -152,7 +152,7 @@ all: xtest
 
 xtest: $(objs)
 	@echo "  LD      $(out-dir)/xtest/$@"
-	$(q)@$(CC) -o $(out-dir)/xtest/$@ $+ $(LDFLAGS)
+	$(q)$(CC) -o $(out-dir)/xtest/$@ $+ $(LDFLAGS)
 
 $(out-dir)/xtest/%.o: $(CURDIR)/%.c
 	$(q)mkdir -p $(out-dir)/xtest/adbg/src
