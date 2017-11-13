@@ -34,6 +34,7 @@
 
 static void xtest_tee_test_1001(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1002(ADBG_Case_t *Case_p);
+static void xtest_tee_test_1003(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1004(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1005(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1006(ADBG_Case_t *Case_p);
@@ -52,6 +53,8 @@ static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
+ADBG_CASE_DEFINE(regression, 1003, xtest_tee_test_1003,
+		 "Core internal read/write mutex");
 ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
 ADBG_CASE_DEFINE(regression, 1005, xtest_tee_test_1005, "Many sessions");
 ADBG_CASE_DEFINE(regression, 1006, xtest_tee_test_1006,
@@ -324,7 +327,141 @@ out:
 	TEEC_CloseSession(&session);
 }
 
+struct test_1003_arg {
+	uint32_t test_type;
+	size_t repeat;
+	size_t max_before_lockers;
+	size_t max_during_lockers;
+	size_t before_lockers;
+	size_t during_lockers;
+	TEEC_Result res;
+	uint32_t error_orig;
+};
 
+static void *test_1003_thread(void *arg)
+{
+	struct test_1003_arg *a = arg;
+	TEEC_Session session = { 0 };
+	size_t rounds = 64 * 1024;
+	size_t n;
+
+	a->res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid,
+					 NULL, &a->error_orig);
+	if (a->res != TEEC_SUCCESS)
+		return NULL;
+
+	for (n = 0; n < a->repeat; n++) {
+		TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+		op.params[0].value.a = a->test_type;
+		op.params[0].value.b = rounds;
+
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						 TEEC_VALUE_OUTPUT,
+						 TEEC_NONE, TEEC_NONE);
+		a->res = TEEC_InvokeCommand(&session,
+					    PTA_INVOKE_TESTS_CMD_MUTEX,
+					    &op, &a->error_orig);
+		if (a->test_type == PTA_MUTEX_TEST_WRITER &&
+		    op.params[1].value.b != 1) {
+			Do_ADBG_Log("n %zu %" PRIu32, n, op.params[1].value.b);
+			a->res = TEEC_ERROR_BAD_STATE;
+			a->error_orig = 42;
+			break;
+		}
+
+		if (a->test_type == PTA_MUTEX_TEST_READER) {
+			if (op.params[1].value.a > a->max_before_lockers)
+				a->max_before_lockers = op.params[1].value.a;
+
+			if (op.params[1].value.b > a->max_during_lockers)
+				a->max_during_lockers = op.params[1].value.b;
+
+			a->before_lockers += op.params[1].value.a;
+			a->during_lockers += op.params[1].value.b;
+		}
+	}
+	TEEC_CloseSession(&session);
+
+	return NULL;
+}
+
+static void xtest_tee_test_1003(ADBG_Case_t *c)
+{
+	size_t num_threads = 3 * 2;
+	TEEC_Result res;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+	size_t repeat = 20;
+	pthread_t thr[num_threads];
+	struct test_1003_arg arg[num_threads];
+	size_t max_read_concurrency = 0;
+	size_t max_read_waiters = 0;
+	size_t num_concurrent_read_lockers = 0;
+	size_t num_concurrent_read_waiters = 0;
+	size_t n;
+	size_t nt = num_threads;
+	double mean_read_concurrency;
+	double mean_read_waiters;
+	size_t num_writers = 0;
+	size_t num_readers = 0;
+
+	/* Pseudo TA is optional: warn and nicely exit if not found */
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1003 -   skip test, pseudo TA not found");
+		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	TEEC_CloseSession(&session);
+
+	memset(arg, 0, sizeof(arg));
+
+	for (n = 0; n < nt; n++) {
+		if (n % 3) {
+			arg[n].test_type = PTA_MUTEX_TEST_READER;
+			num_readers++;
+		} else {
+			arg[n].test_type = PTA_MUTEX_TEST_WRITER;
+			num_writers++;
+		}
+		arg[n].repeat = repeat;
+		if (!ADBG_EXPECT(c, 0, pthread_create(thr + n, NULL,
+						test_1003_thread, arg + n)))
+			nt = n; /* break loop and start cleanup */
+	}
+
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
+			Do_ADBG_Log("error origin %" PRIu32,
+				    arg[n].error_orig);
+		if (arg[n].test_type == PTA_MUTEX_TEST_READER) {
+			if (arg[n].max_during_lockers > max_read_concurrency)
+				max_read_concurrency =
+					arg[n].max_during_lockers;
+
+			if (arg[n].max_before_lockers > max_read_waiters)
+				max_read_waiters = arg[n].max_before_lockers;
+
+			num_concurrent_read_lockers += arg[n].during_lockers;
+			num_concurrent_read_waiters += arg[n].before_lockers;
+		}
+	}
+
+	mean_read_concurrency = (double)num_concurrent_read_lockers /
+				(double)(repeat * num_readers);
+	mean_read_waiters = (double)num_concurrent_read_waiters /
+			    (double)(repeat * num_readers);
+
+	Do_ADBG_Log("    Number of parallel threads: %zu (%zu writers and %zu readers)",
+		    num_threads, num_writers, num_readers);
+	Do_ADBG_Log("    Max read concurrency: %zu", max_read_concurrency);
+	Do_ADBG_Log("    Max read waiters: %zu", max_read_waiters);
+	Do_ADBG_Log("    Mean read concurrency: %g", mean_read_concurrency);
+	Do_ADBG_Log("    Mean read waiting: %g", mean_read_waiters);
+}
 
 static void xtest_tee_test_1004(ADBG_Case_t *c)
 {
