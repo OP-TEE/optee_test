@@ -689,30 +689,6 @@ static bool corrupt_file(FILE *f, long offs, uint8_t mask)
 	return true;
 }
 
-static void load_fake_ta(ADBG_Case_t *c)
-{
-	static const TEEC_UUID fake_uuid =  {
-		0x7e0a0900, 0x586b, 0x11e5,
-		{ 0x93, 0x1f, 0x00, 0x02, 0xa5, 0xd5, 0xc5, 0x1b }
-	};
-	TEEC_Session session = { 0 };
-	TEEC_Result res;
-	uint32_t ret_orig;
-	bool r;
-
-	r = copy_file(&create_fail_test_ta_uuid, &fake_uuid);
-
-	if (ADBG_EXPECT_TRUE(c, r)) {
-		res = xtest_teec_open_session(&session, &fake_uuid, NULL,
-					      &ret_orig);
-		if (res == TEEC_SUCCESS)
-			TEEC_CloseSession(&session);
-		ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
-	}
-
-	ADBG_EXPECT_TRUE(c, rm_file(&fake_uuid));
-}
-
 static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
 {
 	TEEC_Session session = { 0 };
@@ -814,10 +790,6 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "Create session fail");
 
 	make_test_ta_dir();
-
-	Do_ADBG_BeginSubCase(c, "Load fake uuid TA");
-	load_fake_ta(c);
-	Do_ADBG_EndSubCase(c, "Load fake uuid TA");
 
 	Do_ADBG_BeginSubCase(c, "Load corrupt TA");
 	ADBG_EXPECT_TRUE(c,
