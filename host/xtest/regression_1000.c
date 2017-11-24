@@ -14,6 +14,7 @@
 #include <limits.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -31,6 +32,13 @@
 #include <ta_sims_test.h>
 #include <ta_concurrent.h>
 #include <sdp_basic.h>
+#ifdef CFG_SECSTOR_TA_MGMT_PTA
+#include <pta_secstor_ta_mgmt.h>
+#endif
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 static void xtest_tee_test_1001(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1002(ADBG_Case_t *Case_p);
@@ -587,6 +595,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 	TEEC_CloseSession(&session);
 }
 
+#ifdef CFG_SECSTOR_TA_MGMT_PTA
 #ifndef TA_DIR
 # ifdef __ANDROID__
 #define TA_DIR "/system/lib/optee_armtz"
@@ -595,134 +604,75 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 # endif
 #endif
 
-#ifndef TA_TEST_DIR
-# ifdef __ANDROID__
-#  define TA_TEST_DIR "/data/tee/optee_armtz"
-# else
-#  define TA_TEST_DIR "/tmp/optee_armtz"
-# endif
-#endif
-
-static void make_test_ta_dir(void)
+static FILE *open_ta_file(const TEEC_UUID *uuid, const char *mode)
 {
-#ifdef __ANDROID__
-	(void)mkdir("/data/tee", 0755);
-#endif
-	(void)mkdir(TA_TEST_DIR, 0755);
-}
+	char buf[PATH_MAX];
 
-static void uuid_to_full_name(char *buf, size_t blen, const TEEC_UUID *uuid,
-			bool for_write)
-{
-	snprintf(buf, blen,
+	snprintf(buf, sizeof(buf),
 		"%s/%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x.ta",
-		for_write ? TA_TEST_DIR : TA_DIR,
-		uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
+		TA_DIR, uuid->timeLow, uuid->timeMid, uuid->timeHiAndVersion,
 		uuid->clockSeqAndNode[0], uuid->clockSeqAndNode[1],
 		uuid->clockSeqAndNode[2], uuid->clockSeqAndNode[3],
 		uuid->clockSeqAndNode[4], uuid->clockSeqAndNode[5],
 		uuid->clockSeqAndNode[6], uuid->clockSeqAndNode[7]);
-}
 
-static FILE *open_ta_file(const TEEC_UUID *uuid, const char *mode,
-			  bool for_write)
-{
-	char buf[PATH_MAX];
-
-	uuid_to_full_name(buf, sizeof(buf), uuid, for_write);
 	return fopen(buf, mode);
 }
 
-static bool rm_file(const TEEC_UUID *uuid)
-{
-	char buf[PATH_MAX];
-
-	uuid_to_full_name(buf, sizeof(buf), uuid, true);
-	return !unlink(buf);
-}
-
-static bool copy_file(const TEEC_UUID *src_uuid, const TEEC_UUID *dst_uuid)
-{
-	char buf[4 * 1024];
-	FILE *src = open_ta_file(src_uuid, "r", false);
-	FILE *dst = open_ta_file(dst_uuid, "w", true);
-	size_t r;
-	size_t w;
-	bool ret = false;
-
-	if (src && dst) {
-		do {
-			r = fread(buf, 1, sizeof(buf), src);
-			if (!r) {
-				ret = !!feof(src);
-				break;
-			}
-			w = fwrite(buf, 1, r, dst);
-		} while (w == r);
-	}
-
-	if (src)
-		fclose(src);
-	if (dst)
-		fclose(dst);
-	return ret;
-}
-
-static bool corrupt_file(FILE *f, long offs, uint8_t mask)
-{
-	uint8_t b;
-
-	if (fseek(f, offs, SEEK_SET))
-		return false;
-
-	if (fread(&b, 1, 1, f) != 1)
-		return false;
-
-	b ^= mask;
-
-	if (fseek(f, offs, SEEK_SET))
-		return false;
-
-	if (fwrite(&b, 1, 1, f) != 1)
-		return false;
-
-	return true;
-}
-
-static bool load_corrupt_ta(ADBG_Case_t *c, long offs, uint8_t mask)
+static bool load_corrupt_ta(ADBG_Case_t *c, size_t offs, uint8_t mask)
 {
 	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_UUID uuid = PTA_SECSTOR_TA_MGMT_UUID;
 	TEEC_Result res;
 	uint32_t ret_orig;
-	FILE *f;
-	bool r;
+	FILE *f = NULL;
+	bool r = false;
+	uint8_t *buf = NULL;
+	size_t sz;
+	size_t fread_res;
 
-	r = copy_file(&create_fail_test_ta_uuid, &create_fail_test_ta_uuid);
-	if (!ADBG_EXPECT_TRUE(c, r)) {
-		rm_file(&create_fail_test_ta_uuid);
-		return false;
-	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &uuid, NULL, &ret_orig)))
+		goto out;
 
-	f = open_ta_file(&create_fail_test_ta_uuid, "r+", true);
-	if (!ADBG_EXPECT_NOT_NULL(c, f)) {
-		rm_file(&create_fail_test_ta_uuid);
-		return false;
-	}
-	r = corrupt_file(f, offs, mask);
+	f = open_ta_file(&create_fail_test_ta_uuid, "rb");
+	if (!ADBG_EXPECT_NOT_NULL(c, f))
+		goto out;
+	if (!ADBG_EXPECT_TRUE(c, !fseek(f, 0, SEEK_END)))
+		goto out;
+	sz = ftell(f);
+	rewind(f);
+
+	buf = malloc(sz);
+	if (!ADBG_EXPECT_NOT_NULL(c, buf))
+		goto out;
+
+	fread_res = fread(buf, 1, sz, f);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, fread_res, ==, sz))
+		goto out;
+
 	fclose(f);
+	f = NULL;
 
-	if (ADBG_EXPECT_TRUE(c, r)) {
-		res = xtest_teec_open_session(&session,
-					      &create_fail_test_ta_uuid,
-					      NULL, &ret_orig);
-		if (res == TEEC_SUCCESS)
-			TEEC_CloseSession(&session);
-		r &= ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
-	}
+	buf[MIN(offs, sz)] ^= mask;
 
-	r &= ADBG_EXPECT_TRUE(c, rm_file(&create_fail_test_ta_uuid));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = buf;
+	op.params[0].tmpref.size = sz;
+
+	res = TEEC_InvokeCommand(&session, PTA_SECSTOR_TA_MGMT_BOOTSTRAP, &op,
+				 &ret_orig);
+	r = ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY, res);
+out:
+	free(buf);
+	if (f)
+		fclose(f);
+	TEEC_CloseSession(&session);
 	return r;
 }
+#endif /*CFG_SECSTOR_TA_MGMT_PTA*/
 
 static void xtest_tee_test_1008(ADBG_Case_t *c)
 {
@@ -789,8 +739,7 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	}
 	Do_ADBG_EndSubCase(c, "Create session fail");
 
-	make_test_ta_dir();
-
+#ifdef CFG_SECSTOR_TA_MGMT_PTA
 	Do_ADBG_BeginSubCase(c, "Load corrupt TA");
 	ADBG_EXPECT_TRUE(c,
 		load_corrupt_ta(c, offsetof(struct shdr, magic), 1));
@@ -811,6 +760,7 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 3000, 1)); /* payload */
 	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 30000, 1)); /* payload */
 	Do_ADBG_EndSubCase(c, "Load corrupt TA");
+#endif /*CFG_SECSTOR_TA_MGMT_PTA*/
 }
 
 static void *cancellation_thread(void *arg)
