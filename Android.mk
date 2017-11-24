@@ -43,7 +43,6 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_6000.c \
 	regression_7000.c \
 	regression_8000.c \
-	regression_9000.c \
 	sha_perf.c \
 	xtest_helpers.c \
 	xtest_main.c \
