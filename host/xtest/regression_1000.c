@@ -925,7 +925,7 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 			TEEC_InvokeCommand(&session1, TA_SIMS_CMD_WRITE, &op,
 					   &ret_orig));
 
-		for (i = 1; i < 1000; i++) {
+		for (i = 1; i < 3; i++) {
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				xtest_teec_open_session(&session2, &uuid, NULL,
 				                        &ret_orig)))
