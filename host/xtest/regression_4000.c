@@ -2194,6 +2194,10 @@ static const struct xtest_ciph_case ciph_cases[] = {
 			ciph_data_aes_key1, ciph_data_128_iv1, 13,
 			ciph_data_in3,
 			ciph_data_aes_ctr_out2),
+	XTEST_CIPH_CASE(TEE_ALG_AES_CTR, TEE_TYPE_AES,
+			ciph_data_aes_key1, ciph_data_128_iv1, 16,
+			ciph_data_in3,
+			ciph_data_aes_ctr_out2),
 
 	XTEST_CIPH_CASE_AES_CBC(vect1, 11),
 
