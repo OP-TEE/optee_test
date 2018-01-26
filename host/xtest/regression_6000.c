@@ -482,6 +482,29 @@ static void test_truncate_file_length(ADBG_Case_t *c, uint32_t storage_id)
 	/* check buffer */
 	(void)ADBG_EXPECT_BUFFER(c, &data_00[5], 5, out, count);
 
+	/* close */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	/* open */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_open(&sess,  file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_WRITE |
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 5, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	(void)ADBG_EXPECT_BUFFER(c, &data_00[5], 5, out, count);
+
 	/* clean */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
 		goto exit;
@@ -515,6 +538,31 @@ static void test_extend_file_length(ADBG_Case_t *c, uint32_t storage_id)
 
 	/* extend */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_trunc(&sess, obj, 40)))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 30, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	expect[0] = data_00[30];
+	expect[1] = data_00[31];
+	(void)ADBG_EXPECT_BUFFER(c, &expect[0], 10, out, count);
+
+	/* close */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	/* open */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_open(&sess,  file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_WRITE |
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	/* seek */
@@ -570,6 +618,33 @@ static void test_file_hole(ADBG_Case_t *c, uint32_t storage_id)
 	/* write */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_write(&sess, obj, data_00,
 			sizeof(data_00))))
+		goto exit;
+
+	/* seek */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(
+		    c, fs_seek(&sess, obj, 74, TEE_DATA_SEEK_SET)))
+		goto exit;
+
+	/* verify */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	/* check buffer */
+	expect[6] = data_00[0];
+	expect[7] = data_00[1];
+	expect[8] = data_00[2];
+	expect[9] = data_00[3];
+	(void)ADBG_EXPECT_BUFFER(c, &expect[0], 10, out, count);
+
+	/* close */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	/* open */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_open(&sess,  file_01, sizeof(file_01),
+			TEE_DATA_FLAG_ACCESS_WRITE |
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
 		goto exit;
 
 	/* seek */
