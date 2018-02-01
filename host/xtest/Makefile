@@ -81,13 +81,13 @@ endif
 CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
 CFLAGS += -I$(TA_DEV_KIT_DIR)/host_include
 
+CFLAGS += -I../../ta/include
 CFLAGS += -I../../ta/create_fail_test/include
 CFLAGS += -I../../ta/crypt/include
 CFLAGS += -I../../ta/enc_fs/include
 CFLAGS += -I../../ta/os_test/include
 CFLAGS += -I../../ta/rpc_test/include
 CFLAGS += -I../../ta/sims/include
-CFLAGS += -I../../ta/storage/include
 CFLAGS += -I../../ta/storage_benchmark/include
 CFLAGS += -I../../ta/concurrent/include
 CFLAGS += -I../../ta/concurrent_large/include

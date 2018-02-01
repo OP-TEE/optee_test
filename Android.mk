@@ -70,7 +70,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/ta/os_test/include \
 		$(LOCAL_PATH)/ta/rpc_test/include \
 		$(LOCAL_PATH)/ta/sims/include \
-		$(LOCAL_PATH)/ta/storage/include \
+		$(LOCAL_PATH)/ta/include \
 		$(LOCAL_PATH)/ta/storage_benchmark/include \
 		$(LOCAL_PATH)/ta/sha_perf/include \
 		$(LOCAL_PATH)/ta/aes_perf/include \
