@@ -25,8 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TA_STORAGE_H
-#define TA_STORAGE_H
+#ifndef __TA_STORAGE_H
+#define __TA_STORAGE_H
 
 #define TA_STORAGE_UUID { 0xb689f2a7, 0x8adf, 0x477a, \
 	{ 0x9f, 0x99, 0x32, 0xe9, 0x0c, 0x0a, 0xd0, 0xa2 } }
@@ -56,4 +56,4 @@
 #define TA_STORAGE_CMD_RESET_OBJ		20
 #define TA_STORAGE_CMD_GET_OBJ_INFO		21
 
-#endif /*TA_SKELETON_H */
+#endif /*__TA_STORAGE_H*/
