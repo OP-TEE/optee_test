@@ -482,7 +482,9 @@ out:
 
 static void xtest_teec_TEE(ADBG_Case_t *c)
 {
-	struct xtest_session connection = { c };
+	struct xtest_session connection;
+
+	connection.c = c;
 
 	CloseSession_null(&connection);
 

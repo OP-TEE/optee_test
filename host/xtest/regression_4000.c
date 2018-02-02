@@ -963,7 +963,7 @@ static const struct xtest_hash_case hash_cases[] = {
 
 static void xtest_tee_test_4001(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	size_t n;
 
@@ -1609,7 +1609,7 @@ static const struct xtest_mac_case mac_cases[] = {
 
 static void xtest_tee_test_4002(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	TEE_OperationHandle op1;
 	TEE_OperationHandle op2;
 	TEE_ObjectHandle key_handle;
@@ -2269,7 +2269,7 @@ static const struct xtest_ciph_case ciph_cases_xts[] = {
 
 static void xtest_tee_test_4003_no_xts(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	TEE_OperationHandle op;
 	TEE_ObjectHandle key1_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle key2_handle = TEE_HANDLE_NULL;
@@ -2416,7 +2416,7 @@ out:
  */
 static void xtest_tee_test_4003_xts(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	TEE_OperationHandle op;
 	TEE_ObjectHandle key1_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle key2_handle = TEE_HANDLE_NULL;
@@ -2563,7 +2563,7 @@ out:
 
 static void xtest_tee_test_4004(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	uint8_t buf1[45] = { 0 };
 	uint8_t buf2[45] = { 0 };
@@ -2686,7 +2686,7 @@ static const struct xtest_ae_case ae_cases[] = {
 
 static void xtest_tee_test_4005(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	TEE_OperationHandle op;
 	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
 	TEE_Attribute key_attr;
@@ -3745,7 +3745,7 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 
 static void xtest_tee_test_4006(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	TEE_OperationHandle op = TEE_HANDLE_NULL;
 	TEE_ObjectHandle priv_key_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle pub_key_handle = TEE_HANDLE_NULL;
@@ -4725,7 +4725,7 @@ static void xtest_test_keygen_ecc(ADBG_Case_t *c, TEEC_Session *session)
 
 static void xtest_tee_test_4007(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -4746,7 +4746,7 @@ static void xtest_tee_test_4007(ADBG_Case_t *c)
 
 static void xtest_tee_test_4008(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	TEE_OperationHandle op;
 	TEE_ObjectHandle key_handle;
@@ -4843,7 +4843,7 @@ out:
 
 static void xtest_tee_test_4009(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	TEE_OperationHandle op;
 	TEE_ObjectHandle key_handle;
@@ -4972,7 +4972,7 @@ noerror:
 
 static void xtest_tee_test_4010(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	TEE_ObjectHandle o;
 	static const uint8_t large_key[1024] = { 1, 2, 3, 4, 5, 6 };
@@ -5002,7 +5002,7 @@ out:
 
 static void xtest_tee_test_4011(ADBG_Case_t *c)
 {
-	TEEC_Session s = { 0 };
+	TEEC_Session s = TEEC_SESSION_INITIALIZER;
 	size_t key_size = 512;
 	TEE_ObjectHandle key;
 	TEE_OperationHandle ops;
