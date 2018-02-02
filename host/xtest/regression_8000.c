@@ -725,7 +725,7 @@ static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 
 static void xtest_tee_test_8001(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,

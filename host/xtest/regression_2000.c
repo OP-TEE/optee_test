@@ -269,7 +269,7 @@ static bool test_200x_tcp_write_cb(void *ptr, int fd, short *events)
 static void xtest_tee_test_2001(ADBG_Case_t *c)
 {
 	struct sock_server ts;
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	uint32_t proto_error;
 	struct socket_handle sh;
@@ -423,7 +423,7 @@ static void *xtest_tee_test_2002_thread(void *arg)
 	struct test_2002_arg *a = arg;
 	TEE_Result res;
 	struct sock_server ts;
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	uint32_t proto_error;
 	struct socket_handle sh;
@@ -560,7 +560,7 @@ static bool test_2003_accept_cb(void *ptr, int fd, short *events)
 static void xtest_tee_test_2003(ADBG_Case_t *c)
 {
 	struct sock_server ts;
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	uint32_t proto_error;
 	struct socket_handle sh;
@@ -673,7 +673,7 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 	bool ts_inited = false;
 	bool ts2_inited = false;
 	bool ts3_inited = false;
-	TEEC_Session session = { 0 };
+	TEEC_Session session = TEEC_SESSION_INITIALIZER;
 	uint32_t ret_orig;
 	uint32_t proto_error;
 	struct socket_handle sh;
