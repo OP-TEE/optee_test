@@ -81,6 +81,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 LOCAL_CFLAGS += -include conf.h
 LOCAL_CFLAGS += -pthread
 LOCAL_CFLAGS += -g3
+LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
 
 ## $(OPTEE_BIN) is the path of tee.bin like
 ## out/target/product/hikey/optee/arm-plat-hikey/core/tee.bin
