@@ -23,6 +23,7 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 #include <signed_hdr.h>
+#include <util.h>
 
 #include <pta_invoke_tests.h>
 #include <ta_crypt.h>
@@ -495,7 +496,7 @@ static void xtest_tee_test_1004(ADBG_Case_t *c)
 #define TEEC_ERROR_TARGET_DEAD           0xFFFF3024
 #endif
 
-static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, uint32_t n)
+static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, unsigned int n)
 {
 	TEEC_Session session = { 0 };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -509,6 +510,47 @@ static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, uint32_t n)
 	op.params[0].value.a = n;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE,
 					 TEEC_NONE);
+
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+		TEEC_ERROR_TARGET_DEAD,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_BAD_MEM_ACCESS, &op,
+				   &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+	        TEEC_ERROR_TARGET_DEAD,
+	        TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_BAD_MEM_ACCESS, &op,
+					&ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_invalid_mem_access2(ADBG_Case_t *c, unsigned int n,
+							       size_t size)
+{
+	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig;
+	TEEC_SharedMemory shm;
+
+	memset(&shm, 0, sizeof(shm));
+	shm.size = size;
+	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+		                        &ret_orig)))
+		return;
+
+	op.params[0].value.a = (uint32_t)n;
+	op.params[1].memref.parent = &shm;
+	op.params[1].memref.size = size;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_MEMREF_WHOLE,
+					 TEEC_NONE, TEEC_NONE);
 
 	(void)ADBG_EXPECT_TEEC_RESULT(c,
 		TEEC_ERROR_TARGET_DEAD,
@@ -834,12 +876,26 @@ static void xtest_tee_test_1009(ADBG_Case_t *c)
 
 static void xtest_tee_test_1010(ADBG_Case_t *c)
 {
-	unsigned n;
+	unsigned int n;
+	unsigned int idx;
+	size_t memref_sz[] = { 1024, 65536 };
 
 	for (n = 1; n <= 5; n++) {
 		Do_ADBG_BeginSubCase(c, "Invalid memory access %u", n);
 		xtest_tee_test_invalid_mem_access(c, n);
 		Do_ADBG_EndSubCase(c, "Invalid memory access %u", n);
+	}
+
+	for (idx = 0; idx < ARRAY_SIZE(memref_sz); idx++) {
+		for (n = 1; n <= 5; n++) {
+			Do_ADBG_BeginSubCase(c,
+				"Invalid memory access %u with %d bytes memref",
+				n, memref_sz[idx]);
+			xtest_tee_test_invalid_mem_access2(c, n, memref_sz[idx]);
+			Do_ADBG_EndSubCase(c,
+				"Invalid memory access %u with %d bytes memref",
+				n, memref_sz[idx]);
+		}
 	}
 }
 
