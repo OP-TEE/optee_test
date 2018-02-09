@@ -898,7 +898,9 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 	long stack;
 	long stack_addr = (long)&stack;
 
-	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT, 0, 0, 0))
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT, 0, 0, 0) &&
+	    param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_INOUT, 0, 0))
 		return TEE_ERROR_GENERIC;
 
 	switch (params[0].value.a) {
