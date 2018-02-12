@@ -889,11 +889,11 @@ static void xtest_tee_test_1010(ADBG_Case_t *c)
 	for (idx = 0; idx < ARRAY_SIZE(memref_sz); idx++) {
 		for (n = 1; n <= 5; n++) {
 			Do_ADBG_BeginSubCase(c,
-				"Invalid memory access %u with %d bytes memref",
+				"Invalid memory access %u with %zu bytes memref",
 				n, memref_sz[idx]);
 			xtest_tee_test_invalid_mem_access2(c, n, memref_sz[idx]);
 			Do_ADBG_EndSubCase(c,
-				"Invalid memory access %u with %d bytes memref",
+				"Invalid memory access %u with %zu bytes memref",
 				n, memref_sz[idx]);
 		}
 	}
