@@ -28,38 +28,6 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
-static void xtest_tee_test_4101(ADBG_Case_t *c);
-static void xtest_tee_test_4102(ADBG_Case_t *c);
-static void xtest_tee_test_4103(ADBG_Case_t *c);
-static void xtest_tee_test_4104(ADBG_Case_t *c);
-static void xtest_tee_test_4105(ADBG_Case_t *c);
-static void xtest_tee_test_4106(ADBG_Case_t *c);
-static void xtest_tee_test_4107(ADBG_Case_t *c);
-static void xtest_tee_test_4108(ADBG_Case_t *c);
-static void xtest_tee_test_4109(ADBG_Case_t *c);
-static void xtest_tee_test_4110(ADBG_Case_t *c);
-
-ADBG_CASE_DEFINE(regression, 4101, xtest_tee_test_4101,
-		"Initialize and close Cryptoki library");
-ADBG_CASE_DEFINE(regression, 4102, xtest_tee_test_4102,
-		"Connect token and get some token info");
-ADBG_CASE_DEFINE(regression, 4103, xtest_tee_test_4103,
-		"Open and close PKCS#11 sessions");
-ADBG_CASE_DEFINE(regression, 4104, xtest_tee_test_4104,
-		"Login test");
-ADBG_CASE_DEFINE(regression, 4105, xtest_tee_test_4105,
-		"Generate objects");
-ADBG_CASE_DEFINE(regression, 4106, xtest_tee_test_4106,
-		"Create and destroy volatile and persistent object");
-ADBG_CASE_DEFINE(regression, 4107, xtest_tee_test_4107,
-		"Create objects in read-only and read-write sessions");
-ADBG_CASE_DEFINE(regression, 4108, xtest_tee_test_4108,
-		"Check ciphering with valid and invalid keys #1");
-ADBG_CASE_DEFINE(regression, 4109, xtest_tee_test_4109,
-		"Check ciphering with valid and invalid keys #2");
-ADBG_CASE_DEFINE(regression, 4110, xtest_tee_test_4110,
-		"Compliance of ciphering processings");
-
 /*
  * Some PKCS#11 object resources used in the tests
  */
@@ -987,3 +955,24 @@ static void xtest_tee_test_4110(ADBG_Case_t *c)
 	rv = close_lib();
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
 }
+
+ADBG_CASE_DEFINE(regression, 4101, xtest_tee_test_4101,
+		"Initialize and close Cryptoki library");
+ADBG_CASE_DEFINE(regression, 4102, xtest_tee_test_4102,
+		"Connect token and get some token info");
+ADBG_CASE_DEFINE(regression, 4103, xtest_tee_test_4103,
+		"Open and close PKCS#11 sessions");
+ADBG_CASE_DEFINE(regression, 4104, xtest_tee_test_4104,
+		"Login tests (TODO: still weak)");
+ADBG_CASE_DEFINE(regression, 4105, xtest_tee_test_4105,
+		"Generate objects");
+ADBG_CASE_DEFINE(regression, 4106, xtest_tee_test_4106,
+		"Create and destroy volatile and persistent object");
+ADBG_CASE_DEFINE(regression, 4107, xtest_tee_test_4107,
+		"Create objects in read-only and read-write sessions");
+ADBG_CASE_DEFINE(regression, 4108, xtest_tee_test_4108,
+		"Check ciphering with valid and invalid keys #1");
+ADBG_CASE_DEFINE(regression, 4109, xtest_tee_test_4109,
+		"Check ciphering with valid and invalid keys #2");
+ADBG_CASE_DEFINE(regression, 4110, xtest_tee_test_4110,
+		"Compliance of ciphering processings");
