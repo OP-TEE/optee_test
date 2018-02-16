@@ -27,6 +27,10 @@
 #include <regression_4000_data.h>
 #include <nist/186-2ecdsatestvectors.h>
 
+#ifdef CFG_SECURE_KEY_SERVICES
+#include <pkcs11.h>
+#endif
+
 #include <assert.h>
 
 static void xtest_tee_test_4001(ADBG_Case_t *Case_p);
@@ -2403,6 +2407,234 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+
+#ifdef CFG_SECURE_KEY_SERVICES
+/*
+ * The test below belongs to the regression 41xx test. As it rely on test
+ * vectors define for the 40xx test, this test sequence in implemented here.
+ * The test below check compliance of crypto algorithms called throug the SKS
+ * PKCS#11 interface.
+ */
+void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot);
+
+#define CK_CIPHERING_KEY_AES(_key_array) \
+	{								\
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES},		\
+						sizeof(CK_KEY_TYPE) },	\
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+						sizeof(CK_OBJECT_CLASS) }, \
+		{ CKA_VALUE, (void *)_key_array, sizeof(_key_array) }, \
+	}
+
+static CK_ATTRIBUTE cktest_aes_flavours_key1[] =
+	CK_CIPHERING_KEY_AES(ciph_data_aes_key1);
+
+static CK_ATTRIBUTE cktest_aes_flavours_key2[] =
+	CK_CIPHERING_KEY_AES(ciph_data_aes_cbc_vect1_key);
+
+static CK_ATTRIBUTE cktest_aes_flavours_key3[] =
+	CK_CIPHERING_KEY_AES(ciph_data_aes_cts_vect1_key);
+
+/* This is a dump of ciph_data_128_iv1, as CK expects it in a structure */
+static CK_AES_CTR_PARAMS cktest_aes_ctr_params = {
+	.ulCounterBits = 1,
+	.cb = {
+		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, /* 12345678 */
+		0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x30, /* 9ABCDEF0 */
+	},
+};
+
+static CK_MECHANISM cktest_aes_ecb_mechanism = {
+	CKM_AES_ECB, NULL, 0,
+};
+static CK_MECHANISM cktest_aes_cbc_mechanism1 = {
+	CKM_AES_CBC, (CK_BYTE_PTR)ciph_data_128_iv1,
+	sizeof(ciph_data_128_iv1),
+};
+static CK_MECHANISM cktest_aes_cbc_mechanism2 = {
+	CKM_AES_CBC, (CK_BYTE_PTR)ciph_data_aes_cbc_vect1_iv,
+	sizeof(ciph_data_aes_cbc_vect1_iv),
+};
+static CK_MECHANISM cktest_aes_ctr_mechanism = {
+	CKM_AES_CTR, (CK_BYTE_PTR)&cktest_aes_ctr_params,
+	sizeof(cktest_aes_ctr_params),
+};
+static CK_MECHANISM cktest_aes_cts_mechanism1 = {
+	CKM_AES_CTS, (CK_BYTE_PTR)ciph_data_aes_cts_vect1_iv,
+	sizeof(ciph_data_aes_cts_vect1_iv),
+};
+static CK_MECHANISM cktest_aes_cts_mechanism2 = {
+	CKM_AES_CTS, (CK_BYTE_PTR)ciph_data_aes_cts_issue1203_iv,
+	sizeof(ciph_data_aes_cts_issue1203_iv),
+};
+
+void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_RV rv;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key1_handle;
+	uint8_t out[2048];
+	CK_ULONG out_size;
+	CK_ULONG out_offs;
+	size_t n;
+	int close_subcase = 0;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(ciph_cases); n++) {
+		CK_ATTRIBUTE_PTR ck_key1;
+		CK_MECHANISM_PTR mechanism;
+		CK_ULONG attr_count;
+
+		Do_ADBG_BeginSubCase(c, "Cipher case %d algo 0x%x line %d",
+				     (int)n, (unsigned int)ciph_cases[n].algo,
+				     (int)ciph_cases[n].line);
+		close_subcase = 1;
+
+		mechanism = NULL;
+
+		switch (ciph_cases[n].algo) {
+		case TEE_ALG_AES_ECB_NOPAD:
+			mechanism = &cktest_aes_ecb_mechanism;
+			break;
+		case TEE_ALG_AES_CBC_NOPAD:
+			if (ciph_cases[n].iv == ciph_data_128_iv1)
+				mechanism = &cktest_aes_cbc_mechanism1;
+			if (ciph_cases[n].iv == ciph_data_aes_cbc_vect1_iv)
+				mechanism = &cktest_aes_cbc_mechanism2;
+			break;
+		case TEE_ALG_AES_CTS:
+			if (ciph_cases[n].iv == ciph_data_aes_cts_vect1_iv)
+				mechanism = &cktest_aes_cts_mechanism1;
+			if (ciph_cases[n].iv == ciph_data_aes_cts_issue1203_iv)
+				mechanism = &cktest_aes_cts_mechanism2;
+			break;
+		case TEE_ALG_AES_CTR:
+			if (ciph_cases[n].iv == ciph_data_128_iv1)
+				mechanism = &cktest_aes_ctr_mechanism;
+			break;
+		default:
+			Do_ADBG_Log("skipped");
+			Do_ADBG_EndSubCase(c, NULL);
+			close_subcase = 0;
+			continue;
+		}
+
+		ADBG_EXPECT_TRUE(c, mechanism != NULL);
+
+		ck_key1 = NULL;
+
+		if (ciph_cases[n].key1 == ciph_data_aes_key1) {
+			ck_key1 = cktest_aes_flavours_key1;
+			attr_count = ARRAY_SIZE(cktest_aes_flavours_key1);
+		}
+		if (ciph_cases[n].key1 == ciph_data_aes_cbc_vect1_key) {
+			ck_key1 = cktest_aes_flavours_key2;
+			attr_count = ARRAY_SIZE(cktest_aes_flavours_key2);
+		}
+		if (ciph_cases[n].key1 == ciph_data_aes_cts_vect1_key) {
+			ck_key1 = cktest_aes_flavours_key3;
+			attr_count = ARRAY_SIZE(cktest_aes_flavours_key3);
+		}
+
+		ADBG_EXPECT_TRUE(c, ck_key1 != NULL);
+
+		rv = C_CreateObject(session, ck_key1, attr_count, &key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		if (ciph_cases[n].mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptInit(session, mechanism, key1_handle);
+
+		if (ciph_cases[n].mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptInit(session, mechanism, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		out_offs = 0;
+		out_size = sizeof(out);
+		memset(out, 0, sizeof(out));
+
+		if (ciph_cases[n].mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptUpdate(session,
+					     (void *)ciph_cases[n].in,
+					     ciph_cases[n].in_incr,
+					     out, &out_size);
+
+		if (ciph_cases[n].mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptUpdate(session,
+					     (void *)ciph_cases[n].in,
+					     ciph_cases[n].in_incr,
+					     out, &out_size);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+
+		if (ciph_cases[n].algo == TEE_ALG_AES_CTR)
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+				ciph_cases[n].in_incr);
+
+		out_offs += out_size;
+		out_size = sizeof(out) - out_offs;
+
+		if (ciph_cases[n].mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptUpdate(session,
+				(void *)(ciph_cases[n].in +
+					 ciph_cases[n].in_incr),
+				ciph_cases[n].in_len - ciph_cases[n].in_incr,
+				out + out_offs, &out_size);
+
+		if (ciph_cases[n].mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptUpdate(session,
+				(void *)(ciph_cases[n].in +
+					 ciph_cases[n].in_incr),
+				ciph_cases[n].in_len - ciph_cases[n].in_incr,
+				out + out_offs, &out_size);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		out_offs += out_size;
+		out_size = sizeof(out) - out_offs;
+
+		if (ciph_cases[n].mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptFinal(session, out + out_offs, &out_size);
+
+		if (ciph_cases[n].mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptFinal(session, out + out_offs,  &out_size);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		out_offs += out_size;
+
+		(void)ADBG_EXPECT_BUFFER(c, ciph_cases[n].out,
+					 ciph_cases[n].out_len, out, out_offs);
+
+		rv = C_DestroyObject(session, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		Do_ADBG_EndSubCase(c, NULL);
+		close_subcase = 0;
+	}
+out:
+	if (close_subcase)
+		Do_ADBG_EndSubCase(c, NULL);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+}
+#endif
 
 static void xtest_tee_test_4004(ADBG_Case_t *c)
 {

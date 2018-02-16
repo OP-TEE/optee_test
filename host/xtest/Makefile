@@ -59,6 +59,15 @@ ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
 endif
 
+CFG_SECURE_KEY_SERVICES ?= y
+ifeq ($(CFG_SECURE_KEY_SERVICES),y)
+srcs += regression_4100.c
+OPTEE_SKS_HEADERS ?= ../../../optee_client/libsks/include
+CFLAGS += -DCFG_SECURE_KEY_SERVICES
+CFLAGS += -I$(OPTEE_SKS_HEADERS)
+LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -loptee_cryptoki
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 
