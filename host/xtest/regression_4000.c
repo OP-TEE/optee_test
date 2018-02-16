@@ -31,8 +31,7 @@
 
 static void xtest_tee_test_4001(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4002(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4003_no_xts(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4003_xts(ADBG_Case_t *Case_p);
+static void xtest_tee_test_4003(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4004(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4005(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4006(ADBG_Case_t *Case_p);
@@ -46,10 +45,8 @@ ADBG_CASE_DEFINE(regression, 4001, xtest_tee_test_4001,
 		"Test TEE Internal API hash operations");
 ADBG_CASE_DEFINE(regression, 4002, xtest_tee_test_4002,
 		"Test TEE Internal API MAC operations");
-ADBG_CASE_DEFINE(regression, 4003_NO_XTS, xtest_tee_test_4003_no_xts,
-		"Test TEE Internal API cipher operations without AES XTS");
-ADBG_CASE_DEFINE(regression, 4003_XTS, xtest_tee_test_4003_xts,
-		"Test TEE Internal API cipher operations for AES XTS");
+ADBG_CASE_DEFINE(regression, 4003, xtest_tee_test_4003,
+		"Test TEE Internal API cipher operations");
 ADBG_CASE_DEFINE(regression, 4004, xtest_tee_test_4004,
 		"Test TEE Internal API get random");
 ADBG_CASE_DEFINE(regression, 4005, xtest_tee_test_4005,
@@ -2242,9 +2239,7 @@ static const struct xtest_ciph_case ciph_cases[] = {
 			ciph_data_des2_key1, ciph_data_64_iv1, 11,
 			ciph_data_in1,
 			ciph_data_des2_cbc_nopad_out1),
-};
 
-static const struct xtest_ciph_case ciph_cases_xts[] = {
 	/* AES-XTS */
 	XTEST_CIPH_CASE_AES_XTS(vect1, 3),
 	XTEST_CIPH_CASE_AES_XTS(vect2, 6),
@@ -2267,7 +2262,7 @@ static const struct xtest_ciph_case ciph_cases_xts[] = {
 	XTEST_CIPH_CASE_AES_XTS(vect19, 23),
 };
 
-static void xtest_tee_test_4003_no_xts(ADBG_Case_t *c)
+static void xtest_tee_test_4003(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
 	TEE_OperationHandle op;
@@ -2398,158 +2393,6 @@ static void xtest_tee_test_4003_no_xts(ADBG_Case_t *c)
 
 		(void)ADBG_EXPECT_BUFFER(c, ciph_cases[n].out,
 					 ciph_cases[n].out_len, out, out_offs);
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_free_operation(c, &session, op)))
-			goto out;
-
-		Do_ADBG_EndSubCase(c, NULL);
-	}
-out:
-	TEEC_CloseSession(&session);
-}
-
-/*
- * This is a split of the original xtest 4003 as eary version of the ST TEE.
- *
- * Core did not support xts.
- */
-static void xtest_tee_test_4003_xts(ADBG_Case_t *c)
-{
-	TEEC_Session session = { 0 };
-	TEE_OperationHandle op;
-	TEE_ObjectHandle key1_handle = TEE_HANDLE_NULL;
-	TEE_ObjectHandle key2_handle = TEE_HANDLE_NULL;
-	uint8_t out[2048];
-	size_t out_size;
-	size_t out_offs;
-	uint32_t ret_orig;
-	size_t n;
-
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
-					&ret_orig)))
-		return;
-
-	for (n = 0; n < ARRAY_SIZE(ciph_cases_xts); n++) {
-		TEE_Attribute key_attr;
-		size_t key_size;
-		size_t op_key_size;
-
-		Do_ADBG_BeginSubCase(c, "Cipher case %d algo 0x%x line %d",
-				     (int)n,
-				     (unsigned int)ciph_cases_xts[n].algo,
-				     (int)ciph_cases_xts[n].line);
-
-		key_attr.attributeID = TEE_ATTR_SECRET_VALUE;
-		key_attr.content.ref.buffer = (void *)ciph_cases_xts[n].key1;
-		key_attr.content.ref.length = ciph_cases_xts[n].key1_len;
-
-		key_size = key_attr.content.ref.length * 8;
-		if (ciph_cases_xts[n].key_type == TEE_TYPE_DES ||
-		    ciph_cases_xts[n].key_type == TEE_TYPE_DES3)
-			/* Exclude parity in bit size of key */
-			key_size -= key_size / 8;
-
-		op_key_size = key_size;
-		if (ciph_cases_xts[n].key2 != NULL)
-			op_key_size *= 2;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_allocate_operation(c, &session, &op,
-				ciph_cases_xts[n].algo, ciph_cases_xts[n].mode,
-				op_key_size)))
-			goto out;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_allocate_transient_object(c, &session,
-				ciph_cases_xts[n].key_type, key_size,
-				&key1_handle)))
-			goto out;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_populate_transient_object(c, &session,
-				key1_handle, &key_attr, 1)))
-			goto out;
-
-		if (ciph_cases_xts[n].key2 != NULL) {
-			key_attr.content.ref.buffer =
-				(void *)ciph_cases_xts[n].key2;
-
-			key_attr.content.ref.length =
-				ciph_cases_xts[n].key2_len;
-
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_allocate_transient_object(c,
-					&session, ciph_cases_xts[n].key_type,
-					key_attr.content.ref.length * 8,
-					&key2_handle)))
-				goto out;
-
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_populate_transient_object(c,
-					&session, key2_handle, &key_attr, 1)))
-				goto out;
-
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_set_operation_key2(c, &session, op,
-					key1_handle, key2_handle)))
-				goto out;
-		} else {
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_set_operation_key(c, &session, op,
-					key1_handle)))
-				goto out;
-		}
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_free_transient_object(c, &session,
-				key1_handle)))
-			goto out;
-
-		key1_handle = TEE_HANDLE_NULL;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_free_transient_object(c, &session,
-				key2_handle)))
-			goto out;
-
-		key2_handle = TEE_HANDLE_NULL;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c, ta_crypt_cmd_cipher_init(c,
-				  &
-				  session,
-				  op,
-				  ciph_cases_xts
-		[n].iv, ciph_cases_xts[n].iv_len)))
-			goto out;
-
-		out_offs = 0;
-		out_size = sizeof(out);
-		memset(out, 0, sizeof(out));
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_cipher_update(c, &session, op,
-				ciph_cases_xts[n].in, ciph_cases_xts[n].in_incr,
-				out, &out_size)))
-			goto out;
-
-		out_offs += out_size;
-		out_size = sizeof(out) - out_offs;
-
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-			ta_crypt_cmd_cipher_do_final(c, &session, op,
-				ciph_cases_xts[n].in +
-					ciph_cases_xts[n].in_incr,
-				ciph_cases_xts[n].in_len -
-					ciph_cases_xts[n].in_incr,
-				out + out_offs,
-				&out_size)))
-			goto out;
-		out_offs += out_size;
-
-		(void)ADBG_EXPECT_BUFFER(c, ciph_cases_xts[n].out,
-					 ciph_cases_xts[n].out_len, out,
-					 out_offs);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
