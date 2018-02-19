@@ -1368,7 +1368,7 @@ static void xtest_tee_test_6010_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	ADBG_EXPECT_BUFFER(c,
 		data + sizeof(data) / 2, sizeof(data) / 2,
-		out + sizeof(data) / 2, n);
+		out, n);
 
 seek_write_read_out:
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
