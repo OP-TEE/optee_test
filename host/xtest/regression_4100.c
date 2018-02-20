@@ -940,6 +940,7 @@ bail:
  * PKCS#11 interface.
  */
 void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot);
+void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot);
 
 static void xtest_tee_test_4110(ADBG_Case_t *c)
 {
@@ -951,6 +952,21 @@ static void xtest_tee_test_4110(ADBG_Case_t *c)
 		return;
 
 	run_xtest_tee_test_4110(c, slot);
+
+	rv = close_lib();
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+}
+
+static void xtest_tee_test_4111(ADBG_Case_t *c)
+{
+	CK_RV rv;
+	CK_SLOT_ID slot;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		return;
+
+	run_xtest_tee_test_4111(c, slot);
 
 	rv = close_lib();
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
@@ -976,3 +992,5 @@ ADBG_CASE_DEFINE(regression, 4109, xtest_tee_test_4109,
 		"Check ciphering with valid and invalid keys #2");
 ADBG_CASE_DEFINE(regression, 4110, xtest_tee_test_4110,
 		"Compliance of ciphering processings");
+ADBG_CASE_DEFINE(regression, 4111, xtest_tee_test_4111,
+		"Compliance of MAC signing processings");

@@ -1727,6 +1727,352 @@ out:
 	TEEC_CloseSession(&session);
 }
 
+#ifdef CFG_SECURE_KEY_SERVICES
+/*
+ * The test below belongs to the regression 41xx test. As it rely on test
+ * vectors define for the 40xx test, this test sequence in implemented here.
+ * The test below check compliance of crypto algorithms called throug the SKS
+ * PKCS#11 interface.
+ */
+void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot);
+
+/* AES CMAC test resrouces */
+#define CK_MAC_KEY_AES(_key_array) \
+	{								\
+		{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES},		\
+						sizeof(CK_KEY_TYPE) },	\
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+						sizeof(CK_OBJECT_CLASS) }, \
+		{ CKA_VALUE, (void *)_key_array, sizeof(_key_array) }, \
+	}
+
+static CK_ATTRIBUTE cktest_aes_cmac_key1[] =
+	CK_MAC_KEY_AES(mac_cmac_vect1_key);
+
+static CK_ATTRIBUTE cktest_aes_cmac_key2[] =
+	CK_MAC_KEY_AES(mac_cmac_vect5_key);
+
+static CK_ATTRIBUTE cktest_aes_cmac_key3[] =
+	CK_MAC_KEY_AES(mac_cmac_vect9_key);
+
+static CK_MECHANISM cktest_aes_cmac_mechanism = {
+	CKM_AES_CMAC, NULL, 0,
+};
+#if 0
+static CK_MECHANISM cktest_aes_cmac_gen_mechanism = {
+	CKM_AES_CMAC_GENERAL, &(CK_ULONG){12}, sizeof(CK_ULONG),
+};
+#endif
+
+/* HMAC test resrouces */
+
+#define CK_MAC_KEY_HMAC(_type, _key_array) \
+	{								\
+		{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },	\
+		{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){_type}, sizeof(CK_KEY_TYPE) }, \
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+						sizeof(CK_OBJECT_CLASS) }, \
+		{ CKA_VALUE, (void *)_key_array, sizeof(_key_array) },	\
+	}
+
+static CK_ATTRIBUTE cktest_hmac_md5_key[] =
+	CK_MAC_KEY_HMAC(CKK_MD5_HMAC, mac_data_md5_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha1_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA_1_HMAC, mac_data_sha1_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha224_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA224_HMAC, mac_data_sha224_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha256_key1[] =
+	CK_MAC_KEY_HMAC(CKK_SHA256_HMAC, mac_data_sha256_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha256_key2[] =
+	CK_MAC_KEY_HMAC(CKK_SHA256_HMAC, mac_data_sha256_key2);
+
+static CK_ATTRIBUTE cktest_hmac_sha384_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA384_HMAC, mac_data_sha384_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha512_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA512_HMAC, mac_data_sha512_key1);
+
+static CK_MECHANISM cktest_hmac_md5_mechanism = {
+	CKM_MD5_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha1_mechanism = {
+	CKM_SHA_1_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha224_mechanism = {
+	CKM_SHA224_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha256_mechanism = {
+	CKM_SHA256_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha384_mechanism = {
+	CKM_SHA384_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha512_mechanism = {
+	CKM_SHA512_HMAC, NULL, 0,
+};
+
+/* AES CBC MAC test resrouces */
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key1[] =
+	CK_MAC_KEY_AES(mac_cbc_vect1_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key2[] =
+	CK_MAC_KEY_AES(mac_cbc_vect2_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key3[] =
+	CK_MAC_KEY_AES(mac_cbc_vect3_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key4[] =
+	CK_MAC_KEY_AES(mac_cbc_vect4_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key5[] =
+	CK_MAC_KEY_AES(mac_cbc_vect5_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key6[] =
+	CK_MAC_KEY_AES(mac_cbc_vect6_key);
+
+static CK_ATTRIBUTE cktest_aes_cbc_mac_key10[] =
+	CK_MAC_KEY_AES(mac_cbc_vect10_key);
+
+static CK_MECHANISM cktest_aes_cbc_mac_mechanism = {
+	CKM_AES_XCBC_MAC, NULL, 0,
+};
+
+void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_RV rv;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key1_handle;
+	uint8_t out[64];
+	CK_ULONG out_size;
+	size_t n;
+	int close_subcase = 0;
+	struct xtest_mac_case const *test;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(mac_cases); n++) {
+		CK_ATTRIBUTE_PTR ck_key1;
+		CK_MECHANISM_PTR mechanism;
+		CK_ULONG attr_count;
+
+		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x",
+				     (int)n, (unsigned int)mac_cases[n].algo);
+
+		close_subcase = 1;
+		test = &mac_cases[n];
+
+		mechanism = NULL;
+
+		switch (mac_cases[n].algo) {
+		case TEE_ALG_AES_CMAC:
+			mechanism = &cktest_aes_cmac_mechanism;
+			break;
+		case TEE_ALG_HMAC_MD5:
+			mechanism = &cktest_hmac_md5_mechanism;
+			break;
+		case TEE_ALG_HMAC_SHA1:
+			mechanism = &cktest_hmac_sha1_mechanism;
+			break;
+		case TEE_ALG_HMAC_SHA224:
+			mechanism = &cktest_hmac_sha224_mechanism;
+			break;
+		case TEE_ALG_HMAC_SHA256:
+			mechanism = &cktest_hmac_sha256_mechanism;
+			break;
+		case TEE_ALG_HMAC_SHA384:
+			mechanism = &cktest_hmac_sha384_mechanism;
+			break;
+		case TEE_ALG_HMAC_SHA512:
+			mechanism = &cktest_hmac_sha512_mechanism;
+			break;
+		case TEE_ALG_AES_CBC_MAC_NOPAD:
+			mechanism = &cktest_aes_cbc_mac_mechanism;
+			break;
+
+		default:
+			Do_ADBG_Log("skipped");
+			Do_ADBG_EndSubCase(c, NULL);
+			close_subcase = 0;
+			continue;
+		}
+
+		ADBG_EXPECT_TRUE(c, mechanism != NULL);
+
+		ck_key1 = NULL;
+
+		/* aes cmac */
+		if (mac_cases[n].key == mac_cmac_vect1_key) {
+			ck_key1 = cktest_aes_cmac_key1;
+			attr_count = ARRAY_SIZE(cktest_aes_cmac_key1);
+		}
+		if (mac_cases[n].key == mac_cmac_vect5_key) {
+			ck_key1 = cktest_aes_cmac_key2;
+			attr_count = ARRAY_SIZE(cktest_aes_cmac_key2);
+		}
+		if (mac_cases[n].key == mac_cmac_vect9_key) {
+			ck_key1 = cktest_aes_cmac_key3;
+			attr_count = ARRAY_SIZE(cktest_aes_cmac_key3);
+		}
+		/* hmac */
+		if (mac_cases[n].key == mac_data_md5_key1) {
+			ck_key1 = cktest_hmac_md5_key;
+			attr_count = ARRAY_SIZE(cktest_hmac_md5_key);
+		}
+		if (mac_cases[n].key == mac_data_sha1_key1) {
+			ck_key1 = cktest_hmac_sha1_key;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha1_key);
+		}
+		if (mac_cases[n].key == mac_data_sha224_key1) {
+			ck_key1 = cktest_hmac_sha224_key;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha224_key);
+		}
+		if (mac_cases[n].key == mac_data_sha256_key1) {
+			ck_key1 = cktest_hmac_sha256_key1;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha256_key1);
+		}
+		if (mac_cases[n].key == mac_data_sha256_key2) {
+			ck_key1 = cktest_hmac_sha256_key2;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha256_key2);
+		}
+		if (mac_cases[n].key == mac_data_sha384_key1) {
+			ck_key1 = cktest_hmac_sha384_key;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha384_key);
+		}
+		if (mac_cases[n].key == mac_data_sha512_key1) {
+			ck_key1 = cktest_hmac_sha512_key;
+			attr_count = ARRAY_SIZE(cktest_hmac_sha512_key);
+		}
+		/* aes cbc mac */
+		if (mac_cases[n].key == mac_cbc_vect1_key) {
+			ck_key1 = cktest_aes_cbc_mac_key1;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key1);
+		}
+		if (mac_cases[n].key == mac_cbc_vect2_key) {
+			ck_key1 = cktest_aes_cbc_mac_key2;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key2);
+		}
+		if (mac_cases[n].key == mac_cbc_vect3_key) {
+			ck_key1 = cktest_aes_cbc_mac_key3;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key3);
+		}
+		if (mac_cases[n].key == mac_cbc_vect4_key) {
+			ck_key1 = cktest_aes_cbc_mac_key4;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key4);
+		}
+		if (mac_cases[n].key == mac_cbc_vect5_key) {
+			ck_key1 = cktest_aes_cbc_mac_key5;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key5);
+		}
+		if (mac_cases[n].key == mac_cbc_vect6_key) {
+			ck_key1 = cktest_aes_cbc_mac_key6;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key6);
+		}
+		if (mac_cases[n].key == mac_cbc_vect10_key) {
+			ck_key1 = cktest_aes_cbc_mac_key10;
+			attr_count = ARRAY_SIZE(cktest_aes_cbc_mac_key10);
+		}
+
+		ADBG_EXPECT_TRUE(c, ck_key1 != NULL);
+
+		rv = C_CreateObject(session, ck_key1, attr_count, &key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		/* Test 1 shot signature */
+		if (mac_cases[n].in != NULL) {
+			rv = C_SignInit(session, mechanism, key1_handle);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			rv = C_SignUpdate(session,
+					  (void *)test->in, test->in_len);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			/* Test too short buffer case */
+			out_size = 1;
+			rv = C_SignFinal(session, out, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==,
+							  CKR_BUFFER_TOO_SMALL))
+				goto out;
+
+			/* Get to full output */
+			out_size = sizeof(out);
+			memset(out, 0, sizeof(out));
+			rv = C_SignFinal(session, out, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			(void)ADBG_EXPECT_BUFFER(c, mac_cases[n].out,
+						 mac_cases[n].out_len,
+						 out, out_size);
+		}
+
+		/* Test 2 step update signature */
+		rv = C_SignInit(session, mechanism, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		if (mac_cases[n].in != NULL) {
+			rv = C_SignUpdate(session,
+					  (void *)test->in, test->in_incr);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			rv = C_SignUpdate(session,
+					 (void *)(test->in + test->in_incr),
+					 test->in_len - test->in_incr);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+		}
+
+		out_size = sizeof(out);
+		memset(out, 0, sizeof(out));
+
+		rv = C_SignFinal(session, out, &out_size);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		(void)ADBG_EXPECT_BUFFER(c, mac_cases[n].out,
+					 mac_cases[n].out_len, out, out_size);
+
+		rv = C_DestroyObject(session, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		Do_ADBG_EndSubCase(c, NULL);
+		close_subcase = 0;
+	}
+out:
+	if (close_subcase)
+		Do_ADBG_EndSubCase(c, NULL);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+}
+#endif
+
 /* generated with scripts/crypt_aes_cbc_nopad.pl */
 static const uint8_t ciph_data_aes_key1[] = {
 	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, /* 01234567 */
