@@ -29,6 +29,7 @@
 
 #ifdef CFG_SECURE_KEY_SERVICES
 #include <pkcs11.h>
+#include <sks_ck_debug.h>
 #endif
 
 #include <assert.h>
@@ -1866,12 +1867,6 @@ void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot)
 		CK_MECHANISM_PTR mechanism;
 		CK_ULONG attr_count;
 
-		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x",
-				     (int)n, (unsigned int)mac_cases[n].algo);
-
-		close_subcase = 1;
-		test = &mac_cases[n];
-
 		mechanism = NULL;
 
 		switch (mac_cases[n].algo) {
@@ -1899,11 +1894,7 @@ void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot)
 		case TEE_ALG_AES_CBC_MAC_NOPAD:
 			mechanism = &cktest_aes_cbc_mac_mechanism;
 			break;
-
 		default:
-			Do_ADBG_Log("skipped");
-			Do_ADBG_EndSubCase(c, NULL);
-			close_subcase = 0;
 			continue;
 		}
 
@@ -1984,6 +1975,13 @@ void run_xtest_tee_test_4111(ADBG_Case_t *c, CK_SLOT_ID slot)
 		}
 
 		ADBG_EXPECT_TRUE(c, ck_key1 != NULL);
+
+		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x (%s)",
+				     (int)n, (unsigned int)mac_cases[n].algo,
+				     ckm2str(mechanism->mechanism));
+
+		close_subcase = 1;
+		test = &mac_cases[n];
 
 		rv = C_CreateObject(session, ck_key1, attr_count, &key1_handle);
 
@@ -2837,11 +2835,6 @@ void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot)
 		CK_MECHANISM_PTR mechanism;
 		CK_ULONG attr_count;
 
-		Do_ADBG_BeginSubCase(c, "Cipher case %d algo 0x%x line %d",
-				     (int)n, (unsigned int)ciph_cases[n].algo,
-				     (int)ciph_cases[n].line);
-		close_subcase = 1;
-
 		mechanism = NULL;
 
 		switch (ciph_cases[n].algo) {
@@ -2865,9 +2858,6 @@ void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot)
 				mechanism = &cktest_aes_ctr_mechanism;
 			break;
 		default:
-			Do_ADBG_Log("skipped");
-			Do_ADBG_EndSubCase(c, NULL);
-			close_subcase = 0;
 			continue;
 		}
 
@@ -2889,6 +2879,12 @@ void run_xtest_tee_test_4110(ADBG_Case_t *c, CK_SLOT_ID slot)
 		}
 
 		ADBG_EXPECT_TRUE(c, ck_key1 != NULL);
+
+		Do_ADBG_BeginSubCase(c, "Cipher case %d algo 0x%x (%s) line %d",
+				     (int)n, (unsigned int)ciph_cases[n].algo,
+				     ckm2str(mechanism->mechanism),
+				     (int)ciph_cases[n].line);
+		close_subcase = 1;
 
 		rv = C_CreateObject(session, ck_key1, attr_count, &key1_handle);
 
@@ -3260,6 +3256,313 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+
+#ifdef CFG_SECURE_KEY_SERVICES
+/*
+ * The test below belongs to the regression 41xx test. As it rely on test
+ * vectors define for the 40xx test, this test sequence in implemented here.
+ * The test below check compliance of crypto algorithms called throug the SKS
+ * PKCS#11 interface.
+ */
+void run_xtest_tee_test_4112(ADBG_Case_t *c, CK_SLOT_ID slot);
+
+/* AES CMAC test resrouces */
+#define CK_AE_KEY_AES(_key_array) \
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES},		\
+						sizeof(CK_KEY_TYPE) },	\
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+						sizeof(CK_OBJECT_CLASS) }, \
+		{ CKA_VALUE, (void *)_key_array, sizeof(_key_array) }
+
+#define CK_AE_AES_CCM_CASE(vect) \
+	static CK_ATTRIBUTE cktest_aes_ae_ccm_ ## vect ## _key[] =	\
+	{								\
+		CK_AE_KEY_AES(ae_data_aes_ccm_ ## vect ## _key)		\
+	};								\
+									\
+	static CK_CCM_PARAMS cktest_aes_ae_ccm_ ## vect ## _params =	\
+	{								\
+		.ulDataLen = sizeof(ae_data_aes_ccm_ ## vect ## _ptx),	\
+		.pNonce = (void *)ae_data_aes_ccm_ ## vect ## _nonce,	\
+		.ulNonceLen = sizeof(ae_data_aes_ccm_ ## vect ## _nonce), \
+		.pAAD = (void *)ae_data_aes_ccm_ ## vect ## _aad,	\
+		.ulAADLen =  sizeof(ae_data_aes_ccm_ ## vect ## _aad),	\
+		.ulMACLen = sizeof(ae_data_aes_ccm_ ## vect ## _tag),	\
+	};								\
+									\
+	static CK_MECHANISM cktest_aes_ae_ccm_ ## vect ## _mechanism =	\
+	{								\
+		.mechanism = CKM_AES_CCM,				\
+		.pParameter = (void *)&cktest_aes_ae_ccm_ ## vect ## _params, \
+		.ulParameterLen = sizeof(cktest_aes_ae_ccm_ ## vect ## _params), \
+	}
+
+#define CK_AE_AES_GCM_CASE(vect) \
+	static CK_ATTRIBUTE cktest_aes_ae_gcm_ ## vect ## _key[] =	\
+	{								\
+		CK_AE_KEY_AES(ae_data_aes_gcm_ ## vect ## _key)		\
+	};								\
+									\
+	static CK_GCM_PARAMS cktest_aes_ae_gcm_ ## vect ## _params =	\
+	{								\
+		.pIv = (void *)ae_data_aes_gcm_ ## vect ## _nonce,	\
+		.ulIvLen = sizeof(ae_data_aes_gcm_ ## vect ## _nonce),	\
+		.pAAD =  (void *)ae_data_aes_gcm_ ## vect ## _aad,	\
+		.ulAADLen =  sizeof(ae_data_aes_gcm_ ## vect ## _aad),	\
+		.ulTagBits = sizeof(ae_data_aes_gcm_ ## vect ## _tag) * 8, \
+	};								\
+									\
+	static CK_MECHANISM cktest_aes_ae_gcm_ ## vect ## _mechanism = { \
+		.mechanism = CKM_AES_GCM,				\
+		.pParameter = (void *)&cktest_aes_ae_gcm_ ## vect ## _params,	\
+		.ulParameterLen = sizeof(cktest_aes_ae_gcm_ ## vect ## _params), \
+	}
+
+CK_AE_AES_CCM_CASE(vect1);
+CK_AE_AES_CCM_CASE(vect2);
+CK_AE_AES_CCM_CASE(vect3);
+
+CK_AE_AES_GCM_CASE(vect1);
+CK_AE_AES_GCM_CASE(vect2);
+CK_AE_AES_GCM_CASE(vect3);
+CK_AE_AES_GCM_CASE(vect4);
+CK_AE_AES_GCM_CASE(vect5);
+CK_AE_AES_GCM_CASE(vect6);
+CK_AE_AES_GCM_CASE(vect7);
+CK_AE_AES_GCM_CASE(vect8);
+CK_AE_AES_GCM_CASE(vect9);
+CK_AE_AES_GCM_CASE(vect10);
+CK_AE_AES_GCM_CASE(vect11);
+CK_AE_AES_GCM_CASE(vect12);
+CK_AE_AES_GCM_CASE(vect13);
+CK_AE_AES_GCM_CASE(vect14);
+CK_AE_AES_GCM_CASE(vect15);
+CK_AE_AES_GCM_CASE(vect16);
+CK_AE_AES_GCM_CASE(vect17);
+CK_AE_AES_GCM_CASE(vect18);
+
+/* Identify test by the key used to assign the right cryptoki resources */
+
+#define CKTEST_AE_AES_CASE(algo, vect) {	\
+	.key =	(void *)ae_data_aes_ ## algo ## _ ## vect ## _key,		\
+	.ck_key = (void *)cktest_aes_ae_ ## algo ## _ ## vect ## _key,		\
+	.attr_count = ARRAY_SIZE(cktest_aes_ae_ ## algo ## _ ## vect ## _key),	\
+	.ck_mechanism = (void *)&cktest_aes_ae_ ## algo ## _ ## vect ## _mechanism }
+
+struct cktest_ae_test_case {
+	uint8_t *key;
+	CK_ATTRIBUTE_PTR ck_key;
+	CK_ULONG attr_count;
+	CK_MECHANISM_PTR ck_mechanism;
+};
+
+static const struct cktest_ae_test_case cktest_ae_test_case[] = {
+	CKTEST_AE_AES_CASE(ccm, vect1),
+	CKTEST_AE_AES_CASE(ccm, vect2),
+	CKTEST_AE_AES_CASE(ccm, vect3),
+	CKTEST_AE_AES_CASE(gcm, vect1),
+	CKTEST_AE_AES_CASE(gcm, vect2),
+	CKTEST_AE_AES_CASE(gcm, vect3),
+	CKTEST_AE_AES_CASE(gcm, vect4),
+	CKTEST_AE_AES_CASE(gcm, vect5),
+	CKTEST_AE_AES_CASE(gcm, vect6),
+	CKTEST_AE_AES_CASE(gcm, vect7),
+	CKTEST_AE_AES_CASE(gcm, vect8),
+	CKTEST_AE_AES_CASE(gcm, vect9),
+	CKTEST_AE_AES_CASE(gcm, vect10),
+	CKTEST_AE_AES_CASE(gcm, vect11),
+	CKTEST_AE_AES_CASE(gcm, vect12),
+	CKTEST_AE_AES_CASE(gcm, vect13),
+	CKTEST_AE_AES_CASE(gcm, vect14),
+	CKTEST_AE_AES_CASE(gcm, vect15),
+	CKTEST_AE_AES_CASE(gcm, vect16),
+	CKTEST_AE_AES_CASE(gcm, vect17),
+	CKTEST_AE_AES_CASE(gcm, vect18),
+};
+
+void run_xtest_tee_test_4112(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_RV rv;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key1_handle;
+	uint8_t out[512];
+	CK_ULONG out_size;
+	size_t out_offs;
+	size_t n;
+	int close_subcase = 0;
+	struct xtest_ae_case const *test;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(ae_cases); n++) {
+		CK_ATTRIBUTE_PTR ck_key1;
+		CK_MECHANISM_PTR mechanism;
+		CK_ULONG attr_count;
+		size_t i;
+
+		mechanism = NULL;
+		ck_key1 = NULL;
+
+		for (i = 0; i < ARRAY_SIZE(cktest_ae_test_case); i++) {
+			if (ae_cases[n].key == cktest_ae_test_case[i].key) {
+				ck_key1 = cktest_ae_test_case[i].ck_key;
+				attr_count = cktest_ae_test_case[i].attr_count;
+				mechanism = cktest_ae_test_case[i].ck_mechanism;
+				break;
+			}
+		}
+
+		if (!mechanism || !ck_key1)
+			continue;
+
+		Do_ADBG_BeginSubCase(c, "AE case %d algo 0x%x (%s) line %d",
+				     (int)n, (unsigned int)ae_cases[n].algo,
+				     ckm2str(mechanism->mechanism),
+				     (int)ae_cases[n].line);
+
+		close_subcase = 1;
+		test = &ae_cases[n];
+
+		rv = C_CreateObject(session, ck_key1, attr_count, &key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		if (test->mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptInit(session, mechanism, key1_handle);
+
+		if (test->mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptInit(session, mechanism, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		memset(out, 0, sizeof(out));
+		out_offs = 0;
+		out_size = sizeof(out);
+
+		if (test->mode == TEE_MODE_ENCRYPT && test->ptx) {
+			rv = C_EncryptUpdate(session,
+					     (void *)test->ptx, test->in_incr,
+					     out, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			if (test->algo == TEE_ALG_AES_GCM)
+				ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						out_size, ==, test->in_incr);
+
+			out_offs += out_size;
+			out_size = sizeof(out) - out_offs;
+
+			rv = C_EncryptUpdate(session,
+					     (void *)(test->ptx + test->in_incr),
+					     test->ptx_len - test->in_incr,
+					     out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			out_offs += out_size;
+		} else if (test->ctx) {
+
+		rv = C_DecryptUpdate(session,
+					     (void *)test->ctx, test->in_incr,
+					     out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						(unsigned)out_size, ==, 0))
+				goto out;
+
+			out_offs += out_size;
+			out_size = sizeof(out) - out_offs;
+
+			rv = C_DecryptUpdate(session,
+					     (void *)(test->ctx + test->in_incr),
+					     test->ctx_len - test->in_incr,
+					     out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						(unsigned)out_size, ==, 0))
+				goto out;
+		}
+
+		out_size = sizeof(out) - out_offs;
+
+		if (test->mode == TEE_MODE_ENCRYPT) {
+			// TODO malloc a bigger buffer: tag stored at the end
+			rv = C_EncryptFinal(session, out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						(unsigned)out_size + out_offs,
+						==,
+						test->ctx_len + test->tag_len))
+				goto out;
+
+			(void)ADBG_EXPECT_BUFFER(c, test->ctx, test->ctx_len,
+						    out, test->ctx_len);
+
+			(void)ADBG_EXPECT_BUFFER(c, test->tag, test->tag_len,
+						    out + test->ctx_len,
+						    test->tag_len);
+		} else {
+			/* Provide the tag as input data */
+			rv = C_DecryptUpdate(session,
+					     (void *)test->tag, test->tag_len,
+					     out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						(unsigned)out_size, ==, 0))
+				goto out;
+
+			out_offs += out_size;
+			out_size = sizeof(out) - out_offs;
+
+			rv = C_DecryptFinal(session, out + out_offs, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
+
+			out_offs += out_size;
+
+			(void)ADBG_EXPECT_BUFFER(c, test->ptx, test->ptx_len,
+						    out, out_offs);
+		}
+
+		rv = C_DestroyObject(session, key1_handle);
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto out;
+
+		Do_ADBG_EndSubCase(c, NULL);
+		close_subcase = 0;
+	}
+out:
+	if (close_subcase)
+		Do_ADBG_EndSubCase(c, NULL);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+}
+#endif
 
 struct xtest_ac_case {
 	unsigned int level;
