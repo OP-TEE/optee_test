@@ -3521,10 +3521,14 @@ void run_xtest_tee_test_4112(ADBG_Case_t *c, CK_SLOT_ID slot)
 						    out + test->ctx_len,
 						    test->tag_len);
 		} else {
-			/* Provide the tag as input data */
+			/* Provide the tag as input data in 2 steps */
+			if (!ADBG_EXPECT_TRUE(c, !!test->tag))
+				goto out;
+
+			out_size = sizeof(out);
 			rv = C_DecryptUpdate(session,
-					     (void *)test->tag, test->tag_len,
-					     out + out_offs, &out_size);
+					     (void *)(test->tag), 1,
+					     out, &out_size);
 
 			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
 				goto out;
@@ -3533,18 +3537,27 @@ void run_xtest_tee_test_4112(ADBG_Case_t *c, CK_SLOT_ID slot)
 						(unsigned)out_size, ==, 0))
 				goto out;
 
-			out_offs += out_size;
-			out_size = sizeof(out) - out_offs;
-
-			rv = C_DecryptFinal(session, out + out_offs, &out_size);
+			out_size = sizeof(out);
+			rv = C_DecryptUpdate(session,
+					     (void *)(test->tag + 1),
+					     test->tag_len - 1,
+					     out, &out_size);
 
 			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
 				goto out;
 
-			out_offs += out_size;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						(unsigned)out_size, ==, 0))
+				goto out;
+
+			out_size = sizeof(out);
+			rv = C_DecryptFinal(session, out, &out_size);
+
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+				goto out;
 
 			(void)ADBG_EXPECT_BUFFER(c, test->ptx, test->ptx_len,
-						    out, out_offs);
+						    out, out_size);
 		}
 
 		rv = C_DestroyObject(session, key1_handle);
