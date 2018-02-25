@@ -557,7 +557,7 @@ static CK_ATTRIBUTE cktest_session_object[] = {
 };
 
 /* Create session object and token object from a session */
-static void test_create_destroy_object(ADBG_Case_t *c, int persistent)
+static void test_create_destroy_single_object(ADBG_Case_t *c, int persistent)
 {
 	CK_RV rv;
 	CK_SLOT_ID slot;
@@ -598,14 +598,74 @@ bail:
 
 }
 
+static void test_create_destroy_session_objects(ADBG_Case_t *c)
+{
+	CK_RV rv;
+	CK_SLOT_ID slot;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hld[512];
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	size_t n;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+	for (n = 0; n < ARRAY_SIZE(obj_hld); n++) {
+		rv = C_CreateObject(session, cktest_session_object,
+				    ARRAY_SIZE(cktest_session_object),
+				    obj_hld + n);
+
+		if (rv == CKR_DEVICE_MEMORY)
+			break;
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK)) {
+			n--;
+			break;
+		}
+	}
+
+	Do_ADBG_Log("    created object count: %zu", n);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+	rv = C_CreateObject(session, cktest_session_object,
+			    ARRAY_SIZE(cktest_session_object),
+			    obj_hld);
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+bail:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+
+	rv = close_lib();
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+
+}
+
 static void xtest_tee_test_4106(ADBG_Case_t *c)
 {
 	Do_ADBG_BeginSubCase(c, "Create and destroy a volatile object");
-	test_create_destroy_object(c, 0);
+	test_create_destroy_single_object(c, 0);
 	Do_ADBG_EndSubCase(c, NULL);
 
 	Do_ADBG_BeginSubCase(c, "Create and destroy a persistent object");
-	test_create_destroy_object(c, 1);
+	test_create_destroy_single_object(c, 1);
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Create and destroy a persistent object");
+	test_create_destroy_session_objects(c);
 	Do_ADBG_EndSubCase(c, NULL);
 }
 
