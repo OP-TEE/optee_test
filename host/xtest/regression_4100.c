@@ -56,6 +56,37 @@ static CK_MECHANISM cktest_aes_cts_mechanism = {
 	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
 };
 
+static CK_BYTE dummy_1kbyte_buffer[1024];
+
+static CK_CCM_PARAMS cktest_aes_ccm_mechanism_params =	{
+	.ulDataLen = 0,
+	.pNonce = (CK_BYTE_PTR)dummy_1kbyte_buffer,
+	.ulNonceLen = 8,
+	.pAAD = (CK_BYTE_PTR)dummy_1kbyte_buffer,
+	.ulAADLen = 16,
+	.ulMACLen = 6,
+};
+
+static CK_MECHANISM cktest_aes_ccm_mechanism = {
+	CKM_AES_CCM,
+	(CK_BYTE_PTR)&cktest_aes_ccm_mechanism_params,
+	sizeof(cktest_aes_ccm_mechanism_params),
+};
+
+static CK_GCM_PARAMS cktest_aes_gcm_mechanism_params = {
+	.pIv = (CK_BYTE_PTR)dummy_1kbyte_buffer,
+	.ulIvLen = 8,
+	.pAAD = (CK_BYTE_PTR)dummy_1kbyte_buffer,
+	.ulAADLen =  20,
+	.ulTagBits = 128,
+};
+
+static CK_MECHANISM cktest_aes_gcm_mechanism = {
+	CKM_AES_GCM,
+	(CK_BYTE_PTR)&cktest_aes_gcm_mechanism_params,
+	sizeof(cktest_aes_gcm_mechanism_params),
+};
+
 /*
  * Util to find a slot on which to open a session
  */
@@ -767,6 +798,22 @@ static const CK_MECHANISM_TYPE allowed_not_aes_cts[] = {
 	CKM_AES_GCM, CKM_AES_CCM,
 };
 
+static const CK_MECHANISM_TYPE allowed_only_aes_ccm[] = {
+	CKM_AES_CCM,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_ccm[] = {
+	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTR,
+	CKM_AES_CTS, CKM_AES_GCM,
+};
+
+static const CK_MECHANISM_TYPE allowed_only_aes_gcm[] = {
+	CKM_AES_GCM,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_gcm[] = {
+	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTR,
+	CKM_AES_CTS, CKM_AES_CCM,
+};
+
 #define CKTEST_AES_KEY \
 	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
 			sizeof(CK_OBJECT_CLASS) },		\
@@ -807,6 +854,10 @@ CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_cts, allowed_only_aes_cts);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_cts, allowed_not_aes_cts);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_ctr, allowed_only_aes_ctr);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_ctr, allowed_not_aes_ctr);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_ccm, allowed_only_aes_ccm);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_ccm, allowed_not_aes_ccm);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_gcm, allowed_only_aes_gcm);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_gcm, allowed_not_aes_gcm);
 
 struct cktest_allowed_test {
 	CK_ATTRIBUTE_PTR attr_key;
@@ -821,6 +872,9 @@ struct cktest_allowed_test {
 	}
 
 static const struct cktest_allowed_test cktest_allowed_valid[] = {
+	CKTEST_KEY_MECHA(cktest_aes_only_ccm, &cktest_aes_ccm_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_only_gcm, &cktest_aes_gcm_mechanism),
+
 	CKTEST_KEY_MECHA(cktest_aes_only_ecb, &cktest_aes_ecb_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_only_cbcnopad, &cktest_aes_cbc_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_only_cts, &cktest_aes_cts_mechanism),
@@ -832,6 +886,8 @@ static const struct cktest_allowed_test cktest_allowed_invalid[] = {
 	CKTEST_KEY_MECHA(cktest_aes_not_cbcnopad, &cktest_aes_cbc_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_not_cts, &cktest_aes_cts_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_not_ctr, &cktest_aes_ctr_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_ccm, &cktest_aes_ccm_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_gcm, &cktest_aes_gcm_mechanism),
 };
 
 /* Create session object and token object from a session */
@@ -871,7 +927,8 @@ static CK_RV cipher_init_final(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		if (mode == TEE_MODE_DECRYPT)
 			rv = C_DecryptFinal(session, NULL, NULL);
 
-		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		/* Only check that the operation is no more active */
+		if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
 			goto bail;
 	}
 
@@ -884,7 +941,10 @@ bail:
 }
 
 CK_KEY_ALLOWED_AES_ENC_TEST(cktest_aes_enc_only_cts, allowed_only_aes_cts);
+CK_KEY_ALLOWED_AES_ENC_TEST(cktest_aes_enc_only_gcm, allowed_only_aes_gcm);
+
 CK_KEY_ALLOWED_AES_DEC_TEST(cktest_aes_dec_only_ctr, allowed_only_aes_ctr);
+CK_KEY_ALLOWED_AES_DEC_TEST(cktest_aes_dec_only_ccm, allowed_only_aes_ccm);
 
 static void xtest_tee_test_4108(ADBG_Case_t *c)
 {
@@ -949,6 +1009,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
 		goto bail;
 
+	/* Encrypt only AES CTS key */
 	rv = cipher_init_final(c, session,
 				cktest_aes_enc_only_cts,
 				ARRAY_SIZE(cktest_aes_enc_only_cts),
@@ -967,6 +1028,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (rv)
 		goto bail;
 
+	/* Decrypt only AES CTR key */
 	rv = cipher_init_final(c, session,
 				cktest_aes_dec_only_ctr,
 				ARRAY_SIZE(cktest_aes_dec_only_ctr),
@@ -980,8 +1042,46 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 				cktest_aes_dec_only_ctr,
 				ARRAY_SIZE(cktest_aes_dec_only_ctr),
 				&cktest_aes_ctr_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (rv)
+		goto bail;
+
+	/* Encrypt only AES GCM key */
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_gcm,
+				ARRAY_SIZE(cktest_aes_enc_only_gcm),
+				&cktest_aes_gcm_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_OK);
+	if (rv)
+		goto bail;
+
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_gcm,
+				ARRAY_SIZE(cktest_aes_enc_only_gcm),
+				&cktest_aes_gcm_mechanism,
+				TEE_MODE_DECRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (rv)
+		goto bail;
+
+	/* Decrypt only AES CCM key */
+	rv = cipher_init_final(c, session,
+				cktest_aes_dec_only_ccm,
+				ARRAY_SIZE(cktest_aes_dec_only_ccm),
+				&cktest_aes_ccm_mechanism,
 				TEE_MODE_DECRYPT,
 				CKR_OK);
+	if (rv)
+		goto bail;
+
+	rv = cipher_init_final(c, session,
+				cktest_aes_dec_only_ccm,
+				ARRAY_SIZE(cktest_aes_dec_only_ccm),
+				&cktest_aes_ccm_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
 	if (rv)
 		goto bail;
 
