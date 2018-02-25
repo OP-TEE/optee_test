@@ -1048,6 +1048,117 @@ static void xtest_tee_test_4112(ADBG_Case_t *c)
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
 }
 
+static CK_RV open_cipher_session(ADBG_Case_t *c,
+				 CK_SLOT_ID slot, CK_SESSION_HANDLE_PTR session,
+				 CK_ATTRIBUTE_PTR attr_key, CK_ULONG attr_count,
+				 CK_MECHANISM_PTR mechanism, uint32_t mode)
+{
+	CK_RV rv;
+	CK_OBJECT_HANDLE object;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+
+	switch (mode) {
+	case TEE_MODE_ENCRYPT:
+	case TEE_MODE_DECRYPT:
+		break;
+	default:
+		ADBG_EXPECT_TRUE(c, 0);
+	}
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, session);
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+	rv = C_CreateObject(*session, attr_key, attr_count, &object);
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+	if (mode == TEE_MODE_ENCRYPT)
+		rv = C_EncryptInit(*session, mechanism, object);
+	if (mode == TEE_MODE_DECRYPT)
+		rv = C_DecryptInit(*session, mechanism, object);
+
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK)) {
+		rv = CKR_GENERAL_ERROR;
+		goto bail;
+	}
+
+bail:
+	return rv;
+}
+
+static void xtest_tee_test_4113(ADBG_Case_t *c)
+{
+	CK_RV rv;
+	CK_SLOT_ID slot;
+	CK_SESSION_HANDLE sessions[128];
+	size_t n;
+
+	for (n = 0; n < ARRAY_SIZE(sessions); n++)
+		sessions[n] = CK_INVALID_HANDLE;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		return;
+
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+
+
+		rv = open_cipher_session(c, slot, sessions + n,
+					 cktest_allowed_valid[0].attr_key,
+					 cktest_allowed_valid[0].attr_count,
+					 cktest_allowed_valid[0].mechanism,
+					 TEE_MODE_ENCRYPT);
+
+		if (rv == CKR_DEVICE_MEMORY)
+			break;
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+			goto bail;
+	}
+
+	Do_ADBG_Log("    created sessions count: %zu", n);
+
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+		if (sessions[n] == CK_INVALID_HANDLE)
+			continue;
+
+		rv = C_CloseSession(sessions[n]);
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+		sessions[n] = CK_INVALID_HANDLE;
+	}
+
+	rv = open_cipher_session(c, slot, sessions + n,
+				 cktest_allowed_valid[0].attr_key,
+				 cktest_allowed_valid[0].attr_count,
+				 cktest_allowed_valid[0].mechanism,
+				 TEE_MODE_ENCRYPT);
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
+		goto bail;
+
+	rv = C_CloseSession(sessions[0]);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+	sessions[0] = CK_INVALID_HANDLE;
+
+bail:
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+		if (sessions[n] == CK_INVALID_HANDLE)
+			continue;
+
+		rv = C_CloseSession(sessions[n]);
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+	}
+
+	rv = close_lib();
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK);
+}
 
 ADBG_CASE_DEFINE(regression, 4101, xtest_tee_test_4101,
 		"Initialize and close Cryptoki library");
@@ -1073,4 +1184,6 @@ ADBG_CASE_DEFINE(regression, 4111, xtest_tee_test_4111,
 		"Compliance of MAC signing processings");
 ADBG_CASE_DEFINE(regression, 4112, xtest_tee_test_4112,
 		"Compliance of AES CCM/GCM ciphering processings");
+ADBG_CASE_DEFINE(regression, 4113, xtest_tee_test_4113, /*  TODO: rename 4110 */
+		"Check operations release at session closure");
 
