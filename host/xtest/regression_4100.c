@@ -835,10 +835,10 @@ static const struct cktest_allowed_test cktest_allowed_invalid[] = {
 };
 
 /* Create session object and token object from a session */
-static CK_RV cktest_cipher_init(ADBG_Case_t *c, CK_SESSION_HANDLE session,
+static CK_RV cipher_init_final(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 				CK_ATTRIBUTE_PTR attr_key, CK_ULONG attr_count,
 				CK_MECHANISM_PTR mechanism, uint32_t mode,
-				CK_RV expected)
+				CK_RV expected_rc)
 {
 	CK_RV rv;
 	CK_OBJECT_HANDLE object;
@@ -860,7 +860,7 @@ static CK_RV cktest_cipher_init(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (mode == TEE_MODE_DECRYPT)
 		rv = C_DecryptInit(session, mechanism, object);
 
-	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, expected)) {
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, expected_rc)) {
 		rv = CKR_GENERAL_ERROR;
 		goto bail;
 	}
@@ -904,7 +904,7 @@ static void xtest_tee_test_4108(ADBG_Case_t *c)
 
 	for (n = 0; n < ARRAY_SIZE(cktest_allowed_valid); n++) {
 
-		rv = cktest_cipher_init(c, session,
+		rv = cipher_init_final(c, session,
 					cktest_allowed_valid[n].attr_key,
 					cktest_allowed_valid[n].attr_count,
 					cktest_allowed_valid[n].mechanism,
@@ -916,7 +916,7 @@ static void xtest_tee_test_4108(ADBG_Case_t *c)
 
 	for (n = 0; n > ARRAY_SIZE(cktest_allowed_invalid); n++) {
 
-		rv = cktest_cipher_init(c, session,
+		rv = cipher_init_final(c, session,
 					cktest_allowed_valid[n].attr_key,
 					cktest_allowed_valid[n].attr_count,
 					cktest_allowed_valid[n].mechanism,
@@ -949,7 +949,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, ==, CKR_OK))
 		goto bail;
 
-	rv = cktest_cipher_init(c, session,
+	rv = cipher_init_final(c, session,
 				cktest_aes_enc_only_cts,
 				ARRAY_SIZE(cktest_aes_enc_only_cts),
 				&cktest_aes_cts_mechanism,
@@ -958,7 +958,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (rv)
 		goto bail;
 
-	rv = cktest_cipher_init(c, session,
+	rv = cipher_init_final(c, session,
 				cktest_aes_enc_only_cts,
 				ARRAY_SIZE(cktest_aes_enc_only_cts),
 				&cktest_aes_cts_mechanism,
@@ -967,7 +967,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (rv)
 		goto bail;
 
-	rv = cktest_cipher_init(c, session,
+	rv = cipher_init_final(c, session,
 				cktest_aes_dec_only_ctr,
 				ARRAY_SIZE(cktest_aes_dec_only_ctr),
 				&cktest_aes_ctr_mechanism,
@@ -976,7 +976,7 @@ static void xtest_tee_test_4109(ADBG_Case_t *c)
 	if (rv)
 		goto bail;
 
-	rv = cktest_cipher_init(c, session,
+	rv = cipher_init_final(c, session,
 				cktest_aes_dec_only_ctr,
 				ARRAY_SIZE(cktest_aes_dec_only_ctr),
 				&cktest_aes_ctr_mechanism,
