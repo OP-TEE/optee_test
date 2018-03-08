@@ -107,6 +107,7 @@ TEE_Result cmd_process(uint32_t param_types,
 {
 	TEE_Result res;
 	int n;
+	int unit;
 	void *in, *out;
 	uint32_t insz;
 	uint32_t outsz;
@@ -116,6 +117,8 @@ TEE_Result cmd_process(uint32_t param_types,
 						   TEE_PARAM_TYPE_NONE);
 	bool secure_in;
 	bool secure_out = false;
+	TEE_Result (*do_update)(TEE_OperationHandle, const void *, uint32_t,
+				void *, uint32_t *);
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -152,17 +155,26 @@ TEE_Result cmd_process(uint32_t param_types,
 	out = params[1].memref.buffer;
 	outsz = params[1].memref.size;
 	n = params[2].value.a;
+	unit = params[2].value.b;
+	if (!unit)
+		unit = insz;
 
-	if (algo == TEE_ALG_AES_GCM) {
-		while (n--) {
-			res = TEE_AEUpdate(crypto_op, in, insz, out, &outsz);
-			CHECK(res, "TEE_AEUpdate", return res;);
+	if (algo == TEE_ALG_AES_GCM)
+		do_update = TEE_AEUpdate;
+	else
+		do_update = TEE_CipherUpdate;
+
+	while (n--) {
+		uint32_t i;
+		for (i = 0; i < insz / unit; i++) {
+			res = do_update(crypto_op, in, unit, out, &outsz);
+			CHECK(res, "TEE_CipherUpdate/TEE_AEUpdate", return res;);
+			in  = (void *)((uintptr_t)in + unit);
+			out = (void *)((uintptr_t)out + unit);
 		}
-	} else {
-		while (n--) {
-			res = TEE_CipherUpdate(crypto_op, in, insz,
-					       out, &outsz);
-			CHECK(res, "TEE_CipherUpdate", return res;);
+		if (insz % unit) {
+			res = do_update(crypto_op, in, insz % unit, out, &outsz);
+			CHECK(res, "TEE_CipherUpdate/TEE_AEUpdate", return res;);
 		}
 	}
 

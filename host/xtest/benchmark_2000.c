@@ -80,9 +80,9 @@ static void xtest_tee_benchmark_2011(ADBG_Case_t *c)
 	int keysize = AES_128;
 	size_t size = 1024;	/* Buffer size */
 
-	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_COUNT,
-		CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, AES_PERF_INPLACE,
-		CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
+	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_UNIT_SIZE,
+		CRYPTO_DEF_COUNT, CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM,
+		AES_PERF_INPLACE, CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 }
 
 static void xtest_tee_benchmark_2012(ADBG_Case_t *c)
@@ -94,9 +94,9 @@ static void xtest_tee_benchmark_2012(ADBG_Case_t *c)
 	int keysize = AES_256;
 	size_t size = 1024;	/* Buffer size */
 
-	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_COUNT,
-		CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, AES_PERF_INPLACE,
-		CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
+	aes_perf_run_test(mode, keysize, decrypt, size, CRYPTO_DEF_UNIT_SIZE,
+		CRYPTO_DEF_COUNT, CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM,
+		AES_PERF_INPLACE, CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 }
 
 ADBG_CASE_DEFINE(benchmark, 2011, xtest_tee_benchmark_2011,
