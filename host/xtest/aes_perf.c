@@ -204,8 +204,8 @@ static const char *mode_str(uint32_t mode)
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-static void usage(const char *progname, int keysize, int mode,
-				size_t size, int warmup, unsigned int l, unsigned int n)
+static void usage(const char *progname, int keysize, int mode, size_t size,
+		  size_t unit, int warmup, unsigned int l, unsigned int n)
 {
 	fprintf(stderr, "Usage: %s [-h]\n", progname);
 	fprintf(stderr, "Usage: %s [-d] [-i] [-k SIZE]", progname);
@@ -222,12 +222,14 @@ static void usage(const char *progname, int keysize, int mode,
 	fprintf(stderr, "  -h|--help     Print this help and exit\n");
 	fprintf(stderr, "  -i|--in-place Use same buffer for input and output (decrypt in place)\n");
 	fprintf(stderr, "  -k SIZE       Key size in bits: 128, 192 or 256 [%u]\n", keysize);
-	fprintf(stderr, "  -l LOOP       Inner loop iterations (TA calls TEE_CipherUpdate() <x> times) [%u]\n", l);
+	fprintf(stderr, "  -l LOOP       Inner loop iterations [%u]\n", l);
 	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS, GCM [%s]\n", mode_str(mode));
 	fprintf(stderr, "  -n LOOP       Outer test loop iterations [%u]\n", n);
 	fprintf(stderr, "  --not-inited  Do not initialize input buffer content.\n");
 	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all zeros)\n");
 	fprintf(stderr, "  -s SIZE       Test buffer size in bytes [%zu]\n", size);
+	fprintf(stderr, "  -u UNIT       Divide buffer in UNIT-byte increments (+ remainder)\n");
+	fprintf(stderr, "                (0 to ignore) [%zu]\n", unit);
 	fprintf(stderr, "  -v            Be verbose (use twice for greater effect)\n");
 	fprintf(stderr, "  -w|--warmup SEC  Warm-up time in seconds: execute a busy loop before\n");
 	fprintf(stderr, "                   the test to mitigate the effects of cpufreq etc. [%u]\n", warmup);
@@ -441,8 +443,7 @@ static void run_feed_input(void *in, size_t size, int random)
 }
 
 
-/* Encryption test: buffer of tsize byte. Run test n times. */
-void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
+void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t unit,
 				unsigned int n, unsigned int l, int input_data_init,
 				int in_place, int warmup, int verbosity)
 {
@@ -493,12 +494,14 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 	op.params[1].memref.parent = in_place ? &in_shm : &out_shm;
 	op.params[1].memref.size = size;
 	op.params[2].value.a = l;
+	op.params[2].value.b = unit;
 
 	verbose("Starting test: %s, %scrypt, keysize=%u bits, size=%zu bytes, ",
 		mode_str(mode), (decrypt ? "de" : "en"), keysize, size);
 	verbose("random=%s, ", yesno(input_data_init == CRYPTO_USE_RANDOM));
 	verbose("in place=%s, ", yesno(in_place));
-	verbose("inner loops=%u, loops=%u, warm-up=%u s\n", l, n, warmup);
+	verbose("inner loops=%u, loops=%u, warm-up=%u s, ", l, n, warmup);
+	verbose("unit=%zu\n", unit);
 
 	if (warmup)
 		do_warmup(warmup);
@@ -558,6 +561,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		} \
 	} while (0);
 
+#define USAGE() usage(argv[0], keysize, mode, size, unit, warmup, l, n)
+
 int aes_perf_runner_cmd_parser(int argc, char *argv[])
 {
 	int i;
@@ -567,6 +572,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	*/
 
 	size_t size = 1024;	/* Buffer size (-s) */
+	size_t unit = CRYPTO_DEF_UNIT_SIZE; /* Divide buffer (-u) */
 	unsigned int n = CRYPTO_DEF_COUNT; /*Number of measurements (-n)*/
 	unsigned int l = CRYPTO_DEF_LOOPS; /* Inner loops (-l) */
 	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
@@ -582,7 +588,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-			usage(argv[0], keysize, mode, size, warmup, l, n);
+			USAGE();
 			return 0;
 		}
 	}
@@ -599,7 +605,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 				keysize != AES_256) {
 				fprintf(stderr, "%s: invalid key size\n",
 					argv[0]);
-				usage(argv[0], keysize, mode, size, warmup, l, n);
+				USAGE();
 				return 1;
 			}
 		} else if (!strcmp(argv[i], "-l")) {
@@ -620,7 +626,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			else {
 				fprintf(stderr, "%s, invalid mode\n",
 					argv[0]);
-				usage(argv[0], keysize, mode, size, warmup, l, n);
+				USAGE();
 				return 1;
 			}
 		} else if (!strcmp(argv[i], "-n")) {
@@ -630,14 +636,14 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			   !strcmp(argv[i], "-r")) {
 			if (input_data_init == CRYPTO_NOT_INITED) {
 				perror("--random is not compatible with --not-inited\n");
-				usage(argv[0], keysize, mode, size, warmup, l, n);
+				USAGE();
 				return 1;
 			}
 			input_data_init = CRYPTO_USE_RANDOM;
 		} else if (!strcmp(argv[i], "--not-inited")) {
 			if (input_data_init == CRYPTO_USE_RANDOM) {
 				perror("--random is not compatible with --not-inited\n");
-				usage(argv[0], keysize, mode, size, warmup, l, n);
+				USAGE();
 				return 1;
 			}
 			input_data_init = CRYPTO_NOT_INITED;
@@ -663,6 +669,9 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			NEXT_ARG(i);
 			ion_heap = atoi(argv[i]);
 #endif
+		} else if (!strcmp(argv[i], "-u")) {
+			NEXT_ARG(i);
+			unit = atoi(argv[i]);
 		} else if (!strcmp(argv[i], "-v")) {
 			verbosity++;
 		} else if (!strcmp(argv[i], "--warmup") ||
@@ -672,20 +681,20 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else {
 			fprintf(stderr, "%s: invalid argument: %s\n",
 				argv[0], argv[i]);
-			usage(argv[0], keysize, mode, size, warmup, l, n);
+			USAGE();
 			return 1;
 		}
 	}
 
 	if (size & (16 - 1)) {
 		fprintf(stderr, "invalid buffer size argument, must be a multiple of 16\n\n");
-			usage(argv[0], keysize, mode, size, warmup, l, n);
-			return 1;
+		USAGE();
+		return 1;
 	}
 
 
-	aes_perf_run_test(mode, keysize, decrypt, size, n, l, input_data_init,
-					in_place, warmup, verbosity);
+	aes_perf_run_test(mode, keysize, decrypt, size, unit, n, l,
+			  input_data_init, in_place, warmup, verbosity);
 
 	return 0;
 }
