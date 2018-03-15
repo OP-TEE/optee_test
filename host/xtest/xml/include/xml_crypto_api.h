@@ -1858,8 +1858,8 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(
 
 	res = TEEC_InvokeCommand(s, cmd_id, &op, &ret_orig);
 
-	expected_res = full_data;
-	expected_size =  fdata_length;
+	expected_res = (void *)full_data;
+	expected_size = fdata_length;
 	if (nopad) {
 		/*
 		 * According to GP 1.1, no pad encrypting TEE_ALG_RSA_NOPAD

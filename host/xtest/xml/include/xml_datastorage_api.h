@@ -674,11 +674,12 @@ static TEEC_UUID UUID_TTA_testingInternalAPI_dataStorage = {
 			   TEEC_OpenSession(context, session, destination, \
 					    connectionMethod, connectionData, \
 					    operation, &ret_orig)); \
-		if ((returnOrigin != 0) && \
-		    ((int)returnOrigin != TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
-			ADBG_EXPECT(c, (int)returnOrigin, ret_orig); \
+		if (((uint32_t)returnOrigin != 0) && \
+		    ((uint32_t)returnOrigin != \
+			TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
+			ADBG_EXPECT(c, (uint32_t)returnOrigin, ret_orig); \
 		else \
-			ADBG_EXPECT_NOT(c, (int)returnOrigin, ret_orig); \
+			ADBG_EXPECT_NOT(c, (uint32_t)returnOrigin, ret_orig); \
 	} while (0)
 
 /*dummy functions*/
