@@ -43,5 +43,6 @@
 #define TA_OS_TEST_CMD_BAD_MEM_ACCESS       10
 #define TA_OS_TEST_CMD_TA2TA_MEMREF         11
 #define TA_OS_TEST_CMD_TA2TA_MEMREF_MIX     12
+#define TA_OS_TEST_CMD_PARAMS               13
 
 #endif /*TA_OS_TEST_H */
