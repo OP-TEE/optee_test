@@ -60,6 +60,7 @@ static void xtest_tee_test_1014(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1017(ADBG_Case_t *Case_p);
+static void xtest_tee_test_1018(ADBG_Case_t *Case_p);
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
@@ -91,6 +92,8 @@ ADBG_CASE_DEFINE(regression, 1016, xtest_tee_test_1016,
 		"Test TA to TA transfers (in/out/inout memrefs on the stack)");
 ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
 		"Test coalescing memrefs");
+ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
+		"Test memref out of bounds");
 
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
@@ -1372,6 +1375,66 @@ static void xtest_tee_test_1017(ADBG_Case_t *c)
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
 		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PARAMS, &op,
 				   &ret_orig));
+
+	TEEC_CloseSession(&session);
+out:
+	TEEC_ReleaseSharedMemory(&shm);
+}
+
+static void xtest_tee_test_1018(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig;
+	TEEC_SharedMemory shm;
+	size_t page_size = 4096;
+
+	memset(&shm, 0, sizeof(shm));
+	shm.size = 8 * page_size;
+	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+		                        &ret_orig)))
+		goto out;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
+					 TEEC_MEMREF_PARTIAL_INPUT,
+					 TEEC_MEMREF_PARTIAL_OUTPUT,
+					 TEEC_MEMREF_PARTIAL_OUTPUT);
+
+	/*
+	 * The first two memrefs are supposed to be combined into in
+	 * region and the last two memrefs should have one region each
+	 * when the parameters are mapped for the TA.
+	 */
+	op.params[0].memref.parent = &shm;
+	op.params[0].memref.size = page_size;
+	op.params[0].memref.offset = 0;
+
+	op.params[1].memref.parent = &shm;
+	op.params[1].memref.size = page_size;
+	op.params[1].memref.offset = page_size;
+
+	op.params[2].memref.parent = &shm;
+	op.params[2].memref.size = page_size;
+	op.params[2].memref.offset = 4 * page_size;
+
+	op.params[3].memref.parent = &shm;
+	op.params[3].memref.size = 3 * page_size;
+	op.params[3].memref.offset = 6 * page_size;
+
+	/*
+	 * Depending on the tee driver we may have different error codes.
+	 * What's most important is that secure world doesn't panic and
+	 * that someone detects an error.
+	 */
+	ADBG_EXPECT_NOT(c, TEE_SUCCESS,
+			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PARAMS, &op,
+					   &ret_orig));
 
 	TEEC_CloseSession(&session);
 out:
