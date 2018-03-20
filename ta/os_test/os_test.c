@@ -1047,3 +1047,20 @@ TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 
 	return TEE_SUCCESS;
 }
+
+TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4])
+{
+	size_t n;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	for (n = 0; n < TEE_NUM_PARAMS; n++)
+		if (!params[n].memref.buffer || !params[n].memref.size)
+			return TEE_ERROR_BAD_PARAMETERS;
+
+	return TEE_SUCCESS;
+}

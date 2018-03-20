@@ -41,5 +41,6 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types,
 				     TEE_Param params[4]);
+TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*OS_TEST_H */
