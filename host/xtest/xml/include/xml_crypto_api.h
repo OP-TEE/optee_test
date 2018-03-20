@@ -1940,8 +1940,8 @@ static TEEC_Result Invoke_Crypto_MACInit(
 	/* save the $IN_InitialisationVector$ for
 	 * later computation of encryptedData
 	 */
+	CRYPTO_FREE(saved_mac_iv);
 	if (iv_len != 0) {
-		CRYPTO_FREE(saved_mac_iv);
 		saved_mac_iv.size = iv_len;
 		saved_mac_iv.buffer = malloc(iv_len);
 		memcpy(saved_mac_iv.buffer, iv, iv_len);
@@ -2130,8 +2130,8 @@ static TEEC_Result Invoke_Crypto_CipherInit(
 		/* Save the $IN_InitialisationVector$ for later
 		 * computation of encryptedData
 		 */
+		CRYPTO_FREE(saved_cipher_iv);
 		if (iv != NULL) {
-			CRYPTO_FREE(saved_cipher_iv);
 			saved_cipher_iv.size = iv_len;
 			saved_cipher_iv.buffer = malloc(iv_len);
 			memcpy(saved_cipher_iv.buffer, iv, iv_len);
