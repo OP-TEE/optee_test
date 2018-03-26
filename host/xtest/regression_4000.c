@@ -2837,6 +2837,10 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 			  ac_rsassa_vect18, NULL_ARRAY, WITHOUT_SALT),
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_DECRYPT,
 			  ac_rsassa_vect18, NULL_ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT,
+			  ac_rsassa_vect19, NULL_ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_DECRYPT,
+			  ac_rsassa_vect19, NULL_ARRAY, WITHOUT_SALT),
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_SIGN,
 			  ac_rsassa_vect3, NULL_ARRAY, WITHOUT_SALT),
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA1, TEE_MODE_VERIFY,
@@ -3594,7 +3598,7 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 		return false;
 
 	for (n = 0; n < num_attrs; n++) {
-		uint8_t out[384];
+		uint8_t out[512];
 		size_t out_size;
 
 		out_size = sizeof(out);
