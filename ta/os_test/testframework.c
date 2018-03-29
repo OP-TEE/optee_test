@@ -159,13 +159,8 @@ void tb_set_random_value(TEE_BigInt *a, char *str, int allow_neg)
 	TEE_BigIntConvertFromString(a, str);
 }
 
-static uint32_t mempool_u32[mpa_scratch_mem_size_in_U32(10, 2048)];
-mpa_scratch_mem mempool = (void *)&mempool_u32;
-
 void tb_main(void)
 {
-	mpa_init_scratch_mem(mempool, sizeof(mempool_u32), 2048);
-
 	tb_var();
 	tb_conv();
 	tb_cmp();
