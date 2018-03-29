@@ -40,10 +40,10 @@ do {                                          \
 #define MULWORD(s, t, r)                                \
 do {                                                    \
 	TEE_BigIntConvertFromString(a, (s));            \
-	mpa_mul_word((mpanum)b, (mpanum)a, t, mempool); \
+	mpa_mul_word((mpanum)b, (mpanum)a, t, NULL);    \
 	TB_ASSERT_HEX_PRINT_VALUE(b, (r));              \
-	mpa_mul_word((mpanum)a, (mpanum)a, t, mempool); \
-	TB_ASSERT_HEX_PRINT_VALUE(a, (r));              \
+	mpa_mul_word((mpanum)b, (mpanum)a, t, NULL);    \
+	TB_ASSERT_HEX_PRINT_VALUE(b, (r));              \
 } while (0)
 
 void tb_mul(void)
