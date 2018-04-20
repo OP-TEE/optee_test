@@ -8,7 +8,7 @@ ifeq ($(out-dir),)
 $(error invalid output directory (O=$(O)))
 endif
 
-include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+include $(TA_DEV_KIT_DIR)/mk/conf.mk
 
 # Prevent use of LDFLAGS from the environment. For example, yocto exports
 # LDFLAGS that are suitable for the client applications, not for TAs
