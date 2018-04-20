@@ -25,11 +25,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tee_ta_api.h>
-#include <ta_crypt.h>
 #include <aes_taf.h>
-#include <sha2_taf.h>
 #include <cryp_taf.h>
+#include <mbedtls_taf.h>
+#include <sha2_taf.h>
+#include <ta_crypt.h>
+#include <tee_ta_api.h>
 #include <trace.h>
 
 static TEE_Result set_global(uint32_t param_types, TEE_Param params[4]);
@@ -219,6 +220,11 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	case TA_CRYPT_CMD_GETGLOBAL:
 		return get_global(nParamTypes, pParams);
+
+#ifdef CFG_TA_MBEDTLS
+	case TA_CRYPT_CMD_MBEDTLS_SELF_TESTS:
+		return ta_entry_mbedtls_self_tests(nParamTypes, pParams);
+#endif
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

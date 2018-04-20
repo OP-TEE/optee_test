@@ -362,4 +362,7 @@
 #define TA_CRYPT_CMD_SETGLOBAL     40
 #define TA_CRYPT_CMD_GETGLOBAL     41
 
+/* If mbedtls is compiled with MBEDTLS_SELF_TEST, run the self tests */
+#define TA_CRYPT_CMD_MBEDTLS_SELF_TESTS		42
+
 #endif /*TA_CRYPT_H */

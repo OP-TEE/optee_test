@@ -5,3 +5,4 @@ srcs-y += cryp_taf.c
 srcs-y += sha2_impl.c
 srcs-y += sha2_taf.c
 srcs-y += ta_entry.c
+srcs-$(CFG_TA_MBEDTLS) += mbedtls_taf.c
