@@ -365,4 +365,10 @@
 /* If mbedtls is compiled with MBEDTLS_SELF_TEST, run the self tests */
 #define TA_CRYPT_CMD_MBEDTLS_SELF_TESTS		42
 
+/*
+ * in	params[0].memref = cert-chain
+ * in	params[1].memref = trust-anchor-cert
+ */
+#define TA_CRYPT_CMD_MBEDTLS_CHECK_CERT		43
+
 #endif /*TA_CRYPT_H */

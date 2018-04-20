@@ -224,6 +224,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 #ifdef CFG_TA_MBEDTLS
 	case TA_CRYPT_CMD_MBEDTLS_SELF_TESTS:
 		return ta_entry_mbedtls_self_tests(nParamTypes, pParams);
+	case TA_CRYPT_CMD_MBEDTLS_CHECK_CERT:
+		return ta_entry_mbedtls_check_cert(nParamTypes, pParams);
 #endif
 
 	default:
