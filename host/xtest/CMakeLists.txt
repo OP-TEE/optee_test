@@ -12,6 +12,23 @@ endif()
 
 include(GNUInstallDirs)
 
+macro(EMBED_8100FILE prefix infile)
+	add_custom_command(
+		OUTPUT  regression_8100_${prefix}.h
+		COMMAND ../../scripts/file_to_c.py --inf ${infile}
+	--out ${CMAKE_CURRENT_BINARY_DIR}/regression_8100_${prefix}.h
+	--name regression_8100_${prefix}
+		DEPENDS ../../scripts/file_to_c.py ${infile}
+	)
+
+	set_property(SOURCE regression_8100.c APPEND PROPERTY OBJECT_DEPENDS
+		     ${CMAKE_CURRENT_BINARY_DIR}/regression_8100_${prefix}.h)
+endmacro(EMBED_8100FILE)
+
+EMBED_8100FILE(ca_crt ../../cert/ca.crt)
+EMBED_8100FILE(mid_crt ../../cert/mid.crt)
+EMBED_8100FILE(my_crt ../../cert/my.crt)
+
 set (SRC
 	adbg/src/adbg_case.c
 	adbg/src/adbg_enum.c

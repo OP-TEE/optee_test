@@ -75,9 +75,7 @@ objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I./xml/include
-ifeq ($(CFG_GCM_NIST_VECTORS),y)
 CFLAGS += -I$(out-dir)/xtest
-endif
 
 CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
 CFLAGS += -I$(TA_DEV_KIT_DIR)/host_include
@@ -206,6 +204,19 @@ $(foreach v, $(GCM_NIST_VECTORS_ENCRYPT), $(eval $(call \
 	create-nist-gcm-vectors,$v,encrypt)))
 endif
 
+define embed-file
+cleanfiles += $(out-dir)/xtest/$(1).h
+
+$(out-dir)/xtest/$(1).h: $(2)
+	@echo '  GEN     $$@'
+	$(q)../../scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
+
+$(CURDIR)/regression_8100.c: $(out-dir)/xtest/$(1).h
+endef
+
+$(eval $(call embed-file,regression_8100_ca_crt,../../cert/ca.crt))
+$(eval $(call embed-file,regression_8100_mid_crt,../../cert/mid.crt))
+$(eval $(call embed-file,regression_8100_my_crt,../../cert/my.crt))
 
 .PHONY: clean
 clean:
