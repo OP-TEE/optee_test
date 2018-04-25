@@ -1257,6 +1257,11 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 1, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
+
+	Do_ADBG_BeginSubCase(c, "SDP: Invoke TA with out of bounds SDP memref");
+	ret = sdp_out_of_bounds_memref_test(size, ion_heap, 0);
+	ADBG_EXPECT(c, 0, ret);
+	Do_ADBG_EndSubCase(c, NULL);
 }
 ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
 		"Test secure data path against SDP TAs and pTAs");
