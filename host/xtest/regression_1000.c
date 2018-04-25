@@ -1364,23 +1364,55 @@ out:
 ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
 		"Test coalescing memrefs");
 
+static void invoke_1byte_out_of_bounds(ADBG_Case_t *c, TEEC_Session *session,
+				       TEEC_SharedMemory *shm)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result ret = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+
+	op.params[0].memref.parent = shm;
+	op.params[0].memref.size = shm->size / 2;
+	op.params[0].memref.offset = shm->size - (shm->size / 2) + 1;
+
+	ret = TEEC_InvokeCommand(session, TA_OS_TEST_CMD_PARAMS,
+				 &op, &ret_orig);
+
+	ADBG_EXPECT(c, TEEC_ORIGIN_COMMS, ret_orig);
+	if (ret != TEEC_ERROR_BAD_PARAMETERS && ret != TEEC_ERROR_GENERIC) {
+		ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS, ret);
+		ADBG_EXPECT(c, TEEC_ERROR_GENERIC, ret);
+	}
+}
+
 static void xtest_tee_test_1018(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig = 0;
 	TEEC_SharedMemory shm = { };
+	TEEC_Result ret = TEEC_ERROR_GENERIC;
 	size_t page_size = 4096;
+	/* Intentionnally not 4kB aligned and odd */
+	uint8_t buffer[6001] = { };
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				      xtest_teec_open_session(&session,
+							      &os_test_ta_uuid,
+							      NULL,
+							      &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Out of bounds > 4kB on allocateed shm");
 
 	shm.size = 8 * page_size;
 	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
-		return;
-
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
-		                        &ret_orig)))
+				      TEEC_AllocateSharedMemory(&xtest_teec_ctx,
+								&shm)))
 		goto out;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
@@ -1409,18 +1441,52 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 	op.params[3].memref.size = 3 * page_size;
 	op.params[3].memref.offset = 6 * page_size;
 
-	/*
-	 * Depending on the tee driver we may have different error codes.
-	 * What's most important is that secure world doesn't panic and
-	 * that someone detects an error.
-	 */
-	ADBG_EXPECT_NOT(c, TEE_SUCCESS,
-			TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PARAMS, &op,
-					   &ret_orig));
+	ret = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PARAMS, &op,
+				 &ret_orig);
 
-	TEEC_CloseSession(&session);
-out:
+	ADBG_EXPECT(c, TEEC_ORIGIN_COMMS, ret_orig);
+	if (ret != TEEC_ERROR_BAD_PARAMETERS && ret != TEEC_ERROR_GENERIC) {
+		ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS, ret);
+		ADBG_EXPECT(c, TEEC_ERROR_GENERIC, ret);
+	}
+
 	TEEC_ReleaseSharedMemory(&shm);
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Out of bounds by 1 byte on registered shm");
+
+	memset(&shm, 0, sizeof(shm));
+	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+	shm.buffer = buffer;
+	shm.size = sizeof(buffer);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				      TEEC_RegisterSharedMemory(&xtest_teec_ctx,
+								&shm)))
+		goto out;
+
+	invoke_1byte_out_of_bounds(c, &session, &shm);
+
+	TEEC_ReleaseSharedMemory(&shm);
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Out of bounds by 1 byte ref on allocated shm");
+
+	memset(&shm, 0, sizeof(shm));
+	shm.size = sizeof(buffer);
+	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				      TEEC_AllocateSharedMemory(&xtest_teec_ctx,
+								&shm)))
+		goto out;
+
+	invoke_1byte_out_of_bounds(c, &session, &shm);
+
+	TEEC_ReleaseSharedMemory(&shm);
+	Do_ADBG_EndSubCase(c, NULL);
+
+out:
+	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
 		"Test memref out of bounds");
