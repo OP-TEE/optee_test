@@ -539,6 +539,133 @@ bail1:
 	return err;
 }
 
+static int invoke_out_of_bounds(struct tee_ctx *ctx,
+				TEEC_SharedMemory *in, TEEC_SharedMemory *out,
+				size_t offset, size_t size,
+				bool valid_ref, int verbosity)
+{
+	TEEC_Result teerc = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t orig = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
+					 TEEC_MEMREF_PARTIAL_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	op.params[0].memref.parent = in;
+	op.params[0].memref.offset = 0;
+	op.params[0].memref.size = size;
+
+	op.params[1].memref.parent = out;
+	op.params[1].memref.offset = offset;
+	op.params[1].memref.size = size;
+
+	teerc = TEEC_InvokeCommand(&ctx->sess, TA_SDP_BASIC_CMD_INJECT,
+				   &op, &orig);
+
+	/*
+	 * Invocation with invalid references should be nicely rejected by
+	 * the communication layer.
+	 * Invocation with valid references should reach the TA, whatever
+	 * result is.
+	 */
+	if ((valid_ref && orig != TEEC_ORIGIN_TRUSTED_APP) ||
+	    (!valid_ref && orig != TEEC_ORIGIN_COMMS &&
+	     (teerc != TEEC_ERROR_GENERIC ||
+	      teerc != TEEC_ERROR_BAD_PARAMETERS)))
+		goto error;
+
+	verbose("Out of bounds memref test successful:\n");
+	verbose("Shm size 0x%zx, offset 0x%zx/size 0x%zx: %s/0x%x from %s\n",
+		out->size, offset, size,
+		Do_ADBG_GetEnumName(teerc, ADBG_EnumTable_TEEC_Result), teerc,
+		Do_ADBG_GetEnumName(orig, ADBG_EnumTable_TEEC_ErrorOrigin));
+	return 0;
+
+error:
+	fprintf(stderr, "Out of bounds memref test FAILURE:\n");
+	fprintf(stderr,
+		"Shm size 0x%zx, offset 0x%zx/size 0x%zx: %s/0x%x from %s\n",
+		out->size, offset, size,
+		Do_ADBG_GetEnumName(teerc, ADBG_EnumTable_TEEC_Result),	teerc,
+		Do_ADBG_GetEnumName(orig, ADBG_EnumTable_TEEC_ErrorOrigin));
+	return 1;
+}
+
+int sdp_out_of_bounds_memref_test(size_t size, int ion_heap, int verbosity)
+{
+	struct tee_ctx ctx = { };
+	int err = 0;
+	int fd = -1;
+	TEEC_Result teerc = TEEC_ERROR_GENERIC;
+	TEEC_SharedMemory in = { };
+	TEEC_SharedMemory *out = NULL;
+
+	if (create_tee_ctx(&ctx, TEST_NS_TO_TA))
+		return -1;
+
+	fd = allocate_ion_buffer(size, ion_heap, verbosity);
+	if (fd < 0) {
+		verbose("SDP alloc failed (%zu bytes) in ION heap %d: %d\n",
+			size, ion_heap, fd);
+		err = 1;
+		goto bail;
+	}
+	if (tee_register_buffer(&ctx, (void **)&out, fd)) {
+		err = 1;
+		goto bail;
+	}
+
+	/*
+	 * The ION driver will decide how much SDP memory is being allocated.
+	 * Rely on this size to test out of bounds reference cases.
+	 */
+	size = out->size;
+
+	in.size = size;
+	in.flags = TEEC_MEM_INPUT;
+	teerc = TEEC_AllocateSharedMemory(&ctx.ctx, &in);
+	if (teerc) {
+		verbose("failed to allocate memory\n");
+		goto bail;
+	}
+
+	if (verbosity) {
+		/* Valid case: reference inside allocated buffer: last byte */
+		err += invoke_out_of_bounds(&ctx, &in, out, size - 1, 1,
+					    true, verbosity);
+	}
+
+	/* Reference overflows allocated buffer by 1 byte */
+	err += invoke_out_of_bounds(&ctx, &in, out, size - 1, 2,
+				    false, verbosity);
+
+	/* Reference oveflows allocated buffer by more than 4kB byte */
+	err += invoke_out_of_bounds(&ctx, &in, out, size - 1, 5000,
+				    false, verbosity);
+
+	/* Offset exceeds allocated buffer size value by 1 byte */
+	err += invoke_out_of_bounds(&ctx, &in, out, size, 1,
+				    false, verbosity);
+
+	/* Offset exceeds allocated size value by 4kByte */
+	err += invoke_out_of_bounds(&ctx, &in, out, size, 4096,
+				    false, verbosity);
+
+	/* Offset + size overflows offset value */
+	err += invoke_out_of_bounds(&ctx, &in, out, 2, ~0,
+				    false, verbosity);
+
+	TEEC_ReleaseSharedMemory(&in);
+bail:
+	tee_deregister_buffer(&ctx, out);
+	if (fd >= 0)
+		close(fd);
+	finalize_tee_ctx(&ctx);
+
+	return err;
+}
+
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
@@ -639,6 +766,11 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 	err = sdp_basic_test(TEST_NS_TO_PTA, test_size, test_loop, ion_heap,
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 1, return 1);
+
+	verbose("\nSecure Data Path basic access: "
+		"Invoke TA with out of bounds buffer references\n");
+	err = sdp_out_of_bounds_memref_test(test_size, ion_heap, verbosity);
+	CHECK_RESULT(err, 0, return 1);
 
 	return 0;
 }
