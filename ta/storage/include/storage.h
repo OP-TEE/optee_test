@@ -30,16 +30,20 @@
 
 #include <tee_api.h>
 
-TEE_Result ta_storage_cmd_open(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_storage_cmd_create(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_storage_cmd_create_overwrite(uint32_t param_types,
+TEE_Result ta_storage_cmd_open(uint32_t command, uint32_t param_types,
+						 TEE_Param params[4]);
+TEE_Result ta_storage_cmd_create(uint32_t command, uint32_t param_types,
+						   TEE_Param params[4]);
+TEE_Result ta_storage_cmd_create_overwrite(uint32_t command,
+					   uint32_t param_types,
 					   TEE_Param params[4]);
 TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_unlink(uint32_t param_types, TEE_Param params[4]);
-TEE_Result ta_storage_cmd_rename(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_rename(uint32_t command, uint32_t param_types,
+						   TEE_Param params[4]);
 TEE_Result ta_storage_cmd_trunc(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_alloc_enum(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_free_enum(uint32_t param_types, TEE_Param params[4]);

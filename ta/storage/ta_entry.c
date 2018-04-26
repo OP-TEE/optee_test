@@ -71,7 +71,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	switch (nCommandID) {
 	case TA_STORAGE_CMD_OPEN:
-		return ta_storage_cmd_open(nParamTypes, pParams);
+	case TA_STORAGE_CMD_OPEN_ID_IN_SHM:
+		return ta_storage_cmd_open(nCommandID, nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_CLOSE:
 		return ta_storage_cmd_close(nParamTypes, pParams);
@@ -83,10 +84,12 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_storage_cmd_write(nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_CREATE:
-		return ta_storage_cmd_create(nParamTypes, pParams);
+	case TA_STORAGE_CMD_CREATE_ID_IN_SHM:
+		return ta_storage_cmd_create(nCommandID, nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_CREATE_OVERWRITE:
-		return ta_storage_cmd_create_overwrite(nParamTypes, pParams);
+	case TA_STORAGE_CMD_CREATEOVER_ID_IN_SHM:
+		return ta_storage_cmd_create_overwrite(nCommandID, nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_SEEK:
 		return ta_storage_cmd_seek(nParamTypes, pParams);
@@ -95,7 +98,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_storage_cmd_unlink(nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_RENAME:
-		return ta_storage_cmd_rename(nParamTypes, pParams);
+	case TA_STORAGE_CMD_RENAME_ID_IN_SHM:
+		return ta_storage_cmd_rename(nCommandID, nParamTypes, pParams);
 
 	case TA_STORAGE_CMD_TRUNC:
 		return ta_storage_cmd_trunc(nParamTypes, pParams);
