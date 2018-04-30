@@ -60,7 +60,7 @@ endif
 define my-embed-file
 $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
-	@$(LOCAL_PATH)scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
+	@$(LOCAL_PATH)/scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
 $(LOCAL_PATH)/host/xtest/regression_8100.c: $(TARGET_OUT_HEADERS)/$(1).h
 endef
@@ -68,6 +68,7 @@ endef
 $(eval $(call my-embed-file,regression_8100_ca_crt,cert/ca.crt))
 $(eval $(call my-embed-file,regression_8100_mid_crt,cert/mid.crt))
 $(eval $(call my-embed-file,regression_8100_my_crt,cert/my.crt))
+$(eval $(call my-embed-file,regression_8100_my_csr,cert/my.csr))
 
 LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
