@@ -371,4 +371,11 @@
  */
 #define TA_CRYPT_CMD_MBEDTLS_CHECK_CERT		43
 
+/*
+ * in	params[0].memref = Certificate request in PKCS#10 format
+ * out	params[1].memref = Signed certificate in X.509 format
+ * out	params[2].memref = Certificate chain
+ */
+#define TA_CRYPT_CMD_MBEDTLS_SIGN_CERT		44
+
 #endif /*TA_CRYPT_H */
