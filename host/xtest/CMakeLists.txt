@@ -10,6 +10,12 @@ if(NOT THREADS_FOUND)
 	message(FATAL_ERROR "Threads not found")
 endif()
 
+find_package(OpenSSL)
+if(OPENSSL_FOUND)
+	add_compile_options(-DOPENSSL_FOUND=1)
+	set (OPENSSL_PRIVATE_LINK crypto)
+endif()
+
 include(GNUInstallDirs)
 
 macro(EMBED_8100FILE prefix infile)
@@ -28,6 +34,7 @@ endmacro(EMBED_8100FILE)
 EMBED_8100FILE(ca_crt ../../cert/ca.crt)
 EMBED_8100FILE(mid_crt ../../cert/mid.crt)
 EMBED_8100FILE(my_crt ../../cert/my.crt)
+EMBED_8100FILE(my_csr ../../cert/my.csr)
 
 set (SRC
 	adbg/src/adbg_case.c
@@ -87,6 +94,7 @@ target_link_libraries (${PROJECT_NAME}
 	PRIVATE xtest-ta-headers
 	PRIVATE teec
 	PRIVATE m
+	PRIVATE ${OPENSSL_PRIVATE_LINK}
 )
 
 ################################################################################

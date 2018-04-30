@@ -217,6 +217,7 @@ endef
 $(eval $(call embed-file,regression_8100_ca_crt,../../cert/ca.crt))
 $(eval $(call embed-file,regression_8100_mid_crt,../../cert/mid.crt))
 $(eval $(call embed-file,regression_8100_my_crt,../../cert/my.crt))
+$(eval $(call embed-file,regression_8100_my_csr,../../cert/my.csr))
 
 .PHONY: clean
 clean:
