@@ -20,6 +20,12 @@
 #include <string.h>
 #include <unistd.h>
 
+#ifdef OPENSSL_FOUND
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#endif
+
 #include <adbg.h>
 #include "xtest_test.h"
 #include "xtest_helpers.h"
@@ -76,6 +82,15 @@ void usage(char *program)
 	printf("\n");
 }
 
+static void init_ossl(void)
+{
+#ifdef OPENSSL_FOUND
+	OPENSSL_init();
+	OpenSSL_add_all_algorithms();
+	ERR_load_crypto_strings();
+#endif
+}
+
 int main(int argc, char *argv[])
 {
 	int opt;
@@ -95,6 +110,8 @@ int main(int argc, char *argv[])
 
 	if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
 		warn("signal(SIGPIPE, SIG_IGN)");
+
+	init_ossl();
 
 	if (argc > 1 && !strcmp(argv[1], "--sha-perf"))
 		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
