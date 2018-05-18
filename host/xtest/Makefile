@@ -24,6 +24,16 @@ OBJCOPY		?= $(CROSS_COMPILE)objcopy
 OBJDUMP		?= $(CROSS_COMPILE)objdump
 READELF		?= $(CROSS_COMPILE)readelf
 
+# OpenSSL is used by GP tests series 8500 and Mbed TLS test 8103
+ifneq (,$(filter y,$(CFG_GP_PACKAGE_PATH) $(CFG_TA_MBEDTLS)))
+CFLAGS += -Ifor_gp/include -DOPENSSL_FOUND=1
+ifeq ($(COMPILE_NS_USER),32)
+LDFLAGS += ../lib/armv7/libcrypto.a -ldl
+else
+LDFLAGS += ../lib/armv8/libcrypto.a -ldl
+endif
+endif
+
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
@@ -111,20 +121,12 @@ CFLAGS += -I../../ta/GP_TTA_answerSuccessTo_OpenSession_Invoke
 CFLAGS += -I../../ta/GP_TTA_check_OpenSession_with_4_parameters
 CFLAGS += -I../../ta/GP_TTA_testingClientAPI
 
-# need more include: openssl
-CFLAGS += -Ifor_gp/include
 
 # by default, the client application is compiled as the kernel of optee-os
 ifeq ($(CFG_ARM32_core),y)
 COMPILE_NS_USER ?= 32
 else
 COMPILE_NS_USER ?= 64
-endif
-
-ifeq ($(COMPILE_NS_USER),32)
-LDFLAGS += ../lib/armv7/libcrypto.a
-else
-LDFLAGS += ../lib/armv8/libcrypto.a
 endif
 
 endif
