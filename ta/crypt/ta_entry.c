@@ -28,6 +28,7 @@
 #include <aes_taf.h>
 #include <cryp_taf.h>
 #include <mbedtls_taf.h>
+#include <seed_rng_taf.h>
 #include <sha2_taf.h>
 #include <ta_crypt.h>
 #include <tee_ta_api.h>
@@ -229,7 +230,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_CRYPT_CMD_MBEDTLS_SIGN_CERT:
 		return ta_entry_mbedtls_sign_cert(nParamTypes, pParams);
 #endif
-
+#ifdef CFG_SYSTEM_PTA
+	case TA_CRYPT_CMD_SEED_RNG_POOL:
+		return seed_rng_pool(nParamTypes, pParams);
+#endif
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
