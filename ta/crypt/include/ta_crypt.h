@@ -378,4 +378,8 @@
  */
 #define TA_CRYPT_CMD_MBEDTLS_SIGN_CERT		44
 
+/*
+ * system pTA is used for adding entropy to RNG pool */
+#define TA_CRYPT_CMD_SEED_RNG_POOL 45
+
 #endif /*TA_CRYPT_H */

@@ -15,6 +15,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <malloc.h>
+#include <time.h>
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
@@ -40,6 +41,9 @@ static void xtest_tee_test_4008(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
 static void xtest_tee_test_4011(ADBG_Case_t *Case_p);
+#ifdef CFG_SYSTEM_PTA
+static void xtest_tee_test_4012(ADBG_Case_t *Case_p);
+#endif
 
 ADBG_CASE_DEFINE(regression, 4001, xtest_tee_test_4001,
 		"Test TEE Internal API hash operations");
@@ -63,6 +67,10 @@ ADBG_CASE_DEFINE(regression, 4010, xtest_tee_test_4010,
 		"Test TEE Internal API create transient object (negative)");
 ADBG_CASE_DEFINE(regression, 4011, xtest_tee_test_4011,
 		"Test TEE Internal API Bleichenbacher attack (negative)");
+#ifdef CFG_SYSTEM_PTA
+ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
+		"Test seeding RNG entropy");
+#endif
 
 static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,
 						       TEEC_Session *s,
@@ -5005,3 +5013,43 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&s);
 }
+
+
+#ifdef CFG_SYSTEM_PTA
+static void xtest_tee_test_4012(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	/* Fortuna PRNG requires seed <= 32 bytes */
+	uint8_t pool_input[32] = {};
+	time_t t;
+	struct tm tm_local;
+
+	t = time(NULL);
+	tm_local = *localtime(&t);
+
+	memcpy((void *)pool_input, (void *)&tm_local,
+	       sizeof(pool_input) < sizeof(tm_local) ?
+	       sizeof(pool_input) : sizeof(tm_local));
+
+
+	op.params[0].tmpref.buffer = pool_input;
+	op.params[0].tmpref.size = sizeof(pool_input);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE,
+					 TEEC_NONE,
+					 TEEC_NONE);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+				       TEEC_InvokeCommand(&session,
+					TA_CRYPT_CMD_SEED_RNG_POOL,
+					&op,
+					&ret_orig));
+	TEEC_CloseSession(&session);
+}
+#endif
