@@ -497,11 +497,6 @@ static void xtest_tee_test_1004(ADBG_Case_t *c)
 	TEEC_CloseSession(&session);
 }
 
-#ifndef TEEC_ERROR_TARGET_DEAD
-/* To be removed when we have TEEC_ERROR_TARGET_DEAD from tee_client_api.h */
-#define TEEC_ERROR_TARGET_DEAD           0xFFFF3024
-#endif
-
 static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, unsigned int n)
 {
 	TEEC_Session session = { 0 };
