@@ -35,6 +35,7 @@
 #include "os_test.h"
 #include "testframework.h"
 #include "test_float_subj.h"
+#include "os_test_lib.h"
 
 enum p_type {
 	P_TYPE_BOOL,
@@ -1063,4 +1064,33 @@ TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4])
 			return TEE_ERROR_BAD_PARAMETERS;
 
 	return TEE_SUCCESS;
+}
+
+TEE_Result ta_entry_call_lib(uint32_t param_types,
+			     TEE_Param params[4] __unused)
+{
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (os_test_shlib_add(1, 2) != 3)
+		return TEE_ERROR_GENERIC;
+
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_entry_call_lib_panic(uint32_t param_types,
+				   TEE_Param params[4] __unused)
+{
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	os_test_shlib_panic();
+
+	return TEE_ERROR_GENERIC;
 }

@@ -109,6 +109,12 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_PARAMS:
 		return ta_entry_params(nParamTypes, pParams);
 
+	case TA_OS_TEST_CMD_CALL_LIB:
+		return ta_entry_call_lib(nParamTypes, pParams);
+
+	case TA_OS_TEST_CMD_CALL_LIB_PANIC:
+		return ta_entry_call_lib_panic(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

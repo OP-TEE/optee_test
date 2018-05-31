@@ -44,5 +44,7 @@
 #define TA_OS_TEST_CMD_TA2TA_MEMREF         11
 #define TA_OS_TEST_CMD_TA2TA_MEMREF_MIX     12
 #define TA_OS_TEST_CMD_PARAMS               13
+#define TA_OS_TEST_CMD_CALL_LIB             14
+#define TA_OS_TEST_CMD_CALL_LIB_PANIC       15
 
 #endif /*TA_OS_TEST_H */
