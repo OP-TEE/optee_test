@@ -61,6 +61,9 @@ static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1017(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1018(ADBG_Case_t *Case_p);
+#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+static void xtest_tee_test_1019(ADBG_Case_t *Case_p);
+#endif
 
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
@@ -94,6 +97,10 @@ ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
 		"Test coalescing memrefs");
 ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
 		"Test memref out of bounds");
+#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
+		"Test dynamically linked TA");
+#endif
 
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
@@ -1435,3 +1442,29 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 out:
 	TEEC_ReleaseSharedMemory(&shm);
 }
+
+#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+static void xtest_tee_test_1019(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+		                        &ret_orig)))
+		return;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CALL_LIB, NULL,
+				   &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+		TEEC_ERROR_TARGET_DEAD,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CALL_LIB_PANIC,
+				   NULL, &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	TEEC_CloseSession(&session);
+}
+#endif
