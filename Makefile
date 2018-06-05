@@ -70,10 +70,6 @@ ifeq "$(wildcard $(CFG_GP_PACKAGE_PATH) )" ""
 $(error CFG_GP_PACKAGE_PATH must contain the xml package from GP)
 endif
 
-ifeq "$(wildcard /usr/include/openssl )" ""
-$(error openssl must be installed)
-endif
-
 # Note that only TEE_Initial_Configuration-Test_Suite_v1_1_0_4-2014_11_07 is supported
 
 GP_XTEST_OUT_DIR=$(CURDIR)/host/xtest
@@ -95,16 +91,6 @@ define patch-file
 		echo "Warning: Patch already applied on `basename $1`"; \
 	fi
 endef
-
-# openssl .h file installation
-forgpdir=${CURDIR}/host/xtest/for_gp
-.PHONY: patch-openssl
-patch-openssl:
-	$(q)mkdir -p ${forgpdir}/include/openssl ${forgpdir}/lib
-	$(q)if [ -d /usr/include/x86_64-linux-gnu/openssl ]; then \
-		cp -r /usr/include/x86_64-linux-gnu/openssl ${forgpdir}/include ; \
-	fi
-	$(q)cp /usr/include/openssl/*.h $f ${forgpdir}/include/openssl
 
 define mv-package
 	@if [ -d ${1} ]; then \
@@ -215,7 +201,7 @@ patch-filter:
 	$(foreach n,9001 9072 9073 9075 9079 9080 9082 9085 9086 9088 9090 9091 9093 9095 9096 9098 9099 9109 9110 9160 9174 9195 9196 9204 9239,$(call patch-filter-one,$(n),gp_9000.c))
 
 .PHONY: patch
-patch: patch-openssl patch-generate-host patch-generate-ta
+patch: patch-generate-host patch-generate-ta
 	$(MAKE) patch-filter
 
 else
