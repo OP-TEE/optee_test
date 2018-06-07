@@ -6,7 +6,7 @@
 #ifndef _OS_TEST_LIB_H_
 #define _OS_TEST_LIB_H_
 
-#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+#if defined(CFG_TA_DYNLINK)
 
 int os_test_shlib_add(int a, int b);
 void os_test_shlib_panic(void);
@@ -26,6 +26,6 @@ static inline void os_test_shlib_panic(void)
 {
 }
 
-#endif /* CFG_TA_DYNLINK && !__ANDROID__ */
+#endif /* CFG_TA_DYNLINK */
 
 #endif /* _OS_TEST_LIB_H_ */

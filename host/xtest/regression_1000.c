@@ -61,7 +61,7 @@ static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1017(ADBG_Case_t *Case_p);
 static void xtest_tee_test_1018(ADBG_Case_t *Case_p);
-#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+#if defined(CFG_TA_DYNLINK)
 static void xtest_tee_test_1019(ADBG_Case_t *Case_p);
 #endif
 
@@ -97,7 +97,7 @@ ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
 		"Test coalescing memrefs");
 ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
 		"Test memref out of bounds");
-#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+#if defined(CFG_TA_DYNLINK)
 ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
 		"Test dynamically linked TA");
 #endif
@@ -1443,7 +1443,7 @@ out:
 	TEEC_ReleaseSharedMemory(&shm);
 }
 
-#if defined(CFG_TA_DYNLINK) && !defined(__ANDROID__)
+#if defined(CFG_TA_DYNLINK)
 static void xtest_tee_test_1019(ADBG_Case_t *c)
 {
 	TEEC_Session session = { 0 };
