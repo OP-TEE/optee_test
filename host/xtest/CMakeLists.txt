@@ -75,6 +75,17 @@ if (CFG_SECURE_DATA_PATH)
 	list (APPEND SRC sdp_basic.c)
 endif()
 
+
+if (CFG_GP_TEST_SUITE)
+	list (APPEND SRC
+		gp_7000.c
+		 gp_7500.c
+		 gp_8000.c
+		 gp_8500.c
+		 gp_9000.c
+	)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################
@@ -96,6 +107,67 @@ target_link_libraries (${PROJECT_NAME}
 	PRIVATE m
 	PRIVATE ${OPENSSL_PRIVATE_LINK}
 )
+
+if (CFG_GP_TEST_SUITE)
+        target_compile_definitions (${PROJECT_NAME}
+                PRIVATE -DWITH_GP_TESTS
+	)
+
+	target_compile_options (${PROJECT_NAME}
+		PRIVATE -Wall
+		PRIVATE -Wcast-align
+		PRIVATE -Werror
+		PRIVATE -Werror-implicit-function-declaration
+		PRIVATE -Wextra
+		PRIVATE -Wfloat-equal
+		PRIVATE -Wformat-nonliteral
+		PRIVATE -Wformat-security
+		PRIVATE -Wformat=2
+		PRIVATE -Winit-self
+		PRIVATE -Wmissing-declarations
+		PRIVATE -Wmissing-format-attribute
+		PRIVATE -Wmissing-include-dirs
+		PRIVATE -Wmissing-noreturn
+		PRIVATE -Wmissing-prototypes
+		PRIVATE -Wnested-externs
+		PRIVATE -Wpointer-arith
+		PRIVATE -Wshadow
+		PRIVATE -Wstrict-prototypes
+		PRIVATE -Wswitch-default
+		PRIVATE -Wwrite-strings
+		PRIVATE -Wno-missing-field-initializers
+		PRIVATE -Wno-format-zero-length
+		PRIVATE -Wno-format-zero-length
+		# Too many unused resources: don't fail for them.
+		PRIVATE -Wno-unused-function  
+		PRIVATE -Wno-unused-label     
+		PRIVATE -Wno-unused-value     
+		PRIVATE -Wno-unused-variable  		
+		PRIVATE -Wno-unused-parameter
+	)
+
+	target_include_directories(${PROJECT_NAME}
+		PRIVATE ../../ta/GP_TTA_Arithmetical
+		PRIVATE ../../ta/GP_TTA_Crypto
+		PRIVATE ../../ta/GP_TTA_DS
+		PRIVATE ../../ta/GP_TTA_TCF
+		PRIVATE ../../ta/GP_TTA_TCF_ICA
+		PRIVATE ../../ta/GP_TTA_TCF_ICA2
+		PRIVATE ../../ta/GP_TTA_TCF_MultipleInstanceTA
+		PRIVATE ../../ta/GP_TTA_TCF_SingleInstanceTA
+		PRIVATE ../../ta/GP_TTA_Time
+		PRIVATE ../../ta/GP_TTA_answerErrorTo_Invoke
+		PRIVATE ../../ta/GP_TTA_answerErrorTo_OpenSession
+		PRIVATE ../../ta/GP_TTA_answerSuccessTo_OpenSession_Invoke
+		PRIVATE ../../ta/GP_TTA_check_OpenSession_with_4_parameters
+		PRIVATE ../../ta/GP_TTA_testingClientAPI
+		PRIVATE for_gp/include
+	)
+
+	target_link_libraries (${PROJECT_NAME}
+		PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../lib/armv7/libcrypto.a
+	)
+endif()
 
 ################################################################################
 # Install targets
