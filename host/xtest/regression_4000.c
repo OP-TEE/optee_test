@@ -991,23 +991,23 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 			ta_crypt_cmd_allocate_operation(c, &session, &op1,
 							hash_cases[n].algo,
 							TEE_MODE_DIGEST, 0)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_operation(c, &session, &op2,
 							hash_cases[n].algo,
 							TEE_MODE_DIGEST, 0)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_digest_update(c, &session, op1,
 						   hash_cases[n].in,
 						   hash_cases[n].in_incr)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_copy_operation(c, &session, op2, op1)))
-			goto out;
+			goto endsub;
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
@@ -1016,14 +1016,14 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 				hash_cases[n].in + hash_cases[n].in_incr,
 				hash_cases[n].in_len - hash_cases[n].in_incr,
 				out, &out_size)))
-			goto out;
+			goto endsub;
 
 		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
 					 hash_cases[n].out_len, out, out_size);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_reset_operation(c, &session, op1)))
-			goto out;
+			goto endsub;
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
@@ -1032,7 +1032,7 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 						     hash_cases[n].in,
 						     hash_cases[n].in_len, out,
 						     &out_size)))
-			goto out;
+			goto endsub;
 
 		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
 					 hash_cases[n].out_len, out, out_size);
@@ -1048,23 +1048,23 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 						     hash_cases[n].in,
 						     hash_cases[n].in_len, out,
 						     &out_size)))
-			goto out;
+			goto endsub;
 
 		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
 					 hash_cases[n].out_len, out, out_size);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op1)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op2)))
-			goto out;
+			goto endsub;
 
+endsub:
 		Do_ADBG_EndSubCase(c, NULL);
 	}
 
-out:
 	TEEC_CloseSession(&session);
 }
 
@@ -1648,47 +1648,47 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_operation(c, &session, &op1,
 				mac_cases[n].algo, TEE_MODE_MAC, key_size)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_operation(c, &session, &op2,
 				mac_cases[n].algo, TEE_MODE_MAC, key_size)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, &session,
 				mac_cases[n].key_type, key_size, &key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_populate_transient_object(c, &session,
 				key_handle, &key_attr, 1)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_set_operation_key(c, &session, op1,
 				key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_mac_init(c, &session, op1, NULL, 0)))
-			goto out;
+			goto endsub;
 
 		if (mac_cases[n].in != NULL) {
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_mac_update(c, &session, op1,
 					mac_cases[n].in, mac_cases[n].in_incr)))
-				goto out;
+				goto endsub;
 		}
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_copy_operation(c, &session, op2, op1)))
-			goto out;
+			goto endsub;
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
@@ -1697,14 +1697,14 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 				mac_cases[n].in + mac_cases[n].in_incr,
 				mac_cases [n].in_len - mac_cases[n].in_incr,
 				out, &out_size)))
-			goto out;
+			goto endsub;
 
 		(void)ADBG_EXPECT_BUFFER(c, mac_cases[n].out,
 					 mac_cases[n].out_len, out, out_size);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_mac_init(c, &session, op1, NULL, 0)))
-			goto out;
+			goto endsub;
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
@@ -1712,22 +1712,22 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 			ta_crypt_cmd_mac_final_compute(c, &session, op1,
 				mac_cases[n].in, mac_cases[n].in_len, out,
 				&out_size)))
-			goto out;
+			goto endsub;
 
 		(void)ADBG_EXPECT_BUFFER(c, mac_cases[n].out,
 					 mac_cases[n].out_len, out, out_size);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op1)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op2)))
-			goto out;
+			goto endsub;
 
+endsub:
 		Do_ADBG_EndSubCase(c, NULL);
 	}
-out:
 	TEEC_CloseSession(&session);
 }
 
@@ -2383,18 +2383,18 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 			ta_crypt_cmd_allocate_operation(c, &session, &op,
 				ciph_cases[n].algo, ciph_cases[n].mode,
 				op_key_size)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, &session,
 				ciph_cases[n].key_type, key_size,
 				&key1_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_populate_transient_object(c, &session,
 				key1_handle, &key_attr, 1)))
-			goto out;
+			goto endsub;
 
 		if (ciph_cases[n].key2 != NULL) {
 			key_attr.content.ref.buffer =
@@ -2406,40 +2406,40 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 					&session, ciph_cases[n].key_type,
 					key_attr.content.ref.length * 8,
 					&key2_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_populate_transient_object(c,
 					&session, key2_handle, &key_attr, 1)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key2(c, &session, op,
 					key1_handle, key2_handle)))
-				goto out;
+				goto endsub;
 		} else {
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					key1_handle)))
-				goto out;
+				goto endsub;
 		}
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				key1_handle)))
-			goto out;
+			goto endsub;
 		key1_handle = TEE_HANDLE_NULL;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				key2_handle)))
-			goto out;
+			goto endsub;
 		key2_handle = TEE_HANDLE_NULL;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_cipher_init(c, &session, op,
 				ciph_cases[n].iv, ciph_cases[n].iv_len)))
-			goto out;
+			goto endsub;
 
 		out_offs = 0;
 		out_size = sizeof(out);
@@ -2448,7 +2448,7 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 			ta_crypt_cmd_cipher_update(c, &session, op,
 				ciph_cases[n].in, ciph_cases[n].in_incr, out,
 				&out_size)))
-			goto out;
+			goto endsub;
 
 		if (ciph_cases[n].algo == TEE_ALG_AES_CTR)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
@@ -2463,7 +2463,7 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 				ciph_cases[n].in_len - ciph_cases[n].in_incr,
 				out + out_offs,
 				&out_size)))
-			goto out;
+			goto endsub;
 
 		out_offs += out_size;
 
@@ -2472,11 +2472,10 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
-			goto out;
-
+			goto endsub;
+endsub:
 		Do_ADBG_EndSubCase(c, NULL);
 	}
-out:
 	TEEC_CloseSession(&session);
 }
 
@@ -2633,49 +2632,49 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 			ta_crypt_cmd_allocate_operation(c, &session, &op,
 				ae_cases[n].algo, ae_cases[n].mode,
 				key_attr.content.ref.length * 8)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, &session,
 				ae_cases[n].key_type,
 				key_attr.content.ref.length * 8,
 				&key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_populate_transient_object(c, &session,
 				key_handle, &key_attr, 1)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_set_operation_key(c, &session, op,
 				key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				key_handle)))
-			goto out;
+			goto endsub;
 		key_handle = TEE_HANDLE_NULL;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_ae_init(c, &session, op, ae_cases[n].nonce,
 			ae_cases[n].nonce_len, ae_cases[n].tag_len,
 			ae_cases[n].aad_len, ae_cases[n].ptx_len)))
-			goto out;
+			goto endsub;
 
 		if (ae_cases[n].aad != NULL) {
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_ae_update_aad(c, &session, op,
 					ae_cases[n].aad, ae_cases[n].aad_incr)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_ae_update_aad(c, &session, op,
 					ae_cases[n].aad + ae_cases[n].aad_incr,
 					ae_cases [n].aad_len -
 						ae_cases[n].aad_incr)))
-				goto out;
+				goto endsub;
 		}
 
 		out_offs = 0;
@@ -2688,7 +2687,7 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 						ae_cases[n].ptx,
 						ae_cases[n].in_incr, out,
 						&out_size)))
-					goto out;
+					goto endsub;
 				out_offs += out_size;
 				if (ae_cases[n].algo == TEE_ALG_AES_GCM)
 					ADBG_EXPECT_COMPARE_UNSIGNED(c,
@@ -2701,7 +2700,7 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 						ae_cases[n].ctx,
 						ae_cases[n].in_incr, out,
 						&out_size)))
-					goto out;
+					goto endsub;
 				out_offs += out_size;
 				if (ae_cases[n].algo == TEE_ALG_AES_GCM)
 					ADBG_EXPECT_COMPARE_UNSIGNED(c,
@@ -2722,7 +2721,7 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 						ae_cases[n].in_incr,
 					out + out_offs,
 					&out_size, out_tag, &out_tag_len)))
-				goto out;
+				goto endsub;
 
 			(void)ADBG_EXPECT_BUFFER(c,
 				ae_cases[n].tag, ae_cases[n].tag_len, out_tag,
@@ -2741,7 +2740,7 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 					out + out_offs,
 					&out_size, ae_cases[n].tag,
 					ae_cases[n].tag_len)))
-				goto out;
+				goto endsub;
 
 			out_offs += out_size;
 
@@ -2751,11 +2750,11 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
-			goto out;
+			goto endsub;
 
+endsub:
 		Do_ADBG_EndSubCase(c, NULL);
 	}
-out:
 	TEEC_CloseSession(&session);
 }
 
@@ -3721,14 +3720,14 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, hash_algo, TEE_MODE_DIGEST, 0)))
-				goto out;
+				goto endsub;
 
 			ptx_hash_size = sizeof(ptx_hash);
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_digest_do_final(c, & session, op,
 					tv->ptx, tv->ptx_len, ptx_hash,
 					&ptx_hash_size)))
-				goto out;
+				goto endsub;
 
 			/*
 			 * When we use DSA algorithms, the size of the hash we
@@ -3745,7 +3744,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_operation(c, &session, op)))
-				goto out;
+				goto endsub;
 		}
 
 		num_algo_params = 0;
@@ -3779,7 +3778,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 					   key_attrs,
 					   num_key_attrs,
 					   &pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			xtest_add_attr(&num_key_attrs, key_attrs,
 				       TEE_ATTR_RSA_PRIVATE_EXPONENT,
@@ -3828,7 +3827,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				 key_attrs,
 				 num_key_attrs,
 				 &priv_key_handle)))
-				goto out;
+				goto endsub;
 			break;
 
 		case TEE_MAIN_ALGO_DSA:
@@ -3855,7 +3854,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				create_key(c, &session, max_key_size,
 					   TEE_TYPE_DSA_PUBLIC_KEY, key_attrs,
 					   num_key_attrs, &pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			xtest_add_attr(&num_key_attrs, key_attrs,
 				       TEE_ATTR_DSA_PRIVATE_VALUE,
@@ -3866,7 +3865,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				create_key(c, &session, max_key_size,
 					   TEE_TYPE_DSA_KEYPAIR, key_attrs,
 					   num_key_attrs, &priv_key_handle)))
-				goto out;
+				goto endsub;
 			break;
 
 		case TEE_MAIN_ALGO_ECDSA:
@@ -3911,7 +3910,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				create_key(c, &session, max_key_size,
 					   TEE_TYPE_ECDSA_PUBLIC_KEY, key_attrs,
 					   num_key_attrs, &pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			xtest_add_attr(&num_key_attrs, key_attrs,
 				       TEE_ATTR_ECC_PRIVATE_VALUE,
@@ -3922,12 +3921,12 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				create_key(c, &session, max_key_size,
 					   TEE_TYPE_ECDSA_KEYPAIR, key_attrs,
 					   num_key_attrs, &priv_key_handle)))
-				goto out;
+				goto endsub;
 			break;
 
 		default:
 			ADBG_EXPECT_TRUE(c, false);
-			goto out;
+			goto endsub;
 		}
 
 		out_size = sizeof(out);
@@ -3938,17 +3937,17 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, tv->algo, TEE_MODE_ENCRYPT,
 					max_key_size)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, &session,
 					pub_key_handle)))
-				goto out;
+				goto endsub;
 			pub_key_handle = TEE_HANDLE_NULL;
 
 			out_enc_size = sizeof(out_enc);
@@ -3956,7 +3955,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_encrypt(c, &session, op,
 					NULL, 0, tv->ptx, tv->ptx_len, out_enc,
 					&out_enc_size)))
-				goto out;
+				goto endsub;
 
 			/*
 			 * A PS which is random is added when formatting the
@@ -3967,23 +3966,23 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_operation(c, &session, op)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, tv->algo, TEE_MODE_DECRYPT,
 					max_key_size)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, &session,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			priv_key_handle = TEE_HANDLE_NULL;
 
@@ -3991,7 +3990,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_decrypt(c, &session, op,
 					NULL, 0, out_enc, out_enc_size, out,
 					&out_size)))
-				goto out;
+				goto endsub;
 
 			(void)ADBG_EXPECT_BUFFER(c, tv->ptx, tv->ptx_len, out,
 						 out_size);
@@ -4002,17 +4001,17 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, tv->algo, TEE_MODE_DECRYPT,
 					max_key_size)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, &session,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			priv_key_handle = TEE_HANDLE_NULL;
 
@@ -4020,7 +4019,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_decrypt(c, &session, op,
 					NULL, 0, tv->ctx, tv->ctx_len, out,
 					&out_size)))
-				goto out;
+				goto endsub;
 
 			(void)ADBG_EXPECT_BUFFER(c, tv->ptx, tv->ptx_len, out,
 						 out_size);
@@ -4031,17 +4030,17 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, tv->algo, TEE_MODE_VERIFY,
 					max_key_size)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, &session,
 					pub_key_handle)))
-				goto out;
+				goto endsub;
 
 			pub_key_handle = TEE_HANDLE_NULL;
 
@@ -4049,7 +4048,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_verify(c, &session, op,
 					algo_params, num_algo_params, ptx_hash,
 					ptx_hash_size, tv->ctx, tv->ctx_len)))
-				goto out;
+				goto endsub;
 			break;
 
 		case TEE_MODE_SIGN:
@@ -4057,17 +4056,17 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_allocate_operation(c, &session,
 					&op, tv->algo, TEE_MODE_SIGN,
 					max_key_size)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, &session,
 					priv_key_handle)))
-				goto out;
+				goto endsub;
 
 			priv_key_handle = TEE_HANDLE_NULL;
 
@@ -4075,7 +4074,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				ta_crypt_cmd_asymmetric_sign(c, &session, op,
 					algo_params, num_algo_params, ptx_hash,
 					ptx_hash_size, out, &out_size)))
-				goto out;
+				goto endsub;
 
 			if (TEE_ALG_GET_CHAIN_MODE(tv->algo) ==
 			    TEE_CHAIN_MODE_PKCS1_PSS_MGF1 ||
@@ -4087,7 +4086,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_free_operation(c, &session,
 								    op)))
-					goto out;
+					goto endsub;
 				/*
 				 * The salt or K is random so we can't verify
 				 * signing against precomputed values, instead
@@ -4098,17 +4097,17 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 					ta_crypt_cmd_allocate_operation(c,
 						&session, &op, tv->algo,
 						TEE_MODE_VERIFY, max_key_size)))
-					goto out;
+					goto endsub;
 
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_set_operation_key(c,
 						&session, op, pub_key_handle)))
-					goto out;
+					goto endsub;
 
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_free_transient_object(c,
 						&session, pub_key_handle)))
-					goto out;
+					goto endsub;
 
 				pub_key_handle = TEE_HANDLE_NULL;
 
@@ -4117,7 +4116,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 						&session, op, algo_params,
 						num_algo_params, ptx_hash,
 						ptx_hash_size, out, out_size)))
-					goto out;
+					goto endsub;
 			} else {
 				(void)ADBG_EXPECT_BUFFER(c, tv->ctx,
 							 tv->ctx_len, out,
@@ -4131,24 +4130,24 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				pub_key_handle)))
-			goto out;
+			goto endsub;
 		pub_key_handle = TEE_HANDLE_NULL;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 				priv_key_handle)))
-			goto out;
+			goto endsub;
 
 		priv_key_handle = TEE_HANDLE_NULL;
 
+endsub:
 		Do_ADBG_EndSubCase(c, NULL);
 	}
-out:
 	TEEC_CloseSession(&session);
 }
 
@@ -4517,11 +4516,9 @@ static void xtest_test_keygen_dh(ADBG_Case_t *c, TEEC_Session *session)
 				       key_types[n].subprime_len);
 		}
 
-		if (!ADBG_EXPECT_TRUE(c,
-			generate_and_test_key(c, session, TEE_TYPE_DH_KEYPAIR,
-				*key_types[n].private_bits,
-				key_types[n]. key_size, params, param_count)))
-			break;
+		generate_and_test_key(c, session, TEE_TYPE_DH_KEYPAIR,
+			*key_types[n].private_bits,
+			key_types[n]. key_size, params, param_count);
 
 		Do_ADBG_EndSubCase(c,
 				   "Generate DH key %d bits - Private bits = %d",
@@ -4581,11 +4578,9 @@ static void xtest_test_keygen_dsa(ADBG_Case_t *c, TEEC_Session *session)
 		xtest_add_attr(&param_count, params, TEE_ATTR_DSA_BASE,
 			       key_types[n].base, key_types[n].base_len);
 
-		if (!ADBG_EXPECT_TRUE(c,
-			generate_and_test_key(c, session, TEE_TYPE_DSA_KEYPAIR,
-				1, key_types[n]. key_size, params,
-				param_count)))
-			break;
+		generate_and_test_key(c, session, TEE_TYPE_DSA_KEYPAIR,
+			1, key_types[n]. key_size, params,
+			param_count);
 
 		Do_ADBG_EndSubCase(c, "Generate DSA key %d bits",
 				   key_types[n].key_size);
@@ -4640,11 +4635,9 @@ static void xtest_test_keygen_ecc(ADBG_Case_t *c, TEEC_Session *session)
 		xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
 			             key_types[n].curve, 0);
 
-		if (!ADBG_EXPECT_TRUE(c,
-			generate_and_test_key(c, session, key_types[n].algo,
-				0, key_types[n].key_size, params,
-				param_count)))
-			break;
+		generate_and_test_key(c, session, key_types[n].algo,
+			0, key_types[n].key_size, params,
+			param_count);
 
 		Do_ADBG_EndSubCase(c, "Generate %s", key_types[n].name);
 	}
@@ -4801,13 +4794,13 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 			ta_crypt_cmd_allocate_operation(c, &session, &op,
 				pt->algo,
 				TEE_MODE_DERIVE, pt->keysize)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, & session,
 				TEE_TYPE_ECDH_KEYPAIR, pt->keysize,
 				&key_handle)))
-			goto out;
+			goto endsub;
 
 		param_count = 0;
 		xtest_add_attr_value(&param_count, params,
@@ -4830,23 +4823,23 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 				ta_crypt_cmd_populate_transient_object(c,
 					&session,
 					key_handle, params, param_count)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_set_operation_key(c, &session, op,
 					key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_free_transient_object(c, & session,
 					key_handle)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, &session,
 				TEE_TYPE_GENERIC_SECRET, size_bytes * 8,
 				&sv_handle)))
-			goto out;
+			goto endsub;
 
 		/* reuse but reset params and param-count */
 		param_count = 0;
@@ -4861,7 +4854,7 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_derive_key(c, &session, op, sv_handle,
 					        params, param_count)))
-			goto out;
+			goto endsub;
 
 		out_size = sizeof(out);
 		memset(out, 0, sizeof(out));
@@ -4869,31 +4862,26 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 			ta_crypt_cmd_get_object_buffer_attribute(c, &session,
 				sv_handle,
 				TEE_ATTR_SECRET_VALUE, out, &out_size)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_BUFFER(c, pt->out, size_bytes,
 					out, out_size))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
-			goto out;
+			goto endsub;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_transient_object(c, &session,
 							   sv_handle)))
-			goto out;
+			goto endsub;
 
+endsub:
 		Do_ADBG_EndSubCase(c, "Derive ECDH key - algo = 0x%x",
 				   pt->algo);
 	}
 
-	goto noerror;
-
-out:
-	Do_ADBG_EndSubCase(c, "Derive ECDH key - algo = 0x%x", pt->algo);
-
-noerror:
 	TEEC_CloseSession(&session);
 }
 
