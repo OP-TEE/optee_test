@@ -25,7 +25,7 @@ OBJDUMP		?= $(CROSS_COMPILE)objdump
 READELF		?= $(CROSS_COMPILE)readelf
 
 # OpenSSL is used by GP tests series 8500 and Mbed TLS test 8103
-ifneq (,$(filter y,$(CFG_GP_PACKAGE_PATH) $(CFG_TA_MBEDTLS)))
+ifneq ($(CFG_GP_PACKAGE_PATH)$(filter y,$(CFG_TA_MBEDTLS)),)
 CFLAGS += -I../openssl/include -DOPENSSL_FOUND=1
 ifeq ($(COMPILE_NS_USER),32)
 LDFLAGS += ../openssl/lib/arm/libcrypto.a -ldl
