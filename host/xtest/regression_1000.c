@@ -648,7 +648,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 #ifndef TA_DIR
 # ifdef __ANDROID__
-#define TA_DIR "/system/lib/optee_armtz"
+#define TA_DIR "/vendor/lib/optee_armtz"
 # else
 #define TA_DIR "/lib/optee_armtz"
 # endif
