@@ -19,7 +19,10 @@ TA_DEV_KIT_DIR ?= ../invalid_include_path
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := xtest
+LOCAL_VENDOR_MODULE := true
 LOCAL_SHARED_LIBRARIES := libteec
+
+TA_DIR ?= /vendor/lib/optee_armtz
 
 srcs := regression_1000.c
 
@@ -96,6 +99,10 @@ LOCAL_CFLAGS += -include conf.h
 LOCAL_CFLAGS += -pthread
 LOCAL_CFLAGS += -g3
 LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
+
+ifneq ($(TA_DIR),)
+LOCAL_CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
+endif
 
 ## $(OPTEE_BIN) is the path of tee.bin like
 ## out/target/product/hikey/optee/arm-plat-hikey/core/tee.bin
