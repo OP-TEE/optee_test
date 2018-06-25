@@ -26,13 +26,19 @@ READELF		?= $(CROSS_COMPILE)readelf
 
 # OpenSSL is used by GP tests series 8500 and Mbed TLS test 8103
 ifneq ($(CFG_GP_PACKAGE_PATH)$(filter y,$(CFG_TA_MBEDTLS)),)
-CFLAGS += -I../openssl/include -DOPENSSL_FOUND=1
+CFLAGS += -DOPENSSL_FOUND=1
+ifneq ($(OPTEE_OPENSSL_EXPORT),)
+LDFLAGS += -lcrypto
+CFLAGS += -I$(OPTEE_OPENSSL_EXPORT)
+else #OPTEE_OPENSSL_EXPORT
+CFLAGS += -I../openssl/include
 ifeq ($(COMPILE_NS_USER),32)
 LDFLAGS += ../openssl/lib/arm/libcrypto.a -ldl
 else
 LDFLAGS += ../openssl/lib/aarch64/libcrypto.a -ldl
 endif
-endif
+endif #OPTEE_OPENSSL_EXPORT
+endif #require OpenSSL
 
 srcs := regression_1000.c
 
