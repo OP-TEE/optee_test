@@ -23,14 +23,6 @@
 #define WITH_CONCAT_KDF 1
 #define WITH_PBKDF2 1
 
-static void xtest_tee_test_8001(ADBG_Case_t *c);
-static void xtest_tee_test_8002(ADBG_Case_t *c);
-
-ADBG_CASE_DEFINE(regression, 8001, xtest_tee_test_8001,
-		 "Test TEE Internal API key derivation extensions");
-ADBG_CASE_DEFINE(regression, 8002, xtest_tee_test_8002,
-	"Secure Storage Key Manager API Self Test");
-
 /*
  * HKDF test data from RFC 5869
  */
@@ -745,6 +737,8 @@ static void xtest_tee_test_8001(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 8001, xtest_tee_test_8001,
+		 "Test TEE Internal API key derivation extensions");
 
 /* secure storage key manager self test */
 static void xtest_tee_test_8002(ADBG_Case_t *c)
@@ -768,3 +762,5 @@ static void xtest_tee_test_8002(ADBG_Case_t *c)
 exit:
 	TEEC_CloseSession(&sess);
 }
+ADBG_CASE_DEFINE(regression, 8002, xtest_tee_test_8002,
+	"Secure Storage Key Manager API Self Test");

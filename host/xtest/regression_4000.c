@@ -30,52 +30,6 @@
 
 #include <assert.h>
 
-static void xtest_tee_test_4001(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4002(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4003(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4004(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4005(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4006(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4007(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4008(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4009(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4010(ADBG_Case_t *Case_p);
-static void xtest_tee_test_4011(ADBG_Case_t *Case_p);
-#ifdef CFG_SYSTEM_PTA
-static void xtest_tee_test_4012(ADBG_Case_t *Case_p);
-#endif
-
-ADBG_CASE_DEFINE(regression, 4001, xtest_tee_test_4001,
-		"Test TEE Internal API hash operations");
-ADBG_CASE_DEFINE(regression, 4002, xtest_tee_test_4002,
-		"Test TEE Internal API MAC operations");
-ADBG_CASE_DEFINE(regression, 4003, xtest_tee_test_4003,
-		"Test TEE Internal API cipher operations");
-ADBG_CASE_DEFINE(regression, 4004, xtest_tee_test_4004,
-		"Test TEE Internal API get random");
-ADBG_CASE_DEFINE(regression, 4005, xtest_tee_test_4005,
-		"Test TEE Internal API Authenticated Encryption operations");
-ADBG_CASE_DEFINE(regression, 4006, xtest_tee_test_4006,
-		"Test TEE Internal API Asymmetric Cipher operations");
-ADBG_CASE_DEFINE(regression, 4007, xtest_tee_test_4007,
-		"Test TEE Internal API Generate key");
-ADBG_CASE_DEFINE(regression, 4008, xtest_tee_test_4008,
-		"Test TEE Internal API Derive key");
-ADBG_CASE_DEFINE(regression, 4009, xtest_tee_test_4009,
-		"Test TEE Internal API Derive key ECDH");
-ADBG_CASE_DEFINE(regression, 4010, xtest_tee_test_4010,
-		"Test TEE Internal API create transient object (negative)");
-ADBG_CASE_DEFINE(regression, 4011, xtest_tee_test_4011,
-		"Test TEE Internal API Bleichenbacher attack (negative)");
-#ifdef CFG_SYSTEM_PTA
-ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
-		"Test seeding RNG entropy");
-#endif
-
-static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,
-						       TEEC_Session *s,
-						       void *buf, size_t blen);
-
 static TEEC_Result ta_crypt_cmd_reset_operation(ADBG_Case_t *c, TEEC_Session *s,
 						TEE_OperationHandle oph)
 {
@@ -1067,6 +1021,8 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4001, xtest_tee_test_4001,
+		"Test TEE Internal API hash operations");
 
 static const uint8_t mac_data_md5_key1[10] = {
 	0x6B, 0x65, 0x79, /* key */
@@ -1730,6 +1686,8 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4002, xtest_tee_test_4002,
+		"Test TEE Internal API MAC operations");
 
 static const uint8_t ciph_data_aes_key1[] = {
 	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, /* 01234567 */
@@ -2479,6 +2437,8 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4003, xtest_tee_test_4003,
+		"Test TEE Internal API cipher operations");
 
 static void xtest_tee_test_4004(ADBG_Case_t *c)
 {
@@ -2516,7 +2476,8 @@ out:
 	TEEC_CloseSession(&session);
 	Do_ADBG_EndSubCase(c, "TEE get random");
 }
-
+ADBG_CASE_DEFINE(regression, 4004, xtest_tee_test_4004,
+		"Test TEE Internal API get random");
 
 struct xtest_ae_case {
 	uint32_t algo;
@@ -2758,6 +2719,8 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4005, xtest_tee_test_4005,
+		"Test TEE Internal API Authenticated Encryption operations");
 
 struct xtest_ac_case {
 	unsigned int level;
@@ -4151,6 +4114,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4006, xtest_tee_test_4006,
+		"Test TEE Internal API Asymmetric Cipher operations");
 
 #define KEY_ATTR(x, y) { #x, (x), y }
 
@@ -4670,6 +4635,8 @@ static void xtest_tee_test_4007(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4007, xtest_tee_test_4007,
+		"Test TEE Internal API Generate key");
 
 static void xtest_tee_test_4008(ADBG_Case_t *c)
 {
@@ -4767,6 +4734,8 @@ out:
 	Do_ADBG_EndSubCase(c, "Derive DH key success");
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4008, xtest_tee_test_4008,
+		"Test TEE Internal API Derive key");
 
 static void xtest_tee_test_4009(ADBG_Case_t *c)
 {
@@ -4896,6 +4865,8 @@ out:
 noerror:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4009, xtest_tee_test_4009,
+		"Test TEE Internal API Derive key ECDH");
 
 static void xtest_tee_test_4010(ADBG_Case_t *c)
 {
@@ -4926,6 +4897,8 @@ static void xtest_tee_test_4010(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 4010, xtest_tee_test_4010,
+		"Test TEE Internal API create transient object (negative)");
 
 static void xtest_tee_test_4011(ADBG_Case_t *c)
 {
@@ -5063,7 +5036,8 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&s);
 }
-
+ADBG_CASE_DEFINE(regression, 4011, xtest_tee_test_4011,
+		"Test TEE Internal API Bleichenbacher attack (negative)");
 
 #ifdef CFG_SYSTEM_PTA
 static void xtest_tee_test_4012(ADBG_Case_t *c)
@@ -5102,4 +5076,6 @@ static void xtest_tee_test_4012(ADBG_Case_t *c)
 					&ret_orig));
 	TEEC_CloseSession(&session);
 }
-#endif
+ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
+		"Test seeding RNG entropy");
+#endif /*CFG_SYSTEM_PTA*/

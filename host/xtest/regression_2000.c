@@ -395,6 +395,8 @@ out_close_session:
 out:
 	sock_server_uninit(&ts);
 }
+ADBG_CASE_DEFINE(regression, 2001, xtest_tee_test_2001,
+		"Trivial TCP iSocket API tests");
 
 struct test_2002_barrier {
 	pthread_mutex_t mu;
@@ -543,6 +545,8 @@ static void xtest_tee_test_2002(ADBG_Case_t *c)
 
 	Do_ADBG_EndSubCase(c, "Stressing with %d threads", NUM_THREADS);
 }
+ADBG_CASE_DEFINE(regression, 2002, xtest_tee_test_2002,
+		"Concurrent stressing TCP iSocket API tests");
 
 static bool test_2003_accept_cb(void *ptr, int fd, short *events)
 {
@@ -638,6 +642,8 @@ out:
 	free(buf);
 	sock_server_uninit(&ts);
 }
+ADBG_CASE_DEFINE(regression, 2003, xtest_tee_test_2003,
+		"Timeout TCP iSocket API tests");
 
 static bool test_200x_udp_accept_cb(void *ptr, int fd, short *events)
 {
@@ -892,17 +898,5 @@ out:
 	if (ts3_inited)
 		sock_server_uninit(&ts3);
 }
-
-
-
-ADBG_CASE_DEFINE(regression, 2001, xtest_tee_test_2001,
-		"Trivial TCP iSocket API tests");
-
-ADBG_CASE_DEFINE(regression, 2002, xtest_tee_test_2002,
-		"Concurrent stressing TCP iSocket API tests");
-
-ADBG_CASE_DEFINE(regression, 2003, xtest_tee_test_2003,
-		"Timeout TCP iSocket API tests");
-
 ADBG_CASE_DEFINE(regression, 2004, xtest_tee_test_2004,
 		"UDP iSocket API tests");
