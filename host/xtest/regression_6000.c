@@ -29,6 +29,18 @@
 #endif
 #include <util.h>
 
+#define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)			     \
+static void test_name(ADBG_Case_t *c)					     \
+{									     \
+	size_t i;							     \
+									     \
+	for (i = 0; i < ARRAY_SIZE(storage_ids); i++) {			     \
+		Do_ADBG_BeginSubCase(c, "Storage id: %08x", storage_ids[i]); \
+		test_name##_single(c, storage_ids[i]);			     \
+		Do_ADBG_EndSubCase(c, "Storage id: %08x", storage_ids[i]);   \
+	}								     \
+}
+
 static uint32_t storage_ids[] = {
 	TEE_STORAGE_PRIVATE,
 #ifdef CFG_REE_FS
@@ -814,20 +826,9 @@ static void xtest_tee_test_6001_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
-#define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)			     \
-static void test_name(ADBG_Case_t *c)					     \
-{									     \
-	size_t i;							     \
-									     \
-	for (i = 0; i < ARRAY_SIZE(storage_ids); i++) {			     \
-		Do_ADBG_BeginSubCase(c, "Storage id: %08x", storage_ids[i]); \
-		test_name##_single(c, storage_ids[i]);			     \
-		Do_ADBG_EndSubCase(c, "Storage id: %08x", storage_ids[i]);   \
-	}								     \
-}
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6001)
+ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
+		 "Test TEE_CreatePersistentObject");
 
 /* open */
 static void xtest_tee_test_6002_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -869,8 +870,9 @@ static void xtest_tee_test_6002_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6002)
+ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
+		 "Test TEE_OpenPersistentObject");
 
 /* read */
 static void xtest_tee_test_6003_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -912,8 +914,9 @@ static void xtest_tee_test_6003_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6003)
+ADBG_CASE_DEFINE(regression, 6003, xtest_tee_test_6003,
+		 "Test TEE_ReadObjectData");
 
 /* write */
 static void xtest_tee_test_6004_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -970,8 +973,9 @@ static void xtest_tee_test_6004_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6004)
+ADBG_CASE_DEFINE(regression, 6004, xtest_tee_test_6004,
+		 "Test TEE_WriteObjectData");
 
 /* seek */
 static void xtest_tee_test_6005_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -1013,8 +1017,9 @@ static void xtest_tee_test_6005_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6005)
+ADBG_CASE_DEFINE(regression, 6005, xtest_tee_test_6005,
+		 "Test TEE_SeekObjectData");
 
 /* unlink */
 static void xtest_tee_test_6006_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -1047,8 +1052,9 @@ static void xtest_tee_test_6006_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6006)
+ADBG_CASE_DEFINE(regression, 6006, xtest_tee_test_6006,
+		 "Test TEE_CloseAndDeletePersistentObject");
 
 static void xtest_tee_test_6007_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1064,8 +1070,9 @@ static void xtest_tee_test_6007_single(ADBG_Case_t *c, uint32_t storage_id)
 	test_file_hole(c, storage_id);
 	Do_ADBG_EndSubCase(c, "Test file hole");
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6007)
+ADBG_CASE_DEFINE(regression, 6007, xtest_tee_test_6007,
+		 "Test TEE_TruncateObjectData");
 
 static void xtest_tee_test_6008_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1128,8 +1135,9 @@ static void xtest_tee_test_6008_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6008)
+ADBG_CASE_DEFINE(regression, 6008, xtest_tee_test_6008,
+		 "Test TEE_RenamePersistentObject");
 
 static void xtest_tee_test_6009_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1234,8 +1242,9 @@ static void xtest_tee_test_6009_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6009)
+ADBG_CASE_DEFINE(regression, 6009, xtest_tee_test_6009,
+	"Test TEE Internal API Persistent Object Enumeration Functions");
 
 static void xtest_tee_test_6010_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1435,8 +1444,8 @@ seek_write_read_out:
 
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6010)
+ADBG_CASE_DEFINE(regression, 6010, xtest_tee_test_6010, "Test Storage");
 
 #ifdef WITH_GP_TESTS
 static void xtest_tee_test_6011(ADBG_Case_t *c)
@@ -1473,6 +1482,8 @@ static void xtest_tee_test_6011(ADBG_Case_t *c)
 exit:
     TEEC_CloseSession(&sess);
 }
+ADBG_CASE_DEFINE(regression, 6011, xtest_tee_test_6011,
+		 "Test TEE GP TTA DS init objects");
 #endif /*WITH_GP_TESTS*/
 
 static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
@@ -1545,8 +1556,9 @@ bail2:
 bail1:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6012)
+ADBG_CASE_DEFINE(regression, 6012, xtest_tee_test_6012,
+		 "Test TEE GP TTA DS init objects");
 
 static void xtest_tee_test_6013_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1568,8 +1580,9 @@ static void xtest_tee_test_6013_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6013)
+ADBG_CASE_DEFINE(regression, 6013, xtest_tee_test_6013,
+		 "Key usage in Persistent objects");
 
 static void xtest_tee_test_6014_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1590,8 +1603,9 @@ static void xtest_tee_test_6014_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6014)
+ADBG_CASE_DEFINE(regression, 6014, xtest_tee_test_6014,
+		 "Loop on Persistent objects");
 
 static void xtest_tee_test_6015_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1632,9 +1646,8 @@ exit:
 exit2:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6015)
-
+ADBG_CASE_DEFINE(regression, 6015, xtest_tee_test_6015, "Storage isolation");
 
 struct test_6016_thread_arg {
 	ADBG_Case_t *case_t;
@@ -1742,8 +1755,8 @@ static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
 	for (i = 0; i < loops; i++)
 		xtest_tee_test_6016_loop(c, storage_id);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6016)
+ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
 
 static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1796,8 +1809,9 @@ static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6017)
+ADBG_CASE_DEFINE(regression, 6017, xtest_tee_test_6017,
+		 "Test Persistent objects info");
 
 static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1887,8 +1901,8 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 exit:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6018)
+ADBG_CASE_DEFINE(regression, 6018, xtest_tee_test_6018, "Large object");
 
 static void xtest_tee_test_6019_single(ADBG_Case_t *c, uint32_t storage_id)
 {
@@ -1968,8 +1982,8 @@ exit2:
 exit3:
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6019)
+ADBG_CASE_DEFINE(regression, 6019, xtest_tee_test_6019, "Storage independence");
 
 /*
  * According to the GP spec V1.1, the object_id in create/open/rename
@@ -2185,45 +2199,6 @@ exit1:
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
 	TEEC_CloseSession(&sess);
 }
-
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6020)
-
-ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
-		 "Test TEE_CreatePersistentObject");
-ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
-		 "Test TEE_OpenPersistentObject");
-ADBG_CASE_DEFINE(regression, 6003, xtest_tee_test_6003,
-		 "Test TEE_ReadObjectData");
-ADBG_CASE_DEFINE(regression, 6004, xtest_tee_test_6004,
-		 "Test TEE_WriteObjectData");
-ADBG_CASE_DEFINE(regression, 6005, xtest_tee_test_6005,
-		 "Test TEE_SeekObjectData");
-ADBG_CASE_DEFINE(regression, 6006, xtest_tee_test_6006,
-		 "Test TEE_CloseAndDeletePersistentObject");
-ADBG_CASE_DEFINE(regression, 6007, xtest_tee_test_6007,
-		 "Test TEE_TruncateObjectData");
-ADBG_CASE_DEFINE(regression, 6008, xtest_tee_test_6008,
-		 "Test TEE_RenamePersistentObject");
-ADBG_CASE_DEFINE(regression, 6009, xtest_tee_test_6009,
-	"Test TEE Internal API Persistent Object Enumeration Functions");
-ADBG_CASE_DEFINE(regression, 6010, xtest_tee_test_6010, "Test Storage");
-
-#ifdef WITH_GP_TESTS
-ADBG_CASE_DEFINE(regression, 6011, xtest_tee_test_6011,
-		 "Test TEE GP TTA DS init objects");
-#endif
-
-ADBG_CASE_DEFINE(regression, 6012, xtest_tee_test_6012,
-		 "Test TEE GP TTA DS init objects");
-ADBG_CASE_DEFINE(regression, 6013, xtest_tee_test_6013,
-		 "Key usage in Persistent objects");
-ADBG_CASE_DEFINE(regression, 6014, xtest_tee_test_6014,
-		 "Loop on Persistent objects");
-ADBG_CASE_DEFINE(regression, 6015, xtest_tee_test_6015, "Storage isolation");
-ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
-ADBG_CASE_DEFINE(regression, 6017, xtest_tee_test_6017,
-		 "Test Persistent objects info");
-ADBG_CASE_DEFINE(regression, 6018, xtest_tee_test_6018, "Large object");
-ADBG_CASE_DEFINE(regression, 6019, xtest_tee_test_6019, "Storage independence");
 ADBG_CASE_DEFINE(regression, 6020, xtest_tee_test_6020,
 		 "Object IDs in SHM (negative)");

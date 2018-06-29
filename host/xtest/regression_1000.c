@@ -41,67 +41,6 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-static void xtest_tee_test_1001(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1002(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1003(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1004(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1005(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1006(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1007(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1008(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1009(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1010(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1011(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1012(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1013(ADBG_Case_t *Case_p);
-#ifdef CFG_SECURE_DATA_PATH
-static void xtest_tee_test_1014(ADBG_Case_t *Case_p);
-#endif
-static void xtest_tee_test_1015(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1016(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1017(ADBG_Case_t *Case_p);
-static void xtest_tee_test_1018(ADBG_Case_t *Case_p);
-#if defined(CFG_TA_DYNLINK)
-static void xtest_tee_test_1019(ADBG_Case_t *Case_p);
-#endif
-
-ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
-ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
-ADBG_CASE_DEFINE(regression, 1003, xtest_tee_test_1003,
-		 "Core internal read/write mutex");
-ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
-ADBG_CASE_DEFINE(regression, 1005, xtest_tee_test_1005, "Many sessions");
-ADBG_CASE_DEFINE(regression, 1006, xtest_tee_test_1006,
-		"Test Basic OS features");
-ADBG_CASE_DEFINE(regression, 1007, xtest_tee_test_1007, "Test Panic");
-ADBG_CASE_DEFINE(regression, 1008, xtest_tee_test_1008,
-		"TEE internal client API");
-ADBG_CASE_DEFINE(regression, 1009, xtest_tee_test_1009, "TEE Wait");
-ADBG_CASE_DEFINE(regression, 1010, xtest_tee_test_1010,
-		"Invalid memory access");
-ADBG_CASE_DEFINE(regression, 1011, xtest_tee_test_1011,
-		"Test TA-to-TA features with User Crypt TA");
-ADBG_CASE_DEFINE(regression, 1012, xtest_tee_test_1012,
-		"Test Single Instance Multi Session features with SIMS TA");
-ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
-		"Test concurency with concurrent TA");
-#ifdef CFG_SECURE_DATA_PATH
-ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
-		"Test secure data path against SDP TAs and pTAs");
-#endif
-ADBG_CASE_DEFINE(regression, 1015, xtest_tee_test_1015,
-		"FS hash-tree corner cases");
-ADBG_CASE_DEFINE(regression, 1016, xtest_tee_test_1016,
-		"Test TA to TA transfers (in/out/inout memrefs on the stack)");
-ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
-		"Test coalescing memrefs");
-ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
-		"Test memref out of bounds");
-#if defined(CFG_TA_DYNLINK)
-ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
-		"Test dynamically linked TA");
-#endif
-
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
 	TEEC_Session *session;
@@ -310,6 +249,7 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
 
 static void xtest_tee_test_1002(ADBG_Case_t *c)
 {
@@ -348,6 +288,7 @@ static void xtest_tee_test_1002(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1002, xtest_tee_test_1002, "PTA parameters");
 
 struct test_1003_arg {
 	uint32_t test_type;
@@ -484,6 +425,8 @@ static void xtest_tee_test_1003(ADBG_Case_t *c)
 	Do_ADBG_Log("    Mean read concurrency: %g", mean_read_concurrency);
 	Do_ADBG_Log("    Mean read waiting: %g", mean_read_waiters);
 }
+ADBG_CASE_DEFINE(regression, 1003, xtest_tee_test_1003,
+		 "Core internal read/write mutex");
 
 static void xtest_tee_test_1004(ADBG_Case_t *c)
 {
@@ -503,6 +446,7 @@ static void xtest_tee_test_1004(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1004, xtest_tee_test_1004, "Test User Crypt TA");
 
 static void xtest_tee_test_invalid_mem_access(ADBG_Case_t *c, unsigned int n)
 {
@@ -593,6 +537,7 @@ static void xtest_tee_test_1005(ADBG_Case_t *c)
 	for (; --i >= 0; )
 		TEEC_CloseSession(&sessions[i]);
 }
+ADBG_CASE_DEFINE(regression, 1005, xtest_tee_test_1005, "Many sessions");
 
 static void xtest_tee_test_1006(ADBG_Case_t *c)
 {
@@ -617,6 +562,8 @@ static void xtest_tee_test_1006(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1006, xtest_tee_test_1006,
+		"Test Basic OS features");
 
 static void xtest_tee_test_1007(ADBG_Case_t *c)
 {
@@ -644,6 +591,7 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1007, xtest_tee_test_1007, "Test Panic");
 
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 #ifndef TA_DIR
@@ -812,6 +760,8 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "Load corrupt TA");
 #endif /*CFG_SECSTOR_TA_MGMT_PTA*/
 }
+ADBG_CASE_DEFINE(regression, 1008, xtest_tee_test_1008,
+		"TEE internal client API");
 
 static void *cancellation_thread(void *arg)
 {
@@ -881,6 +831,7 @@ static void xtest_tee_test_1009(ADBG_Case_t *c)
 	xtest_tee_test_1009_subcase(c, "TEE Wait 2s cancel", 2000, true);
 	xtest_tee_test_1009_subcase(c, "TEE Wait 2s", 2000, false);
 }
+ADBG_CASE_DEFINE(regression, 1009, xtest_tee_test_1009, "TEE Wait");
 
 static void xtest_tee_test_1010(ADBG_Case_t *c)
 {
@@ -906,6 +857,8 @@ static void xtest_tee_test_1010(ADBG_Case_t *c)
 		}
 	}
 }
+ADBG_CASE_DEFINE(regression, 1010, xtest_tee_test_1010,
+		"Invalid memory access");
 
 static void xtest_tee_test_1011(ADBG_Case_t *c)
 {
@@ -946,6 +899,8 @@ static void xtest_tee_test_1011(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1011, xtest_tee_test_1011,
+		"Test TA-to-TA features with User Crypt TA");
 
 /*
  * Note that this test is failing when
@@ -1056,6 +1011,8 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 		TEEC_CloseSession(&session1);
 	}
 }
+ADBG_CASE_DEFINE(regression, 1012, xtest_tee_test_1012,
+		"Test Single Instance Multi Session features with SIMS TA");
 
 struct test_1013_thread_arg {
 	const TEEC_UUID *uuid;
@@ -1247,6 +1204,8 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "Using large concurrency TA");
 #endif
 }
+ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
+		"Test concurency with concurrent TA");
 
 #ifdef CFG_SECURE_DATA_PATH
 static void xtest_tee_test_1014(ADBG_Case_t *c)
@@ -1284,7 +1243,9 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 	ADBG_EXPECT(c, 1, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
 }
-#endif
+ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
+		"Test secure data path against SDP TAs and pTAs");
+#endif /*CFG_SECURE_DATA_PATH*/
 
 static void xtest_tee_test_1015(ADBG_Case_t *c)
 {
@@ -1306,6 +1267,8 @@ static void xtest_tee_test_1015(ADBG_Case_t *c)
 				   NULL, &ret_orig));
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1015, xtest_tee_test_1015,
+		"FS hash-tree corner cases");
 
 static void xtest_tee_test_1016(ADBG_Case_t *c)
 {
@@ -1327,6 +1290,8 @@ static void xtest_tee_test_1016(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
+ADBG_CASE_DEFINE(regression, 1016, xtest_tee_test_1016,
+		"Test TA to TA transfers (in/out/inout memrefs on the stack)");
 
 static void xtest_tee_test_1017(ADBG_Case_t *c)
 {
@@ -1382,6 +1347,8 @@ static void xtest_tee_test_1017(ADBG_Case_t *c)
 out:
 	TEEC_ReleaseSharedMemory(&shm);
 }
+ADBG_CASE_DEFINE(regression, 1017, xtest_tee_test_1017,
+		"Test coalescing memrefs");
 
 static void xtest_tee_test_1018(ADBG_Case_t *c)
 {
@@ -1442,6 +1409,8 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 out:
 	TEEC_ReleaseSharedMemory(&shm);
 }
+ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
+		"Test memref out of bounds");
 
 #if defined(CFG_TA_DYNLINK)
 static void xtest_tee_test_1019(ADBG_Case_t *c)
@@ -1467,4 +1436,6 @@ static void xtest_tee_test_1019(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 }
-#endif
+ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
+		"Test dynamically linked TA");
+#endif /*CFG_TA_DYNLINK*/
