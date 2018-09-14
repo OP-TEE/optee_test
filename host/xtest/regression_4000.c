@@ -21,6 +21,7 @@
 #include "xtest_helpers.h"
 
 #include <tee_api_types.h>
+#include <tee_api_defines_extensions.h>
 #include <ta_crypt.h>
 #include <utee_defines.h>
 #include <util.h>
@@ -2876,6 +2877,13 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA224, TEE_MODE_VERIFY,
 			  ac_rsassa_vect16, NULL_ARRAY, WITHOUT_SALT),
 
+#ifdef CFG_CRYPTO_RSASSA_NA1
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5, TEE_MODE_SIGN,
+			  ac_rsassa_vect20, NULL_ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5, TEE_MODE_VERIFY,
+			  ac_rsassa_vect20, NULL_ARRAY, WITHOUT_SALT),
+#endif
+
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA256, TEE_MODE_SIGN,
 			  ac_rsassa_vect9, NULL_ARRAY, WITHOUT_SALT),
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA256, TEE_MODE_VERIFY,
@@ -3677,6 +3685,10 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		if (tv->mode == TEE_MODE_VERIFY || tv->mode == TEE_MODE_SIGN) {
 			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA)
 				hash_algo = TEE_ALG_SHA1;
+#if defined(CFG_CRYPTO_RSASSA_NA1)
+			else if (tv->algo == TEE_ALG_RSASSA_PKCS1_V1_5)
+				hash_algo = TEE_ALG_SHA256;
+#endif
 			else
 				hash_algo = TEE_ALG_HASH_ALGO(
 					TEE_ALG_GET_DIGEST_HASH(tv->algo));
