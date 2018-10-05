@@ -1439,3 +1439,37 @@ static void xtest_tee_test_1019(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
 		"Test dynamically linked TA");
 #endif /*CFG_TA_DYNLINK*/
+
+static void xtest_tee_test_1020(ADBG_Case_t *c)
+{
+	TEEC_Result res;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig;
+
+	/* Pseudo TA is optional: warn and nicely exit if not found */
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1020 -   skip test, pseudo TA not found");
+		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_LOCKDEP,
+				 NULL, &ret_orig);
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+		if (res == TEEC_ERROR_NOT_SUPPORTED) {
+			Do_ADBG_Log(" - 1020 -   skip test, feature not "
+				    "implemented");
+			goto out;
+		}
+		/* Error */
+		(void)ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	}
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1020, xtest_tee_test_1020,
+		"Test lockdep algorithm");
