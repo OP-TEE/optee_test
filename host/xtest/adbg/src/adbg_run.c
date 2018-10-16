@@ -238,15 +238,15 @@ static int ADBG_RunSuite(
 
 	Do_ADBG_Log("%d subtest%s of which %d failed",
 		    Runner_p->Result.NumTests,
-		    Runner_p->Result.NumTests > 1 ? "s" : "",
+		    Runner_p->Result.NumTests != 1 ? "s" : "",
 		    Runner_p->Result.NumFailedTests);
 	Do_ADBG_Log("%d test case%s of which %d failed",
 		    Runner_p->Result.NumSubCases,
-		    Runner_p->Result.NumSubCases > 1 ? "s" : "",
+		    Runner_p->Result.NumSubCases != 1 ? "s" : "",
 		    Runner_p->Result.NumFailedSubCases);
-	Do_ADBG_Log("%zu test case%s was skipped",
+	Do_ADBG_Log("%zu test case%s skipped",
 		    NumSkippedTestCases,
-		    NumSkippedTestCases > 1 ? "s" : "");
+		    NumSkippedTestCases != 1 ? "s were" : " was");
 
 	failed_test = Runner_p->Result.NumFailedSubCases;
 
