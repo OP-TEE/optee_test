@@ -210,6 +210,15 @@ patch:
 	$(q) echo "Please define CFG_GP_PACKAGE_PATH" && false
 endif
 
+.PHONY: checkpatch checkpatch-staging checkpatch-working
+checkpatch: checkpatch-staging checkpatch-working
+
+checkpatch-working:
+	@./scripts/checkpatch.sh
+
+checkpatch-staging:
+	@./scripts/checkpatch.sh --cached
+
 install:
 	$(echo) '  INSTALL ${DESTDIR}/lib/optee_armtz'
 	$(q)mkdir -p ${DESTDIR}/lib/optee_armtz
