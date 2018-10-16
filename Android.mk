@@ -65,7 +65,8 @@ $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
 	@$(LOCAL_PATH)/scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
-$(LOCAL_PATH)/host/xtest/regression_8100.c: $(TARGET_OUT_HEADERS)/$(1).h
+LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_HEADERS)/$(1).h
+
 endef
 
 $(eval $(call my-embed-file,regression_8100_ca_crt,cert/ca.crt))
@@ -107,7 +108,7 @@ endif
 ## out/target/product/hikey/optee/arm-plat-hikey/core/tee.bin
 ## it will be generated after build the optee_os with target BUILD_OPTEE_OS
 ## which is defined in the common ta build mk file included before,
-LOCAL_ADDITIONAL_DEPENDENCIES := $(OPTEE_BIN)
+LOCAL_ADDITIONAL_DEPENDENCIES += $(OPTEE_BIN)
 
 include $(BUILD_EXECUTABLE)
 
