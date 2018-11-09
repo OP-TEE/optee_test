@@ -1,4 +1,4 @@
-project (xtest-ta-headers)
+project (xtest-ta-headers C)
 
 add_library(${PROJECT_NAME} INTERFACE)
 

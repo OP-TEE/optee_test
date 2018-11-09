@@ -1,4 +1,5 @@
 cmake_minimum_required (VERSION 3.2)
+project (optee_test C)
 
 # Default cross compile settings
 set (CMAKE_TOOLCHAIN_FILE CMakeToolchain.txt)
