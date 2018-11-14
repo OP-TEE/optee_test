@@ -7,6 +7,8 @@ srcs-y += sha2_taf.c
 srcs-$(CFG_SYSTEM_PTA) += seed_rng_taf.c
 srcs-y += ta_entry.c
 srcs-$(CFG_TA_MBEDTLS) += mbedtls_taf.c
+srcs-y += arith_taf.c
+srcs-y += handle.c
 
 CRYPT_FILE_TO_C_SCRIPT = ../../scripts/file_to_c.py
 CRYPT_CA_CRT = ../../certs/ca.crt
