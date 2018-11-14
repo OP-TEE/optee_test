@@ -382,4 +382,233 @@
  * system pTA is used for adding entropy to RNG pool */
 #define TA_CRYPT_CMD_SEED_RNG_POOL 45
 
+/*
+ * Testing arithmetical interface.
+ *
+ * Coding of signed 32-bit values:
+ * a int32_t with its bit pattern stored in a 32-bit value
+ */
+
+#define TA_CRYPT_ARITH_INVALID_HANDLE	0xffffffff
+
+/*
+ * in	params[0].value.a:	Number of bits
+ * out	params[1].value.b:	Handle to bignum variable
+ */
+#define TA_CRYPT_CMD_ARITH_NEW_VAR		46
+
+/*
+ * in	params[0].value.a:	Number of bits
+ * in	params[0].value.b:	Handle to bignum variable modulus
+ * out	params[1].value.a:	Handle to FMM context
+ */
+#define TA_CRYPT_CMD_ARITH_NEW_FMM_CTX		47
+
+/*
+ * in	params[0].value.a:	Number of bits
+ * out	params[1].value.a:	Handle to FMM variable
+ */
+#define TA_CRYPT_CMD_ARITH_NEW_FMM_VAR		48
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable, FMM context, or
+ *				FMM variable
+ */
+#define TA_CRYPT_CMD_ARITH_FREE_HANDLE		49
+
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * in	params[0].value.b:	S32 representing the sign of the value
+ * in	params[1].memref:	octet string representing the value
+ */
+#define TA_CRYPT_CMD_ARITH_FROM_OCTET_STRING	50
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * in	params[0].value.b:	S32 representing the value
+ */
+#define TA_CRYPT_CMD_ARITH_FROM_S32		51
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * out	params[1].value.a:	S32 representing the sign of the value
+ * out	params[2].memref:	octet string representing the value
+ */
+#define TA_CRYPT_CMD_ARITH_GET_VALUE		52
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * out	params[1].value.a:	S32 the value
+ */
+#define TA_CRYPT_CMD_ARITH_GET_VALUE_S32	53
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * in	params[0].value.b:	Bit number
+ * out	params[1].value.a:	Bit value
+ */
+#define TA_CRYPT_CMD_ARITH_GET_BIT		54
+
+/*
+ * in	params[0].value.a:	Handle to bignum variable
+ * out	params[1].value.a:	Bit count
+ */
+#define TA_CRYPT_CMD_ARITH_GET_BIT_COUNT	55
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	number of bits
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_SHIFT_RIGHT		56
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * out	params[1].value.a:	result
+ */
+#define TA_CRYPT_CMD_ARITH_CMP			57
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	S32 shortVal
+ * out	params[1].value.a:	result
+ */
+#define TA_CRYPT_CMD_ARITH_CMP_S32		58
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle b
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_ADD			59
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle b
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_SUB			60
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle b
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_MUL			61
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_NEG			62
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_SQR			63
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle result Q
+ * in	params[1].value.b:	handle result R
+ */
+#define TA_CRYPT_CMD_ARITH_DIV			64
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	handle n
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_MOD			65
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle n
+ * in	params[1].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_ADDMOD		66
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle n
+ * in	params[1].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_SUBMOD		67
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle n
+ * in	params[1].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_MULMOD		68
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	handle n
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_SQRMOD		69
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	handle n
+ * in	params[1].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_INVMOD		70
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	handle n
+ * in	params[1].value.a:	bool result
+ */
+#define TA_CRYPT_CMD_ARITH_IS_RELATIVE_PRIME	71
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle result u
+ * in	params[1].value.b:	handle result v
+ * in	params[2].value.a:	handle result gcd
+ */
+#define TA_CRYPT_CMD_ARITH_COMPUTE_EGCD		72
+
+/*
+ * in	params[0].value.a:	handle op
+ * in	params[0].value.b:	confidence level
+ * out	params[1].value.a:	S32 result
+ */
+#define TA_CRYPT_CMD_ARITH_IS_PRIME		73
+
+/*
+ * in	params[0].value.a:	handle src
+ * in	params[0].value.b:	handle n
+ * in	params[1].value.a:	handle FMM context
+ * in	params[1].value.b:	handle result FMM variable
+ */
+#define TA_CRYPT_CMD_ARITH_TO_FMM		74
+
+/*
+ * in	params[0].value.a:	handle FMM src
+ * in	params[0].value.b:	handle bigint n
+ * in	params[1].value.a:	handle FMM context
+ * in	params[1].value.b:	handle result bigint
+ */
+#define TA_CRYPT_CMD_ARITH_FROM_FMM		75
+
+/*
+ * in	params[0].value.a:	handle FMM op1
+ * in	params[0].value.b:	handle FMM op2
+ * in	params[1].value.a:	handle bigint n
+ * in	params[1].value.b:	handle FMM context
+ * in	params[2].value.a:	handle FMM result
+ */
+#define TA_CRYPT_CMD_ARITH_COMPUTE_FMM		76
+
 #endif /*TA_CRYPT_H */
