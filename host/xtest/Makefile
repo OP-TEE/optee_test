@@ -58,6 +58,7 @@ srcs +=	adbg/src/adbg_case.c \
 	benchmark_1000.c \
 	benchmark_2000.c \
 	regression_4000.c \
+	regression_4100.c \
 	regression_5000.c \
 	regression_6000.c \
 	regression_7000.c \
