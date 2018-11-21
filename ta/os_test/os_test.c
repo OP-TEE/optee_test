@@ -24,16 +24,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <stdint.h>
-#include <setjmp.h>
-
 #include <compiler.h>
+#include <setjmp.h>
+#include <stdint.h>
+#include <string.h>
 #include <ta_crypt.h>
 #include <ta_os_test.h>
 #include <tee_internal_api_extensions.h>
 
 #include "os_test.h"
-#include "testframework.h"
 #include "test_float_subj.h"
 #include "os_test_lib.h"
 
@@ -140,7 +139,7 @@ while (true) {
 	if (res != TEE_SUCCESS)
 		return res;
 
-	if (my_strcmp(vbuf, vbuf2) != 0) {
+	if (strcmp(vbuf, vbuf2) != 0) {
 		EMSG("String of \"%s\" differs\n", nbuf);
 		return TEE_ERROR_GENERIC;
 	}
@@ -179,7 +178,7 @@ while (true) {
 	DMSG("Found \"%s\" value \"%s\"\n", nbuf, vbuf);
 
 	for (n = 0; n < num_p_attrs; n++) {
-		if (my_strcmp(nbuf, p_attrs[n].str) != 0)
+		if (strcmp(nbuf, p_attrs[n].str) != 0)
 			continue;
 
 		if (p_attrs[n].retrieved) {
@@ -270,13 +269,11 @@ while (true) {
 					nbuf, (unsigned int)res);
 					return res;
 				}
-				if (my_strcmp
-				    ("myprop.binaryblock", nbuf) == 0) {
+				if (strcmp("myprop.binaryblock", nbuf) == 0) {
 					const char exp_bin_value[] =
 					    "Hello world!";
 
-					if (bblen !=
-					    my_strlen(exp_bin_value)
+					if (bblen != strlen(exp_bin_value)
 					    ||
 					    TEE_MemCompare
 					    (exp_bin_value, bbuf,
@@ -715,9 +712,6 @@ TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 	res = test_setjmp();
 	if (res != TEE_SUCCESS)
 		return res;
-
-	/* mpa lib test bench, panics TA on failure */
-	tb_main();
 
 	return TEE_SUCCESS;
 }
