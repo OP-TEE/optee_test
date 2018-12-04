@@ -136,3 +136,15 @@ TEE_Result sims_get_counter(void *session_context, uint32_t param_types,
 
 	return TEE_SUCCESS;
 }
+
+TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
+			    TEE_Param params[4])
+{
+	(void)session_context;
+	(void)param_types;
+	(void)params;
+
+	TEE_Panic(0xbeef); /* Trigger panic to current TA */
+
+	return TEE_SUCCESS;
+}
