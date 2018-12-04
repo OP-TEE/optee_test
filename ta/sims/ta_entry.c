@@ -74,6 +74,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_SIMS_CMD_GET_COUNTER:
 		return sims_get_counter(pSessionContext, nParamTypes, pParams);
 
+	case TA_SIMS_CMD_PANIC:
+		return sims_entry_panic(pSessionContext, nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
