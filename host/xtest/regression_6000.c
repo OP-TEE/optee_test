@@ -1405,6 +1405,33 @@ seek_write_read_out:
 
 	Do_ADBG_EndSubCase(c, "Rename Access Conflict");
 
+	Do_ADBG_BeginSubCase(c, "Rename Access Conflict 2");
+
+	o1 = TEE_HANDLE_NULL;
+	o2 = TEE_HANDLE_NULL;
+	f = TEE_DATA_FLAG_ACCESS_READ | TEE_DATA_FLAG_ACCESS_WRITE |
+	    TEE_DATA_FLAG_ACCESS_WRITE_META | TEE_DATA_FLAG_SHARE_READ |
+	    TEE_DATA_FLAG_SHARE_WRITE | TEE_DATA_FLAG_OVERWRITE;
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, o1));
+
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, sizeof(file_01), f, 0, data,
+			  sizeof(data) / 2, &o2, storage_id));
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ACCESS_CONFLICT,
+		fs_rename(&sess, o2, file_00, sizeof(file_00)));
+
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, sizeof(file_00), f, 0, data,
+			  sizeof(data), &o1, storage_id));
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o1));
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, o2));
+
+	Do_ADBG_EndSubCase(c, "Rename Access Conflict 2");
+
 	Do_ADBG_BeginSubCase(c, "AllocPersistentObjectEnumerator + "
 				"ResetPersistentObjectEnumerator");
 	e = TEE_HANDLE_NULL;
