@@ -100,7 +100,7 @@ int Do_ADBG_AppendToSuite(
 		snprintf(p, size, "%s+%s", Dest_p->SuiteID_p,
 			 Source_p->SuiteID_p);
 	else
-		strncpy(p, Source_p->SuiteID_p, size);
+		snprintf(p, size, "%s", Source_p->SuiteID_p);
 	free((void *)Dest_p->SuiteID_p);
 	Dest_p->SuiteID_p = p;
 
