@@ -5018,18 +5018,28 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 				out, out_size, tmp, &tmp_size)))
 			goto out;
 
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, tmp_size, <=, sizeof(tmp)))
+			goto out;
+
 		/* 4.1 */
-		for (n = 0; n < tmp_size; n++)
+		for (n = 0; n < tmp_size - i; n++)
 			if (tmp[n] == 0xff)
 				break;
+
+		/* Shall find at least a padding start before buffer end */
+	        if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, n, <, tmp_size - i - 1))
+			goto out;
+
 		for (m = n + 1; m < tmp_size; m++)
 			if (tmp[m] != 0xff)
 				break;
+
 		/* 4.2 */
 		memmove(tmp + n + i, tmp + m, tmp_size - m);
+
 		/* 4.3 */
-		for (n = n + tmp_size - m + i; n < tmp_size; n++)
-			tmp[n] = 0;
+		n = n + i + tmp_size - m;
+		memset(tmp + n, 0, tmp_size - n);
 
 		/* 5 */
 		out_size = sizeof(out);
