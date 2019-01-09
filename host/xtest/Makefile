@@ -87,6 +87,15 @@ ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
 endif
 
+ifeq ($(CFG_PKCS11_TA),y)
+srcs += pkcs11_1000.c
+
+OPTEE_PKCS11_TA_HEADERS ?= ../../../optee_client/libckteec/include
+CFLAGS += -DCFG_PKCS11_TA
+CFLAGS += -I$(OPTEE_PKCS11_TA_HEADERS)
+LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lckteec
+endif
+
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -DWITH_GP_TESTS
 

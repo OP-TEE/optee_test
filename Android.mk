@@ -24,6 +24,10 @@ LOCAL_SHARED_LIBRARIES := libteec
 
 TA_DIR ?= /vendor/lib/optee_armtz
 
+ifeq ($(CFG_PKCS11_TA),y)
+LOCAL_SHARED_LIBRARIES += libckteec
+endif
+
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
@@ -60,6 +64,10 @@ endif
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 srcs += sdp_basic.c
+endif
+
+ifeq ($(CFG_PKCS11_TA),y)
+srcs += pkcs11_1000.c
 endif
 
 define my-embed-file
@@ -106,6 +114,10 @@ LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
 
 ifneq ($(TA_DIR),)
 LOCAL_CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
+endif
+
+ifeq ($(CFG_PKCS11_TA),y)
+LOCAL_CFLAGS += -DCFG_PKCS11_TA
 endif
 
 ## $(OPTEE_BIN) is the path of tee.bin like
