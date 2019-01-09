@@ -40,16 +40,28 @@ ADBG_SUITE_DEFINE(benchmark);
 #ifdef WITH_GP_TESTS
 ADBG_SUITE_DEFINE(gp);
 #endif
+#ifdef CFG_PKCS11_TA
+ADBG_SUITE_DEFINE(pkcs11);
+#endif
 ADBG_SUITE_DEFINE(regression);
 
 char *_device = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
+
 #ifdef WITH_GP_TESTS
-static char gsuitename[] = "regression+gp";
+#define GP_SUITE	"+gp"
 #else
-static char gsuitename[] = "regression";
+#define GP_SUITE	""
 #endif
+
+#ifdef CFG_PKCS11_TA
+#define PKCS11_SUITE	"+pkcs11"
+#else
+#define PKCS11_SUITE	""
+#endif
+
+static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE;
 
 void usage(char *program);
 
@@ -64,6 +76,9 @@ void usage(char *program)
 	printf("\t-t <test_suite>    Available test suites: regression benchmark");
 #ifdef WITH_GP_TESTS
 	printf(" gp");
+#endif
+#ifdef CFG_PKCS11_TA
+	printf(" pkcs11");
 #endif
 	printf("\n");
 	printf("\t                   To run several suites, use multiple names\n");
@@ -183,6 +198,10 @@ int main(int argc, char *argv[])
 #ifdef WITH_GP_TESTS
 		else if (!strcmp(token, "gp"))
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_gp);
+#endif
+#ifdef CFG_PKCS11_TA
+		else if (!strcmp(token, "pkcs11"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_pkcs11);
 #endif
 		else {
 			fprintf(stderr, "Unkown test suite: %s\n", token);

@@ -81,6 +81,10 @@ if (CFG_SECURE_DATA_PATH)
 	list (APPEND SRC sdp_basic.c)
 endif()
 
+if (CFG_PKCS11_TA)
+	list (APPEND SRC pkcs11_1000.c)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################
@@ -102,6 +106,7 @@ target_link_libraries (${PROJECT_NAME}
 	PRIVATE teec
 	PRIVATE m
 	PRIVATE ${OPENSSL_PRIVATE_LINK}
+	PRIVATE ckteec
 )
 
 ################################################################################
