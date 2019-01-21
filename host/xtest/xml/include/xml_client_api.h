@@ -123,11 +123,12 @@ static TEEC_UUID UUID_Unknown = {
 			   TEEC_OpenSession(context, session, destination, \
 					    connectionMethod, connectionData, \
 					    operation, &ret_orig)); \
-		if ((returnOrigin != 0) && \
-		    (returnOrigin != TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
-			ADBG_EXPECT(c, returnOrigin, ret_orig); \
+		if (((uint32_t)returnOrigin != 0) && \
+		    ((uint32_t)returnOrigin != \
+			TEEC_ORIGIN_ANY_NOT_TRUSTED_APP)) \
+			ADBG_EXPECT(c, (uint32_t)returnOrigin, ret_orig); \
 		else \
-			ADBG_EXPECT_NOT(c, returnOrigin, ret_orig); \
+			ADBG_EXPECT_NOT(c, (uint32_t)returnOrigin, ret_orig); \
 	} while (0)
 
 #define OPERATION_TEEC_PARAM_TYPES(op, p0, p1, p2, p3) \
@@ -214,14 +215,16 @@ static inline void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
 #define TEEC_checkMemoryContent_sharedMemory(op, param_num, shrm, exp_buf, \
 					     exp_blen) \
 	do { \
-		if ((exp_buf) == IGNORE) { \
+		void *exp_buf_ref = (void *)&(exp_buf); \
+		\
+		if (exp_buf_ref == &IGNORE) { \
 			ADBG_EXPECT((c), exp_blen, \
 				    (op)->params[(param_num)].memref.size); \
 		} else { \
 			ADBG_EXPECT_COMPARE_POINTER((c), (shrm), ==, \
 						    (op)->params[(param_num)].\
 							memref.parent); \
-			ADBG_EXPECT_BUFFER((c), &(exp_buf), (exp_blen), \
+			ADBG_EXPECT_BUFFER((c), exp_buf_ref, (exp_blen), \
 					   (shrm)->buffer, \
 					   (op)->params[(param_num)].\
 						memref.size); \
@@ -235,14 +238,16 @@ static inline void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
 #define TEEC_checkMemoryContent_tmpMemory(op, param_num, \
 	buf, exp_buf, exp_blen) \
 	do { \
-		if ((exp_buf) == 0) { \
+		void *exp_buf_ref = (void *)&(exp_buf); \
+		\
+		if (exp_buf_ref == &IGNORE) { \
 			ADBG_EXPECT((c), exp_blen, \
 				    (op)->params[(param_num)].tmpref.size); \
 		} else { \
 			ADBG_EXPECT_COMPARE_POINTER((c), (buf), ==, \
 						    (op)->params[(param_num)].\
 							tmpref.buffer); \
-			ADBG_EXPECT_BUFFER((c), &(exp_buf), (exp_blen), \
+			ADBG_EXPECT_BUFFER((c), exp_buf_ref, (exp_blen), \
 					   (buf), \
 					   (op)->params[(param_num)].\
 						memref.size); \
@@ -255,10 +260,13 @@ static inline void TEEC_prepare_OperationEachParameter_value(TEEC_Operation *op,
  */
 #define TEEC_checkContent_Parameter_value(op, param_num, exp_a, exp_b) \
 	do { \
-		if (IGNORE != exp_a) \
+		void *exp_a_ref = (void *)&(exp_a); \
+		void *exp_b_ref = (void *)&(exp_b); \
+		\
+		if ((void *)&IGNORE != exp_a_ref) \
 			ADBG_EXPECT((c), exp_a, \
 				    (op)->params[(param_num)].value.a); \
-		if (IGNORE != exp_b) \
+		if ((void *)&IGNORE != exp_b_ref) \
 			ADBG_EXPECT((c), exp_b, \
 				    (op)->params[(param_num)].value.b); \
 	} while (0)
@@ -309,7 +317,7 @@ static void *context_thread(void *arg)
 /*
  * Required by Global Platform test suite for v1.0
  */
-static uint32_t BIG_VALUE = 1024; /* BIG_SIZE */
+static uint8_t BIG_VALUE[1024] = { 0 }; /* BIG_SIZE */
 static uint32_t SIZE_LESSER_THAN_SIZE_VALUE01 = sizeof(VALUE01) - 1;
 
 /* "SMART-CSLT-TA-ER" */
