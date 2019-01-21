@@ -4,6 +4,7 @@ project (optee_test C)
 # Default cross compile settings
 set (CMAKE_TOOLCHAIN_FILE CMakeToolchain.txt)
 
+set (OPTEE_TEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 ################################################################################
 # Compiler flags:
 #   We want to use the same flags in the entire optee_client git
