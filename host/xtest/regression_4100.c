@@ -832,7 +832,7 @@ static TEEC_Result compare_str(ADBG_Case_t *c, TEEC_Session *s,
 			       int32_t cmp_res)
 {
 	TEEC_Result res;
-	int32_t cres;
+	int32_t cres = 0;
 	uint32_t h1 = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t h2 = TA_CRYPT_ARITH_INVALID_HANDLE;
 
@@ -866,7 +866,7 @@ static TEEC_Result compare_s32(ADBG_Case_t *c, TEEC_Session *s,
 			       int32_t cmp_res)
 {
 	TEEC_Result res;
-	int32_t cres;
+	int32_t cres = 0;
 	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
 
 	res = cmd_new_var(c, s, 512, &h);
@@ -2034,7 +2034,7 @@ static bool test_4111_invmod(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t hn = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t hc = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t hres = TA_CRYPT_ARITH_INVALID_HANDLE;
-	int32_t cres;
+	int32_t cres = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, s, 2048, &hop)))
 		goto out;
