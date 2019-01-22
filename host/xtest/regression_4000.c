@@ -3655,7 +3655,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	uint8_t out_enc[512];
 	size_t out_enc_size;
 	uint8_t ptx_hash[TEE_MAX_HASH_SIZE];
-	size_t ptx_hash_size;
+	size_t ptx_hash_size = 0;
 	size_t max_key_size;
 	size_t num_key_attrs;
 	uint32_t ret_orig;
