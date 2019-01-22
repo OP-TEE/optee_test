@@ -460,9 +460,9 @@ static TEEC_Result fs_get_obj_info(TEEC_Session *sess, uint32_t obj,
 static void test_truncate_file_length(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -529,10 +529,10 @@ exit:
 static void test_extend_file_length(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
 	uint8_t expect[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -603,10 +603,10 @@ exit:
 static void test_file_hole(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
 	uint8_t expect[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -805,7 +805,7 @@ static TEEC_Result ds_null_close_free_reset(TEEC_Session *sess)
 static void xtest_tee_test_6001_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -834,7 +834,7 @@ ADBG_CASE_DEFINE(regression, 6001, xtest_tee_test_6001,
 static void xtest_tee_test_6002_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -878,9 +878,9 @@ ADBG_CASE_DEFINE(regression, 6002, xtest_tee_test_6002,
 static void xtest_tee_test_6003_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -922,9 +922,9 @@ ADBG_CASE_DEFINE(regression, 6003, xtest_tee_test_6003,
 static void xtest_tee_test_6004_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -981,9 +981,9 @@ ADBG_CASE_DEFINE(regression, 6004, xtest_tee_test_6004,
 static void xtest_tee_test_6005_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1025,7 +1025,7 @@ ADBG_CASE_DEFINE(regression, 6005, xtest_tee_test_6005,
 static void xtest_tee_test_6006_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1077,9 +1077,9 @@ ADBG_CASE_DEFINE(regression, 6007, xtest_tee_test_6007,
 static void xtest_tee_test_6008_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1517,7 +1517,7 @@ static void xtest_tee_test_6012_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	TEEC_Session sess;
 	uint32_t orig;
-	uint32_t obj;
+	uint32_t obj = 0;
 
 	/*
 	 * create the object a first time (forced through with overwrite attribute)
@@ -1639,7 +1639,7 @@ static void xtest_tee_test_6015_single(ADBG_Case_t *c, uint32_t storage_id)
 	TEEC_Session sess;
 	TEEC_Session sess2;
 	uint32_t orig;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t obj2;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1687,9 +1687,9 @@ static void *test_6016_thread(void *arg)
 {
 	struct test_6016_thread_arg *a = arg;
 	TEEC_Session sess = a->session;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 
 	/* create */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(a->case_t,
@@ -1790,7 +1790,7 @@ static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 	TEEC_Session sess;
 	TEE_ObjectInfo obj_info1;
 	TEE_ObjectInfo obj_info2;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t orig;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1845,7 +1845,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 	TEEC_Session sess;
 	TEE_ObjectInfo obj_info1;
 	TEE_ObjectInfo obj_info2;
-	uint32_t obj;
+	uint32_t obj = 0;
 	uint32_t orig;
 	uint8_t block[32 * 1024];
 	size_t num_blocks;
@@ -1909,7 +1909,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	for (n = 0; n < num_blocks; n++) {
 		uint8_t br[block_size];
-		uint32_t count;
+		uint32_t count = 0;
 
 		memset(block, n, block_size);
 
@@ -1936,10 +1936,10 @@ static void xtest_tee_test_6019_single(ADBG_Case_t *c, uint32_t storage_id)
 	TEEC_Session sess;
 	TEEC_Session sess2;
 	uint32_t orig;
-	uint32_t obj;
-	uint32_t obj2;
+	uint32_t obj = 0;
+	uint32_t obj2 = 0;
 	uint8_t out[10] = { 0 };
-	uint32_t count;
+	uint32_t count = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig)))
@@ -2104,7 +2104,7 @@ static void xtest_tee_test_6020_single(ADBG_Case_t *c, uint32_t storage_id)
 	TEEC_Result res;
 	TEEC_Session sess;
 	uint32_t orig;
-	uint32_t obj;
+	uint32_t obj = 0;
 
 	/*
 	 * Invalid open request from the TA (object ID reference in SHM)
