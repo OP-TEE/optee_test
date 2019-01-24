@@ -426,8 +426,7 @@ TEE_Result ta_entry_copy_object_attributes(uint32_t param_type,
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CopyObjectAttributes1(dst, src);
-	return TEE_SUCCESS;
+	return TEE_CopyObjectAttributes1(dst, src);
 }
 
 TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
