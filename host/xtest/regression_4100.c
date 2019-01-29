@@ -445,21 +445,21 @@ static TEEC_Result convert_from_string(ADBG_Case_t *c, TEEC_Session *s,
 		return TEEC_ERROR_OUT_OF_MEMORY;
 
 	while (spos) {
-		spos--;
-		nibble = digit_value(str[spos]);
+		nibble = digit_value(str[spos - 1]);
 		if (nibble == -1)
 			break;
 		os[ospos] = nibble;
 
-		if (!spos)
-			break;
-		spos--;
-		nibble = digit_value(str[spos]);
-		if (nibble == -1)
-			break;
+		if (spos > 1) {
+			nibble = digit_value(str[spos - 2]);
+			if (nibble == -1)
+				break;
 
-		os[ospos] |= nibble << 4;
-		ospos--;
+			os[ospos] |= nibble << 4;
+			ospos--;
+			spos--;
+		}
+		spos--;
 	}
 
 	if (spos)
