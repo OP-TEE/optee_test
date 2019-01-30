@@ -1497,11 +1497,20 @@ struct xtest_mac_case {
 	size_t in_len;
 	const uint8_t *out;
 	size_t out_len;
+	bool multiple_incr;
 };
 
-#define XTEST_MAC_CASE(algo, key_type, key, in_incr, in, out) \
+#define XTEST_MAC_CASE_1(algo, key_type, key, in_incr, in, out) \
 	{ (algo), (key_type), (key), ARRAY_SIZE(key), \
-	  (in_incr), (in), ARRAY_SIZE(in), (out), ARRAY_SIZE(out) }
+	  (in_incr), (in), ARRAY_SIZE(in), (out), ARRAY_SIZE(out), false }
+
+#define XTEST_MAC_CASE_MULT(algo, key_type, key, in_incr, in, out) \
+	{ (algo), (key_type), (key), ARRAY_SIZE(key), \
+	  (in_incr), (in), ARRAY_SIZE(in), (out), ARRAY_SIZE(out), true }
+
+#define XTEST_MAC_CASE(algo, key_type, key, in_incr, in, out) \
+	XTEST_MAC_CASE_1((algo), (key_type), (key), (in_incr), (in), (out)), \
+	XTEST_MAC_CASE_MULT((algo), (key_type), (key), (in_incr), (in), (out))
 
 #define XTEST_MAC_CBC_CASE(algo, key_type, vect, in_incr) \
 	XTEST_MAC_CASE((algo), (key_type), \
@@ -1588,6 +1597,7 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 	for (n = 0; n < ARRAY_SIZE(mac_cases); n++) {
 		TEE_Attribute key_attr;
 		size_t key_size;
+		size_t offs;
 
 		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x",
 				     (int)n, (unsigned int)mac_cases[n].algo);
@@ -1636,11 +1646,19 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 			ta_crypt_cmd_mac_init(c, &session, op1, NULL, 0)))
 			goto out;
 
+		offs = 0;
 		if (mac_cases[n].in != NULL) {
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_mac_update(c, &session, op1,
-					mac_cases[n].in, mac_cases[n].in_incr)))
-				goto out;
+			while (offs + mac_cases[n].in_incr <
+					mac_cases[n].in_len) {
+				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+					ta_crypt_cmd_mac_update(c, &session,
+						op1, mac_cases[n].in + offs,
+						mac_cases[n].in_incr)))
+					goto out;
+				offs += mac_cases[n].in_incr;
+				if (!mac_cases[n].multiple_incr)
+					break;
+			}
 		}
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1651,8 +1669,8 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 		memset(out, 0, sizeof(out));
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_mac_final_compute(c, &session, op2,
-				mac_cases[n].in + mac_cases[n].in_incr,
-				mac_cases [n].in_len - mac_cases[n].in_incr,
+				mac_cases[n].in + offs,
+				mac_cases [n].in_len - offs,
 				out, &out_size)))
 			goto out;
 
