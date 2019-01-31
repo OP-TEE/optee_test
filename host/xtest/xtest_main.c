@@ -33,6 +33,7 @@
 /* include here shandalone tests */
 #include "crypto_common.h"
 #include "install_ta.h"
+#include "stats.h"
 
 
 ADBG_SUITE_DEFINE(benchmark);
@@ -79,6 +80,7 @@ void usage(char *program)
 #ifdef CFG_SECURE_DATA_PATH
 	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
+	printf("\t--stats [opts]     Various statistics ('-h' for usage)\n");
 	printf("\n");
 }
 
@@ -125,6 +127,8 @@ int main(int argc, char *argv[])
 	else if (argc > 1 && !strcmp(argv[1], "--sdp-basic"))
 		return sdp_basic_runner_cmd_parser(argc-1, &argv[1]);
 #endif
+	else if (argc > 1 && !strcmp(argv[1], "--stats"))
+		return stats_runner_cmd_parser(argc - 1, &argv[1]);
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
 		switch (opt) {
