@@ -99,7 +99,7 @@ static TEEC_Result run_chunk_access_test(enum storage_benchmark_cmd cmd,
 
 static void show_test_result(struct test_record records[], size_t size)
 {
-	uint i;
+	size_t i;
 
 	printf("-----------------+---------------+----------------\n");
 	printf(" Data Size (B) \t | Time (s)\t | Speed (kB/s)\t \n");
@@ -119,7 +119,7 @@ static void chunk_test(ADBG_Case_t *c, enum storage_benchmark_cmd cmd)
 {
 	uint32_t chunk_size = DEFAULT_CHUNK_SIZE;
 	struct test_record records[ARRAY_SIZE(data_size_table) - 1];
-	uint i;
+	size_t i;
 
 	for (i = 0; data_size_table[i]; i++) {
 		ADBG_EXPECT_TEEC_SUCCESS(c,
