@@ -4,6 +4,7 @@
 #include <adbg.h>
 #include <compiler.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
