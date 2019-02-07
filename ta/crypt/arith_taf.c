@@ -2,6 +2,7 @@
 /* Copyright (c) 2018, Linaro Limited */
 
 #include <arith_taf.h>
+#include <inttypes.h>
 #include <ta_crypt.h>
 #include <tee_internal_api.h>
 #include <util.h>
