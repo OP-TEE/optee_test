@@ -21,7 +21,6 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <poll.h>
-#include <sys/errno.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
