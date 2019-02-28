@@ -756,7 +756,7 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	ADBG_EXPECT_TRUE(c,
 		load_corrupt_ta(c, sizeof(struct shdr) + 32, 1)); /* sig */
 	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 3000, 1)); /* payload */
-	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 30000, 1)); /* payload */
+	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 8000, 1)); /* payload */
 	Do_ADBG_EndSubCase(c, "Load corrupt TA");
 #endif /*CFG_SECSTOR_TA_MGMT_PTA*/
 }
