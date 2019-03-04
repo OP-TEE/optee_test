@@ -1068,6 +1068,30 @@ TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4])
 	return TEE_SUCCESS;
 }
 
+TEE_Result ta_entry_null_memref(uint32_t param_types, TEE_Param params[4])
+{
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	/*
+	 * Tests how client can provide null or non-null memref parameters
+	 * param[0] expected as a 0 byte input mapped memeref.
+	 * param[1] expected as a 0 byte input not-mapped memeref.
+	 * param[2] expected as a 0 byte output mapped memeref.
+	 * param[3] expected as a 0 byte output not-mapped memeref.
+	 */
+	if (!params[0].memref.buffer || params[0].memref.size ||
+	    params[1].memref.buffer || params[1].memref.size ||
+	    !params[2].memref.buffer || params[2].memref.size ||
+	    params[3].memref.buffer || params[3].memref.size)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	return TEE_SUCCESS;
+}
+
 TEE_Result ta_entry_call_lib(uint32_t param_types,
 			     TEE_Param params[4] __unused)
 {

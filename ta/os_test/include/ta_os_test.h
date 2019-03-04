@@ -49,5 +49,6 @@
 #define TA_OS_TEST_CMD_CALL_LIB_DL          16
 #define TA_OS_TEST_CMD_CALL_LIB_DL_PANIC    17
 #define TA_OS_TEST_CMD_GET_GLOBAL_VAR       18
+#define TA_OS_TEST_CMD_NULL_MEMREF_PARAMS   19
 
 #endif /*TA_OS_TEST_H */
