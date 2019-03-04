@@ -109,6 +109,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_PARAMS:
 		return ta_entry_params(nParamTypes, pParams);
 
+	case TA_OS_TEST_CMD_NULL_MEMREF_PARAMS:
+		return ta_entry_null_memref(nParamTypes, pParams);
+
 	case TA_OS_TEST_CMD_CALL_LIB:
 		return ta_entry_call_lib(nParamTypes, pParams);
 

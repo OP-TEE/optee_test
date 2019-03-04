@@ -1909,3 +1909,77 @@ static void xtest_tee_test_1024(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1024, xtest_tee_test_1024,
 		 "Test PTA_SYSTEM_GET_TPM_EVENT_LOG Service");
 #endif /* CFG_CORE_TPM_EVENT_LOG */
+
+static void xtest_tee_test_1025(ADBG_Case_t *c)
+{
+	TEEC_Session session = {};
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint8_t *empty_buf = NULL;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				      xtest_teec_open_session(&session,
+							      &os_test_ta_uuid,
+							      NULL, &ret_orig)))
+		return;
+
+	empty_buf = malloc(1);
+	if (!empty_buf) {
+		(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_ERROR_OUT_OF_MEMORY);
+		goto out;
+	}
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT);
+
+	Do_ADBG_BeginSubCase(c,
+			     "Input/Output MEMREF Buffer NULL - Size 0 bytes");
+
+	op.params[0].tmpref.buffer = empty_buf;
+	op.params[0].tmpref.size = 0;
+
+	op.params[1].tmpref.buffer = NULL;
+	op.params[1].tmpref.size = 0;
+
+	op.params[2].tmpref.buffer = empty_buf;
+	op.params[2].tmpref.size = 0;
+
+	op.params[3].tmpref.buffer = NULL;
+	op.params[3].tmpref.size = 0;
+
+	ADBG_EXPECT(c, TEE_SUCCESS,
+		    TEEC_InvokeCommand(&session,
+				       TA_OS_TEST_CMD_NULL_MEMREF_PARAMS, &op,
+				       &ret_orig));
+
+	Do_ADBG_EndSubCase(c, "Input/Output MEMREF Buffer NULL - Size 0 bytes");
+
+	Do_ADBG_BeginSubCase(c, "Input MEMREF Buffer NULL - Size non 0 bytes");
+
+	op.params[0].tmpref.buffer = empty_buf;
+	op.params[0].tmpref.size = 1;
+
+	op.params[1].tmpref.buffer = NULL;
+	op.params[1].tmpref.size = 0;
+
+	op.params[2].tmpref.buffer = empty_buf;
+	op.params[2].tmpref.size = 0;
+
+	op.params[3].tmpref.buffer = NULL;
+	op.params[3].tmpref.size = 0;
+
+	ADBG_EXPECT(c, TEE_ERROR_BAD_PARAMETERS,
+		    TEEC_InvokeCommand(&session,
+				       TA_OS_TEST_CMD_NULL_MEMREF_PARAMS, &op,
+				       &ret_orig));
+
+	Do_ADBG_EndSubCase(c, "Input MEMREF Buffer NULL - Size non 0 bytes");
+
+out:
+	TEEC_CloseSession(&session);
+	free(empty_buf);
+}
+ADBG_CASE_DEFINE(regression, 1025, xtest_tee_test_1025,
+		 "Test memref NULL and/or 0 bytes size");
