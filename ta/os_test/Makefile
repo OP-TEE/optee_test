@@ -10,4 +10,6 @@ ifeq ($(CFG_TA_DYNLINK),y)
 LDADD = -L$(subst os_test,os_test_lib,$(abspath $(link-out-dir))) -los_test
 endif
 
+LDADD += -ldl
+
 include ../ta_common.mk

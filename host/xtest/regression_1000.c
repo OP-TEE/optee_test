@@ -1717,3 +1717,29 @@ static void xtest_tee_test_1021(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1021, xtest_tee_test_1021,
 		 "Test panic context release");
+
+static void xtest_tee_test_1022(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+				NULL, &ret_orig)))
+		return;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CALL_LIB_DL, NULL,
+				   &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+		TEEC_ERROR_TARGET_DEAD,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CALL_LIB_DL_PANIC,
+				   NULL, &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1022, xtest_tee_test_1022,
+		"Test dlopen()/dlsym()/dlclose() API");
