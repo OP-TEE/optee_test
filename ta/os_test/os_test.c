@@ -36,6 +36,10 @@
 #include "test_float_subj.h"
 #include "os_test_lib.h"
 
+#ifdef CFG_TA_DL
+#include <dlfcn.h>
+#endif
+
 enum p_type {
 	P_TYPE_BOOL,
 	P_TYPE_INT,
@@ -1087,4 +1091,80 @@ TEE_Result ta_entry_call_lib_panic(uint32_t param_types,
 	os_test_shlib_panic();
 
 	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
+				TEE_Param params[4] __unused)
+{
+#ifdef CFG_TA_DL
+	int (*add_func)(int a, int b) = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	void *handle = NULL;
+	void *this_func = NULL;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
+			RTLD_NOW | RTLD_GLOBAL);
+	if (!handle)
+		return res;
+
+	add_func = dlsym(handle, "os_test_shlib_dl_add");
+	if (!add_func)
+		goto err;
+	if (add_func(3, 4) != 7)
+		goto err;
+
+	add_func = dlsym(NULL, "os_test_shlib_dl_add");
+	if (!add_func)
+		goto err;
+	if (add_func(5, 6) != 11)
+		goto err;
+
+	this_func = dlsym(NULL, "ta_entry_call_lib_dl");
+	if (this_func != (void *)ta_entry_call_lib_dl)
+		goto err;
+
+	res = TEE_SUCCESS;
+err:
+	dlclose(handle);
+	return res;
+#else
+	return TEE_ERROR_NOT_IMPLEMENTED;
+#endif
+}
+
+TEE_Result ta_entry_call_lib_dl_panic(uint32_t param_types __maybe_unused,
+				      TEE_Param params[4] __unused)
+{
+#ifdef CFG_TA_DL
+	int (*panic_func)(void) = NULL;
+	void *handle = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
+			RTLD_NOW | RTLD_GLOBAL);
+	if (!handle)
+		return res;
+	panic_func = dlsym(handle, "os_test_shlib_dl_panic");
+	if (!panic_func)
+		goto err;
+	panic_func();
+	return TEE_ERROR_GENERIC;
+err:
+	dlclose(handle);
+	return res;
+#else
+	return TEE_ERROR_NOT_IMPLEMENTED;
+#endif
 }

@@ -44,5 +44,7 @@ TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types,
 TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_call_lib(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_call_lib_panic(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_entry_call_lib_dl(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_entry_call_lib_dl_panic(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*OS_TEST_H */

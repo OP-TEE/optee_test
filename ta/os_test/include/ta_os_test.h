@@ -46,5 +46,7 @@
 #define TA_OS_TEST_CMD_PARAMS               13
 #define TA_OS_TEST_CMD_CALL_LIB             14
 #define TA_OS_TEST_CMD_CALL_LIB_PANIC       15
+#define TA_OS_TEST_CMD_CALL_LIB_DL          16
+#define TA_OS_TEST_CMD_CALL_LIB_DL_PANIC    17
 
 #endif /*TA_OS_TEST_H */

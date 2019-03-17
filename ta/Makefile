@@ -18,9 +18,14 @@ ifeq ($(CFG_TA_DYNLINK),y)
 OS_TEST_LIB := os_test_lib
 endif
 
+ifeq ($(CFG_TA_DL),y)
+OS_TEST_LIB_DL := os_test_lib_dl
+endif
+
 TA_DIRS := create_fail_test \
 	   crypt \
 	   $(OS_TEST_LIB) \
+	   $(OS_TEST_LIB_DL) \
 	   os_test \
 	   rpc_test \
 	   sims \
