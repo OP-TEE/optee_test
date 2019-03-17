@@ -25,6 +25,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <compiler.h>
+#include <dlfcn.h>
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
@@ -1085,4 +1086,76 @@ TEE_Result ta_entry_call_lib_panic(uint32_t param_types,
 	os_test_shlib_panic();
 
 	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
+				TEE_Param params[4] __unused)
+{
+	int (*add_func)(int a, int b) = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	void *handle = NULL;
+	void *hnull = NULL;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
+			RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+	if (!handle)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	add_func = dlsym(handle, "os_test_shlib_dl_add");
+	if (!add_func)
+		goto err;
+	if (add_func(3, 4) != 7)
+		goto err;
+
+	hnull = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+	if (!hnull) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto err;
+	}
+
+	add_func = dlsym(hnull, "os_test_shlib_dl_add");
+	if (!add_func)
+		goto err;
+	if (add_func(5, 6) != 11)
+		goto err;
+
+	res = TEE_SUCCESS;
+	dlclose(hnull);
+err:
+	dlclose(handle);
+	return res;
+}
+
+TEE_Result ta_entry_call_lib_dl_panic(uint32_t param_types __maybe_unused,
+				      TEE_Param params[4] __unused)
+{
+	int (*panic_func)(void) = NULL;
+	void *handle = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
+			RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+	if (!handle)
+		return res;
+
+	panic_func = dlsym(handle, "os_test_shlib_dl_panic");
+	if (!panic_func)
+		goto err;
+	panic_func();
+	return TEE_ERROR_GENERIC;
+err:
+	dlclose(handle);
+	return res;
 }
