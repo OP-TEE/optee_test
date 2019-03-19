@@ -20,3 +20,25 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE socket/include
 	INTERFACE storage_benchmark/include
 )
+
+project (xtest-tas)
+
+set_directory_properties(
+	PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${CMAKE_CURRENT_SOURCE_DIR}/out"
+	)
+
+add_custom_target (
+	build-tas ALL
+	)
+
+add_custom_command (
+	TARGET build-tas
+	COMMAND make -f Makefile.tas O=${CMAKE_CURRENT_SOURCE_DIR}/out TA_DEV_KIT_DIR=${OPTEE_TEST_SDK} all
+	COMMENT "Compiling xtest Trusted Applications"
+	VERBATIM
+	)
+
+install (
+	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/out/ta-binaries/ DESTINATION /lib/optee_armtz
+	PATTERN "ta-binaries/*"
+	)
