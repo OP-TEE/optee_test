@@ -1100,7 +1100,6 @@ TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
 	int (*add_func)(int a, int b) = NULL;
 	TEE_Result res = TEE_ERROR_GENERIC;
 	void *handle = NULL;
-	void *this_func = NULL;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
 					   TEE_PARAM_TYPE_NONE,
@@ -1123,10 +1122,6 @@ TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
 	if (!add_func)
 		goto err;
 	if (add_func(5, 6) != 11)
-		goto err;
-
-	this_func = dlsym(NULL, "ta_entry_call_lib_dl");
-	if (this_func != (void *)ta_entry_call_lib_dl)
 		goto err;
 
 	res = TEE_SUCCESS;
