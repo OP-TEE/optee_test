@@ -25,9 +25,9 @@ void handle_db_destroy(struct handle_db *db)
 
 int handle_get(struct handle_db *db, void *ptr)
 {
-	size_t n;
-	void *p;
-	size_t new_max_ptrs;
+	size_t n = 0;
+	void *p = NULL;
+	size_t new_max_ptrs = 0;
 
 	if (!db || !ptr)
 		return -1;
@@ -60,7 +60,7 @@ int handle_get(struct handle_db *db, void *ptr)
 
 void *handle_put(struct handle_db *db, int handle)
 {
-	void *p;
+	void *p = NULL;
 
 	if (!db || handle < 0 || (size_t)handle >= db->max_ptrs)
 		return NULL;

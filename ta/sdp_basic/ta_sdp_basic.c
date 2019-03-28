@@ -45,7 +45,7 @@
 static TEE_Result cmd_inject(uint32_t types,
 			     TEE_Param params[TEE_NUM_PARAMS])
 {
-	TEE_Result rc;
+	TEE_Result rc = TEE_ERROR_GENERIC;
 	const int sec_idx = 1;		/* highlight secure buffer index */
 	const int ns_idx = 0;		/* highlight nonsecure buffer index */
 
@@ -128,9 +128,9 @@ static TEE_Result cmd_inject(uint32_t types,
 static TEE_Result cmd_transform(uint32_t types,
 				TEE_Param params[TEE_NUM_PARAMS])
 {
-	TEE_Result rc;
-	unsigned char *p;
-	size_t sz;
+	TEE_Result rc = TEE_ERROR_GENERIC;
+	unsigned char *p = NULL;
+	size_t sz = 0;
 
 	if (types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 				     TEE_PARAM_TYPE_NONE,
@@ -198,7 +198,7 @@ static TEE_Result cmd_transform(uint32_t types,
 static TEE_Result cmd_dump(uint32_t types,
 			   TEE_Param params[TEE_NUM_PARAMS])
 {
-	TEE_Result rc;
+	TEE_Result rc = TEE_ERROR_GENERIC;
 	const int sec_idx = 0;		/* highlight secure buffer index */
 	const int ns_idx = 1;		/* highlight nonsecure buffer index */
 
@@ -270,8 +270,8 @@ static TEE_Result cmd_invoke(uint32_t nParamTypes,
 {
         const TEE_UUID uuid = TA_SDP_BASIC_UUID;
         static TEE_TASessionHandle sess = TEE_HANDLE_NULL;
-        uint32_t ret_orig;
-        TEE_Result res;
+        uint32_t ret_orig = 0;
+        TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (sess == TEE_HANDLE_NULL) {
 	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);
@@ -302,8 +302,8 @@ static TEE_Result cmd_invoke_pta(uint32_t nParamTypes,
 {
         const TEE_UUID uuid = PTA_INVOKE_TESTS_UUID;
         static TEE_TASessionHandle sess = TEE_HANDLE_NULL;
-        uint32_t ret_orig;
-        TEE_Result res;
+        uint32_t ret_orig = 0;
+        TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (sess == TEE_HANDLE_NULL) {
 	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);

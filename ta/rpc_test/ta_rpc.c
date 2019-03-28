@@ -37,17 +37,14 @@ static TEE_UUID cryp_uuid = TA_CRYPT_UUID;
 static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
 				TEE_Param pParams[4], uint32_t cmd)
 {
-	TEE_TASessionHandle cryp_session;
-	TEE_Result res;
-	uint32_t origin;
-	TEE_Param params[4];
-	size_t n;
-
+	TEE_TASessionHandle cryp_session = TEE_HANDLE_NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t origin = 0;
+	TEE_Param params[4] = { };
+	size_t n = 0;
 	uint32_t types =
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE,
 			    TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE);
-
-	TEE_MemFill(params, 0, sizeof(TEE_Param) * 4);
 
 	res = TEE_OpenTASession(&cryp_uuid, 0, types, params, &cryp_session,
 				&origin);
@@ -156,14 +153,14 @@ TEE_Result rpc_aes256ecb_decrypt(bool sec_mem, uint32_t nParamTypes,
 TEE_Result rpc_open(void *session_context, uint32_t param_types,
 		    TEE_Param params[4])
 {
-	TEE_TASessionHandle session;
-	uint32_t orig;
-	TEE_Result res;
+	TEE_TASessionHandle session = TEE_HANDLE_NULL;
+	uint32_t orig = 0;
+	TEE_Result res = TEE_ERROR_GENERIC;
 	TEE_UUID uuid = TA_SIMS_TEST_UUID;
 	uint32_t types =
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
 			    TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE);
-	TEE_Param par[4];
+	TEE_Param par[4] = { };
 
 	(void)session_context;
 	(void)param_types;

@@ -34,7 +34,6 @@
 
 #include "tb_macros.h"
 #include "tb_asserts.h"
-#include "mpa.h"
 
 /* define the max size of generated numbers */
 /* this is number of hex chars in the number */
@@ -61,8 +60,6 @@ void tb_gcd(void);
 void tb_modulus(void);
 void tb_fmm(void);
 void tb_prime(void);
-
-extern mpa_scratch_mem mempool;
 
 int TEE_BigIntConvertFromString(TEE_BigInt *dest, const char *src);
 char *TEE_BigIntConvertToString(char *dest, int mode, const TEE_BigInt *src);

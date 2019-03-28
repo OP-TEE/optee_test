@@ -11,8 +11,8 @@ TEE_Result seed_rng_pool(uint32_t param_types, TEE_Param params[4])
 {
 	static const TEE_UUID system_uuid = PTA_SYSTEM_UUID;
 	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
-	TEE_Result res;
-	uint32_t ret_orig;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -37,7 +37,6 @@ TEE_Result seed_rng_pool(uint32_t param_types, TEE_Param params[4])
 		EMSG("TEE_InvokeTACommand failed");
 		goto cleanup_return;
 	}
-
 
 cleanup_return:
 	TEE_CloseTASession(sess);

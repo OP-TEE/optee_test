@@ -41,8 +41,8 @@ extern const void *ta_head;
 
 TEE_Result ta_entry_allocate_operation(uint32_t param_type, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_OperationHandle op;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INOUT,
@@ -167,8 +167,8 @@ TEE_Result ta_entry_digest_do_final(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_cipher_init(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	void *buffer;
-	size_t size;
+	void *buffer = NULL;
+	size_t size = 0;
 
 	if (param_type == TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 					  TEE_PARAM_TYPE_NONE,
@@ -220,8 +220,8 @@ TEE_Result ta_entry_cipher_do_final(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_mac_init(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	void *buffer;
-	size_t size;
+	void *buffer = NULL;
+	size_t size = 0;
 
 	if (param_type == TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 					  TEE_PARAM_TYPE_NONE,
@@ -286,8 +286,8 @@ TEE_Result ta_entry_mac_final_compare(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_allocate_transient_object(uint32_t param_type,
 					      TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectHandle o;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -338,7 +338,7 @@ static TEE_Result unpack_attrs(const uint8_t *buf, size_t blen,
 {
 	TEE_Result res = TEE_SUCCESS;
 	TEE_Attribute *a = NULL;
-	const struct attr_packed *ap;
+	const struct attr_packed *ap = NULL;
 	size_t num_attrs = 0;
 	const size_t num_attrs_size = sizeof(uint32_t);
 
@@ -396,9 +396,9 @@ out:
 TEE_Result ta_entry_populate_transient_object(uint32_t param_type,
 					      TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
@@ -432,9 +432,9 @@ TEE_Result ta_entry_copy_object_attributes(uint32_t param_type,
 TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -454,9 +454,9 @@ TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_asymmetric_encrypt(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -479,9 +479,9 @@ TEE_Result ta_entry_asymmetric_encrypt(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_asymmetric_decrypt(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -505,9 +505,9 @@ TEE_Result ta_entry_asymmetric_sign_digest(uint32_t param_type,
 					   TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -531,9 +531,9 @@ TEE_Result ta_entry_asymmetric_verify_digest(uint32_t param_type,
 					     TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -557,9 +557,9 @@ TEE_Result ta_entry_derive_key(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
 	TEE_ObjectHandle key = VAL2HANDLE(params[0].value.b);
-	TEE_Result res;
-	TEE_Attribute *attrs;
-	uint32_t attr_count;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Attribute *attrs = NULL;
+	uint32_t attr_count = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -630,7 +630,7 @@ TEE_Result ta_entry_ae_update(uint32_t param_type, TEE_Param params[4])
 TEE_Result ta_entry_ae_encrypt_final(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = VAL2HANDLE(params[0].value.a);
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,

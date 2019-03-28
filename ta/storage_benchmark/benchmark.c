@@ -45,7 +45,7 @@ static uint8_t filename[] = "BenchmarkTestFile";
 
 static void fill_buffer(uint8_t *buf, size_t size)
 {
-	size_t i;
+	size_t i = 0;
 
 	if (!buf)
 		return;
@@ -56,7 +56,7 @@ static void fill_buffer(uint8_t *buf, size_t size)
 
 static TEE_Result verify_buffer(uint8_t *buf, size_t size)
 {
-	size_t i;
+	size_t i = 0;
 
 	if (!buf)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -87,7 +87,7 @@ static TEE_Result prepare_test_file(size_t data_size, uint8_t *chunk_buf,
 {
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
-	TEE_ObjectHandle object;
+	TEE_ObjectHandle object = TEE_HANDLE_NULL;
 
 	res = TEE_CreatePersistentObject(TEE_STORAGE_PRIVATE,
 			filename, sizeof(filename),
@@ -103,7 +103,7 @@ static TEE_Result prepare_test_file(size_t data_size, uint8_t *chunk_buf,
 	}
 
 	while (remain_bytes) {
-		size_t write_size;
+		size_t write_size = 0;
 
 		if (remain_bytes < chunk_size)
 			write_size = remain_bytes;
@@ -126,14 +126,15 @@ static TEE_Result test_write(TEE_ObjectHandle object, size_t data_size,
 		uint8_t *chunk_buf, size_t chunk_size,
 		uint32_t *spent_time_in_ms)
 {
-	TEE_Time start_time, stop_time;
+	TEE_Time start_time = { };
+	TEE_Time stop_time = { };
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
 
 	TEE_GetSystemTime(&start_time);
 
 	while (remain_bytes) {
-		size_t write_size;
+		size_t write_size = 0;
 
 		DMSG("Write data, remain bytes: %zu", remain_bytes);
 		if (chunk_size > remain_bytes)
@@ -165,7 +166,8 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 		uint8_t *chunk_buf, size_t chunk_size,
 		uint32_t *spent_time_in_ms)
 {
-	TEE_Time start_time, stop_time;
+	TEE_Time start_time = { };
+	TEE_Time stop_time = { };
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
 	uint32_t read_bytes = 0;
@@ -173,7 +175,7 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 	TEE_GetSystemTime(&start_time);
 
 	while (remain_bytes) {
-		size_t read_size;
+		size_t read_size = 0;
 
 		DMSG("Read data, remain bytes: %zu", remain_bytes);
 		if (remain_bytes < chunk_size)
@@ -207,7 +209,8 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 		uint8_t *chunk_buf, size_t chunk_size,
 		uint32_t *spent_time_in_ms)
 {
-	TEE_Time start_time, stop_time;
+	TEE_Time start_time = { };
+	TEE_Time stop_time = { };
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
 	uint32_t read_bytes = 0;
@@ -215,8 +218,8 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 	TEE_GetSystemTime(&start_time);
 
 	while (remain_bytes) {
-		size_t write_size;
-		int32_t negative_chunk_size;
+		size_t write_size = 0;
+		int32_t negative_chunk_size = 0;
 
 		if (remain_bytes < chunk_size)
 			write_size = remain_bytes;
@@ -272,7 +275,7 @@ exit:
 static TEE_Result verify_file_data(TEE_ObjectHandle object, size_t data_size,
 		uint8_t *chunk_buf, size_t chunk_size)
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 	size_t tmp_data_size = data_size;
 
 	res = TEE_SeekObjectData(object, 0, TEE_DATA_SEEK_SET);
@@ -316,13 +319,13 @@ exit:
 static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 		uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	size_t data_size;
-	size_t chunk_size;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	size_t data_size = 0;
+	size_t chunk_size = 0;
 	TEE_ObjectHandle object = TEE_HANDLE_NULL;
-	uint8_t *chunk_buf;
+	uint8_t *chunk_buf = NULL;
 	uint32_t *spent_time_in_ms = &params[2].value.a;
-	bool do_verify;
+	bool do_verify = false;
 
 	ASSERT_PARAM_TYPE(param_types, TEE_PARAM_TYPES(
 					TEE_PARAM_TYPE_VALUE_INPUT,
@@ -411,7 +414,7 @@ exit:
 TEE_Result ta_storage_benchmark_cmd_handler(uint32_t nCommandID,
 		uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	switch (nCommandID) {
 	case TA_STORAGE_BENCHMARK_CMD_TEST_READ:

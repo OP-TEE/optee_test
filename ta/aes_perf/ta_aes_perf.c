@@ -52,7 +52,7 @@ static uint32_t algo;
 
 static bool is_inbuf_a_secure_memref(TEE_Param *param)
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	/*
 	 * Check secure attribute for the referenced buffer
@@ -69,7 +69,7 @@ static bool is_inbuf_a_secure_memref(TEE_Param *param)
 
 static bool is_outbuf_a_secure_memref(TEE_Param *param)
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	/*
 	 * Check secure attribute for the referenced buffer
@@ -87,7 +87,7 @@ static bool is_outbuf_a_secure_memref(TEE_Param *param)
 #if defined(CFG_CACHE_API)
 static TEE_Result flush_memref_buffer(TEE_Param *param)
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	res = TEE_CacheFlush(param->memref.buffer,
 			     param->memref.size);
@@ -105,20 +105,21 @@ TEE_Result cmd_process(uint32_t param_types,
 		       TEE_Param params[TEE_NUM_PARAMS],
 		       bool use_sdp)
 {
-	TEE_Result res;
-	int n;
-	int unit;
-	void *in, *out;
-	uint32_t insz;
-	uint32_t outsz;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	int n = 0;
+	int unit = 0;
+	void *in = NULL;
+	void *out = NULL;
+	uint32_t insz = 0;
+	uint32_t outsz = 0;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 						   TEE_PARAM_TYPE_MEMREF_INOUT,
 						   TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE);
-	bool secure_in;
+	bool secure_in = false;
 	bool secure_out = false;
 	TEE_Result (*do_update)(TEE_OperationHandle, const void *, uint32_t,
-				void *, uint32_t *);
+				void *, uint32_t *) = NULL;
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -165,7 +166,7 @@ TEE_Result cmd_process(uint32_t param_types,
 		do_update = TEE_CipherUpdate;
 
 	while (n--) {
-		uint32_t i;
+		uint32_t i = 0;
 		for (i = 0; i < insz / unit; i++) {
 			res = do_update(crypto_op, in, unit, out, &outsz);
 			CHECK(res, "TEE_CipherUpdate/TEE_AEUpdate", return res;);
@@ -189,15 +190,15 @@ TEE_Result cmd_process(uint32_t param_types,
 
 TEE_Result cmd_prepare_key(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectHandle hkey;
-	TEE_ObjectHandle hkey2;
-	TEE_Attribute attr;
-	uint32_t mode;
-	uint32_t op_keysize;
-	uint32_t keysize;
-	const uint8_t *ivp;
-	size_t ivlen;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle hkey = TEE_HANDLE_NULL;
+	TEE_ObjectHandle hkey2 = TEE_HANDLE_NULL;
+	TEE_Attribute attr = { };
+	uint32_t mode = 0;
+	uint32_t op_keysize = 0;
+	uint32_t keysize = 0;
+	const uint8_t *ivp = NULL;
+	size_t ivlen = 0;
 	static uint8_t aes_key[] = { 0x00, 0x01, 0x02, 0x03,
 				     0x04, 0x05, 0x06, 0x07,
 				     0x08, 0x09, 0x0A, 0x0B,
@@ -214,11 +215,11 @@ TEE_Result cmd_prepare_key(uint32_t param_types, TEE_Param params[4])
 				      0x34, 0x35, 0x36, 0x37,
 				      0x38, 0x39, 0x3A, 0x3B,
 				      0x3C, 0x3D, 0x3E, 0x3F };
-
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE);
+
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 

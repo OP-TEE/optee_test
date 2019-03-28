@@ -41,13 +41,13 @@ unsigned long rk[RKLENGTH(AES_256)];
 
 TEE_Result ta_entry_aes256ecb_encrypt(uint32_t param_types, TEE_Param params[4])
 {
-	size_t n_input_blocks;
-	size_t i;
+	size_t n_input_blocks = 0;
+	size_t i = 0;
 
-/*
- * It is expected that memRef[0] is input buffer and memRef[1] is
- * output buffer.
- */
+	/*
+	 * It is expected that memRef[0] is input buffer and memRef[1] is
+	 * output buffer.
+	 */
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
@@ -55,15 +55,15 @@ TEE_Result ta_entry_aes256ecb_encrypt(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
-/* Check that input buffer is whole mult. of block size, in bits */
+	/* Check that input buffer is whole mult. of block size, in bits */
 	if ((params[0].memref.size << 8) % AES_BLOCK_SIZE != 0)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-/* Check that output buffer is whole mult. of block size, in bits */
+	/* Check that output buffer is whole mult. of block size, in bits */
 	if ((params[1].memref.size << 8) % AES_BLOCK_SIZE != 0)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-/* Set up for encryption */
+	/* Set up for encryption */
 	(void)rijndaelSetupEncrypt(rk, key, AES_256);
 
 	n_input_blocks = params[0].memref.size / (AES_BLOCK_SIZE / 8);
@@ -82,13 +82,13 @@ TEE_Result ta_entry_aes256ecb_encrypt(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_entry_aes256ecb_decrypt(uint32_t param_types, TEE_Param params[4])
 {
-	size_t n_input_blocks;
-	size_t i;
+	size_t n_input_blocks = 0;
+	size_t i = 0;
 
-/*
- * It is expected that memRef[0] is input buffer and memRef[1] is
- * output buffer.
- */
+	/*
+	 * It is expected that memRef[0] is input buffer and memRef[1] is
+	 * output buffer.
+	 */
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
@@ -96,15 +96,15 @@ TEE_Result ta_entry_aes256ecb_decrypt(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
-/* Check that input buffer is whole mult. of block size, in bits */
+	/* Check that input buffer is whole mult. of block size, in bits */
 	if ((params[0].memref.size << 8) % AES_BLOCK_SIZE != 0)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-/* Check that output buffer is whole mult. of block size, in bits */
+	/* Check that output buffer is whole mult. of block size, in bits */
 	if ((params[1].memref.size << 8) % AES_BLOCK_SIZE != 0)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-/* Set up for decryption */
+	/* Set up for decryption */
 	(void)rijndaelSetupDecrypt(rk, key, AES_256);
 
 	n_input_blocks = params[0].memref.size / (AES_BLOCK_SIZE / 8);

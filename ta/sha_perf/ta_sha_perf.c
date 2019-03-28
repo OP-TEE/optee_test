@@ -44,12 +44,13 @@ static TEE_OperationHandle digest_op = NULL;
 
 TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	int n;
-	void *in, *out;
-	uint32_t insz;
-	uint32_t outsz;
-	uint32_t offset;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	int n = 0;
+	void *in = NULL;
+	void *out = NULL;
+	uint32_t insz = 0;
+	uint32_t outsz = 0;
+	uint32_t offset = 0;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 						   TEE_PARAM_TYPE_MEMREF_OUTPUT,
 						   TEE_PARAM_TYPE_VALUE_INPUT,
@@ -74,13 +75,13 @@ TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result cmd_prepare_op(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	uint32_t algo;
-
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t algo = 0;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE);
+
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 

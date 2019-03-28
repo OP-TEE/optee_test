@@ -65,9 +65,9 @@ struct sock_handle {
 
 static TEE_Result ta_entry_tcp_open(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	struct sock_handle h;
-	TEE_tcpSocket_Setup setup;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	struct sock_handle h = { };
+	TEE_tcpSocket_Setup setup = { };
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 				TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -104,9 +104,9 @@ static TEE_Result ta_entry_tcp_open(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_udp_open(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	struct sock_handle h;
-	TEE_udpSocket_Setup setup;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	struct sock_handle h = { };
+	TEE_udpSocket_Setup setup = { };
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 				TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -143,7 +143,7 @@ static TEE_Result ta_entry_udp_open(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_close(uint32_t param_types, TEE_Param params[4])
 {
-	struct sock_handle *h;
+	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE,
@@ -164,7 +164,7 @@ static TEE_Result ta_entry_close(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_send(uint32_t param_types, TEE_Param params[4])
 {
-	struct sock_handle *h;
+	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -188,7 +188,7 @@ static TEE_Result ta_entry_send(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_recv(uint32_t param_types, TEE_Param params[4])
 {
-	struct sock_handle *h;
+	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_MEMREF_OUTPUT,
@@ -211,7 +211,7 @@ static TEE_Result ta_entry_recv(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_error(uint32_t param_types, TEE_Param params[4])
 {
-	struct sock_handle *h;
+	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_VALUE_OUTPUT,
@@ -234,7 +234,7 @@ static TEE_Result ta_entry_error(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_ioctl(uint32_t param_types, TEE_Param params[4])
 {
-	struct sock_handle *h;
+	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_MEMREF_INOUT,

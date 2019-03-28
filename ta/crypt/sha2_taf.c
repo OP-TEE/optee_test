@@ -30,10 +30,10 @@
 
 TEE_Result ta_entry_sha224(uint32_t param_types, TEE_Param params[4])
 {
-/*
- * It is expected that memRef[0] is input buffer and memRef[1] is
- * output buffer.
- */
+	/*
+	 * It is expected that memRef[0] is input buffer and memRef[1] is
+	 * output buffer.
+	 */
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
@@ -53,10 +53,10 @@ TEE_Result ta_entry_sha224(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_entry_sha256(uint32_t param_types, TEE_Param params[4])
 {
-/*
- * It is expected that memRef[0] is input buffer and memRef[1] is
- * output buffer.
- */
+	/*
+	 * It is expected that memRef[0] is input buffer and memRef[1] is
+	 * output buffer.
+	 */
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,

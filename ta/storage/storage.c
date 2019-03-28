@@ -42,9 +42,9 @@ do { \
 TEE_Result ta_storage_cmd_open(uint32_t command,
 				uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectHandle o;
-	void *object_id;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
+	void *object_id = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -83,10 +83,10 @@ TEE_Result ta_storage_cmd_open(uint32_t command,
 TEE_Result ta_storage_cmd_create(uint32_t command,
 				 uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectHandle o;
-	void *object_id;
-	TEE_ObjectHandle ref_handle;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
+	void *object_id = NULL;
+	TEE_ObjectHandle ref_handle = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -130,8 +130,8 @@ TEE_Result ta_storage_cmd_create_overwrite(uint32_t command,
 					   uint32_t param_types,
 					   TEE_Param params[4])
 {
-	TEE_Result res;
-	void *object_id;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	void *object_id = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -205,10 +205,10 @@ TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 	TEE_ObjectInfo info;
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
-	int32_t offs;
+	int32_t offs = 0;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -243,8 +243,8 @@ TEE_Result ta_storage_cmd_rename(uint32_t command, uint32_t param_types,
 				 TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
-	void *object_id;
-	TEE_Result res;
+	void *object_id = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -288,8 +288,8 @@ TEE_Result ta_storage_cmd_trunc(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_storage_cmd_alloc_enum(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectEnumHandle oe;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectEnumHandle oe = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
@@ -338,7 +338,7 @@ TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4])
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
-	TEE_ObjectInfo *obj;
+	TEE_ObjectInfo *obj = NULL;
 
 	if (TEE_PARAM_TYPE_GET(param_types, 0) != TEE_PARAM_TYPE_VALUE_INPUT)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -382,10 +382,10 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 					    TEE_Param params[4])
 {
 	TEE_Result result = TEE_SUCCESS;
-	TEE_ObjectHandle transient_key = (TEE_ObjectHandle)NULL;
-	TEE_ObjectHandle persistent_key = (TEE_ObjectHandle)NULL;
-	TEE_ObjectHandle key = (TEE_ObjectHandle)NULL;
-	TEE_OperationHandle encrypt_op = (TEE_OperationHandle)NULL;
+	TEE_ObjectHandle transient_key = TEE_HANDLE_NULL;
+	TEE_ObjectHandle persistent_key = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key = TEE_HANDLE_NULL;
+	TEE_OperationHandle encrypt_op = TEE_HANDLE_NULL;
 	TEE_ObjectInfo keyInfo;
 	TEE_ObjectInfo keyInfo2;
 	TEE_ObjectInfo keyInfo3;
@@ -399,6 +399,10 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 			 TEE_DATA_FLAG_ACCESS_WRITE_META |
 			 TEE_DATA_FLAG_SHARE_READ |
 			 TEE_DATA_FLAG_SHARE_WRITE;
+
+	TEE_MemFill(&keyInfo, 0, sizeof(keyInfo));
+	TEE_MemFill(&keyInfo2, 0, sizeof(keyInfo2));
+	TEE_MemFill(&keyInfo3, 0, sizeof(keyInfo3));
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
@@ -488,7 +492,7 @@ cleanup1:
 TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectHandle object = TEE_HANDLE_NULL;
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 	int object_id = 0;
 	uint32_t flags =  TEE_DATA_FLAG_OVERWRITE |
 			  TEE_DATA_FLAG_ACCESS_WRITE_META;
@@ -526,7 +530,7 @@ TEE_Result ta_storage_cmd_loop(uint32_t param_types, TEE_Param params[4])
 TEE_Result ta_storage_cmd_restrict_usage(uint32_t param_types,
 					 TEE_Param params[4])
 {
-	TEE_ObjectHandle o;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
@@ -539,8 +543,8 @@ TEE_Result ta_storage_cmd_restrict_usage(uint32_t param_types,
 
 TEE_Result ta_storage_cmd_alloc_obj(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectHandle o;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
@@ -555,7 +559,7 @@ TEE_Result ta_storage_cmd_alloc_obj(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_storage_cmd_free_obj(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_ObjectHandle o;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
@@ -568,7 +572,7 @@ TEE_Result ta_storage_cmd_free_obj(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_ObjectHandle o;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
@@ -582,8 +586,8 @@ TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4])
 TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 					    TEE_Param params[4])
 {
-	TEE_Result res;
-	TEE_ObjectInfo *info;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectInfo *info = NULL;
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
