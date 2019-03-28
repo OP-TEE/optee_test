@@ -20,15 +20,17 @@
 #include <sys/types.h>
 #include <tee_client_api.h>
 #include <unistd.h>
-#include "xtest_test.h"
+
 #include "install_ta.h"
+#include "xtest_helpers.h"
+#include "xtest_test.h"
 
 static void *read_ta(const char *dname, const char *fname, size_t *size)
 {
 	char nbuf[PATH_MAX];
-	FILE *f;
-	void *buf;
-	size_t s;
+	FILE *f = NULL;
+	void *buf = NULL;
+	size_t s = 0;
 
 	if (dname)
 		snprintf(nbuf, sizeof(nbuf), "%s/%s", dname, fname);
@@ -58,11 +60,10 @@ static void *read_ta(const char *dname, const char *fname, size_t *size)
 
 static void install_ta(TEEC_Session *sess, void *buf, size_t blen)
 {
-	TEEC_Result res;
-	uint32_t err_origin;
-	TEEC_Operation op;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t err_origin = 0;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 
-	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].tmpref.buffer = buf;
@@ -78,8 +79,8 @@ static void install_ta(TEEC_Session *sess, void *buf, size_t blen)
 static void install_file(TEEC_Session *sess, const char *dirname,
 			 const char *filename)
 {
-	void *ta;
-	size_t ta_size;
+	void *ta = NULL;
+	size_t ta_size = 0;
 
 	printf("Installing \"%s\"\n", filename);
 	ta = read_ta(dirname, filename, &ta_size);
@@ -89,7 +90,7 @@ static void install_file(TEEC_Session *sess, const char *dirname,
 
 static void install_dir(TEEC_Session *sess, const char *dirname)
 {
-	DIR *dirp;
+	DIR *dirp = NULL;
 
 	printf("Searching directory \"%s\" for TAs\n", dirname);
 	dirp = opendir(dirname);
@@ -113,12 +114,12 @@ static void install_dir(TEEC_Session *sess, const char *dirname)
 
 int install_ta_runner_cmd_parser(int argc, char *argv[])
 {
-	TEEC_Result res;
-	uint32_t err_origin;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t err_origin = 0;
 	TEEC_UUID uuid = PTA_SECSTOR_TA_MGMT_UUID;
-	TEEC_Context ctx;
-	TEEC_Session sess;
-	int i;
+	TEEC_Context ctx = { };
+	TEEC_Session sess = { };
+	int i = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
 	if (res)
@@ -131,7 +132,7 @@ int install_ta_runner_cmd_parser(int argc, char *argv[])
 			res, err_origin);
 
 	for (i = 1; i < argc; i++) {
-		struct stat sb;
+		struct stat sb = { };
 
 		if (stat(argv[i], &sb)) {
 			printf("Skipping \"%s\": %s", argv[i], strerror(errno));

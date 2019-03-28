@@ -30,8 +30,8 @@
 static void test_8101(ADBG_Case_t *c __maybe_unused)
 {
 #ifdef CFG_TA_MBEDTLS_SELF_TEST
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(
 					      &session, &crypt_user_ta_uuid,
@@ -77,13 +77,13 @@ out:
 
 static void test_8102(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
+	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 	char *chain = NULL;
 	int clen = 0;
 	char *trust = NULL;
-	int tlen;
+	int tlen = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(
 					      &session, &crypt_user_ta_uuid,
@@ -124,10 +124,10 @@ ADBG_CASE_DEFINE(regression, 8102, test_8102, "TA mbedTLS test cert chain");
 static void osslerr(void)
 {
 	while (true) {
-		unsigned long e;
-		char b[256];
-		const char *f;
-		int l;
+		unsigned long e = 0;
+		char b[256] = { };
+		const char *f = NULL;
+		int l = 0;
 
 		e = ERR_get_error_line(&f, &l);
 		if (!e)
@@ -142,7 +142,7 @@ static bool get_cert(ADBG_Case_t *c, const char *crt_str, X509 **crt)
 	bool ret = false;
 	size_t slen = strlen(crt_str) + 1;
 	BIO *buf = BIO_new(BIO_s_mem());
-	size_t b;
+	size_t b = 0;
 
 	if (!ADBG_EXPECT_NOT_NULL(c, buf))
 		goto out;
@@ -165,7 +165,7 @@ out:
 static bool push_cert(ADBG_Case_t *c, const char *crt_str, STACK_OF(X509) *cs)
 {
 	X509 *crt = NULL;
-	int rc;
+	int rc = 0;
 
 	if (!get_cert(c, crt_str, &crt))
 		return false;
@@ -186,8 +186,8 @@ static bool check(ADBG_Case_t *c, STACK_OF(X509) *trusted,
 	X509_STORE *store = NULL;
 	X509_STORE_CTX *csc = NULL;
 	X509_VERIFY_PARAM *pm = NULL;
-	int i;
-	time_t vfy_time;
+	int i = 0;
+	time_t vfy_time = 0;
 
 	pm = X509_VERIFY_PARAM_new();
 	vfy_time = 1526898005; /* Mon, 21 May 2018 10:20:05 +0000 */
@@ -267,10 +267,10 @@ static bool verify_cert(ADBG_Case_t *c __unused, const char *ca __unused,
 
 static void test_8103(ADBG_Case_t *c)
 {
-	TEEC_Result res;
-	TEEC_Session session = { 0 };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 	char *csr = NULL;
 	int clen = 0;
 	char cert[2048];

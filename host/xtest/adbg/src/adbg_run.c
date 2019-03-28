@@ -60,7 +60,7 @@ int Do_ADBG_RunSuite(
 	char *argv[]
 	)
 {
-	ADBG_Runner_t *Runner_p;
+	ADBG_Runner_t *Runner_p = NULL;
 
 	Runner_p = calloc(1, sizeof(*Runner_p));
 	if (Runner_p == NULL) {
@@ -81,8 +81,8 @@ int Do_ADBG_AppendToSuite(
 	ADBG_Suite_Definition_t *Source_p
 	)
 {
-	char *p;
-	size_t size;
+	char *p = NULL;
+	size_t size = 0;
 
 	/* Append name of 'Source_p' to name of 'Dest_p' */
 	size = strlen(Source_p->SuiteID_p);
@@ -117,10 +117,10 @@ static int ADBG_RunSuite(
 	char *argv[]
 	)
 {
-	ADBG_Case_t *Case_p;
+	ADBG_Case_t *Case_p = NULL;
 	size_t NumSkippedTestCases = 0;
 	int failed_test = 0;
-	struct adbg_case_def *case_def;
+	struct adbg_case_def *case_def = NULL;
 
 	Do_ADBG_Log("######################################################");
 	Do_ADBG_Log("#");
@@ -131,7 +131,7 @@ static int ADBG_RunSuite(
 	TAILQ_FOREACH(case_def, &Runner_p->Suite_p->cases, link) {
 		if (argc > 0) {
 			bool HaveMatch = false;
-			int i;
+			int i = 0;
 
 			for (i = 0; i < argc; i++) {
 
@@ -191,7 +191,7 @@ static int ADBG_RunSuite(
 
 	Do_ADBG_Log("+-----------------------------------------------------");
 	if (argc > 0) {
-		int i;
+		int i = 0;
 
 		for (i = 0; i < argc; i++)
 			Do_ADBG_Log(

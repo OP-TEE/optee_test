@@ -152,12 +152,12 @@ size_t SecUtil_BufferToHex(
 	)
 {
 	const uint8_t *Data_p = Buffer_p;
-	size_t UsedDestLength;
-	size_t n;
+	size_t UsedDestLength = 0;
+	size_t n = 0;
 	const char *ByteSeparator_p = NULL;
 	const char *GroupSeparator_p = NULL;
 	const char *BytePrefix_p = NULL;
-	size_t BytePrefixLength;
+	size_t BytePrefixLength = 0;
 
 	if (DestinationLength > 1)
 		Destination_p[0] = '\0';
@@ -186,8 +186,8 @@ size_t SecUtil_BufferToHex(
 	 * the absense of both snprintf and strlcat
 	 */
 	for (n = 0; n < BufferLength; n++) {
-		const char *Separator_p;
-		size_t SeparatorLength;
+		const char *Separator_p = NULL;
+		size_t SeparatorLength = 0;
 
 		/* Establish separator for this byte and the next */
 		if (n == BufferLength - 1)
@@ -201,7 +201,7 @@ size_t SecUtil_BufferToHex(
 
 		/* Insert the Byte prefix */
 		if (UsedDestLength < DestinationLength) {
-			size_t CopyLength;
+			size_t CopyLength = 0;
 
 			CopyLength = MIN(BytePrefixLength,
 					 DestinationLength - UsedDestLength);
@@ -229,7 +229,7 @@ size_t SecUtil_BufferToHex(
 
 		/* Insert the separator */
 		if (UsedDestLength < DestinationLength) {
-			size_t CopyLength;
+			size_t CopyLength = 0;
 
 			CopyLength = MIN(SeparatorLength,
 					 DestinationLength - UsedDestLength);

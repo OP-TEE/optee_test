@@ -46,7 +46,7 @@ static bool server_io_cb(struct server_state *srvst, size_t idx)
 	short revents = srvst->fds[idx].revents;
 	short *events = &srvst->fds[idx].events;
 	struct sock_io_cb *cb = srvst->cb;
-	int fd;
+	int fd = 0;
 
 	fd = srvst->fds[idx].fd;
 	if (revents & POLLIN) {
@@ -79,8 +79,8 @@ static bool server_add_state(struct server_state *srvst,
 			     struct sock_server_bind *serv, int fd,
 			     short poll_events)
 {
-	void *p;
-	size_t n;
+	void *p = NULL;
+	size_t n = 0;
 
 	for (n = 0; n < srvst->nfds; n++) {
 		if (srvst->fds[n].fd == -1) {
@@ -115,10 +115,10 @@ static bool server_add_state(struct server_state *srvst,
 static bool tcp_server_accept_cb(struct server_state *srvst, size_t idx)
 {
 	short revents = srvst->fds[idx].revents;
-	struct sockaddr_storage sass;
+	struct sockaddr_storage sass = { };
 	struct sockaddr *sa = (struct sockaddr *)&sass;
 	socklen_t len = sizeof(sass);
-	int fd;
+	int fd = 0;
 	short io_events = POLLIN | POLLOUT;
 
 	if (!(revents & POLLIN))
@@ -164,9 +164,9 @@ static void sock_server(struct sock_server *ts,
 			bool (*cb)(struct server_state *srvst, size_t idx))
 {
 	struct server_state srvst = { .cb = ts->cb };
-	int pres;
-	size_t n;
-	char b;
+	int pres = 0;
+	size_t n = 0;
+	char b = 0;
 
 	sock_server_lock(ts);
 
@@ -237,16 +237,14 @@ static void *sock_server_dgram(void *arg)
 
 static void sock_server_add_fd(struct sock_server *ts, struct addrinfo *ai)
 {
-	struct sock_server_bind serv;
-	struct sockaddr_storage sass;
+	struct sock_server_bind serv = { };
+	struct sockaddr_storage sass = { };
 	struct sockaddr *sa = (struct sockaddr *)&sass;
 	struct sockaddr_in *sain = (struct sockaddr_in *)&sass;
 	struct sockaddr_in6 *sain6 = (struct sockaddr_in6 *)&sass;
-	void *src;
+	void *src = NULL;
 	socklen_t len = sizeof(sass);
-	struct sock_server_bind *p;
-
-	memset(&serv, 0, sizeof(serv));
+	struct sock_server_bind *p = NULL;
 
 	serv.fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 	if (serv.fd < 0)
@@ -291,8 +289,8 @@ bad:
 
 void sock_server_uninit(struct sock_server *ts)
 {
-	size_t n;
-	int e;
+	size_t n = 0;
+	int e = 0;
 
 	if (ts->stop_fd != -1) {
 		if (close(ts->stop_fd))
@@ -323,11 +321,11 @@ void sock_server_uninit(struct sock_server *ts)
 static bool sock_server_init(struct sock_server *ts, struct sock_io_cb *cb,
 			     int socktype)
 {
-	struct addrinfo hints;
-	struct addrinfo *ai;
-	struct addrinfo *ai0;
-	int fd_pair[2];
-	int e;
+	struct addrinfo hints = { };
+	struct addrinfo *ai = NULL;
+	struct addrinfo *ai0 = NULL;
+	int fd_pair[2] = { };
+	int e = 0;
 
 	memset(ts, 0, sizeof(*ts));
 	ts->quit_fd = -1;
@@ -339,8 +337,6 @@ static bool sock_server_init(struct sock_server *ts, struct sock_io_cb *cb,
 		warnx("sock_server_init: pthread_mutex_init: %s", strerror(e));
 		return false;
 	}
-
-	memset(&hints, 0, sizeof(hints));
 
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = AF_UNSPEC;

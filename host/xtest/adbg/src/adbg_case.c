@@ -47,7 +47,7 @@ static const char *ADBG_Case_GetTestID(ADBG_Case_t *Case_p);
 *************************************************************************/
 ADBG_Case_t *ADBG_Case_New(const struct adbg_case_def *case_def)
 {
-	ADBG_Case_t *Case_p;
+	ADBG_Case_t *Case_p = NULL;
 
 	Case_p = calloc(1, sizeof(*Case_p));
 	if (Case_p)
@@ -160,7 +160,7 @@ void Do_ADBG_BeginSubCase(
 	}
 
 	va_list ArgList;
-	char Title[80];
+	char Title[80] = { };
 
 	va_start(ArgList, FormatTitle_p);
 	vsnprintf(Title, sizeof(Title), FormatTitle_p, ArgList);
@@ -189,7 +189,7 @@ void Do_ADBG_EndSubCase(
 	)
 {
 	va_list ArgList;
-	char Title[80];
+	char Title[80] = { };
 	ADBG_SubCase_t *SubCase_p = NULL;
 
 	if (Case_p == NULL) {
@@ -277,7 +277,7 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 	const char *const Title_p
 	)
 {
-	ADBG_SubCase_t *SubCase_p;
+	ADBG_SubCase_t *SubCase_p = NULL;
 
 	SubCase_p = calloc(1, sizeof(*SubCase_p));
 	if (SubCase_p == NULL)
@@ -301,7 +301,7 @@ static ADBG_SubCase_t *ADBG_Case_CreateSubCase(
 		Case_p->FirstSubCase_p = SubCase_p;
 	} else {
 		ADBG_SubCase_t *Parent_p = SubCase_p->Parent_p;
-		char PrefixTitle[80];
+		char PrefixTitle[80] = { };
 
 		/* Update parent SubCase */
 		Parent_p->Result.NumSubCases++;

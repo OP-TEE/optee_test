@@ -43,6 +43,7 @@
 #include <unistd.h>
 
 #include "crypto_common.h"
+#include "xtest_helpers.h"
 
 #ifdef CFG_SECURE_DATA_PATH
 #include "sdp_basic.h"
@@ -129,9 +130,9 @@ static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 
 static void open_ta(void)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_UUID uuid = TA_AES_PERF_UUID;
-	uint32_t err_origin;
+	uint32_t err_origin = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
 	check_res(res, "TEEC_InitializeContext", NULL);
@@ -259,7 +260,7 @@ static void register_shm(TEEC_SharedMemory *shm, int fd)
 
 static void allocate_shm(TEEC_SharedMemory *shm, size_t sz)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 
 	shm->buffer = NULL;
 	shm->size = sz;
@@ -330,7 +331,7 @@ static void free_shm(int in_place)
 static ssize_t read_random(void *in, size_t rsize)
 {
 	static int rnd;
-	ssize_t s;
+	ssize_t s = 0;
 
 	if (!rnd) {
 		rnd = open("/dev/urandom", O_RDONLY);
@@ -371,12 +372,11 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 
 static void prepare_key(int decrypt, int keysize, int mode)
 {
-	TEEC_Result res;
-	uint32_t ret_origin;
-	TEEC_Operation op;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_origin = 0;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t cmd = TA_AES_PERF_CMD_PREPARE_KEY;
 
-	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = decrypt;
@@ -389,8 +389,9 @@ static void prepare_key(int decrypt, int keysize, int mode)
 
 static void do_warmup(int warmup)
 {
-	struct timespec t0, t;
-	int i;
+	struct timespec t0 = { };
+	struct timespec t = { };
+	int i = 0;
 
 	get_current_time(&t0);
 	do {
@@ -447,11 +448,11 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 				unsigned int n, unsigned int l, int input_data_init,
 				int in_place, int warmup, int verbosity)
 {
-	struct statistics stats;
-	struct timespec ts;
-	TEEC_Operation op;
+	struct statistics stats = { };
+	struct timespec ts = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	int n0 = n;
-	double sd;
+	double sd = 0;
 	uint32_t cmd = is_sdp_test ? TA_AES_PERF_CMD_PROCESS_SDP :
 				     TA_AES_PERF_CMD_PROCESS;
 
@@ -478,13 +479,10 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 	open_ta();
 	prepare_key(decrypt, keysize, mode);
 
-	memset(&stats, 0, sizeof(stats));
-
 	alloc_buffers(size, in_place, verbosity);
 	if (input_data_init == CRYPTO_USE_ZEROS)
 		run_feed_input(in_shm.buffer, size, 0);
 
-	memset(&op, 0, sizeof(op));
 	/* Using INOUT to handle the case in_place == 1 */
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INOUT,
 					 TEEC_MEMREF_PARTIAL_INOUT,
@@ -507,9 +505,10 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 		do_warmup(warmup);
 
 	while (n-- > 0) {
-		TEEC_Result res;
-		uint32_t ret_origin;
-		struct timespec t0, t1;
+		TEEC_Result res = TEEC_ERROR_GENERIC;
+		uint32_t ret_origin = 0;
+		struct timespec t0 = { };
+		struct timespec t1 = { };
 
 		if (input_data_init == CRYPTO_USE_RANDOM)
 			run_feed_input(in_shm.buffer, size, 1);
@@ -565,12 +564,10 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 
 int aes_perf_runner_cmd_parser(int argc, char *argv[])
 {
-	int i;
-
+	int i = 0;
 	/*
 	* Command line parameters
 	*/
-
 	size_t size = 1024;	/* Buffer size (-s) */
 	size_t unit = CRYPTO_DEF_UNIT_SIZE; /* Divide buffer (-u) */
 	unsigned int n = CRYPTO_DEF_COUNT; /*Number of measurements (-n)*/

@@ -19,9 +19,9 @@
 static TEEC_Result cmd_new_var(ADBG_Case_t *c, TEEC_Session *s,
 			       uint32_t num_bits, uint32_t *handle)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = num_bits;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
@@ -37,9 +37,9 @@ static TEEC_Result cmd_new_var(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_new_fmm_var(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t num_bits, uint32_t *handle)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = num_bits;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
@@ -57,9 +57,9 @@ static TEEC_Result cmd_new_fmm_ctx(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t num_bits, uint32_t hmodulus,
 				   uint32_t *handle)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = num_bits;
 	op.params[0].value.b = hmodulus;
@@ -80,9 +80,9 @@ static TEEC_Result cmd_free_handle(ADBG_Case_t *c, TEEC_Session *s,
 	if (handle == TA_CRYPT_ARITH_INVALID_HANDLE)
 		return TEEC_SUCCESS;
 
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = handle;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
@@ -98,9 +98,9 @@ static TEEC_Result cmd_from_octet_string(ADBG_Case_t *c, TEEC_Session *s,
 					 uint8_t *buf, uint32_t buf_len,
 					 int32_t sign, uint32_t h)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = h;
 	op.params[0].value.b = sign;
@@ -119,9 +119,9 @@ static TEEC_Result cmd_from_octet_string(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_from_s32(ADBG_Case_t *c, TEEC_Session *s,
 				uint32_t handle, int32_t v)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = handle;
 	op.params[0].value.b = v;
@@ -137,9 +137,9 @@ static TEEC_Result cmd_from_s32(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_get_bit(ADBG_Case_t *c, TEEC_Session *s,
 				uint32_t handle, uint32_t bit_num, uint32_t *v)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = handle;
 	op.params[0].value.b = bit_num;
@@ -156,9 +156,9 @@ static TEEC_Result cmd_get_bit(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_get_bit_count(ADBG_Case_t *c, TEEC_Session *s,
 				uint32_t handle, uint32_t *v)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = handle;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
@@ -175,9 +175,9 @@ static TEEC_Result cmd_get_bit_count(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_binary_cmd(ADBG_Case_t *c, TEEC_Session *s, uint32_t cmd,
 				  uint32_t hop1, uint32_t hop2, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -193,9 +193,9 @@ static TEEC_Result cmd_binary_cmd(ADBG_Case_t *c, TEEC_Session *s, uint32_t cmd,
 static TEEC_Result cmd_unary_cmd(ADBG_Case_t *c, TEEC_Session *s, uint32_t cmd,
 				  uint32_t hop, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop;
 	op.params[0].value.b = hres;
@@ -211,9 +211,9 @@ static TEEC_Result cmd_ternary_cmd(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t cmd, uint32_t hop1, uint32_t hop2,
 				   uint32_t hn, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -291,9 +291,9 @@ static TEEC_Result cmd_mulmod(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_is_prime(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 				uint32_t conf_level, int32_t *pres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop;
 	op.params[0].value.b = conf_level;
@@ -311,9 +311,9 @@ static TEEC_Result cmd_is_prime(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 static TEEC_Result cmd_shift_right(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t hop, uint32_t bits, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop;
 	op.params[0].value.b = bits;
@@ -330,9 +330,9 @@ static TEEC_Result cmd_shift_right(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_to_fmm(ADBG_Case_t *c, TEEC_Session *s, uint32_t hsrc,
 			      uint32_t hn, uint32_t hctx, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hsrc;
 	op.params[0].value.b = hn;
@@ -349,9 +349,9 @@ static TEEC_Result cmd_to_fmm(ADBG_Case_t *c, TEEC_Session *s, uint32_t hsrc,
 static TEEC_Result cmd_from_fmm(ADBG_Case_t *c, TEEC_Session *s, uint32_t hsrc,
 				uint32_t hn, uint32_t hctx, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hsrc;
 	op.params[0].value.b = hn;
@@ -370,9 +370,9 @@ static TEEC_Result cmd_compute_fmm(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t hop1, uint32_t hop2, uint32_t hn,
 				   uint32_t hctx, uint32_t hres)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -392,9 +392,9 @@ static TEEC_Result cmd_compute_egcd(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t hop1, uint32_t hop2, uint32_t hu,
 				   uint32_t hv, uint32_t hgcd)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -440,7 +440,7 @@ static TEEC_Result convert_from_string(ADBG_Case_t *c, TEEC_Session *s,
 	size_t os_len = spos / 2 + 1;
 	uint8_t *os = calloc(1, os_len);
 	int ospos = os_len - 1;
-	int nibble;
+	int nibble = 0;
 
 	if (!os)
 		return TEEC_ERROR_OUT_OF_MEMORY;
@@ -478,9 +478,9 @@ out:
 static TEEC_Result cmd_get_value(ADBG_Case_t *c, TEEC_Session *s, uint8_t *buf,
 				 uint32_t *buf_len, int32_t *sign, uint32_t h)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = h;
 	op.params[2].tmpref.buffer = buf;
@@ -500,7 +500,7 @@ static TEEC_Result cmd_get_value(ADBG_Case_t *c, TEEC_Session *s, uint8_t *buf,
 static TEEC_Result __maybe_unused print_handle(ADBG_Case_t *c, TEEC_Session *s,
 					       const char *name, uint32_t h)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint8_t *os = NULL;
 	uint32_t os_len = 0;
 	int32_t sign = 0;
@@ -530,9 +530,9 @@ out:
 static TEEC_Result cmd_get_value_s32(ADBG_Case_t *c, TEEC_Session *s,
 				     uint32_t h, int32_t *val)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = h;
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
@@ -549,9 +549,9 @@ static TEEC_Result cmd_get_value_s32(ADBG_Case_t *c, TEEC_Session *s,
 static TEEC_Result cmd_cmp(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop1,
 			   uint32_t hop2, int32_t *cmp_res)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -569,9 +569,9 @@ static TEEC_Result cmd_cmp(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop1,
 static TEEC_Result cmd_cmp_s32(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 			       int32_t s32, int32_t *cmp_res)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop;
 	op.params[0].value.b = s32;
@@ -589,9 +589,9 @@ static TEEC_Result cmd_cmp_s32(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 static TEEC_Result cmd_div(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop1,
 			   uint32_t hop2, uint32_t hq, uint32_t hr)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = hop1;
 	op.params[0].value.b = hop2;
@@ -607,8 +607,8 @@ static TEEC_Result cmd_div(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop1,
 
 static void test_4101(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
 	uint32_t handle = TA_CRYPT_ARITH_INVALID_HANDLE;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -684,11 +684,11 @@ ADBG_CASE_DEFINE(regression, 4101, test_4101,
 
 static void test_4102(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
 	uint32_t ha = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t hb = TA_CRYPT_ARITH_INVALID_HANDLE;
-	size_t n;
+	size_t n = 0;
 	const struct {
 		const uint8_t *os;
 		uint32_t os_len;
@@ -766,15 +766,16 @@ ADBG_CASE_DEFINE(regression, 4102, test_4102,
 
 static void test_4103(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
 	int32_t v = 0;
 	static const int32_t data[] = {
 		1, -1, 123, -123, 0x7FFFFFFF, (int32_t)0x80000000,
 		(int32_t)0xFFFFFFFF, 0,
 	};
+	static const char *data_str[] = { "1FFFFFFFFF", "-1FFFFFFFFF" };
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -809,8 +810,6 @@ static void test_4103(ADBG_Case_t *c)
 		Do_ADBG_EndSubCase(c, NULL);
 	}
 
-	static const char *data_str[] = { "1FFFFFFFFF", "-1FFFFFFFFF" };
-
 	for (n = 0; n < ARRAY_SIZE(data_str); n++) {
 		Do_ADBG_BeginSubCase(c, "\"%s\" (overflow)", data_str[n]);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, convert_from_string(c,
@@ -832,7 +831,7 @@ static TEEC_Result compare_str(ADBG_Case_t *c, TEEC_Session *s,
 			       const char str1[], const char str2[],
 			       int32_t cmp_res)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	int32_t cres = 0;
 	uint32_t h1 = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t h2 = TA_CRYPT_ARITH_INVALID_HANDLE;
@@ -866,7 +865,7 @@ static TEEC_Result compare_s32(ADBG_Case_t *c, TEEC_Session *s,
 			       const char str[], int32_t val,
 			       int32_t cmp_res)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	int32_t cres = 0;
 	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
 
@@ -891,9 +890,9 @@ out:
 
 static void test_4104(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	const struct {
 		const char *str1;
 		const char *str2;
@@ -1079,9 +1078,9 @@ out:
 
 static void test_4105(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	static const struct {
 		const char *s;
 		const char *t;
@@ -1158,9 +1157,9 @@ ADBG_CASE_DEFINE(regression, 4105, test_4105,
 
 static void test_4106(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	uint32_t h1 = TA_CRYPT_ARITH_INVALID_HANDLE;
 	uint32_t h2 = TA_CRYPT_ARITH_INVALID_HANDLE;
 	static const struct {
@@ -1258,9 +1257,9 @@ out:
 
 static void test_4107(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	static const struct {
 		const char *s;
 		const char *t;
@@ -1398,9 +1397,9 @@ out:
 
 static void test_4108(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 	static const struct {
 		const char *s;
 		const char *t;
@@ -1659,9 +1658,9 @@ out:
 
 static void test_4109(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -1965,9 +1964,9 @@ out:
 
 static void test_4110(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -2091,9 +2090,9 @@ out:
 
 static void test_4111(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -2212,7 +2211,8 @@ static bool test_4112_is_prime(ADBG_Case_t *c, TEEC_Session *s,
 						      &pres)))
 		goto out;
 	if (!ADBG_EXPECT_TRUE(c, pres == res1 || pres == res2)) {
-		Do_ADBG_Log("Unexpected prime clasification %" PRId32 ", expected %" PRId32 " or %" PRId32, pres, res1, res2);
+		Do_ADBG_Log("Unexpected prime clasification %" PRId32 ", expected %" PRId32 " or %" PRId32,
+			    pres, res1, res2);
 		goto out;
 	}
 
@@ -2225,9 +2225,9 @@ out:
 
 static void test_4112(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -2343,9 +2343,9 @@ out:
 
 static void test_4113(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
@@ -2477,9 +2477,9 @@ out:
 
 static void test_4114(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
-	size_t n;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
