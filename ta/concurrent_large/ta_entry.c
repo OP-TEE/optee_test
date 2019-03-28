@@ -66,10 +66,9 @@ static uint32_t dec_active_count(struct ta_concurrent_shm *shm)
 	return atomic_dec32(&shm->active_count);
 }
 
-
 static TEE_Result ta_entry_busy_loop(uint32_t param_types, TEE_Param params[4])
 {
-	size_t num_rounds;
+	size_t num_rounds = 0;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 				TEE_PARAM_TYPE_VALUE_INOUT,
@@ -102,11 +101,11 @@ static TEE_Result ta_entry_busy_loop(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_sha256(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 	TEE_OperationHandle op = TEE_HANDLE_NULL;
-	void *out;
-	uint32_t out_len;
-	size_t num_rounds;
+	void *out = NULL;
+	uint32_t out_len = 0;
+	size_t num_rounds = 0;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 				TEE_PARAM_TYPE_VALUE_INOUT,

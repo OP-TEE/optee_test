@@ -727,7 +727,7 @@ static const u32 rcon[] = {
 int rijndaelSetupEncrypt(u32 *rk, const u8 *key, int keybits)
 {
 	int i = 0;
-	u32 temp;
+	u32 temp = 0;
 
 	rk[0] = GETU32(key);
 	rk[1] = GETU32(key + 4);
@@ -806,8 +806,10 @@ int rijndaelSetupEncrypt(u32 *rk, const u8 *key, int keybits)
  */
 int rijndaelSetupDecrypt(u32 *rk, const u8 *key, int keybits)
 {
-	int nrounds, i, j;
-	u32 temp;
+	int nrounds = 0;
+	int i = 0;
+	int j = 0;
+	u32 temp = 0;
 
 /* expand the cipher key: */
 	nrounds = rijndaelSetupEncrypt(rk, key, keybits);
@@ -857,9 +859,16 @@ int rijndaelSetupDecrypt(u32 *rk, const u8 *key, int keybits)
 void rijndaelEncrypt(const u32 *rk, int nrounds, const u8 plaintext[16],
 		     u8 ciphertext[16])
 {
-	u32 s0, s1, s2, s3, t0, t1, t2, t3;
+	u32 s0 = 0;
+	u32 s1 = 0;
+	u32 s2 = 0;
+	u32 s3 = 0;
+	u32 t0 = 0;
+	u32 t1 = 0;
+	u32 t2 = 0;
+	u32 t3 = 0;
 #ifndef FULL_UNROLL
-	int r;
+	int r = 0;
 #endif /* ?FULL_UNROLL */
 /*
  * map byte array block to cipher state
@@ -1056,9 +1065,16 @@ void rijndaelEncrypt(const u32 *rk, int nrounds, const u8 plaintext[16],
 void rijndaelDecrypt(const u32 *rk, int nrounds, const u8 ciphertext[16],
 		     u8 plaintext[16])
 {
-	u32 s0, s1, s2, s3, t0, t1, t2, t3;
+	u32 s0 = 0;
+	u32 s1 = 0;
+	u32 s2 = 0;
+	u32 s3 = 0;
+	u32 t0 = 0;
+	u32 t1 = 0;
+	u32 t2 = 0;
+	u32 t3 = 0;
 #ifndef FULL_UNROLL
-	int r;
+	int r = 0;
 #endif /* ?FULL_UNROLL */
 
 /*

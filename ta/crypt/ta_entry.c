@@ -90,7 +90,6 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	(void)pSessionContext;
 
-
 	switch (nCommandID) {
 	case TA_CRYPT_CMD_SHA224:
 		use_fptr = !use_fptr;
@@ -305,7 +304,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 static TEE_Result set_global(uint32_t param_types, TEE_Param params[4])
 {
-	int i;
+	int i = 0;
 
 	/* Param 0 is a memref, input/output */
 	if (TEE_PARAM_TYPE_VALUE_INPUT != TEE_PARAM_TYPE_GET(param_types, 0))
@@ -323,7 +322,7 @@ static TEE_Result set_global(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result get_global(uint32_t param_types, TEE_Param params[4])
 {
-	int i;
+	int i = 0;
 
 	/* Param 0 is a memref, input/output */
 	if (TEE_PARAM_TYPE_VALUE_OUTPUT != TEE_PARAM_TYPE_GET(param_types, 0))

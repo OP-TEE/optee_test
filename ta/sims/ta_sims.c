@@ -48,6 +48,7 @@ TEE_Result sims_open_session(void **ctx)
 {
 	struct sims_session *context =
 	    TEE_Malloc(sizeof(struct sims_session), 0);
+
 	if (context == NULL)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
@@ -66,8 +67,8 @@ void sims_close_session(void *ctx)
 
 TEE_Result sims_read(uint32_t param_types, TEE_Param params[4])
 {
-	uint32_t index;
-	void *p;
+	uint32_t index = 0;
+	void *p = NULL;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
@@ -95,7 +96,7 @@ TEE_Result sims_read(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result sims_write(uint32_t param_types, TEE_Param params[4])
 {
-	uint32_t index;
+	uint32_t index = 0;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,

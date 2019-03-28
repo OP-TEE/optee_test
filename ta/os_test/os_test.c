@@ -75,18 +75,18 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 				   TEE_PropSetHandle prop_set,
 				   struct p_attr *p_attrs, size_t num_p_attrs)
 {
-TEE_Result res;
-size_t n;
+TEE_Result res = TEE_ERROR_GENERIC;
+size_t n = 0;
 
 TEE_StartPropertyEnumerator(h, prop_set);
 
 while (true) {
-	char nbuf[256];
-	char nbuf_small[256];
-	char vbuf[256];
-	char vbuf2[256];
+	char nbuf[256] = { };
+	char nbuf_small[256] = { };
+	char vbuf[256] = { };
+	char vbuf2[256] = { };
 	uint32_t nblen = sizeof(nbuf);
-	uint32_t nblen_small;
+	uint32_t nblen_small = 0;
 	uint32_t vblen = sizeof(vbuf);
 	uint32_t vblen2 = sizeof(vbuf2);
 
@@ -191,7 +191,7 @@ while (true) {
 		switch (p_attrs[n].type) {
 		case P_TYPE_BOOL:
 			{
-				bool v;
+				bool v = false;
 
 				res =
 				    TEE_GetPropertyAsBool(h, NULL, &v);
@@ -206,7 +206,7 @@ while (true) {
 
 		case P_TYPE_INT:
 			{
-				uint32_t v;
+				uint32_t v = 0;
 
 				res = TEE_GetPropertyAsU32(h, NULL, &v);
 				if (res != TEE_SUCCESS) {
@@ -220,7 +220,7 @@ while (true) {
 
 		case P_TYPE_UUID:
 			{
-				TEE_UUID v;
+				TEE_UUID v = { };
 
 				res =
 				    TEE_GetPropertyAsUUID(h, NULL, &v);
@@ -235,7 +235,7 @@ while (true) {
 
 		case P_TYPE_IDENTITY:
 			{
-				TEE_Identity v;
+				TEE_Identity v = { };
 
 				res =
 				    TEE_GetPropertyAsIdentity(h, NULL,
@@ -255,7 +255,7 @@ while (true) {
 
 		case P_TYPE_BINARY_BLOCK:
 			{
-				char bbuf[80];
+				char bbuf[80] = { };
 				uint32_t bblen = sizeof(bbuf);
 
 				res =
@@ -273,11 +273,9 @@ while (true) {
 					const char exp_bin_value[] =
 					    "Hello world!";
 
-					if (bblen != strlen(exp_bin_value)
-					    ||
-					    TEE_MemCompare
-					    (exp_bin_value, bbuf,
-					     bblen) != 0) {
+					if (bblen != strlen(exp_bin_value) ||
+					    TEE_MemCompare(exp_bin_value, bbuf,
+							   bblen) != 0) {
 						EMSG(
 						"Binary buffer of \"%s\" differs from \"%s\"\n",
 							nbuf, exp_bin_value);
@@ -325,7 +323,7 @@ static TEE_Result test_malloc(void)
 static TEE_Result test_properties(void)
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
-	TEE_PropSetHandle h;
+	TEE_PropSetHandle h = TEE_HANDLE_NULL;
 	struct p_attr p_attrs[] = {
 		{"gpd.ta.appID", P_TYPE_UUID},
 		{"gpd.ta.singleInstance", P_TYPE_BOOL},
@@ -358,7 +356,7 @@ static TEE_Result test_properties(void)
 		{"myprop.binaryblock", P_TYPE_BINARY_BLOCK},
 	};
 	const size_t num_p_attrs = sizeof(p_attrs) / sizeof(p_attrs[0]);
-	size_t n;
+	size_t n = 0;
 
 	res = TEE_AllocatePropertyEnumerator(&h);
 	if (res != TEE_SUCCESS) {
@@ -401,13 +399,13 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 					TEE_Param params[4])
 {
 	static const TEE_UUID test_uuid = TA_OS_TEST_UUID;
-	TEE_Result res;
-	uint32_t ret_orig;
-	uint32_t l_pts;
-	TEE_Param l_params[4] = { { {0} } };
-	uint8_t buf[32];
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+	uint32_t l_pts = 0;
+	TEE_Param l_params[4] = { };
+	uint8_t buf[32] = { };
 	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
-	TEE_UUID *uuid;
+	TEE_UUID *uuid = NULL;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0, 0))
@@ -492,10 +490,9 @@ cleanup_return:
 
 static TEE_Result test_time(void)
 {
-	TEE_Result res;
-	TEE_Time t;
-	TEE_Time sys_t;
-
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Time t = { };
+	TEE_Time sys_t = { };
 	static const TEE_Time null_time = { 0, 0 };
 	static const TEE_Time wrap_time = { UINT32_MAX, 999 };
 
@@ -672,7 +669,7 @@ static __noinline void call_longjmp(jmp_buf env)
 
 static TEE_Result test_setjmp(void)
 {
-	jmp_buf env;
+	jmp_buf env = { };
 
 	if (setjmp(env)) {
 		IMSG("Returned via longjmp");
@@ -741,9 +738,9 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 					TEE_Param params[4])
 {
 	static const TEE_UUID os_test_uuid = TA_OS_TEST_UUID;
-	TEE_Result res;
-	TEE_TASessionHandle sess;
-	uint32_t ret_orig;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	uint32_t ret_orig = 0;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 					   TEE_PARAM_TYPE_NONE,
@@ -781,11 +778,11 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 {
 	static const TEE_UUID crypt_uuid = TA_CRYPT_UUID;
-	TEE_Result res;
-	uint32_t l_pts;
-	TEE_Param l_params[4] = { { {0} } };
-	TEE_TASessionHandle sess;
-	uint32_t ret_orig;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t l_pts = 0;
+	TEE_Param l_params[4] = { };
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	uint32_t ret_orig = 0;
 	static const uint8_t sha256_in[] = { 'a', 'b', 'c' };
 	static const uint8_t sha256_out[] = {
 		0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea,
@@ -840,7 +837,7 @@ cleanup_return:
 
 TEE_Result ta_entry_params_access_rights(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_Result res;
+	TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -890,8 +887,8 @@ static void undef_instr(void)
 
 TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 {
-	long stack;
-	long stack_addr = (long)&stack;
+	long int stack = 0;
+	long int stack_addr = (long int)&stack;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT, 0, 0, 0) &&
 	    param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
@@ -923,26 +920,27 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 
 static void incr_values(size_t bufsize, uint8_t *a, uint8_t *b, uint8_t *c)
 {
-	size_t i;
+	size_t i = 0;
 
 	for (i = 0; i < bufsize; i++) {
 		a[i]++; b[i]++; c[i]++;
 	}
 }
 
+#define TA2TA_BUF_SIZE		(2 * 1024)
 TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 {
 	static const TEE_UUID test_uuid = TA_OS_TEST_UUID;
 	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
-	TEE_Param l_params[4] = { { {0} } };
-	size_t bufsize = 2 * 1024;
-	uint8_t in[bufsize];
-	uint8_t inout[bufsize];
-	uint8_t out[bufsize];
-	TEE_Result res;
-	uint32_t ret_orig;
-	uint32_t l_pts;
-	size_t i;
+	TEE_Param l_params[4] = { };
+	uint8_t in[TA2TA_BUF_SIZE] = { };
+	uint8_t inout[TA2TA_BUF_SIZE] = { };
+	uint8_t out[TA2TA_BUF_SIZE] = { };
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+	uint32_t l_pts = 0;
+	size_t i = 0;
+
 	(void)params;
 
 	if (param_types != TEE_PARAM_TYPES(0, 0, 0, 0))
@@ -958,14 +956,14 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 				TEE_PARAM_TYPE_MEMREF_INOUT,
 				TEE_PARAM_TYPE_MEMREF_OUTPUT, 0);
 	l_params[0].memref.buffer = in;
-	l_params[0].memref.size = bufsize;
+	l_params[0].memref.size = TA2TA_BUF_SIZE;
 	l_params[1].memref.buffer = inout;
-	l_params[1].memref.size = bufsize;
+	l_params[1].memref.size = TA2TA_BUF_SIZE;
 	l_params[2].memref.buffer = out;
-	l_params[2].memref.size = bufsize;
+	l_params[2].memref.size = TA2TA_BUF_SIZE;
 
 	/* Initialize buffers */
-	for (i = 0; i < bufsize; i++) {
+	for (i = 0; i < TA2TA_BUF_SIZE; i++) {
 		in[i] = 5;
 		inout[i] = 10;
 		out[i] = 0;
@@ -981,12 +979,12 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 		EMSG("TEE_InvokeTACommand failed");
 		goto cleanup_return;
 	}
-	
+
 	/*
 	 * Increment all values by one.
 	 * Expected values after this step: in: 6, inout: 12, out: 17
 	 */
-	incr_values(bufsize, in, inout, out);
+	incr_values(TA2TA_BUF_SIZE, in, inout, out);
 
 	/*
 	 * TA will compute: out = ++inout + in
@@ -1000,12 +998,12 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 	}
 
 	/* Check the actual values */
-	for (i = 0; i < bufsize; i++) {
+	for (i = 0; i < TA2TA_BUF_SIZE; i++) {
 		if (in[i] != 6 || inout[i] != 13 || out[i] != 19) {
 			EMSG("Unexpected value in buffer(s)");
-			DHEXDUMP(in, bufsize);
-			DHEXDUMP(inout, bufsize);
-			DHEXDUMP(out, bufsize);
+			DHEXDUMP(in, TA2TA_BUF_SIZE);
+			DHEXDUMP(inout, TA2TA_BUF_SIZE);
+			DHEXDUMP(out, TA2TA_BUF_SIZE);
 			return TEE_ERROR_GENERIC;
 		}
 	}
@@ -1017,11 +1015,11 @@ cleanup_return:
 
 TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 {
-	uint8_t *in;
-	uint8_t *inout;
-	uint8_t *out;
-	size_t bufsize;
-	size_t i;
+	uint8_t *in = NULL;
+	uint8_t *inout = NULL;
+	uint8_t *out = NULL;
+	size_t bufsize = 0;
+	size_t i = 0;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 					   TEE_PARAM_TYPE_MEMREF_INOUT,
@@ -1045,7 +1043,7 @@ TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_entry_params(uint32_t param_types, TEE_Param params[4])
 {
-	size_t n;
+	size_t n = 0;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 					   TEE_PARAM_TYPE_MEMREF_INPUT,
