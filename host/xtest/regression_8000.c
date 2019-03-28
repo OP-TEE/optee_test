@@ -320,7 +320,7 @@ static const uint8_t pbkdf2_6_dkm[] = {
 #ifdef WITH_HKDF
 static void xtest_test_derivation_hkdf(ADBG_Case_t *c, TEEC_Session *session)
 {
-	size_t n;
+	size_t n = 0;
 #define TEST_HKDF_DATA(section, algo, id, oeb /* omit empty bufs */) \
 	{ \
 		section, algo, \
@@ -365,13 +365,13 @@ static void xtest_test_derivation_hkdf(ADBG_Case_t *c, TEEC_Session *session)
 	size_t max_size = 2048;
 
 	for (n = 0; n < sizeof(hkdf_cases) / sizeof(struct hkdf_case); n++) {
-		TEE_OperationHandle op;
-		TEE_ObjectHandle key_handle;
-		TEE_ObjectHandle sv_handle;
-		TEE_Attribute params[4];
+		TEE_OperationHandle op = TEE_HANDLE_NULL;
+		TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+		TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+		TEE_Attribute params[4] = { };
 		size_t param_count = 0;
-		uint8_t out[2048];
-		size_t out_size;
+		uint8_t out[2048] = { };
+		size_t out_size = 0;
 		const struct hkdf_case *hc = &hkdf_cases[n];
 
 		Do_ADBG_BeginSubCase(c, "HKDF RFC 5869 %s", hc->subcase_name);
@@ -457,7 +457,7 @@ static void xtest_test_derivation_hkdf(ADBG_Case_t *c, TEEC_Session *session)
 #ifdef WITH_CONCAT_KDF
 static void xtest_test_derivation_concat_kdf(ADBG_Case_t *c, TEEC_Session *session)
 {
-	size_t n;
+	size_t n = 0;
 #define TEST_CONCAT_KDF_DATA(name, algo, id, oeb /* omit empty bufs */) \
 	{ \
 		name, algo, \
@@ -485,13 +485,13 @@ static void xtest_test_derivation_concat_kdf(ADBG_Case_t *c, TEEC_Session *sessi
 	for (n = 0;
 	     n < sizeof(concat_kdf_cases) / sizeof(struct concat_kdf_case);
 	     n++) {
-		TEE_OperationHandle op;
-		TEE_ObjectHandle key_handle;
-		TEE_ObjectHandle sv_handle;
-		TEE_Attribute params[4];
+		TEE_OperationHandle op = TEE_HANDLE_NULL;
+		TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+		TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+		TEE_Attribute params[4] = { };
 		size_t param_count = 0;
-		uint8_t out[2048];
-		size_t out_size;
+		uint8_t out[2048] = { };
+		size_t out_size = 0;
 		const struct concat_kdf_case *cc = &concat_kdf_cases[n];
 
 		Do_ADBG_BeginSubCase(c, "Concat KDF %s", cc->subcase_name);
@@ -576,7 +576,7 @@ out:
 #ifdef WITH_PBKDF2
 static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 {
-	size_t n;
+	size_t n = 0;
 #define TEST_PBKDF2_DATA(level, section, algo, id, oeb /* omit empty bufs */) \
 	{ \
 		level, section, algo, \
@@ -609,13 +609,13 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 	size_t max_size = 2048;
 
 	for (n = 0; n < sizeof(pbkdf2_cases) / sizeof(struct pbkdf2_case); n++) {
-		TEE_OperationHandle op;
-		TEE_ObjectHandle key_handle;
-		TEE_ObjectHandle sv_handle;
-		TEE_Attribute params[4];
+		TEE_OperationHandle op = TEE_HANDLE_NULL;
+		TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+		TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+		TEE_Attribute params[4] = { };
 		size_t param_count = 0;
-		uint8_t out[2048];
-		size_t out_size;
+		uint8_t out[2048] = { };
+		size_t out_size = 0;
 		const struct pbkdf2_case *pc = &pbkdf2_cases[n];
 
 		if (pc->level > level)
@@ -684,7 +684,8 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 		memset(out, 0, sizeof(out));
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_get_object_buffer_attribute(c, session,
-				sv_handle, TEE_ATTR_SECRET_VALUE, out, &out_size)))
+						sv_handle, TEE_ATTR_SECRET_VALUE,
+						out, &out_size)))
 			goto out;
 
 		if (!ADBG_EXPECT_BUFFER(c, pc->dkm, pc->dkm_len, out, out_size))
@@ -706,19 +707,18 @@ out:
 
 static TEEC_Result enc_fs_km_self_test(TEEC_Session *sess)
 {
-	TEEC_Operation op;
-	TEEC_Result res;
-	uint32_t org;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t org = 0;
 
-	memset(&op, 0, sizeof(op));
 	res = TEEC_InvokeCommand(sess, CMD_SELF_TESTS, &op, &org);
 	return res;
 }
 
 static void xtest_tee_test_8001(ADBG_Case_t *c)
 {
-	TEEC_Session session = { 0 };
-	uint32_t ret_orig;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -743,9 +743,9 @@ ADBG_CASE_DEFINE(regression, 8001, xtest_tee_test_8001,
 /* secure storage key manager self test */
 static void xtest_tee_test_8002(ADBG_Case_t *c)
 {
-	TEEC_Result res;
-	TEEC_Session sess;
-	uint32_t orig;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session sess = { };
+	uint32_t orig = 0;
 
 	res = xtest_teec_open_session(&sess,
 			&enc_fs_key_manager_test_ta_uuid,

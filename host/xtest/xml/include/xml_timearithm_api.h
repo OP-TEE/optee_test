@@ -556,11 +556,9 @@ static TEEC_Result Invoke_BigIntShiftRight(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM02->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM02->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM02->size);
 
 	if (!BN_bin2bn(SHARE_MEM01->buffer, SHARE_MEM01->size, a))
 		goto exit;
@@ -653,11 +651,9 @@ static TEEC_Result Invoke_BigIntDiv_Remain(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -735,11 +731,9 @@ static TEEC_Result Invoke_BigIntDiv_Quotient(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)caalloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -817,11 +811,9 @@ static TEEC_Result Invoke_BigIntAdd(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)caalloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -985,11 +977,9 @@ static TEEC_Result Invoke_BigIntAddMod(
 	if (res != TEE_SUCCESS)
 		goto exit;
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1070,11 +1060,9 @@ static TEEC_Result Invoke_BigIntSubMod(
 	if (res != TEE_SUCCESS)
 		goto exit;
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1192,11 +1180,9 @@ static TEEC_Result Invoke_BigIntMulMod(
 	if (res != TEE_SUCCESS)
 		goto exit;
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1368,11 +1354,9 @@ static TEEC_Result Invoke_BigIntSub(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1440,17 +1424,13 @@ static TEEC_Result Invoke_BigIntNeg(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
 
-	memset(tmp1, 0, SHARE_MEM03->size);
-
-	tmp2 = (uint8_t *)malloc(SHARE_MEM01->size);
+	tmp2 = (uint8_t *)calloc(1, SHARE_MEM01->size);
 	if (tmp2 == NULL)
 		goto tmp2_exit;
-	memset(tmp2, 0, SHARE_MEM01->size);
-
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1607,11 +1587,9 @@ static TEEC_Result Invoke_BigIntMul(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))
@@ -1688,17 +1666,14 @@ static TEEC_Result Invoke_BigIntInvMod(
 	if (res != TEE_SUCCESS)
 		goto exit;
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
 
-	memset(tmp1, 0, SHARE_MEM03->size);
-
-	tmp2 = (uint8_t *)malloc(SHARE_MEM01->size);
+	tmp2 = (uint8_t *)calloc(1, SHARE_MEM01->size);
 	if (tmp2 == NULL)
 		goto tmp2_exit;
 
-	memset(tmp2, 0, SHARE_MEM01->size);
 	tmp2[0] = 1;
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
@@ -1775,11 +1750,9 @@ static TEEC_Result Invoke_BigIntSquare(
 
 	res = TEEC_InvokeCommand(sess, cmdId, &op, &org);
 
-	tmp1 = (uint8_t *)malloc(SHARE_MEM03->size);
+	tmp1 = (uint8_t *)calloc(1, SHARE_MEM03->size);
 	if (tmp1 == NULL)
 		goto tmp1_exit;
-
-	memset(tmp1, 0, SHARE_MEM03->size);
 
 	if (!BN_bin2bn((uint8_t *)(SHARE_MEM01->buffer), SHARE_MEM01->size,
 		       a))

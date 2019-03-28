@@ -59,7 +59,7 @@ void Do_ADBG_HexLog(
 	)
 {
 	const uint8_t *Data_p = Buf_p;
-	size_t n;
+	size_t n = 0;
 
 	for (n = 0; n < Size; n += Cols) {
 		char HexBuffer[ADBG_STRING_LENGTH_MAX];

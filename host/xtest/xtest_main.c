@@ -95,15 +95,17 @@ static void init_ossl(void)
 
 int main(int argc, char *argv[])
 {
-	int opt;
-	int index;
-	TEEC_Result tee_res;
-	int ret;
+	int opt = 0;
+	int index = 0;
+	TEEC_Result tee_res = TEEC_ERROR_GENERIC;
+	int ret = 0;
 	char *p = (char *)glevel;
 	char *test_suite = (char *)gsuitename;
-	char *token;
-	ADBG_Suite_Definition_t all = { .SuiteID_p = NULL,
-				.cases = TAILQ_HEAD_INITIALIZER(all.cases), };
+	char *token = NULL;
+	ADBG_Suite_Definition_t all = {
+		.SuiteID_p = NULL,
+		.cases = TAILQ_HEAD_INITIALIZER(all.cases),
+	};
 
 	opterr = 0;
 

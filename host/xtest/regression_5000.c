@@ -102,7 +102,7 @@ static void Allocate_In(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Allocate_In");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		size_t size = 1024;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -126,7 +126,7 @@ static void Allocate_out_of_memory(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Allocate_out_of_memory");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		size_t SIZE_OVER_MEMORY_CAPACITY = SIZE_MAX;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -150,7 +150,7 @@ static void OpenSession_error_notExistingTA(struct xtest_session *cs)
 		TEEC_UUID NONEXISTING_TA_UUID = { 0x534D1192, 0x6143, 0x234C,
 						  { 0x47, 0x55, 0x53, 0x52,
 						    0x54, 0x4F, 0x4F, 0x59 } };
-		uint32_t ret_orig;
+		uint32_t ret_orig = 0;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -173,7 +173,7 @@ static void Allocate_InOut(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Allocate_InOut");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		uint8_t val[] = { 54, 76, 98, 32 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -197,7 +197,7 @@ static void Register_In(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Register_In");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		uint8_t val[] = { 32, 65, 43, 21, 98 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -223,7 +223,7 @@ static void Register_notZeroLength_Out(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Register_notZeroLength_Out");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		uint8_t val[] = { 56, 67, 78, 99 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -249,7 +249,7 @@ static void Register_InOut(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Register_InOut");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		uint8_t val[] = { 54, 76, 23, 98, 255, 23, 86 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -275,7 +275,7 @@ static void Register_zeroLength_Out(struct xtest_session *cs)
 	Do_ADBG_BeginSubCase(cs->c, "Register_zeroLength_Out");
 	{
 		uint8_t val[] = { 65, 76, 98, 32 };
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -299,7 +299,7 @@ static void Allocate_Out(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Allocate_Out");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -343,7 +343,7 @@ static void AllocateThenRegister_SameMemory(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "AllocateThenRegister_SameMemory");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		size_t size_allocation = 32;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -371,7 +371,7 @@ static void AllocateSameMemory_twice(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "AllocateSameMemory_twice");
 	{
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 		size_t size_allocation = 32;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
@@ -400,7 +400,7 @@ static void RegisterSameMemory_twice(struct xtest_session *cs)
 	Do_ADBG_BeginSubCase(cs->c, "RegisterSameMemory_twice");
 	{
 		uint8_t val[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -434,7 +434,7 @@ static void Allocate_sharedMemory_32k(struct xtest_session *cs)
 	{
 		size_t size = MIN(32 * 1024,
 				  TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
-		TEEC_SharedMemory shm;
+		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -453,14 +453,14 @@ out:
 	Do_ADBG_EndSubCase(cs->c, "Allocate_sharedMemory_32k");
 }
 
+#define SHM_32K_SIZE	MIN(32 * 1024, TEEC_CONFIG_SHAREDMEM_MAX_SIZE)
+
 static void Register_sharedMemory_32k(struct xtest_session *cs)
 {
 	Do_ADBG_BeginSubCase(cs->c, "Register_sharedMemory_32k");
 	{
-		size_t size = MIN(32 * 1024,
-				  TEEC_CONFIG_SHAREDMEM_MAX_SIZE);
-		uint8_t val[size];
-		TEEC_SharedMemory shm;
+		uint8_t val[SHM_32K_SIZE] = { };
+		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
 			TEEC_InitializeContext(_device, &cs->context)))
@@ -468,7 +468,7 @@ static void Register_sharedMemory_32k(struct xtest_session *cs)
 
 		shm.buffer = val;
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
-			RegisterSharedMemory(&cs->context, &shm, size,
+			RegisterSharedMemory(&cs->context, &shm, SHM_32K_SIZE,
 					     TEEC_MEM_INPUT)))
 			goto out_final;
 

@@ -395,7 +395,7 @@ static uint8_t TEE_ATTR_DH_PUBLIC_VALUE_VALUE01[] = {
 	0x39, 0xf7, 0x4b, 0x01,
 };
 
-static uint8_t TEE_ATTR_DH_SUBPRIME_VALUE01[] = { 0 };
+static uint8_t TEE_ATTR_DH_SUBPRIME_VALUE01[] = { };
 /* static uint8_t *TEE_ATTR_DH_SUBPRIME_VALUE01=NULL; */
 
 static uint8_t TEE_ATTR_HMAC_MD5_256_VALUE01[] = {

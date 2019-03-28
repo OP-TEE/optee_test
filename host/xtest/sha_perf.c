@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "crypto_common.h"
+#include "xtest_helpers.h"
 
 /*
  * TEE client stuff
@@ -71,9 +72,9 @@ static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 
 static void open_ta(void)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_UUID uuid = TA_SHA_PERF_UUID;
-	uint32_t err_origin;
+	uint32_t err_origin = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
 	check_res(res,"TEEC_InitializeContext", NULL);
@@ -167,7 +168,7 @@ static int hash_size(uint32_t algo)
 
 static void alloc_shm(size_t sz, uint32_t algo, int offset)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 
 	in_shm.buffer = NULL;
 	in_shm.size = sz + offset;
@@ -189,7 +190,7 @@ static void free_shm(void)
 static ssize_t read_random(void *in, size_t rsize)
 {
 	static int rnd;
-	ssize_t s;
+	ssize_t s = 0;
 
 	if (!rnd) {
 		rnd = open("/dev/urandom", O_RDONLY);
@@ -233,11 +234,13 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return ns;
 }
 
-static uint64_t run_test_once(void *in, size_t size,  int random_in, TEEC_Operation *op)
+static uint64_t run_test_once(void *in, size_t size,  int random_in,
+			      TEEC_Operation *op)
 {
-	struct timespec t0, t1;
-	TEEC_Result res;
-	uint32_t ret_origin;
+	struct timespec t0 = { };
+	struct timespec t1 = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_origin = 0;
 
 	if (random_in == CRYPTO_USE_RANDOM)
 		read_random(in, size);
@@ -253,11 +256,10 @@ static uint64_t run_test_once(void *in, size_t size,  int random_in, TEEC_Operat
 
 static void prepare_op(int algo)
 {
-	TEEC_Result res;
-	uint32_t ret_origin;
-	TEEC_Operation op;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_origin = 0;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 
-	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = algo;
@@ -268,8 +270,9 @@ static void prepare_op(int algo)
 
 static void do_warmup(int warmup)
 {
-	struct timespec t0, t;
-	int i;
+	struct timespec t0 = { };
+	struct timespec t = { };
+	int i = 0;
 
 	get_current_time(&t0);
 	do {
@@ -305,12 +308,12 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity)
 {
-	uint64_t t;
-	struct statistics stats;
-	TEEC_Operation op;
+	uint64_t t = 0;
+	struct statistics stats = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	int n0 = n;
-	struct timespec ts;
-	double sd;
+	struct timespec ts = { };
+	double sd = 0;
 
 	vverbose("sha-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
@@ -328,7 +331,6 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	if (random_in == CRYPTO_USE_ZEROS)
 		memset((uint8_t *)in_shm.buffer + offset, 0, size);
 
-	memset(&op, 0, sizeof(op));
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_PARTIAL_INPUT,
 					 TEEC_MEMREF_PARTIAL_OUTPUT,
 					 TEEC_VALUE_INPUT, TEEC_NONE);
@@ -350,9 +352,9 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	if (warmup)
 		do_warmup(warmup);
 
-	memset(&stats, 0, sizeof(stats));
 	while (n-- > 0) {
-		t = run_test_once((uint8_t *)in_shm.buffer + offset, size, random_in, &op);
+		t = run_test_once((uint8_t *)in_shm.buffer + offset, size,
+				  random_in, &op);
 		update_stats(&stats, t);
 		if (n % (n0 / 10) == 0)
 			vverbose("#");
@@ -404,7 +406,7 @@ static void usage(const char *progname,
 
 extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 {
-	int i;
+	int i = 0;
 	/* Command line params */
 	size_t size = 1024;	/* Buffer size (-s) */
 	unsigned int n = CRYPTO_DEF_COUNT;/* Number of measurements (-n)*/

@@ -51,9 +51,9 @@ TEEC_Result ta_crypt_cmd_allocate_operation(ADBG_Case_t *c, TEEC_Session *s,
 					    uint32_t algo, uint32_t mode,
 					    uint32_t max_key_size)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = 0;
 	op.params[0].value.b = algo;
@@ -83,9 +83,9 @@ TEEC_Result ta_crypt_cmd_allocate_transient_object(ADBG_Case_t *c,
 						   uint32_t max_obj_size,
 						   TEE_ObjectHandle *o)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = obj_type;
 	op.params[0].value.b = max_obj_size;
@@ -134,10 +134,10 @@ struct tee_attr_packed {
 TEE_Result pack_attrs(const TEE_Attribute *attrs, uint32_t attr_count,
 		      uint8_t **buf, size_t *blen)
 {
-	struct tee_attr_packed *a;
-	uint8_t *b;
-	size_t bl;
-	size_t n;
+	struct tee_attr_packed *a = NULL;
+	uint8_t *b = NULL;
+	size_t bl = 0;
+	size_t n = 0;
 
 	*buf = NULL;
 	*blen = 0;
@@ -202,11 +202,11 @@ TEEC_Result ta_crypt_cmd_populate_transient_object(ADBG_Case_t *c,
 						   const TEE_Attribute *attrs,
 						   uint32_t attr_count)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
-	uint8_t *buf;
-	size_t blen;
+	uint32_t ret_orig = 0;
+	uint8_t *buf = NULL;
+	size_t blen = 0;
 
 	res = pack_attrs(attrs, attr_count, &buf, &blen);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
@@ -238,9 +238,9 @@ TEE_Result ta_crypt_cmd_set_operation_key(ADBG_Case_t *c, TEEC_Session *s,
 					  TEE_OperationHandle oph,
 					  TEE_ObjectHandle key)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	assert((uintptr_t)oph <= UINT32_MAX);
 	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
@@ -265,9 +265,9 @@ TEE_Result ta_crypt_cmd_set_operation_key(ADBG_Case_t *c, TEEC_Session *s,
 TEEC_Result ta_crypt_cmd_free_transient_object(ADBG_Case_t *c, TEEC_Session *s,
 					       TEE_ObjectHandle o)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	assert((uintptr_t)o <= UINT32_MAX);
 	op.params[0].value.a = (uint32_t)(uintptr_t)o;
@@ -290,11 +290,11 @@ TEEC_Result ta_crypt_cmd_derive_key(ADBG_Case_t *c, TEEC_Session *s,
 				    const TEE_Attribute *params,
 				    uint32_t paramCount)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
-	uint8_t *buf;
-	size_t blen;
+	uint32_t ret_orig = 0;
+	uint8_t *buf = NULL;
+	size_t blen = 0;
 
 	res = pack_attrs(params, paramCount, &buf, &blen);
 
@@ -331,9 +331,9 @@ TEEC_Result ta_crypt_cmd_get_object_buffer_attribute(ADBG_Case_t *c,
 						     uint32_t attr_id,
 						     void *buf, size_t *blen)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	assert((uintptr_t)o <= UINT32_MAX);
 	op.params[0].value.a = (uint32_t)(uintptr_t)o;
@@ -363,9 +363,9 @@ TEEC_Result ta_crypt_cmd_get_object_buffer_attribute(ADBG_Case_t *c,
 TEEC_Result ta_crypt_cmd_free_operation(ADBG_Case_t *c, TEEC_Session *s,
 					TEE_OperationHandle oph)
 {
-	TEEC_Result res;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
 
