@@ -19,6 +19,8 @@
 #include <ta_os_test.h>
 #include <ta_rpc_test.h>
 #include <ta_sims_test.h>
+#include <ta_miss_test.h>
+#include <ta_sims_keepalive_test.h>
 #include <ta_storage.h>
 #include <ta_concurrent.h>
 #include <ta_concurrent_large.h>
@@ -94,6 +96,8 @@ const TEEC_UUID ecc_test_ta_uuid = ECC_SELF_TEST_UUID;
 const TEEC_UUID pta_invoke_tests_ta_uuid = PTA_INVOKE_TESTS_UUID;
 const TEEC_UUID rpc_test_ta_uuid = TA_RPC_TEST_UUID;
 const TEEC_UUID sims_test_ta_uuid = TA_SIMS_TEST_UUID;
+const TEEC_UUID miss_test_ta_uuid = TA_MISS_TEST_UUID;
+const TEEC_UUID sims_keepalive_test_ta_uuid = TA_SIMS_KEEP_ALIVE_TEST_UUID;
 const TEEC_UUID storage_ta_uuid = TA_STORAGE_UUID;
 const TEEC_UUID storage2_ta_uuid = TA_STORAGE2_UUID;
 const TEEC_UUID enc_fs_key_manager_test_ta_uuid = ENC_FS_KEY_MANAGER_TEST_UUID;
