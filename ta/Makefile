@@ -24,6 +24,8 @@ TA_DIRS := create_fail_test \
 	   os_test \
 	   rpc_test \
 	   sims \
+	   miss \
+	   sims_keepalive \
 	   storage \
 	   storage2 \
 	   concurrent \

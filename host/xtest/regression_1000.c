@@ -31,6 +31,8 @@
 #include <ta_create_fail_test.h>
 #include <ta_rpc_test.h>
 #include <ta_sims_test.h>
+#include <ta_miss_test.h>
+#include <ta_sims_keepalive_test.h>
 #include <ta_concurrent.h>
 #include <sdp_basic.h>
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
@@ -1469,3 +1471,247 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1020, xtest_tee_test_1020,
 		"Test lockdep algorithm");
+
+static TEEC_Result open_sec_session(TEEC_Session *session,
+				    const TEEC_UUID *uuid)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	op.params[0].tmpref.buffer = (void *)uuid;
+	op.params[0].tmpref.size = sizeof(*uuid);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(session, TA_SIMS_OPEN_TA_SESSION,
+				 &op, &ret_orig);
+	if (res != TEEC_SUCCESS)
+		return TEEC_ERROR_GENERIC;
+
+	return res;
+}
+
+static TEEC_Result sims_get_counter(TEEC_Session *session,
+				    uint32_t *counter)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(session, TA_SIMS_CMD_GET_COUNTER,
+				 &op, &ret_orig);
+	if (res == TEEC_SUCCESS)
+		*counter = op.params[0].value.a;
+
+	return res;
+}
+
+static TEEC_Result trigger_panic(TEEC_Session *session,
+				 const TEEC_UUID *uuid)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	if (!uuid) {
+		op.params[0].tmpref.buffer = NULL;
+		op.params[0].tmpref.size = 0;
+	} else {
+		op.params[0].tmpref.buffer = (void *)uuid;
+		op.params[0].tmpref.size = sizeof(*uuid);
+	}
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+
+	return TEEC_InvokeCommand(session, TA_SIMS_CMD_PANIC,
+				  &op, &ret_orig);
+}
+
+static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
+				bool multi_instance)
+{
+	TEEC_Result exp_res = TEEC_ERROR_GENERIC;
+	uint32_t counter = 0;
+	uint32_t ret_orig = 0;
+	uint32_t exp_counter = 0;
+	TEEC_Session cs[3] = { };
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[0], uuid, NULL,
+						&ret_orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[1], uuid, NULL,
+						&ret_orig)))
+		goto bail0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[0], &counter)))
+		goto bail1;
+
+	if (!ADBG_EXPECT(c, 0, counter))
+		goto bail1;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[1], &counter)))
+		goto bail1;
+
+	exp_counter = multi_instance ? 0 : 1;
+	if (ADBG_EXPECT(c, exp_counter, counter))
+		goto bail1;
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				     trigger_panic(&cs[1], NULL)))
+		goto bail1;
+
+	exp_res = multi_instance ? TEEC_SUCCESS : TEEC_ERROR_TARGET_DEAD;
+	if (!ADBG_EXPECT_TEEC_RESULT(c, exp_res,
+				     sims_get_counter(&cs[0], &counter)))
+		goto bail1;
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				     sims_get_counter(&cs[1], &counter)))
+		goto bail1;
+
+	/* Attempt to open a session on panicked context */
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+			xtest_teec_open_session(&cs[1], uuid, NULL,
+						&ret_orig)))
+		goto bail1;
+
+	/* Sanity check of still valid TA context */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[2], uuid, NULL,
+						&ret_orig)))
+		goto bail1;
+
+	/* Sanity check of still valid TA context */
+	if (multi_instance) {
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				sims_get_counter(&cs[0], &counter)))
+			goto bail2;
+
+		if (!ADBG_EXPECT(c, 0, counter))
+			goto bail2;
+	}
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[2], &counter)))
+		goto bail2;
+
+	if (!ADBG_EXPECT(c, 0, counter))
+		goto bail2;
+
+bail2:
+	TEEC_CloseSession(&cs[2]);
+bail1:
+	TEEC_CloseSession(&cs[1]);
+bail0:
+	TEEC_CloseSession(&cs[0]);
+}
+
+static void test_panic_ta_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid1,
+				const TEEC_UUID *uuid2)
+{
+	uint32_t ret_orig = 0;
+	uint32_t counter = 0;
+	TEEC_Session cs[3] = { };
+
+	/* Test pre-conditions */
+	/* 2.1 - CA opens a session toward TA1 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[0], uuid1, NULL,
+						&ret_orig)))
+		return;
+
+	/* 2.2 - CA opens a session toward TA2 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[1], uuid2, NULL,
+						&ret_orig)))
+		goto bail0;
+
+	/* 2.3 - TA1 opens a session toward TA2 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, open_sec_session(&cs[0], uuid2)))
+		goto bail1;
+
+	/* 2.4 - CA invokes TA2 which panics */
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				     trigger_panic(&cs[1], NULL)))
+		goto bail1;
+
+	/* Expected results */
+	/* 2.5 - Expect CA->TA1 session is still alive */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[0], &counter)))
+		goto bail1;
+
+	/* 2.6 - Expect CA->TA2 session is properly released */
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				     sims_get_counter(&cs[1], &counter)))
+		goto bail1;
+
+bail1:
+	TEEC_CloseSession(&cs[1]);
+bail0:
+	TEEC_CloseSession(&cs[0]);
+
+	memset(cs, 0, sizeof(cs));
+
+	/* Test pre-conditions */
+	/* 2.1 - CA opens a session toward TA1 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[0], uuid1, NULL,
+						&ret_orig)))
+		return;
+
+	/* 2.2 - CA opens a session toward TA2 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[1], uuid2, NULL,
+						&ret_orig)))
+		goto bail2;
+
+	/* 2.3 - TA1 opens a session toward TA2 */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, open_sec_session(&cs[0], uuid2)))
+		goto bail3;
+
+	/* 2.4 - CA invokes TA1 which invokes TA2 which panics */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, trigger_panic(&cs[0], uuid2)))
+		goto bail3;
+
+	/* Expected results */
+	/* 2.5 - Expect CA->TA1 session is still alive */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[0], &counter)))
+		goto bail3;
+
+	/* 2.6 - Expect CA->TA2 session is properly released */
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				     sims_get_counter(&cs[1], &counter)))
+		goto bail3;
+
+bail3:
+	TEEC_CloseSession(&cs[1]);
+bail2:
+	TEEC_CloseSession(&cs[0]);
+}
+
+static void xtest_tee_test_1021(ADBG_Case_t *c)
+{
+	Do_ADBG_BeginSubCase(c, "Multiple Instances Single Session");
+	test_panic_ca_to_ta(c, &miss_test_ta_uuid, true);
+	Do_ADBG_EndSubCase(c, "Multiple Instances Single Session");
+
+	Do_ADBG_BeginSubCase(c, "Single Instance Multi Sessions");
+	test_panic_ca_to_ta(c, &sims_test_ta_uuid, false);
+	Do_ADBG_EndSubCase(c, "Single Instance Multi Sessions");
+
+	Do_ADBG_BeginSubCase(c, "Single Instance Multi Sessions Keep Alive");
+	test_panic_ca_to_ta(c, &sims_keepalive_test_ta_uuid, false);
+	Do_ADBG_EndSubCase(c, "Single Instance Multi Sessions Keep Alive");
+
+	Do_ADBG_BeginSubCase(c, "Multi Sessions TA to TA");
+	test_panic_ta_to_ta(c, &sims_test_ta_uuid,
+			    &sims_keepalive_test_ta_uuid);
+	Do_ADBG_EndSubCase(c, "Multi Sessions TA to TA");
+}
+ADBG_CASE_DEFINE(regression, 1021, xtest_tee_test_1021,
+		 "Test panic context release");

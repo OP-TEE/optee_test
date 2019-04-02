@@ -103,6 +103,8 @@ extern const TEEC_UUID os_test_ta_uuid;
 extern const TEEC_UUID create_fail_test_ta_uuid;
 extern const TEEC_UUID rpc_test_ta_uuid;
 extern const TEEC_UUID sims_test_ta_uuid;
+extern const TEEC_UUID miss_test_ta_uuid;
+extern const TEEC_UUID sims_keepalive_test_ta_uuid;
 extern const TEEC_UUID gp_tta_testing_client_api_uuid;
 extern const TEEC_UUID gp_tta_answer_success_to_open_session_invoke_uuid;
 extern const TEEC_UUID gp_tta_answer_error_to_invoke_uuid;
