@@ -32,6 +32,8 @@
 #include <tee_api.h>
 
 TEE_Result sims_open_session(void **ctx);
+TEE_Result sims_open_ta_session(void *ctx, uint32_t nParamTypes,
+				TEE_Param pParams[4]);
 void sims_close_session(void *ctx);
 TEE_Result sims_read(uint32_t nParamTypes, TEE_Param pParams[4]);
 TEE_Result sims_write(uint32_t nParamTypes, TEE_Param pParams[4]);

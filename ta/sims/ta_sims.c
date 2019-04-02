@@ -36,6 +36,7 @@ struct sims_bucket {
 };
 
 struct sims_session {
+	TEE_TASessionHandle sess;
 	uint32_t counter;
 	uint32_t array[2048];
 };
@@ -44,14 +45,50 @@ static struct sims_bucket storage[TA_SIMS_MAX_STORAGE] = { {0} };
 
 static uint32_t counter;
 
+TEE_Result sims_open_ta_session(void *session_context, uint32_t param_types,
+				TEE_Param params[4])
+{
+	TEE_UUID *uuid = NULL;
+	TEE_Result res = TEE_SUCCESS;
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	uint32_t ret_orig = 0;
+	struct sims_session *ctx = (struct sims_session *)session_context;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (params[0].memref.size != sizeof(*uuid))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	uuid = TEE_Malloc(sizeof(*uuid), TEE_MALLOC_FILL_ZERO);
+	if (!uuid)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	TEE_MemMove(uuid, params[0].memref.buffer, params[0].memref.size);
+
+	res = TEE_OpenTASession(uuid, 0, 0, NULL, &sess, &ret_orig);
+	TEE_Free(uuid);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	ctx->sess = sess;
+	ctx->counter++;
+
+	return TEE_SUCCESS;
+}
+
 TEE_Result sims_open_session(void **ctx)
 {
 	struct sims_session *context =
-	    TEE_Malloc(sizeof(struct sims_session), 0);
+	    TEE_Malloc(sizeof(struct sims_session), TEE_MALLOC_FILL_ZERO);
 
 	if (context == NULL)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
+	context->sess = TEE_HANDLE_NULL;
 	context->counter = counter;
 	*ctx = context;
 
@@ -62,6 +99,11 @@ TEE_Result sims_open_session(void **ctx)
 
 void sims_close_session(void *ctx)
 {
+	TEE_TASessionHandle sess = ((struct sims_session *)ctx)->sess;
+
+	if (sess != TEE_HANDLE_NULL)
+		TEE_CloseTASession(sess);
+
 	TEE_Free(ctx);
 }
 
@@ -140,11 +182,33 @@ TEE_Result sims_get_counter(void *session_context, uint32_t param_types,
 TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
 			    TEE_Param params[4])
 {
-	(void)session_context;
-	(void)param_types;
-	(void)params;
+	uint32_t ret_orig = 0;
+	TEE_Result res = TEE_SUCCESS;
+	struct sims_session *ctx = (struct sims_session *)session_context;
 
-	TEE_Panic(0xbeef); /* Trigger panic to current TA */
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (params[0].memref.buffer && params[0].memref.size) {
+		res = sims_open_ta_session(session_context,
+					   param_types, params);
+		if (res != TEE_SUCCESS)
+			return res;
+
+		params[0].memref.buffer = NULL;
+		params[0].memref.size = 0;
+
+		/* Trigger panic to remote TA */
+		(void)TEE_InvokeTACommand(ctx->sess, 0,
+					  TA_SIMS_CMD_PANIC,
+					  param_types, params,
+					  &ret_orig);
+	} else {
+		TEE_Panic(0xbeef); /* Trigger panic to current TA */
+	}
 
 	return TEE_SUCCESS;
 }

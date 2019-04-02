@@ -36,5 +36,6 @@
 #define TA_SIMS_CMD_WRITE                2
 #define TA_SIMS_CMD_GET_COUNTER          3
 #define TA_SIMS_CMD_PANIC                4
+#define TA_SIMS_OPEN_TA_SESSION          5
 
 #endif
