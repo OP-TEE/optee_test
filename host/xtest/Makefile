@@ -95,7 +95,7 @@ CFLAGS += -I./adbg/include
 CFLAGS += -I./xml/include
 CFLAGS += -I$(out-dir)/xtest
 
-CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
+CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/usr/include
 CFLAGS += -I$(TA_DEV_KIT_DIR)/host_include
 
 CFLAGS += -I../../ta/include
@@ -160,7 +160,7 @@ endif
 
 CFLAGS += -g3
 
-LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lteec
+LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/usr/lib -lteec
 LDFLAGS += -lpthread -lm
 
 .PHONY: all
