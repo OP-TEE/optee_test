@@ -61,6 +61,10 @@ set (SRC
 	xtest_test.c
 )
 
+set_source_files_properties(
+	regression_4100.c PROPERTIES COMPILE_FLAGS -Wno-unsafe-loop-optimizations
+)
+
 if (CFG_GP_SOCKETS)
 	list (APPEND SRC
 		regression_2000.c
