@@ -1010,6 +1010,7 @@ static void xtest_tee_test_1012(ADBG_Case_t *c)
 
 		TEEC_CloseSession(&session1);
 	}
+	Do_ADBG_EndSubCase(c, "Single Instance Multi Session");
 }
 ADBG_CASE_DEFINE(regression, 1012, xtest_tee_test_1012,
 		"Test Single Instance Multi Session features with SIMS TA");
