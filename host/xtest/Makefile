@@ -155,6 +155,7 @@ CFLAGS += -Wall -Wcast-align -Werror \
 	  -Wshadow -Wstrict-prototypes -Wswitch-default \
 	  -Wwrite-strings \
 	  -Wno-declaration-after-statement \
+	  -Wno-unsafe-loop-optimizations \
 	  -Wno-missing-field-initializers -Wno-format-zero-length
 endif
 
