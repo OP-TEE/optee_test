@@ -63,7 +63,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *session_context,
 				      TEE_Param params[4])
 {
 	switch (command_id) {
-	case TA_SIMS_OPEN_TA_SESSION:
+	case TA_SIMS_CMD_OPEN_TA_SESSION:
 		return sims_open_ta_session(session_context,
 					    param_types, params);
 

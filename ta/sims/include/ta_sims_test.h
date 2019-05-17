@@ -44,10 +44,46 @@
  */
 
 /* Command invocation interface */
-#define TA_SIMS_CMD_READ                 1
-#define TA_SIMS_CMD_WRITE                2
-#define TA_SIMS_CMD_GET_COUNTER          3
-#define TA_SIMS_CMD_PANIC                4
-#define TA_SIMS_OPEN_TA_SESSION          5
+
+/*
+ * TA_SIMS_CMD_READ	Read a binary blob previously written
+ *
+ * param#0: [in]	value.a = index of blob in the storage array
+ * param#1: [out]	memref = output buffer for blob
+ */
+#define TA_SIMS_CMD_READ		1
+
+/*
+ * TA_SIMS_CMD_WRITE	Read a binary blob previously written
+ *
+ * param#0: [in]	value.a = index of blob in the storage array
+ * param#1: [in]	memref = blob to store
+ */
+#define TA_SIMS_CMD_WRITE		2
+
+/*
+ * TA_SIMS_CMD_GET_COUNTER	Read counter value that is (session count - 1)
+ *
+ * param#0: [out]	value.a = counter value
+ */
+#define TA_SIMS_CMD_GET_COUNTER		3
+
+/*
+ * TA_SIMS_CMD_PANIC	Make the TA panicking
+ *
+ * Optional parameters:
+ *
+ * param#0: [in]	memref = UUID of a TA
+ *			If provided, open a session towards this TA and
+ *			invoke it with command TA_SIMS_CMD_PANIC.
+ */
+#define TA_SIMS_CMD_PANIC		4
+
+/*
+ * TA_SIMS_CMD_OPEN_TA_SESSION	Open a session towards a TA
+ *
+ * param#0: [in]	memref = target TA UUID
+ */
+#define TA_SIMS_CMD_OPEN_TA_SESSION	5
 
 #endif
