@@ -32,6 +32,18 @@
 #define TA_SIMS_TEST_UUID { 0xe6a33ed4, 0x562b, 0x463a, \
 	{ 0xbb, 0x7e, 0xff, 0x5e, 0x15, 0xa4, 0x93, 0xc8 } }
 
+/*
+ * Open session invocation interface
+ *
+ * When opening a session, client may provide additional request through
+ * the TEE invocation parameters. When parameter types are not all of type None
+ * below lists the parameters usage.
+ *
+ * param#0: [in]	value.a = Request based on below supported values:
+ *			TA_SIMS_CMD_PANIC: TA to panic during session opening
+ */
+
+/* Command invocation interface */
 #define TA_SIMS_CMD_READ                 1
 #define TA_SIMS_CMD_WRITE                2
 #define TA_SIMS_CMD_GET_COUNTER          3

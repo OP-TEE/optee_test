@@ -80,7 +80,7 @@ TEE_Result sims_open_ta_session(void *session_context, uint32_t param_types,
 	return TEE_SUCCESS;
 }
 
-TEE_Result sims_open_session(void **ctx)
+static TEE_Result open_client_session(struct sims_session **ctx)
 {
 	struct sims_session *context =
 	    TEE_Malloc(sizeof(struct sims_session), TEE_MALLOC_FILL_ZERO);
@@ -97,9 +97,9 @@ TEE_Result sims_open_session(void **ctx)
 	return TEE_SUCCESS;
 }
 
-void sims_close_session(void *ctx)
+static void close_client_session(struct sims_session *ctx)
 {
-	TEE_TASessionHandle sess = ((struct sims_session *)ctx)->sess;
+	TEE_TASessionHandle sess = ctx->sess;
 
 	if (sess != TEE_HANDLE_NULL)
 		TEE_CloseTASession(sess);
@@ -211,4 +211,32 @@ TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
 	}
 
 	return TEE_SUCCESS;
+}
+
+TEE_Result sims_entry_open_session(void **session,
+				   uint32_t param_types, TEE_Param params[4])
+{
+	struct sims_session *loc_ctx = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t ptypes_extra = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+						0, 0, 0);
+
+	res = open_client_session(&loc_ctx);
+	if (res != TEE_SUCCESS)
+		return res;
+
+	if (param_types == ptypes_extra &&
+	    params[0].value.a == TA_SIMS_CMD_PANIC)
+		TEE_Panic(TEE_ERROR_TARGET_DEAD);
+
+	*session = loc_ctx;
+
+	return res;
+}
+
+void sims_entry_close_session(void *session)
+{
+	struct sims_session *ctx = (struct sims_session *)session;
+
+	close_client_session(ctx);
 }

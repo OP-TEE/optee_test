@@ -1530,6 +1530,19 @@ static TEEC_Result trigger_panic(TEEC_Session *session,
 				  &op, &ret_orig);
 }
 
+static TEEC_Result sims_panic_in_open_session(TEEC_Session *session,
+					      const TEEC_UUID *uuid,
+					      uint32_t *ret_orig)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = TA_SIMS_CMD_PANIC;
+
+	return xtest_teec_open_session(session, uuid, &op, ret_orig);
+}
+
 static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
 				bool multi_instance)
 {
@@ -1602,6 +1615,30 @@ static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
 
 	if (!ADBG_EXPECT(c, 0, counter))
 		goto bail2;
+
+	/*
+	 * Test TA panic from its open_session sequence
+	 */
+	TEEC_CloseSession(&cs[0]);
+	TEEC_CloseSession(&cs[1]);
+	TEEC_CloseSession(&cs[2]);
+
+	memset(&cs[0], 0, sizeof(cs[0]));
+	memset(&cs[1], 0, sizeof(cs[1]));
+	memset(&cs[2], 0, sizeof(cs[2]));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&cs[0], uuid, NULL, &ret_orig)))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+			sims_panic_in_open_session(&cs[1], uuid, &ret_orig)))
+		goto bail0;
+
+	exp_res = multi_instance ? TEEC_SUCCESS : TEEC_ERROR_TARGET_DEAD;
+	if (!ADBG_EXPECT_TEEC_RESULT(c, exp_res,
+				     sims_get_counter(&cs[0], &counter)))
+		goto bail1;
 
 bail2:
 	TEEC_CloseSession(&cs[2]);
