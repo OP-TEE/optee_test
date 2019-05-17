@@ -1484,7 +1484,7 @@ static TEEC_Result open_sec_session(TEEC_Session *session,
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
 					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
 
-	res = TEEC_InvokeCommand(session, TA_SIMS_OPEN_TA_SESSION,
+	res = TEEC_InvokeCommand(session, TA_SIMS_CMD_OPEN_TA_SESSION,
 				 &op, &ret_orig);
 	if (res != TEEC_SUCCESS)
 		return TEEC_ERROR_GENERIC;
