@@ -660,7 +660,7 @@ static TEE_Result test_float(void)
 }
 #endif /*CFG_TA_FLOAT_SUPPORT*/
 
-static __noinline void call_longjmp(jmp_buf env)
+static __noinline __noprof void call_longjmp(jmp_buf env)
 {
 	DMSG("Calling longjmp");
 	longjmp(env, 1);
