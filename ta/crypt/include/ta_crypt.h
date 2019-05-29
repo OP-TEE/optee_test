@@ -611,4 +611,22 @@
  */
 #define TA_CRYPT_CMD_ARITH_COMPUTE_FMM		76
 
+/*
+ * system PTA is used for deriving device and TA unique keys. This function in
+ * the "crypt" TA is testing the key derivation.
+ */
+#define TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY	77
+
+/*
+ * system PTA is used for deriving device and TA unique keys. This function in
+ * the "crypt" TA is testing the key derivation. This function tries to derive
+ * keys by using shared memory buffers (something that shall fail).
+ *
+ * in  params[0].memref.buffer     Buffer for extra data
+ * in  params[0].memref.size       Size of extra data
+ * out params[1].memref.buffer     Buffer for the derived key
+ * out params[1].memref.size       Size of the derived key
+ */
+#define TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM	78
+
 #endif /*TA_CRYPT_H */

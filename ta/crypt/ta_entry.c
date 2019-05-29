@@ -28,6 +28,7 @@
 #include <aes_taf.h>
 #include <arith_taf.h>
 #include <cryp_taf.h>
+#include <derive_key_taf.h>
 #include <mbedtls_taf.h>
 #include <seed_rng_taf.h>
 #include <sha2_taf.h>
@@ -233,6 +234,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 #ifdef CFG_SYSTEM_PTA
 	case TA_CRYPT_CMD_SEED_RNG_POOL:
 		return seed_rng_pool(nParamTypes, pParams);
+	case TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY:
+		return derive_ta_unique_key_test(nParamTypes, pParams);
+	case TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM:
+		return derive_ta_unique_key_test_shm(nParamTypes, pParams);
 #endif
 	case TA_CRYPT_CMD_ARITH_NEW_VAR:
 		return ta_entry_arith_new_var(nParamTypes, pParams);
