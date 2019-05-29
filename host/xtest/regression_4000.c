@@ -5163,4 +5163,50 @@ static void xtest_tee_test_4012(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
 		"Test seeding RNG entropy");
+
+static void xtest_tee_test_4013(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint8_t key[32] = { };
+	uint8_t extra_data[32] = { };
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE,
+					 TEEC_NONE,
+					 TEEC_NONE,
+					 TEEC_NONE);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			TEEC_InvokeCommand(&session,
+					  TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY,
+					  &op,
+					  &ret_orig));
+
+	/* Negative test using non-secure memory */
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE,
+					 TEEC_NONE);
+
+	op.params[0].tmpref.buffer = extra_data;
+	op.params[0].tmpref.size = sizeof(extra_data);
+	op.params[1].tmpref.buffer = key;
+	op.params[1].tmpref.size = sizeof(key);
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+			TEEC_ERROR_SECURITY,
+			TEEC_InvokeCommand(&session,
+					   TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM,
+					   &op,
+					   &ret_orig));
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4013, xtest_tee_test_4013,
+		"Test generation of device unique TA keys");
 #endif /*CFG_SYSTEM_PTA*/
