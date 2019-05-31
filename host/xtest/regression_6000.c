@@ -2220,7 +2220,7 @@ static void xtest_tee_test_6020_single(ADBG_Case_t *c, uint32_t storage_id)
 				storage_id);
 
 	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_TARGET_DEAD, res);
-
+	TEEC_CloseSession(&sess);
 	return;
 exit1:
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
