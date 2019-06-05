@@ -46,7 +46,7 @@ static struct sims_bucket storage[TA_SIMS_MAX_STORAGE] = { {0} };
 static uint32_t counter;
 
 TEE_Result sims_open_ta_session(void *session_context, uint32_t param_types,
-				TEE_Param params[4])
+				TEE_Param params[TEE_NUM_PARAMS])
 {
 	TEE_UUID *uuid = NULL;
 	TEE_Result res = TEE_SUCCESS;
@@ -107,7 +107,7 @@ static void close_client_session(struct sims_session *ctx)
 	TEE_Free(ctx);
 }
 
-TEE_Result sims_read(uint32_t param_types, TEE_Param params[4])
+TEE_Result sims_read(uint32_t param_types, TEE_Param params[TEE_NUM_PARAMS])
 {
 	uint32_t index = 0;
 	void *p = NULL;
@@ -136,7 +136,7 @@ TEE_Result sims_read(uint32_t param_types, TEE_Param params[4])
 	return TEE_SUCCESS;
 }
 
-TEE_Result sims_write(uint32_t param_types, TEE_Param params[4])
+TEE_Result sims_write(uint32_t param_types, TEE_Param params[TEE_NUM_PARAMS])
 {
 	uint32_t index = 0;
 
@@ -166,7 +166,7 @@ TEE_Result sims_write(uint32_t param_types, TEE_Param params[4])
 }
 
 TEE_Result sims_get_counter(void *session_context, uint32_t param_types,
-			    TEE_Param params[4])
+			    TEE_Param params[TEE_NUM_PARAMS])
 {
 	struct sims_session *ctx = (struct sims_session *)session_context;
 
@@ -180,7 +180,7 @@ TEE_Result sims_get_counter(void *session_context, uint32_t param_types,
 }
 
 TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
-			    TEE_Param params[4])
+			    TEE_Param params[TEE_NUM_PARAMS])
 {
 	uint32_t ret_orig = 0;
 	TEE_Result res = TEE_SUCCESS;
@@ -214,7 +214,8 @@ TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
 }
 
 TEE_Result sims_entry_open_session(void **session,
-				   uint32_t param_types, TEE_Param params[4])
+				   uint32_t param_types,
+				   TEE_Param params[TEE_NUM_PARAMS])
 {
 	struct sims_session *loc_ctx = NULL;
 	TEE_Result res = TEE_ERROR_GENERIC;
