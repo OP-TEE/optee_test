@@ -45,7 +45,8 @@ void TA_DestroyEntryPoint(void)
 }
 
 /* Called each time a session is opened */
-TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types, TEE_Param params[4],
+TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
+				    TEE_Param params[TEE_NUM_PARAMS],
 				    void **session_context)
 {
 	return sims_entry_open_session(session_context, param_types, params);
@@ -60,7 +61,7 @@ void TA_CloseSessionEntryPoint(void *session_context)
 /* Called when a command is invoked */
 TEE_Result TA_InvokeCommandEntryPoint(void *session_context,
 				      uint32_t command_id, uint32_t param_types,
-				      TEE_Param params[4])
+				      TEE_Param params[TEE_NUM_PARAMS])
 {
 	switch (command_id) {
 	case TA_SIMS_CMD_OPEN_TA_SESSION:
