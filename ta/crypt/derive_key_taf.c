@@ -160,7 +160,7 @@ TEE_Result derive_ta_unique_key_test(uint32_t param_types,
 			if (res != TEE_SUCCESS)
 				continue;
 
-			EMSG("Small key test iteration %d failed", i);
+			EMSG("Small key test iteration %zu failed", i);
 			res_final = TEE_ERROR_GENERIC;
 			break;
 		}
@@ -169,7 +169,7 @@ TEE_Result derive_ta_unique_key_test(uint32_t param_types,
 			if (res != TEE_SUCCESS)
 				continue;
 
-			EMSG("Big key test iteration %d failed", i);
+			EMSG("Big key test iteration %zu failed", i);
 			res_final = TEE_ERROR_GENERIC;
 			break;
 		}
@@ -211,7 +211,6 @@ TEE_Result derive_ta_unique_key_test_shm(uint32_t param_types,
 	 */
 	res = TEE_InvokeTACommand(session, 0, PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY,
 				  param_types, params, &ret_origin);
-err:
 	TEE_CloseTASession(session);
 
 	return res;
