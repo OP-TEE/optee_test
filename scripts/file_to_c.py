@@ -37,9 +37,9 @@ def main():
         else:
             f.write(" ")
 
-    f.write("};\n")
+    f.write("'\\0'};\n")
     f.write("const size_t " + args.name + "_size = sizeof(" + 
-            args.name + ");\n")
+            args.name + ") - 1;\n")
 
     f.close()
     inf.close()

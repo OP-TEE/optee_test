@@ -91,13 +91,13 @@ static void test_8102(ADBG_Case_t *c)
 		return;
 
 	clen = myasprintf(&chain, "%*s\n%*s",
-			  (int)sizeof(regression_8100_my_crt),
+			  (int)regression_8100_my_crt_size,
 			  regression_8100_my_crt,
-			  (int)sizeof(regression_8100_mid_crt),
+			  (int)regression_8100_mid_crt_size,
 			   regression_8100_mid_crt);
 	if (!ADBG_EXPECT_COMPARE_SIGNED(c, clen, !=, -1))
 		goto out;
-	tlen = myasprintf(&trust, "%*s", (int)sizeof(regression_8100_ca_crt),
+	tlen = myasprintf(&trust, "%*s", (int)regression_8100_ca_crt_size,
 			  regression_8100_ca_crt);
 	if (!ADBG_EXPECT_COMPARE_SIGNED(c, tlen, !=, -1))
 		goto out;
@@ -282,7 +282,7 @@ static void test_8103(ADBG_Case_t *c)
 					      NULL, &ret_orig)))
 		return;
 
-	clen = myasprintf(&csr, "%*s", (int)sizeof(regression_8100_my_csr),
+	clen = myasprintf(&csr, "%*s", (int)regression_8100_my_csr_size,
 			  regression_8100_my_csr);
 	if (!ADBG_EXPECT_COMPARE_SIGNED(c, clen, >=, 0))
 		goto out;
@@ -300,7 +300,7 @@ static void test_8103(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out;
 
-	myasprintf(&ca, "%*s", (int)sizeof(regression_8100_ca_crt),
+	myasprintf(&ca, "%*s", (int)regression_8100_ca_crt_size,
 		   regression_8100_ca_crt);
 	if (!ADBG_EXPECT_NOT_NULL(c, ca))
 		goto out;
