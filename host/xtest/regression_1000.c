@@ -496,7 +496,7 @@ static void xtest_tee_test_invalid_mem_access2(ADBG_Case_t *c, unsigned int n,
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
 		                        &ret_orig)))
-		return;
+		goto rel_shm;
 
 	op.params[0].value.a = (uint32_t)n;
 	op.params[1].memref.parent = &shm;
@@ -517,6 +517,8 @@ static void xtest_tee_test_invalid_mem_access2(ADBG_Case_t *c, unsigned int n,
 	(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
 
 	TEEC_CloseSession(&session);
+rel_shm:
+	TEEC_ReleaseSharedMemory(&shm);
 }
 
 static void xtest_tee_test_1005(ADBG_Case_t *c)
