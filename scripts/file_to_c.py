@@ -3,6 +3,8 @@
 #
 # Copyright (c) 2018, Linaro Limited
 #
+from array import array
+
 
 def get_args():
     import argparse
@@ -16,7 +18,6 @@ def get_args():
     return parser.parse_args()
 
 def main():
-    import array
 
     args = get_args()
 
@@ -26,11 +27,15 @@ def main():
     f.write("/* automatically generated */\n")
     f.write("#include <stdint.h>\n")
     f.write("#include <stddef.h>\n\n")
-
+    
     f.write("const uint8_t " + args.name + "[] = {\n")
+    
+    wordarray = inf.read()
+    b = bytearray(wordarray, 'utf-8')
+    
     i = 0
-    for x in array.array("B", inf.read()):
-        f.write("0x" + '{0:02x}'.format(x) + ",")
+    for x in b:
+        f.write("0x" + "{0:02x}".format(x) + ",")
         i = i + 1
         if i % 8 == 0:
             f.write("\n")
