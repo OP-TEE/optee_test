@@ -87,11 +87,15 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/ta/crypt/include \
 		$(LOCAL_PATH)/ta/enc_fs/include \
 		$(LOCAL_PATH)/ta/os_test/include \
+		$(LOCAL_PATH)/ta/os_test_lib/include \
+		$(LOCAL_PATH)/ta/os_test_lib_dl/include \
 		$(LOCAL_PATH)/ta/rpc_test/include \
 		$(LOCAL_PATH)/ta/sims/include \
 		$(LOCAL_PATH)/ta/miss/include \
 		$(LOCAL_PATH)/ta/sims_keepalive/include \
 		$(LOCAL_PATH)/ta/include \
+		$(LOCAL_PATH)/ta/storage/include \
+		$(LOCAL_PATH)/ta/storage2/include \
 		$(LOCAL_PATH)/ta/storage_benchmark/include \
 		$(LOCAL_PATH)/ta/sha_perf/include \
 		$(LOCAL_PATH)/ta/aes_perf/include \
