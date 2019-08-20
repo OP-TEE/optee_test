@@ -13,7 +13,7 @@ endif()
 find_package(OpenSSL)
 if(OPENSSL_FOUND)
 	add_compile_options(-DOPENSSL_FOUND=1)
-	set (OPENSSL_PRIVATE_LINK crypto)
+	set (OPENSSL_PRIVATE_LINK OpenSSL::Crypto)
 endif()
 
 include(GNUInstallDirs)
