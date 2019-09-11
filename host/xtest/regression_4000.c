@@ -4860,15 +4860,16 @@ static void xtest_tee_test_4009(ADBG_Case_t *c)
 			       TEE_ATTR_ECC_PRIVATE_VALUE,
 			       pt->private, size_bytes);
 		/*
-		 * The public value is not used. This is why we provide
-		 * another buffer
+		 * The public value is not used, but we should provide a valid
+		 * one to avoid rejection in case TEE_PopulateTransientObject()
+		 * checks for key validity.
 		 */
 		xtest_add_attr(&param_count, params,
-				TEE_ATTR_ECC_PUBLIC_VALUE_X,
-			       pt->private, size_bytes);
+			       TEE_ATTR_ECC_PUBLIC_VALUE_X,
+			       pt->public_x, size_bytes);
 		xtest_add_attr(&param_count, params,
-				TEE_ATTR_ECC_PUBLIC_VALUE_Y,
-			       pt->private, size_bytes);
+			       TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+			       pt->public_y, size_bytes);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_populate_transient_object(c,
