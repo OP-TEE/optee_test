@@ -274,7 +274,8 @@ static TEE_Result cmd_invoke(uint32_t nParamTypes,
         TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (sess == TEE_HANDLE_NULL) {
-	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);
+	        res = TEE_OpenTASession(&uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+					&sess, &ret_orig);
 		if (res != TEE_SUCCESS) {
 	                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED \n");
 	                goto cleanup_return;
@@ -282,7 +283,8 @@ static TEE_Result cmd_invoke(uint32_t nParamTypes,
 
         }
 
-        res = TEE_InvokeTACommand(sess, 0, nCommandID, nParamTypes, pParams, &ret_orig);
+        res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  nCommandID, nParamTypes, pParams, &ret_orig);
         if (res != TEE_SUCCESS) {
                 EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d\n",
 								res, ret_orig);
@@ -306,7 +308,8 @@ static TEE_Result cmd_invoke_pta(uint32_t nParamTypes,
         TEE_Result res = TEE_ERROR_GENERIC;
 
 	if (sess == TEE_HANDLE_NULL) {
-	        res = TEE_OpenTASession(&uuid, 0, 0, NULL, &sess, &ret_orig);
+	        res = TEE_OpenTASession(&uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+					&sess, &ret_orig);
 		if (res != TEE_SUCCESS) {
 	                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED \n");
 	                goto cleanup_return;
@@ -314,7 +317,8 @@ static TEE_Result cmd_invoke_pta(uint32_t nParamTypes,
 
         }
 
-        res = TEE_InvokeTACommand(sess, 0, nCommandID, nParamTypes, pParams, &ret_orig);
+        res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  nCommandID, nParamTypes, pParams, &ret_orig);
         if (res != TEE_SUCCESS) {
                 EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d\n",
 								res, ret_orig);

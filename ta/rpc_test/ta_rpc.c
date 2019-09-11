@@ -46,8 +46,8 @@ static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE,
 			    TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE);
 
-	res = TEE_OpenTASession(&cryp_uuid, 0, types, params, &cryp_session,
-				&origin);
+	res = TEE_OpenTASession(&cryp_uuid, TEE_TIMEOUT_INFINITE, types,
+				params, &cryp_session, &origin);
 
 	if (res != TEE_SUCCESS) {
 		EMSG("rpc_sha256 - TEE_OpenTASession returned 0x%x\n",
@@ -87,7 +87,8 @@ static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
 		TEE_MemMove(params, pParams, sizeof(params));
 	}
 
-	res = TEE_InvokeTACommand(cryp_session, 0, cmd, types, params, &origin);
+	res = TEE_InvokeTACommand(cryp_session, TEE_TIMEOUT_INFINITE, cmd,
+				types, params, &origin);
 	if (res != TEE_SUCCESS) {
 		EMSG("rpc_call_cryp - TEE_InvokeTACommand returned 0x%x\n",
 		     (unsigned int)res);
@@ -165,15 +166,16 @@ TEE_Result rpc_open(void *session_context, uint32_t param_types,
 	(void)session_context;
 	(void)param_types;
 
-	res = TEE_OpenTASession(&uuid, 0, 0, NULL, &session, &orig);
+	res = TEE_OpenTASession(&uuid, TEE_TIMEOUT_INFINITE, 0, NULL, &session,
+				&orig);
 
 	if (res != TEE_SUCCESS)
 		return res;
 
 	TEE_MemFill(params, 0, sizeof(TEE_Param) * 4);
 	res =
-	    TEE_InvokeTACommand(session, 0, TA_SIMS_CMD_GET_COUNTER, types, par,
-				&orig);
+	    TEE_InvokeTACommand(session, TEE_TIMEOUT_INFINITE,
+				TA_SIMS_CMD_GET_COUNTER, types, par, &orig);
 
 	if (res != TEE_SUCCESS)
 		goto exit;
