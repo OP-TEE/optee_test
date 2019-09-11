@@ -131,6 +131,7 @@ TEE_Result ta_storage_cmd_create_overwrite(uint32_t command,
 					   TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 	void *object_id = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
@@ -158,7 +159,8 @@ TEE_Result ta_storage_cmd_create_overwrite(uint32_t command,
 	res = TEE_CreatePersistentObject(params[1].value.a,
 					 object_id, params[0].memref.size,
 					 TEE_DATA_FLAG_OVERWRITE,
-					 NULL, NULL, 0, NULL);
+					 NULL, NULL, 0, &o);
+	TEE_CloseObject(o);
 
 	if (command == TA_STORAGE_CMD_CREATE_OVERWRITE)
 		TEE_Free(object_id);
