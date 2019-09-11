@@ -25,13 +25,15 @@ TEE_Result seed_rng_pool(uint32_t param_types, TEE_Param params[4])
 	if (!params[0].memref.size)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	res = TEE_OpenTASession(&system_uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(&system_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_OpenTASession failed");
 		goto cleanup_return;
 	}
 
-	res = TEE_InvokeTACommand(sess, 0, PTA_SYSTEM_ADD_RNG_ENTROPY,
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  PTA_SYSTEM_ADD_RNG_ENTROPY,
 				  param_types, params, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_InvokeTACommand failed");

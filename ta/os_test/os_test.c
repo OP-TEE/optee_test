@@ -465,7 +465,8 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	if (res == TEE_SUCCESS)
 		return TEE_ERROR_GENERIC;
 
-	res = TEE_OpenTASession(&test_uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("test_mem_access_right: TEE_OpenTASession failed\n");
 		goto cleanup_return;
@@ -477,7 +478,8 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	l_params[0].memref.size = sizeof(buf);
 	l_params[1].memref.buffer = NULL;
 	l_params[1].memref.size = 0;
-	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_PARAMS_ACCESS,
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("test_mem_access_right: TEE_InvokeTACommand failed\n");
@@ -751,7 +753,8 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
-	res = TEE_OpenTASession(&os_test_uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(&os_test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG(
 		"ta_entry_client_with_timeout: TEE_OpenTASession failed\n");
@@ -804,7 +807,8 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_OUT_OF_MEMORY;
 	TEE_MemMove(in, sha256_in, sizeof(sha256_in));
 
-	res = TEE_OpenTASession(&crypt_uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(&crypt_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("ta_entry_client: TEE_OpenTASession failed\n");
 		goto cleanup_return;
@@ -817,7 +821,8 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	l_params[1].memref.buffer = out;
 	l_params[1].memref.size = sizeof(out);
 
-	res = TEE_InvokeTACommand(sess, 0, TA_CRYPT_CMD_SHA256, l_pts, l_params,
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  TA_CRYPT_CMD_SHA256, l_pts, l_params,
 				  &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("ta_entry_client: TEE_InvokeTACommand failed\n");
@@ -947,7 +952,8 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 	if (param_types != TEE_PARAM_TYPES(0, 0, 0, 0))
 		return TEE_ERROR_GENERIC;
 
-	res = TEE_OpenTASession(&test_uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_OpenTASession failed");
 		goto cleanup_return;
@@ -974,7 +980,8 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 	 * TA will compute: out = ++inout + in
 	 * Expected values after this step: in: 5, inout: 11, out: 16
 	 */
-	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_InvokeTACommand failed");
@@ -991,7 +998,8 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 	 * TA will compute: out = ++inout + in
 	 * Expected values after this step: in: 6, inout: 13, out: 19
 	 */
-	res = TEE_InvokeTACommand(sess, 0, TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_InvokeTACommand failed");

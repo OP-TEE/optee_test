@@ -69,7 +69,8 @@ TEE_Result sims_open_ta_session(void *session_context, uint32_t param_types,
 
 	TEE_MemMove(uuid, params[0].memref.buffer, params[0].memref.size);
 
-	res = TEE_OpenTASession(uuid, 0, 0, NULL, &sess, &ret_orig);
+	res = TEE_OpenTASession(uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
 	TEE_Free(uuid);
 	if (res != TEE_SUCCESS)
 		return res;
@@ -202,7 +203,7 @@ TEE_Result sims_entry_panic(void *session_context, uint32_t param_types,
 		params[0].memref.size = 0;
 
 		/* Trigger panic to remote TA */
-		(void)TEE_InvokeTACommand(ctx->sess, 0,
+		(void)TEE_InvokeTACommand(ctx->sess, TEE_TIMEOUT_INFINITE,
 					  TA_SIMS_CMD_PANIC,
 					  param_types, params,
 					  &ret_orig);

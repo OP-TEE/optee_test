@@ -37,7 +37,8 @@ static TEE_Result derive_unique_key(TEE_TASessionHandle session,
 	params[1].memref.buffer = key;
 	params[1].memref.size = key_size;
 
-	res = TEE_InvokeTACommand(session, 0, PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY,
+	res = TEE_InvokeTACommand(session, TEE_TIMEOUT_INFINITE,
+				  PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY,
 				  param_types, params, &ret_origin);
 	if (res != TEE_SUCCESS)
 		EMSG("Failure when calling PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY");
@@ -64,8 +65,8 @@ TEE_Result derive_ta_unique_key_test(uint32_t param_types,
 					   TEE_PARAM_TYPE_NONE))
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	res = TEE_OpenTASession(&system_uuid, 0, 0, NULL, &session,
-				&ret_origin);
+	res = TEE_OpenTASession(&system_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&session, &ret_origin);
 
 	if (res != TEE_SUCCESS)
 		return res;
@@ -198,8 +199,8 @@ TEE_Result derive_ta_unique_key_test_shm(uint32_t param_types,
 					   TEE_PARAM_TYPE_NONE))
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	res = TEE_OpenTASession(&system_uuid, 0, 0, NULL, &session,
-				&ret_origin);
+	res = TEE_OpenTASession(&system_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&session, &ret_origin);
 
 	if (res != TEE_SUCCESS)
 		return res;
@@ -209,7 +210,8 @@ TEE_Result derive_ta_unique_key_test_shm(uint32_t param_types,
 	 * unsuccessful since we are using an out buffer coming from normal
 	 * world.
 	 */
-	res = TEE_InvokeTACommand(session, 0, PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY,
+	res = TEE_InvokeTACommand(session, TEE_TIMEOUT_INFINITE,
+				  PTA_SYSTEM_DERIVE_TA_UNIQUE_KEY,
 				  param_types, params, &ret_origin);
 	TEE_CloseTASession(session);
 
