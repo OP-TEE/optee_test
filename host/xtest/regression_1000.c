@@ -1561,7 +1561,7 @@ static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
 		goto bail1;
 
 	exp_counter = multi_instance ? 0 : 1;
-	if (ADBG_EXPECT(c, exp_counter, counter))
+	if (!ADBG_EXPECT(c, exp_counter, counter))
 		goto bail1;
 
 	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
@@ -1578,7 +1578,7 @@ static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
 		goto bail1;
 
 	/* Attempt to open a session on panicked context */
-	if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			xtest_teec_open_session(&cs[1], uuid, NULL,
 						&ret_orig)))
 		goto bail1;
@@ -1602,7 +1602,8 @@ static void test_panic_ca_to_ta(ADBG_Case_t *c, const TEEC_UUID *uuid,
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, sims_get_counter(&cs[2], &counter)))
 		goto bail2;
 
-	if (!ADBG_EXPECT(c, 0, counter))
+	exp_counter = multi_instance ? 0 : 1;
+	if (!ADBG_EXPECT(c, exp_counter, counter))
 		goto bail2;
 
 bail2:
