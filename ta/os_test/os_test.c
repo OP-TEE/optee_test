@@ -903,7 +903,7 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 
 	switch (params[0].value.a) {
 	case 1:
-		*((uint32_t *) 0) = 0;
+		*((volatile uint32_t *)0) = 0;
 		break;
 	case 2:
 		*((uint32_t *)(stack_addr + 0x40000000)) = 0;
