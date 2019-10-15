@@ -7,9 +7,19 @@ ifeq ($(CFG_TA_DYNLINK),y)
 # follows the same scheme as the output path of the os_test application.
 # Therefore, simply replacing os_test by os_test_lib in the absolute path
 # should get us a valid path
-LDADD = -L$(subst os_test,os_test_lib,$(abspath $(link-out-dir))) -los_test
+OS_TEST_LIB_LDADD = -L$(subst os_test,os_test_lib,$(abspath $O)) -los_test
+OS_TEST_LIB = os_test_lib
 endif
 
 LDADD += -ldl
 
-include ../ta_common.mk
+# ensure os_test_lib is present
+.PHONY: os_test_lib
+os_test_lib:
+	@$(MAKE) -C $(subst os_test,os_test_lib,$(abspath $(@D))) all
+
+all: $(OS_TEST_LIB)
+	@LDADD="$(OS_TEST_LIB_LDADD) $(LDADD)" $(MAKE) -f ../ta_common.mk BINARY=$(BINARY) $@
+
+%:
+	@LDADD="$(OS_TEST_LIB_LDADD) $(LDADD)" $(MAKE) -f ../ta_common.mk BINARY=$(BINARY) $@
