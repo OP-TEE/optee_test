@@ -1114,7 +1114,7 @@ TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
 	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
 			RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 	if (!handle)
-		return TEE_ERROR_OUT_OF_MEMORY;
+		return TEE_ERROR_GENERIC;
 
 	add_func = dlsym(handle, "os_test_shlib_dl_add");
 	if (!add_func)
@@ -1123,10 +1123,8 @@ TEE_Result ta_entry_call_lib_dl(uint32_t param_types __maybe_unused,
 		goto err;
 
 	hnull = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
-	if (!hnull) {
-		res = TEE_ERROR_OUT_OF_MEMORY;
+	if (!hnull)
 		goto err;
-	}
 
 	add_func = dlsym(hnull, "os_test_shlib_dl_add");
 	if (!add_func)
