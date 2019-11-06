@@ -437,7 +437,7 @@ static TEEC_Result convert_from_string(ADBG_Case_t *c, TEEC_Session *s,
 	TEEC_Result res = TEEC_ERROR_BAD_FORMAT;
 	size_t spos = strlen(str);
 	int32_t sign = 1;
-	size_t os_len = spos / 2 + 1;
+	size_t os_len = (spos + 1) / 2;
 	uint8_t *os = calloc(1, os_len);
 	int ospos = os_len - 1;
 	int nibble = 0;
