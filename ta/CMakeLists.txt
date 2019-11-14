@@ -39,6 +39,5 @@ add_custom_command (
 	)
 
 install (
-	DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/out/ta-binaries/ DESTINATION /lib/optee_armtz
-	PATTERN "ta-binaries/*"
+	CODE "execute_process(COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR} -f Makefile.tas O=${CMAKE_CURRENT_SOURCE_DIR}/out TA_DEV_KIT_DIR=${OPTEE_TEST_SDK} install)"
 	)

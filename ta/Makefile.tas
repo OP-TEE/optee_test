@@ -58,16 +58,16 @@ TA_DIRS += GP_TTA_Arithmetical \
 endif
 
 .PHONY: all
-all: ta pre-install
+all: ta
 
 .PHONY: ta
 ta:
 	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) &&) true
 
-.PHONY: pre-install
-pre-install:
-	mkdir -p $(out-dir)/ta-binaries
-	$(foreach ta,$(wildcard $(out-dir)/ta/*/*.ta), cp -a $(ta) $(out-dir)/ta-binaries &&) true
+.PHONY: install
+install:
+	mkdir -p $(DESTDIR)/lib/optee_armtz
+	$(foreach ta,$(wildcard $(out-dir)/ta/*/*.ta), cp -a $(ta) $(DESTDIR)/lib/optee_armtz &&) true
 
 
 # remove build directories including ta/<ta-name>/ directories.
@@ -81,5 +81,3 @@ endef
 clean:
 	$(q)$(foreach dir,$(TA_DIRS), [ ! -d $(dir) ] || $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) $@ &&) true
 	$(q)$(foreach dir,$(TA_DIRS), $(call rm-build-subdir,$(dir));)
-	$(q)$(foreach ta,$(wildcard $(out-dir)/ta/$(dir)/*.ta), rm -f $(out-dir)/ta-binaries/$(basename $(ta)) &&) true
-	$(q)rm-build-subdir,$(out-dir)/ta-binaries
