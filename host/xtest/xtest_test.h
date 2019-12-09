@@ -99,6 +99,7 @@ extern const char gp_tta_tcf_multipleinstance_ta[];
 extern const unsigned int gp_tta_tcf_multipleinstance_ta_size;
 
 extern const TEEC_UUID crypt_user_ta_uuid;
+extern const TEEC_UUID crypt_sm_ta_uuid;
 extern const TEEC_UUID os_test_ta_uuid;
 extern const TEEC_UUID create_fail_test_ta_uuid;
 extern const TEEC_UUID rpc_test_ta_uuid;

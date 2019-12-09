@@ -16,6 +16,7 @@
 #include <tee_client_api.h>
 #include <ta_create_fail_test.h>
 #include <ta_crypt.h>
+#include <ta_crypt_sm.h>
 #include <ta_os_test.h>
 #include <ta_rpc_test.h>
 #include <ta_sims_test.h>
@@ -90,6 +91,7 @@ ADBG_ENUM_TABLE_DEFINE_END(TEEC_ErrorOrigin);
 		{ 0x91, 0xBF, 0x3C, 0x57, 0x02, 0x4D, 0x51, 0x99 } }
 
 const TEEC_UUID crypt_user_ta_uuid = TA_CRYPT_UUID;
+const TEEC_UUID crypt_sm_ta_uuid = TA_CRYPT_SM_UUID;
 const TEEC_UUID os_test_ta_uuid = TA_OS_TEST_UUID;
 const TEEC_UUID create_fail_test_ta_uuid = TA_CREATE_FAIL_TEST_UUID;
 const TEEC_UUID ecc_test_ta_uuid = ECC_SELF_TEST_UUID;

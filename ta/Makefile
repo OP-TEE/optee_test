@@ -18,8 +18,14 @@ ifeq ($(CFG_TA_DYNLINK),y)
 OS_TEST_LIB := os_test_lib
 endif
 
+$(info GLOP CFG_TA_LIBSM=$(CFG_TA_LIBSM))
+ifeq ($(CFG_TA_LIBSM),y)
+CRYPT_SM := crypt_sm
+endif
+
 TA_DIRS := create_fail_test \
 	   crypt \
+	   $(CRYPT_SM) \
 	   $(OS_TEST_LIB) \
 	   os_test_lib_dl \
 	   os_test \

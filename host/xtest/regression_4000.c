@@ -23,6 +23,7 @@
 #include <tee_api_types.h>
 #include <tee_api_defines_extensions.h>
 #include <ta_crypt.h>
+#include <ta_crypt_sm.h>
 #include <utee_defines.h>
 #include <util.h>
 
@@ -5211,3 +5212,48 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 4013, xtest_tee_test_4013,
 		"Test generation of device unique TA keys");
 #endif /*CFG_SYSTEM_PTA*/
+
+#ifdef CFG_TA_LIBSM
+static void xtest_tee_test_4014(ADBG_Case_t *c)
+{
+	uint32_t ret_orig = 0;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_sm_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	Do_ADBG_BeginSubCase(c, "SM2 signature");
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			TEEC_InvokeCommand(&session,
+					  TA_CRYPT_SM_CMD_SM2,
+					  &op,
+					  &ret_orig));
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "SM3 hash");
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			TEEC_InvokeCommand(&session,
+					  TA_CRYPT_SM_CMD_SM3,
+					  &op,
+					  &ret_orig));
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "SM4 cipher");
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+			TEEC_InvokeCommand(&session,
+					  TA_CRYPT_SM_CMD_SM4,
+					  &op,
+					  &ret_orig));
+	Do_ADBG_EndSubCase(c, NULL);
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4014, xtest_tee_test_4014,
+		"Test Chinese SM2/SM3/SM4 algorithms (libsm)");
+#endif /* CFG_TA_LIBSM */

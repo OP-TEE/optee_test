@@ -9,6 +9,7 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE concurrent_large/include
 	INTERFACE create_fail_test/include
 	INTERFACE crypt/include
+	INTERFACE crypt_sm/include
 	INTERFACE enc_fs/include
 	INTERFACE os_test/include
 	INTERFACE rpc_test/include
