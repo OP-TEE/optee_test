@@ -5436,6 +5436,9 @@ static void xtest_tee_test_4011(ADBG_Case_t *c)
 
 		/* 4.3 */
 		n = n + i + tmp_size - m;
+		if (n >= tmp_size)
+			goto out;
+
 		memset(tmp + n, 0, tmp_size - n);
 
 		/* 5 */
