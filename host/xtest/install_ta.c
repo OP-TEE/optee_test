@@ -30,7 +30,7 @@ static void *read_ta(const char *dname, const char *fname, size_t *size)
 	char nbuf[PATH_MAX];
 	FILE *f = NULL;
 	void *buf = NULL;
-	size_t s = 0;
+	ssize_t s = 0;
 
 	if (dname)
 		snprintf(nbuf, sizeof(nbuf), "%s/%s", dname, fname);
@@ -45,15 +45,20 @@ static void *read_ta(const char *dname, const char *fname, size_t *size)
 		err(1, "fseek");
 
 	s = ftell(f);
+	if (s < 0) {
+		fclose(f);
+		return NULL;
+	}
 	rewind(f);
 
 	buf = malloc(s);
 	if (!buf)
 		err(1, "malloc(%zu)", s);
 
-	if (fread(buf, 1, s, f) != s)
+	if (fread(buf, 1, s, f) != (size_t)s)
 		err(1, "fread");
 
+	fclose(f);
 	*size = s;
 	return buf;
 }
