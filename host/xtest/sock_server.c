@@ -348,6 +348,8 @@ static bool sock_server_init(struct sock_server *ts, struct sock_io_cb *cb,
 	for (ai = ai0; ai; ai = ai->ai_next)
 		sock_server_add_fd(ts, ai);
 
+	freeaddrinfo(ai0);
+
 	if (!ts->num_binds)
 		return false;
 
