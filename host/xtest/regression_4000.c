@@ -3875,6 +3875,13 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	/* [B-283] - GP NOT SUPPORTED */
 	/* [B-409] - GP NOT SUPPORTED */
 	/* [B-571] - GP NOT SUPPORTED */
+
+	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_ENCRYPT,
+			  gmt_0003_part5_c2_sm2_testvector),
+	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_DECRYPT,
+			  gmt_0003_part5_c2_sm2_testvector),
+	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_ENCRYPT,
+			  sm2_testvector2),
 };
 
 static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
@@ -3942,6 +3949,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	size_t n = 0;
 	uint32_t curve = 0;
+	uint32_t pub_key_type = 0;
+	uint32_t priv_key_type = 0;
 	uint32_t hash_algo = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -4126,21 +4135,37 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			break;
 
 		case TEE_MAIN_ALGO_ECDSA:
+		case TEE_MAIN_ALGO_SM2_PKE:
 			switch (tv->algo) {
 			case TEE_ALG_ECDSA_P192:
 				curve = TEE_ECC_CURVE_NIST_P192;
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
 			case TEE_ALG_ECDSA_P224:
 				curve = TEE_ECC_CURVE_NIST_P224;
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
 			case TEE_ALG_ECDSA_P256:
 				curve = TEE_ECC_CURVE_NIST_P256;
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
 			case TEE_ALG_ECDSA_P384:
 				curve = TEE_ECC_CURVE_NIST_P384;
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
 			case TEE_ALG_ECDSA_P521:
 				curve = TEE_ECC_CURVE_NIST_P521;
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
+				break;
+			case TEE_ALG_SM2_PKE:
+				curve = TEE_ECC_CURVE_SM2;
+				pub_key_type = TEE_TYPE_SM2_PKE_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_SM2_PKE_KEYPAIR;
 				break;
 			default:
 				curve = 0xFF;
@@ -4165,7 +4190,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (!ADBG_EXPECT_TRUE(c,
 				create_key(c, &session, max_key_size,
-					   TEE_TYPE_ECDSA_PUBLIC_KEY, key_attrs,
+					   pub_key_type, key_attrs,
 					   num_key_attrs, &pub_key_handle)))
 				goto out;
 
@@ -4176,7 +4201,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (!ADBG_EXPECT_TRUE(c,
 				create_key(c, &session, max_key_size,
-					   TEE_TYPE_ECDSA_KEYPAIR, key_attrs,
+					   priv_key_type, key_attrs,
 					   num_key_attrs, &priv_key_handle)))
 				goto out;
 			break;
