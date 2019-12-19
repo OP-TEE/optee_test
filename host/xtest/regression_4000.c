@@ -3882,6 +3882,11 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 			  gmt_0003_part5_c2_sm2_testvector),
 	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_ENCRYPT,
 			  sm2_testvector2),
+
+	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_DSA_SM3, TEE_MODE_VERIFY,
+			  gmt_003_part5_a2),
+	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_DSA_SM3, TEE_MODE_SIGN,
+			  gmt_003_part5_a2),
 };
 
 static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
@@ -4136,6 +4141,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 		case TEE_MAIN_ALGO_ECDSA:
 		case TEE_MAIN_ALGO_SM2_PKE:
+		case TEE_MAIN_ALGO_SM2_DSA_SM3:
 			switch (tv->algo) {
 			case TEE_ALG_ECDSA_P192:
 				curve = TEE_ECC_CURVE_NIST_P192;
@@ -4166,6 +4172,11 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				curve = TEE_ECC_CURVE_SM2;
 				pub_key_type = TEE_TYPE_SM2_PKE_PUBLIC_KEY;
 				priv_key_type = TEE_TYPE_SM2_PKE_KEYPAIR;
+				break;
+			case TEE_ALG_SM2_DSA_SM3:
+				curve = TEE_ECC_CURVE_SM2;
+				pub_key_type = TEE_TYPE_SM2_DSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_SM2_DSA_KEYPAIR;
 				break;
 			default:
 				curve = 0xFF;
@@ -4364,7 +4375,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			    tv->algo == TEE_ALG_DSA_SHA224 ||
 			    tv->algo == TEE_ALG_DSA_SHA256 ||
 			    TEE_ALG_GET_MAIN_ALG(tv->algo) ==
-					    TEE_MAIN_ALGO_ECDSA) {
+					    TEE_MAIN_ALGO_ECDSA ||
+			    tv->algo == TEE_ALG_SM2_DSA_SM3) {
 				if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_free_operation(c, &session,
 								    op)))
