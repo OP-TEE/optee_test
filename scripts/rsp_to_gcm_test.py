@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 modes = {'encrypt': 0, 'decrypt': 1}
 
