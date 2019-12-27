@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # Copyright (c) 2018, Linaro Limited
@@ -29,7 +29,7 @@ def main():
 
     f.write("const uint8_t " + args.name + "[] = {\n")
     i = 0
-    for x in array.array("B", inf.read()):
+    for x in array.array("B", map(ord, (inf.read()))):
         f.write("0x" + '{0:02x}'.format(x) + ",")
         i = i + 1
         if i % 8 == 0:
