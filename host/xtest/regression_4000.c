@@ -5543,4 +5543,335 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 4013, xtest_tee_test_4013,
 		"Test generation of device unique TA keys");
+
+static void xtest_tee_test_4014(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_ObjectHandle keyA = TEE_HANDLE_NULL;
+	TEE_ObjectHandle eph_keyA = TEE_HANDLE_NULL;
+	TEE_ObjectHandle keyB = TEE_HANDLE_NULL;
+	TEE_ObjectHandle eph_keyB = TEE_HANDLE_NULL;
+	TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+	TEE_Attribute params[9] = { };
+	size_t param_count = 0;
+	uint8_t out[128] = { };
+	size_t out_size = 0;
+	uint8_t conf_A[32] = { };
+	uint8_t conf_B[32] = { };
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	if (!ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_SM2_KEP,
+					    TEE_ECC_CURVE_SM2)) {
+		Do_ADBG_Log("SM2 KEP not supported: skip subcase");
+		goto out;
+	}
+
+	Do_ADBG_BeginSubCase(c, "Initiator side");
+
+	/*
+	 * Key exchange protocol running on user A's side. A is initiator.
+	 */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_operation(c, &session, &op,
+			TEE_ALG_SM2_KEP, TEE_MODE_DERIVE, 512)))
+		goto out;
+
+	/* Allocate and initialize keypair of user A */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_SM2_KEP_KEYPAIR, 256, &keyA)))
+		goto out;
+
+	param_count = 0;
+
+	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
+			     TEE_ECC_CURVE_SM2, 0);
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_public_xA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_public_yA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PRIVATE_VALUE,
+		       ARRAY(gmt_003_part5_b2_private_A));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_populate_transient_object(c, &session, keyA,
+			params, param_count)))
+		goto out;
+
+	/*
+	 * Allocate and set ephemeral key of user A. Note: it is a regular ECC
+	 * key -- we don't use the *_EPHEMERAL_* attributes flags which are
+	 * reserved for use in TEE_DeriveKey() to pass the ephermeral key of
+	 * user B.
+	 */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_SM2_KEP_KEYPAIR, 256, &eph_keyA)))
+		goto out;
+
+	param_count = 0;
+
+	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
+			     TEE_ECC_CURVE_SM2, 0);
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_eph_public_xA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_eph_public_yA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PRIVATE_VALUE,
+		       ARRAY(gmt_003_part5_b2_eph_private_A));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_populate_transient_object(c, &session, eph_keyA,
+			params, param_count)))
+		goto out;
+
+	/* Associate user A keys with operation */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key2(c, &session, op, keyA,
+						eph_keyA)))
+		goto out;
+
+	/* Keys have been set, free key objects */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_transient_object(c, &session, keyA)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_transient_object(c, &session, eph_keyA)))
+		goto out;
+
+	/* Allocate output object */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_GENERIC_SECRET,
+			sizeof(gmt_003_part5_b2_shared_secret),
+			&sv_handle)))
+		goto out;
+
+	/* Set key derivation parameters: user A role, user B information */
+
+	params[0].attributeID = TEE_ATTR_SM2_KEP_USER;
+	params[0].content.value.a = 0; /* Initiator role */
+	params[0].content.value.b = 0; /* Not used */
+	param_count = 1;
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_public_xB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_public_yB));
+
+	xtest_add_attr(&param_count, params,
+		       TEE_ATTR_ECC_EPHEMERAL_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_eph_public_xB));
+
+	xtest_add_attr(&param_count, params,
+		       TEE_ATTR_ECC_EPHEMERAL_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_eph_public_yB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_ID_INITIATOR,
+		       ARRAY(gmt_003_part5_b2_id_A));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_ID_RESPONDER,
+		       ARRAY(gmt_003_part5_b2_id_B));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_KEP_CONFIRMATION_IN,
+		       ARRAY(gmt_003_part5_b2_conf_B));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_KEP_CONFIRMATION_OUT,
+		       ARRAY(conf_A));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_derive_key(c, &session, op, sv_handle, params,
+			param_count)))
+		goto out;
+
+	out_size = sizeof(out);
+	memset(out, 0, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_get_object_buffer_attribute(c, &session, sv_handle,
+			TEE_ATTR_SECRET_VALUE, out, &out_size)))
+		goto out;
+
+	/* Check derived key */
+	if (!ADBG_EXPECT_BUFFER(c, gmt_003_part5_b2_shared_secret,
+				sizeof(gmt_003_part5_b2_shared_secret), out,
+				out_size))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_operation(c, &session, op)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_transient_object(c, &session, sv_handle)))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, "Initiator side");
+
+	Do_ADBG_BeginSubCase(c, "Responder side");
+
+	/*
+	 * Key derivation on user B's side
+	 */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_operation(c, &session, &op,
+			TEE_ALG_SM2_KEP, TEE_MODE_DERIVE, 512)))
+		goto out;
+
+	/* Allocate and initialize keypair of user B */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_SM2_KEP_KEYPAIR, 256, &keyB)))
+		goto out;
+
+	param_count = 0;
+
+	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
+			     TEE_ECC_CURVE_SM2, 0);
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_public_xB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_public_yB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PRIVATE_VALUE,
+		       ARRAY(gmt_003_part5_b2_private_B));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_populate_transient_object(c, &session, keyB,
+			params, param_count)))
+		goto out;
+
+	/* Allocate and set ephemeral key of user B */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_SM2_KEP_KEYPAIR, 256, &eph_keyB)))
+		goto out;
+
+	param_count = 0;
+
+	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
+			     TEE_ECC_CURVE_SM2, 0);
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_eph_public_xB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_eph_public_yB));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PRIVATE_VALUE,
+		       ARRAY(gmt_003_part5_b2_eph_private_B));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_populate_transient_object(c, &session, eph_keyB,
+			params, param_count)))
+		goto out;
+
+	/* Associate user B keys with operation */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key2(c, &session, op, keyB,
+						eph_keyB)))
+		goto out;
+
+	/* Keys have been set, free key objects */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_transient_object(c, &session, keyB)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_free_transient_object(c, &session, eph_keyB)))
+		goto out;
+
+	/* Allocate output object */
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_GENERIC_SECRET,
+			sizeof(gmt_003_part5_b2_shared_secret),
+			&sv_handle)))
+		goto out;
+
+	/* Set key derivation parameters: user B role, user A information */
+
+	params[0].attributeID = TEE_ATTR_SM2_KEP_USER;
+	params[0].content.value.a = 1; /* Responder role */
+	params[0].content.value.b = 0; /* Not used */
+	param_count = 1;
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_public_xA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_public_yA));
+
+	xtest_add_attr(&param_count, params,
+		       TEE_ATTR_ECC_EPHEMERAL_PUBLIC_VALUE_X,
+		       ARRAY(gmt_003_part5_b2_eph_public_xA));
+
+	xtest_add_attr(&param_count, params,
+		       TEE_ATTR_ECC_EPHEMERAL_PUBLIC_VALUE_Y,
+		       ARRAY(gmt_003_part5_b2_eph_public_yA));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_ID_INITIATOR,
+		       ARRAY(gmt_003_part5_b2_id_A));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_ID_RESPONDER,
+		       ARRAY(gmt_003_part5_b2_id_B));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_KEP_CONFIRMATION_IN,
+		       ARRAY(gmt_003_part5_b2_conf_A));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_SM2_KEP_CONFIRMATION_OUT,
+		       ARRAY(conf_B));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_derive_key(c, &session, op, sv_handle, params,
+			param_count)))
+		goto out;
+
+	out_size = sizeof(out);
+	memset(out, 0, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_get_object_buffer_attribute(c, &session, sv_handle,
+			TEE_ATTR_SECRET_VALUE, out, &out_size)))
+		goto out;
+
+	/* Check derived key */
+	if (!ADBG_EXPECT_BUFFER(c, gmt_003_part5_b2_shared_secret,
+				sizeof(gmt_003_part5_b2_shared_secret), out,
+				out_size))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, "Responder side");
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4014, xtest_tee_test_4014,
+		"Test SM2 KEP (key derivation)");
 #endif /*CFG_SYSTEM_PTA*/
