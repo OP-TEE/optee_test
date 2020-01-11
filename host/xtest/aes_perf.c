@@ -470,8 +470,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 		perror("clock_getres");
 		return;
 	}
-	vverbose("Clock resolution is %lu ns\n",
-					ts.tv_sec * 1000000000 + ts.tv_nsec);
+	vverbose("Clock resolution is %jd ns\n",
+		 (intmax_t)ts.tv_sec * 1000000000 + ts.tv_nsec);
 
 	vverbose("input test buffer:  %s\n", buf_type_str(input_buffer));
 	vverbose("output test buffer: %s\n", buf_type_str(output_buffer));

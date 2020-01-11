@@ -320,8 +320,8 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 		perror("clock_getres");
 		return;
 	}
-	vverbose("Clock resolution is %lu ns\n", ts.tv_sec*1000000000 +
-		ts.tv_nsec);
+	vverbose("Clock resolution is %jd ns\n",
+		 (intmax_t)ts.tv_sec * 1000000000 + ts.tv_nsec);
 
 	open_ta();
 	prepare_op(algo);
