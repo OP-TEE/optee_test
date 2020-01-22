@@ -2611,6 +2611,20 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 		size_t key_size = 0;
 		size_t op_key_size = 0;
 
+		switch (ciph_cases[n].algo) {
+		case TEE_ALG_SM4_CTR:
+		case TEE_ALG_SM4_CBC_NOPAD:
+		case TEE_ALG_SM4_ECB_NOPAD:
+			if (!ta_crypt_cmd_is_algo_supported(c, &session,
+				ciph_cases[n].algo, TEE_CRYPTO_ELEMENT_NONE)) {
+				Do_ADBG_Log("SM4 not supported: skip subcase");
+				continue;
+			}
+			break;
+		default:
+			break;
+		}
+
 		Do_ADBG_BeginSubCase(c, "Cipher case %d algo 0x%x line %d",
 				     (int)n, (unsigned int)ciph_cases[n].algo,
 				     (int)ciph_cases[n].line);
