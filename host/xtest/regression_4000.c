@@ -980,6 +980,13 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 		uint8_t out[64] = { };
 		size_t out_size = 0;
 
+		if (hash_cases[n].algo == TEE_ALG_SM3 &&
+		    !ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_SM3,
+						    TEE_CRYPTO_ELEMENT_NONE)) {
+		    Do_ADBG_Log("SM3 not supported: skip subcase");
+		    continue;
+		}
+
 		Do_ADBG_BeginSubCase(c, "Hash case %d algo 0x%x",
 				     (int)n, (unsigned int)hash_cases[n].algo);
 
