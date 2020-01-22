@@ -383,6 +383,36 @@ TEEC_Result ta_crypt_cmd_free_operation(ADBG_Case_t *c, TEEC_Session *s,
 	return res;
 }
 
+bool ta_crypt_cmd_is_algo_supported(ADBG_Case_t *c, TEEC_Session *s,
+				    uint32_t algo, uint32_t element)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	TEEC_Result st = TEEC_ERROR_GENERIC;
+
+	op.params[0].value.a = algo;
+	op.params[0].value.b = element;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_IS_ALGO_SUPPORTED, &op,
+				 &ret_orig);
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+		return res;
+	}
+
+	st = op.params[1].value.a;
+	ADBG_EXPECT_TRUE(c, st == TEEC_SUCCESS ||
+			 st == TEEC_ERROR_NOT_SUPPORTED);
+	if (st == TEE_SUCCESS)
+		return true;
+	return false;
+}
+
 void xtest_mutex_init(pthread_mutex_t *mutex)
 {
 	int e = pthread_mutex_init(mutex, NULL);

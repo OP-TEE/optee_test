@@ -301,6 +301,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_entry_arith_from_fmm(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_COMPUTE_FMM:
 		return ta_entry_arith_compute_fmm(nParamTypes, pParams);
+	case TA_CRYPT_CMD_IS_ALGO_SUPPORTED:
+		return ta_entry_is_algo_supported(nParamTypes, pParams);
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

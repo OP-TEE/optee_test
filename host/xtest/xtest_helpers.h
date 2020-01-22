@@ -94,6 +94,9 @@ TEEC_Result ta_crypt_cmd_free_operation(ADBG_Case_t *c,
 					       TEEC_Session *s,
 					       TEE_OperationHandle oph);
 
+bool ta_crypt_cmd_is_algo_supported(ADBG_Case_t *c, TEEC_Session *s,
+				    uint32_t alg, uint32_t element);
+
 void xtest_add_attr(size_t *attr_count, TEE_Attribute *attrs,
 			   uint32_t attr_id, const void *buf, size_t len);
 void xtest_add_attr_value(size_t *attr_count, TEE_Attribute *attrs,
