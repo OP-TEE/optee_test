@@ -3969,6 +3969,14 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 		if (tv->level > level)
 			continue;
 
+		if ((tv->algo == TEE_ALG_SM2_PKE ||
+		     tv->algo == TEE_ALG_SM2_DSA_SM3) &&
+		    !ta_crypt_cmd_is_algo_supported(c, &session, tv->algo,
+						    TEE_ECC_CURVE_SM2)) {
+			Do_ADBG_Log("SM2 not supported: skip subcase");
+			continue;
+		}
+
 		Do_ADBG_BeginSubCase(c, "Asym Crypto case %d algo 0x%x line %d",
 				     (int)n, (unsigned int)tv->algo,
 				     (int)tv->line);
