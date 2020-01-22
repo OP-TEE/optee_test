@@ -629,4 +629,10 @@
  */
 #define TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY_SHM	78
 
+/*
+ * in	params[0].value.a:	algorithm
+ * in	params[0].value.b:	element
+ * out	params[1].value.a:	TEE_IsAlgorithmSupported() return status
+ */
+#define TA_CRYPT_CMD_IS_ALGO_SUPPORTED		79
 #endif /*TA_CRYPT_H */

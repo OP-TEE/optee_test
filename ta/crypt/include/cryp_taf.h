@@ -117,4 +117,5 @@ TEE_Result ta_entry_get_object_buffer_attribute(uint32_t param_type,
 TEE_Result ta_entry_get_object_value_attribute(uint32_t param_type,
 					       TEE_Param params[4]);
 
+TEE_Result ta_entry_is_algo_supported(uint32_t param_type, TEE_Param params[4]);
 #endif /*CRYP_TAF_H */

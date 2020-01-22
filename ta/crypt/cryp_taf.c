@@ -688,3 +688,17 @@ TEE_Result ta_entry_get_object_value_attribute(uint32_t param_type,
 	return TEE_GetObjectValueAttribute(o, params[0].value.b,
 				   &params[1].value.a, &params[1].value.b);
 }
+
+TEE_Result ta_entry_is_algo_supported(uint32_t param_type,
+				      TEE_Param params[TEE_NUM_PARAMS])
+{
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT,
+			   TEE_PARAM_TYPE_VALUE_OUTPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE));
+
+	params[1].value.a = TEE_IsAlgorithmSupported(params[0].value.a,
+						     params[0].value.b);
+
+	return TEE_SUCCESS;
+}
