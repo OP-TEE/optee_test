@@ -41,6 +41,9 @@ static void xtest_tee_test_1000(ADBG_Case_t *c)
 
 	rv = C_Finalize(NULL);
 	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = C_Finalize(NULL);
+	ADBG_EXPECT_CK_RESULT(c, CKR_CRYPTOKI_NOT_INITIALIZED, rv);
 }
 
 ADBG_CASE_DEFINE(pkcs11, 1000, xtest_tee_test_1000,
