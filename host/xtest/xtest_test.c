@@ -27,6 +27,7 @@
 #include <enc_fs_key_manager_test.h>
 #include <ta_storage_benchmark.h>
 #include <ta_socket.h>
+#include <ta_tpm_log_test.h>
 #include <tee_api_defines.h>
 #include <__tee_isocket_defines.h>
 #include <__tee_tcpsocket_defines.h>
@@ -206,6 +207,7 @@ const TEEC_UUID concurrent_large_ta_uuid = TA_CONCURRENT_LARGE_UUID;
 const TEEC_UUID storage_benchmark_ta_uuid = TA_STORAGE_BENCHMARK_UUID;
 const TEEC_UUID socket_ta_uuid = TA_SOCKET_UUID;
 const TEEC_UUID sdp_basic_ta_uuid = TA_SDP_BASIC_UUID;
+const TEEC_UUID tpm_log_test_ta_uuid = TA_TPM_LOG_TEST_UUID;
 #ifdef WITH_GP_TESTS
 const TEEC_UUID gp_tta_ds_uuid = TA_TTA_DS_UUID;
 #endif

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020, ARM Limited. All rights reserved.
  * Copyright (c) 2014, STMicroelectronics International N.V.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,6 +35,7 @@
 #include <ta_miss_test.h>
 #include <ta_sims_keepalive_test.h>
 #include <ta_concurrent.h>
+#include <ta_tpm_log_test.h>
 #include <sdp_basic.h>
 #include <pta_secstor_ta_mgmt.h>
 
@@ -1879,3 +1881,31 @@ static void xtest_tee_test_1023(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1023, xtest_tee_test_1023,
 		"Test ELF initialization (.init_array)");
+
+#ifdef CFG_CORE_TPM_EVENT_LOG
+static void xtest_tee_test_1024(ADBG_Case_t *c)
+{
+	TEEC_Session session = {};
+	uint32_t ret_orig = 0;
+
+	xtest_teec_open_session(&session, &tpm_log_test_ta_uuid,
+				NULL, &ret_orig);
+
+	Do_ADBG_BeginSubCase(c, "TPM test service invocation");
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+				  TA_TPM_TEST_GET_LOG,
+				  NULL, &ret_orig));
+	Do_ADBG_EndSubCase(c, "TPM test service invocation");
+
+	Do_ADBG_BeginSubCase(c, "TPM test passing short buffer");
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+				  TA_TPM_TEST_SHORT_BUF,
+				  NULL, &ret_orig));
+	Do_ADBG_EndSubCase(c, "TPM test passing short buffer");
+
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 1024, xtest_tee_test_1024,
+		 "Test PTA_SYSTEM_GET_TPM_EVENT_LOG Service");
+#endif /* CFG_CORE_TPM_EVENT_LOG */

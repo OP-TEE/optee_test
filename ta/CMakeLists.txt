@@ -19,4 +19,5 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE sims_keepalive/include
 	INTERFACE socket/include
 	INTERFACE storage_benchmark/include
+	INTERFACE tpm_log_test/include
 )
