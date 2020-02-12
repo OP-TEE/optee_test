@@ -35,9 +35,7 @@
 #include <ta_sims_keepalive_test.h>
 #include <ta_concurrent.h>
 #include <sdp_basic.h>
-#ifdef CFG_SECSTOR_TA_MGMT_PTA
 #include <pta_secstor_ta_mgmt.h>
-#endif
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -595,7 +593,6 @@ static void xtest_tee_test_1007(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1007, xtest_tee_test_1007, "Test Panic");
 
-#ifdef CFG_SECSTOR_TA_MGMT_PTA
 #ifndef TA_DIR
 # ifdef __ANDROID__
 #define TA_DIR "/vendor/lib/optee_armtz"
@@ -672,7 +669,42 @@ out:
 	TEEC_CloseSession(&session);
 	return r;
 }
-#endif /*CFG_SECSTOR_TA_MGMT_PTA*/
+
+static void test_1008_corrupt_ta(ADBG_Case_t *c)
+{
+	TEEC_UUID uuid = PTA_SECSTOR_TA_MGMT_UUID;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	res = xtest_teec_open_session(&session, &uuid, NULL, &ret_orig);
+	if (res) {
+		if (ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ITEM_NOT_FOUND,
+					    res))
+			Do_ADBG_Log("PTA Secure Storage TA Managment not found: skip test");
+		return;
+	}
+	TEEC_CloseSession(&session);
+
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, magic), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, img_type), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, img_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, algo), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, hash_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, offsetof(struct shdr, sig_size), 1));
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, sizeof(struct shdr), 1)); /* hash */
+	ADBG_EXPECT_TRUE(c,
+		load_corrupt_ta(c, sizeof(struct shdr) + 32, 1)); /* sig */
+	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 3000, 1)); /* payload */
+	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 8000, 1)); /* payload */
+}
 
 static void xtest_tee_test_1008(ADBG_Case_t *c)
 {
@@ -739,28 +771,9 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	}
 	Do_ADBG_EndSubCase(c, "Create session fail");
 
-#ifdef CFG_SECSTOR_TA_MGMT_PTA
 	Do_ADBG_BeginSubCase(c, "Load corrupt TA");
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, magic), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, img_type), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, img_size), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, algo), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, hash_size), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, offsetof(struct shdr, sig_size), 1));
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, sizeof(struct shdr), 1)); /* hash */
-	ADBG_EXPECT_TRUE(c,
-		load_corrupt_ta(c, sizeof(struct shdr) + 32, 1)); /* sig */
-	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 3000, 1)); /* payload */
-	ADBG_EXPECT_TRUE(c, load_corrupt_ta(c, 8000, 1)); /* payload */
+	test_1008_corrupt_ta(c);
 	Do_ADBG_EndSubCase(c, "Load corrupt TA");
-#endif /*CFG_SECSTOR_TA_MGMT_PTA*/
 }
 ADBG_CASE_DEFINE(regression, 1008, xtest_tee_test_1008,
 		"TEE internal client API");
