@@ -7,4 +7,4 @@ information that used to be here in this git can be found under [optee_test].
 
 // OP-TEE core maintainers
 
-[optee_test]: https://optee.readthedocs.io/building/gits/optee_test.html
+[optee_test]: https://optee.readthedocs.io/en/latest/building/gits/optee_test.html
