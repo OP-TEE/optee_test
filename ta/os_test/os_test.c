@@ -1166,3 +1166,27 @@ err:
 	dlclose(handle);
 	return res;
 }
+
+/* ELF initialization/finalization test */
+
+int os_test_global;
+
+static void __attribute__((constructor)) os_test_init(void)
+{
+	os_test_global *= 10;
+	os_test_global += 1;
+	DMSG("os_test_global=%d", os_test_global);
+}
+
+TEE_Result ta_entry_get_global_var(uint32_t param_types, TEE_Param params[4])
+{
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	params[0].value.a = os_test_global;
+
+	return TEE_SUCCESS;
+}
