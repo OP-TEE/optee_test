@@ -48,5 +48,6 @@
 #define TA_OS_TEST_CMD_CALL_LIB_PANIC       15
 #define TA_OS_TEST_CMD_CALL_LIB_DL          16
 #define TA_OS_TEST_CMD_CALL_LIB_DL_PANIC    17
+#define TA_OS_TEST_CMD_GET_GLOBAL_VAR       18
 
 #endif /*TA_OS_TEST_H */

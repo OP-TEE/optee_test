@@ -1757,3 +1757,54 @@ static void xtest_tee_test_1022(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1022, xtest_tee_test_1022,
 		"Test dlopen()/dlsym()/dlclose() API");
+
+/*
+ * Testing the ELF initialization (.init_array)
+ *
+ * - The TA has a global variable which can also be accessed by the two shared
+ *   libraries os_test_lib (linked with the TA) and os_test_lib_dl (loaded via
+ *   dlopen())
+ * - The TA and both libraries have initialization functions (declared with the
+ *   "constructor" attribute) which perform the following:
+ *     * The TA multiplies by 10 then adds 1
+ *     * os_test_lib multiplies by 10 then adds 2
+ *     * os_test_lib_dl multiplies by 10 then adds 3
+ * By testing the variable value we make sure the initializations occurred in
+ * the correct order.
+ */
+static void xtest_tee_test_1023(ADBG_Case_t *c)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+				NULL, &ret_orig)))
+		return;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_GET_GLOBAL_VAR, &op,
+				   &ret_orig));
+
+	/* Expected: initialization of os_test_lib, then TA */
+	(void)ADBG_EXPECT_COMPARE_SIGNED(c, op.params[0].value.a, ==, 21);
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CALL_LIB_DL, NULL,
+				   &ret_orig));
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_GET_GLOBAL_VAR, &op,
+				   &ret_orig));
+
+	/* Expected: initialization of os_test_lib_dl */
+	(void)ADBG_EXPECT_COMPARE_SIGNED(c, op.params[0].value.a, ==, 213);
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1023, xtest_tee_test_1023,
+		"Test ELF initialization (.init_array)");
