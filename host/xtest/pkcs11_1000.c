@@ -66,6 +66,8 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
+	Do_ADBG_BeginSubCase(c, "Test C_GetFunctionList()");
+
 	rv = C_GetFunctionList(&ckfunc_list);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
@@ -75,9 +77,15 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetSlotInfo))
 		goto out;
 
+	Do_ADBG_EndSubCase(c, "Test C_GetFunctionList()");
+	Do_ADBG_BeginSubCase(c, "Test C_GetInfo()");
+
 	rv = C_GetInfo(&lib_info);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
+
+	Do_ADBG_EndSubCase(c, "Test C_GetInfo()");
+	Do_ADBG_BeginSubCase(c, "Test C_GetSlotList()");
 
 	rv = C_GetSlotList(0, NULL, &slot_count);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -107,6 +115,9 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
+	Do_ADBG_EndSubCase(c, "Test C_GetSlotList()");
+	Do_ADBG_BeginSubCase(c, "Test C_GetSlotInfo()");
+
 	for (i = 0; i < slot_count; i++) {
 		CK_SLOT_ID slot = slot_ids[i];
 
@@ -118,7 +129,9 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 			max_slot_id = slot;
 	}
 
-	/* Test invalid slot/token IDs */
+	Do_ADBG_EndSubCase(c, "Test C_GetSlotInfo()");
+	Do_ADBG_BeginSubCase(c, "Test C_Get*Info() with invalid reference");
+
 	rv = C_GetSlotInfo(max_slot_id + 1, &slot_info);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
 		goto out;
@@ -128,6 +141,7 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		goto out;
 
 out:
+	Do_ADBG_EndSubCase(c, NULL);
 	free(slot_ids);
 
 	rv = C_Finalize(NULL);
