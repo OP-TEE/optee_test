@@ -86,6 +86,16 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, slot_count, !=, 0))
 		goto out;
 
+	if (slot_count > 1) {
+		/* Ensure case non-NULL-buffer and zero-count is tested */
+		CK_SLOT_ID id = 0;
+
+		slot_count = 0;
+		rv = C_GetSlotList(0, &id, &slot_count);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+			goto out;
+	}
+
 	rv = C_GetSlotList(1, NULL, &present_slot_count);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
