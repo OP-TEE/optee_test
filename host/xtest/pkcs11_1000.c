@@ -62,6 +62,9 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
 	size_t i = 0;
 	CK_SLOT_ID max_slot_id = 0;
+	CK_MECHANISM_TYPE_PTR mecha_types = NULL;
+	CK_ULONG mecha_count = 0;
+	CK_MECHANISM_INFO mecha_info = { };
 
 	rv = C_Initialize(NULL);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -76,7 +79,9 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetInfo) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetSlotList) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetSlotInfo) ||
-	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetTokenInfo))
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetTokenInfo) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetMechanismList) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_GetMechanismInfo))
 		goto out;
 
 	Do_ADBG_EndSubCase(c, "Test C_GetFunctionList()");
@@ -146,6 +151,44 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	}
 
 	Do_ADBG_EndSubCase(c, "Test C_Get{Slot|Token}Info()");
+	Do_ADBG_BeginSubCase(c, "Test C_GetMechanism{List|Info}()");
+
+	for (i = 0; i < slot_count; i++) {
+		CK_SLOT_ID slot = slot_ids[i];
+		size_t j = 0;
+
+		mecha_count = 0;
+		rv = C_GetMechanismList(slot, NULL, &mecha_count);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		if (mecha_count == 0)
+			continue;
+
+		free(mecha_types);
+		mecha_types = calloc(mecha_count, sizeof(*mecha_types));
+		if (!ADBG_EXPECT_NOT_NULL(c, mecha_types))
+			goto out;
+
+		/* Test specific case: valid buffer reference with 0 count */
+		mecha_count = 0;
+		rv = C_GetMechanismList(slot, mecha_types, &mecha_count);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+			goto out;
+
+		rv = C_GetMechanismList(slot, mecha_types, &mecha_count);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		for (j = 0; j < mecha_count; j++) {
+			rv = C_GetMechanismInfo(slot, mecha_types[j],
+						&mecha_info);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out;
+		}
+	}
+
+	Do_ADBG_EndSubCase(c, "Test C_GetMechanism{List|Info}()");
 	Do_ADBG_BeginSubCase(c, "Test C_Get*Info() with invalid reference");
 
 	rv = C_GetSlotInfo(max_slot_id + 1, &slot_info);
@@ -153,6 +196,20 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		goto out;
 
 	rv = C_GetTokenInfo(max_slot_id + 1, &token_info);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
+		goto out;
+
+	mecha_count = 1;
+	if (!mecha_types)
+		mecha_types = malloc(sizeof(*mecha_types));
+	if (!ADBG_EXPECT_NOT_NULL(c, mecha_types))
+		goto out;
+
+	rv = C_GetMechanismList(max_slot_id + 1, mecha_types, &mecha_count);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
+		goto out;
+
+	rv = C_GetMechanismInfo(max_slot_id + 1, CKM_AES_KEY_GEN, &mecha_info);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
 		goto out;
 
@@ -164,9 +221,19 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
 		goto out;
 
+	mecha_count = 1;
+	rv = C_GetMechanismList(ULONG_MAX, mecha_types, &mecha_count);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
+		goto out;
+
+	rv = C_GetMechanismInfo(ULONG_MAX, CKM_AES_KEY_GEN, &mecha_info);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SLOT_ID_INVALID, rv))
+		goto out;
+
 out:
 	Do_ADBG_EndSubCase(c, NULL);
 	free(slot_ids);
+	free(mecha_types);
 
 	rv = C_Finalize(NULL);
 	ADBG_EXPECT_CK_OK(c, rv);
