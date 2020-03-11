@@ -69,7 +69,7 @@ bail:
 	return rv;
 }
 
-static void xtest_tee_test_1000(ADBG_Case_t *c)
+static void xtest_pkcs11_test_1000(ADBG_Case_t *c)
 {
 	CK_RV rv;
 
@@ -95,10 +95,10 @@ static void xtest_tee_test_1000(ADBG_Case_t *c)
 	ADBG_EXPECT_CK_RESULT(c, CKR_CRYPTOKI_NOT_INITIALIZED, rv);
 }
 
-ADBG_CASE_DEFINE(pkcs11, 1000, xtest_tee_test_1000,
-		"Initialize and close Cryptoki library");
+ADBG_CASE_DEFINE(pkcs11, 1000, xtest_pkcs11_test_1000,
+		 "Initialize and close Cryptoki library");
 
-static void xtest_tee_test_1001(ADBG_Case_t *c)
+static void xtest_pkcs11_test_1001(ADBG_Case_t *c)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_SLOT_ID_PTR slot_ids = NULL;
@@ -287,7 +287,7 @@ out:
 	ADBG_EXPECT_CK_OK(c, rv);
 }
 
-ADBG_CASE_DEFINE(pkcs11, 1001, xtest_tee_test_1001,
+ADBG_CASE_DEFINE(pkcs11, 1001, xtest_pkcs11_test_1001,
 		 "PKCS11: List PKCS#11 slots and get information from");
 
 static void xtest_pkcs11_test_1002(ADBG_Case_t *c)
