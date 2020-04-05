@@ -127,6 +127,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_GET_GLOBAL_VAR:
 		return ta_entry_get_global_var(nParamTypes, pParams);
 
+	case TA_OS_TEST_CMD_CLIENT_IDENTITY:
+		return ta_entry_client_identity(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
