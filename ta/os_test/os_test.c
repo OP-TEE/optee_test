@@ -1214,3 +1214,34 @@ TEE_Result ta_entry_get_global_var(uint32_t param_types, TEE_Param params[4])
 
 	return TEE_SUCCESS;
 }
+
+TEE_Result ta_entry_client_identity(uint32_t param_types, TEE_Param params[4])
+{
+	TEE_PropSetHandle *propset = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Identity identity = { };
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (params[1].memref.size < sizeof(TEE_UUID)) {
+		params[1].memref.size = sizeof(TEE_UUID);
+		return TEE_ERROR_SHORT_BUFFER;
+	}
+
+	res = TEE_GetPropertyAsIdentity(TEE_PROPSET_CURRENT_CLIENT,
+					"gpd.client.identity", &identity);
+	if (res != TEE_SUCCESS) {
+		EMSG("TEE_GetPropertyAsIdentity: returned %#"PRIx32, res);
+		return res;
+	}
+
+	params[0].value.a = identity.login;
+	memcpy(params[1].memref.buffer, &identity.uuid, sizeof(TEE_UUID));
+	params[1].memref.size = sizeof(TEE_UUID);
+
+	return res;
+}
