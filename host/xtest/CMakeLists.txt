@@ -59,6 +59,7 @@ set (SRC
 	xtest_helpers.c
 	xtest_main.c
 	xtest_test.c
+	xtest_uuid_helpers.c
 )
 
 set_source_files_properties(
