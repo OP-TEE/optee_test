@@ -2036,3 +2036,38 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1025, xtest_tee_test_1025,
 		 "Test memref NULL and/or 0 bytes size");
+
+/* TEEC_LOGIN_PUBLIC's Client UUID is NIL UUID */
+static TEEC_UUID client_uuid_public = { };
+
+static void xtest_tee_test_1026(ADBG_Case_t *c)
+{
+	TEEC_Result result = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+	TEEC_Session session = { };
+	uint32_t login = UINT32_MAX;
+	TEEC_UUID client_uuid = { };
+
+	result = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
+				  TEEC_LOGIN_PUBLIC, NULL, NULL, &ret_orig);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		return;
+
+	result = ta_os_test_cmd_client_identity(&session, &login,
+						&client_uuid);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, login, ==, TEEC_LOGIN_PUBLIC);
+
+	ADBG_EXPECT_EQUAL(c, &client_uuid_public, &client_uuid,
+			  sizeof(TEEC_UUID));
+
+out:
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 1026, xtest_tee_test_1026,
+		 "Session: public login");

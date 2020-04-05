@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ta_crypt.h>
+#include <ta_os_test.h>
 #include <utee_defines.h>
 
 #include "xtest_helpers.h"
@@ -411,6 +412,31 @@ bool ta_crypt_cmd_is_algo_supported(ADBG_Case_t *c, TEEC_Session *s,
 	if (st == TEE_SUCCESS)
 		return true;
 	return false;
+}
+
+TEEC_Result ta_os_test_cmd_client_identity(TEEC_Session *session,
+					   uint32_t *login,
+					   TEEC_UUID *client_uuid)
+{
+	TEEC_Operation operation = { };
+	TEEC_Result result = TEEC_ERROR_GENERIC;
+
+	operation.params[1].tmpref.buffer = client_uuid;
+	operation.params[1].tmpref.size = sizeof(*client_uuid);
+
+	operation.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT,
+						TEEC_MEMREF_TEMP_OUTPUT,
+						TEEC_NONE, TEEC_NONE);
+
+	result = TEEC_InvokeCommand(session, TA_OS_TEST_CMD_CLIENT_IDENTITY,
+				    &operation, NULL);
+
+	if (result != TEEC_SUCCESS)
+		return result;
+
+	*login = operation.params[0].value.a;
+
+	return TEEC_SUCCESS;
 }
 
 void xtest_mutex_init(pthread_mutex_t *mutex)
