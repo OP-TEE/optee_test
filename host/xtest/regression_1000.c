@@ -2129,3 +2129,53 @@ out:
 
 ADBG_CASE_DEFINE(regression, 1027, xtest_tee_test_1027,
 		 "Session: user login for current user");
+
+static void xtest_tee_test_1028(ADBG_Case_t *c)
+{
+	TEEC_Result result = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+	TEEC_Session session = { };
+	uint32_t login = UINT32_MAX;
+	TEEC_UUID client_uuid = { };
+	TEEC_UUID expected_client_uuid = { };
+	TEEC_UUID uuid_ns = { };
+	char uuid_name[TEE_UUID_NS_NAME_SIZE] = { };
+	uint32_t group = 0;
+
+	group = getegid();
+
+	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		return;
+
+	sprintf(uuid_name, "gid=%x", group);
+
+	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
+			       strlen(uuid_name));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		return;
+
+	result = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
+				  TEEC_LOGIN_GROUP, &group, NULL, &ret_orig);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		return;
+
+	result = ta_os_test_cmd_client_identity(&session, &login,
+						&client_uuid);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, login, ==, TEEC_LOGIN_GROUP);
+
+	ADBG_EXPECT_EQUAL(c, &expected_client_uuid, &client_uuid,
+			  sizeof(TEEC_UUID));
+
+out:
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 1028, xtest_tee_test_1028,
+		 "Session: group login for current user's effective group");
