@@ -683,7 +683,7 @@ static void test_1008_corrupt_ta(ADBG_Case_t *c)
 	if (res) {
 		if (ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ITEM_NOT_FOUND,
 					    res))
-			Do_ADBG_Log("PTA Secure Storage TA Managment not found: skip test");
+			Do_ADBG_Log("PTA Secure Storage TA Management not found: skip test");
 		return;
 	}
 	TEEC_CloseSession(&session);
@@ -1139,7 +1139,7 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 
 	/*
 	 * Concurrency can be limited by several factors, for instance in a
-	 * single CPU system it's dependent on the Preemtion Model used by
+	 * single CPU system it's dependent on the Preemption Model used by
 	 * the kernel (Preemptible Kernel (Low-Latency Desktop) gives the
 	 * best result there).
 	 */
@@ -1222,7 +1222,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 #endif
 }
 ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
-		"Test concurency with concurrent TA");
+		"Test concurrency with concurrent TA");
 
 #ifdef CFG_SECURE_DATA_PATH
 static void xtest_tee_test_1014(ADBG_Case_t *c)
@@ -1403,7 +1403,7 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 	TEEC_SharedMemory shm = { };
 	TEEC_Result ret = TEEC_ERROR_GENERIC;
 	size_t page_size = 4096;
-	/* Intentionnally not 4kB aligned and odd */
+	/* Intentionally not 4kB aligned and odd */
 	uint8_t buffer[6001] = { };
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -1413,7 +1413,7 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 							      &ret_orig)))
 		return;
 
-	Do_ADBG_BeginSubCase(c, "Out of bounds > 4kB on allocateed shm");
+	Do_ADBG_BeginSubCase(c, "Out of bounds > 4kB on allocated shm");
 
 	shm.size = 8 * page_size;
 	shm.flags = TEEC_MEM_INPUT | TEEC_MEM_OUTPUT;
