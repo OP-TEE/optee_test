@@ -71,8 +71,10 @@ uint32_t DS_BIG_SIZE = 16384;
 #define SIZE_HMAC_SHA256_512        512
 #define SIZE_HMAC_SHA384_512        512
 #define SIZE_HMAC_SHA512_512        512
+#define SIZE_DIGEST_MD5_16          16
 #define SIZE_RSA_KEYPAIR_2048       2048
 #define SIZE_RSA_PUBLIC_KEY_2048    2048
+#define SIZE_DIGEST_SHA256_32       32
 #define SIZE_ZERO                   0
 #define WRONG_SIZE                  5
 

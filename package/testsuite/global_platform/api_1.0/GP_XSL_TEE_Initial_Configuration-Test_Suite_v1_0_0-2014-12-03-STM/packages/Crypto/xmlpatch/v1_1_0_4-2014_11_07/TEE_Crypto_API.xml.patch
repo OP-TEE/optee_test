@@ -1419,6 +1419,15 @@
                          </argument>
                          <argument>
                              <parameter name="IN_session" />
+@@ -8865,7 +8865,7 @@
+                         <argument>
+                             <parameter name="OUT_digestLength" />
+                             <type name="ALL_OBJECT_SIZES" />
+-                            <value name="SIZE_ZERO" />
++                            <value name="SIZE_DIGEST_SHA256_32" />
+                         </argument>
+                         <argument>
+                             <parameter name="OUT_maxKeySize_object1" />
 @@ -8956,7 +8956,7 @@
                          <argument>
                              <parameter name="IN_context" />
@@ -3264,6 +3273,15 @@
                          </argument>
                          <argument>
                              <parameter name="IN_session" />
+@@ -33837,7 +33837,7 @@
+                         <argument>
+                             <parameter name="OUT_digestLength" />
+                             <type name="ALL_OBJECT_SIZES" />
+-                            <value name="SIZE_ZERO" />
++                            <value name="SIZE_DIGEST_MD5_16" />
+                         </argument>
+                         <argument>
+                             <parameter name="OUT_maxKeySize_object1" />
 @@ -33928,7 +33928,7 @@
                          <argument>
                              <parameter name="IN_context" />
