@@ -1917,6 +1917,7 @@ static void xtest_tee_test_1025(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	uint8_t *empty_buf = NULL;
 	TEEC_SharedMemory shm = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 
 	Do_ADBG_BeginSubCase(c, "Invalid NULL buffer memref registration");
 
@@ -1952,7 +1953,7 @@ static void xtest_tee_test_1025(ADBG_Case_t *c)
 	empty_buf = malloc(1);
 	if (!empty_buf) {
 		(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_ERROR_OUT_OF_MEMORY);
-		goto out;
+		goto out_session;
 	}
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
@@ -2001,10 +2002,36 @@ static void xtest_tee_test_1025(ADBG_Case_t *c)
 				       TA_OS_TEST_CMD_NULL_MEMREF_PARAMS, &op,
 				       &ret_orig));
 
+	TEEC_CloseSession(&session);
+
 	Do_ADBG_EndSubCase(c, "Input MEMREF Buffer NULL - Size non 0 bytes");
 
-out:
+	Do_ADBG_BeginSubCase(c, "Input MEMREF Buffer NULL over PTA invocation");
+
+	/* Pseudo TA is optional: warn and nicely exit if not found */
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1025 -   skip test, pseudo TA not found");
+		goto out;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = NULL;
+	op.params[0].tmpref.size = 0;
+
+	ADBG_EXPECT(c, TEE_SUCCESS,
+		    TEEC_InvokeCommand(&session,
+				       PTA_INVOKE_TESTS_CMD_MEMREF_NULL,
+				       &op, &ret_orig));
+
+out_session:
 	TEEC_CloseSession(&session);
+out:
+	Do_ADBG_EndSubCase(c, NULL);
 	free(empty_buf);
 }
 ADBG_CASE_DEFINE(regression, 1025, xtest_tee_test_1025,
