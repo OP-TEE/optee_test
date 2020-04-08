@@ -1388,7 +1388,7 @@ static void invoke_1byte_out_of_bounds(ADBG_Case_t *c, TEEC_Session *session,
 	ret = TEEC_InvokeCommand(session, TA_OS_TEST_CMD_PARAMS,
 				 &op, &ret_orig);
 
-	ADBG_EXPECT(c, TEEC_ORIGIN_COMMS, ret_orig);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, ret_orig, !=, TEEC_ORIGIN_TRUSTED_APP);
 	if (ret != TEEC_ERROR_BAD_PARAMETERS && ret != TEEC_ERROR_GENERIC) {
 		ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS, ret);
 		ADBG_EXPECT(c, TEEC_ERROR_GENERIC, ret);
@@ -1451,7 +1451,7 @@ static void xtest_tee_test_1018(ADBG_Case_t *c)
 	ret = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PARAMS, &op,
 				 &ret_orig);
 
-	ADBG_EXPECT(c, TEEC_ORIGIN_COMMS, ret_orig);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, ret_orig, !=, TEEC_ORIGIN_TRUSTED_APP);
 	if (ret != TEEC_ERROR_BAD_PARAMETERS && ret != TEEC_ERROR_GENERIC) {
 		ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS, ret);
 		ADBG_EXPECT(c, TEEC_ERROR_GENERIC, ret);
