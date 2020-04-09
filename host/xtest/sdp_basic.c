@@ -570,9 +570,9 @@ static int invoke_out_of_bounds(struct tee_ctx *ctx,
 	 * result is.
 	 */
 	if ((valid_ref && orig != TEEC_ORIGIN_TRUSTED_APP) ||
-	    (!valid_ref && orig != TEEC_ORIGIN_COMMS &&
-	     (teerc != TEEC_ERROR_GENERIC ||
-	      teerc != TEEC_ERROR_BAD_PARAMETERS)))
+	    (!valid_ref && ((orig != TEEC_ORIGIN_COMMS) ||
+			    (teerc != TEEC_ERROR_GENERIC &&
+			     teerc != TEEC_ERROR_BAD_PARAMETERS))))
 		goto error;
 
 	verbose("Out of bounds memref test successful:\n");
