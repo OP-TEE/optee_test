@@ -565,12 +565,12 @@ static int invoke_out_of_bounds(struct tee_ctx *ctx,
 
 	/*
 	 * Invocation with invalid references should be nicely rejected by
-	 * the communication layer.
+	 * the TEE.
 	 * Invocation with valid references should reach the TA, whatever
 	 * result is.
 	 */
 	if ((valid_ref && orig != TEEC_ORIGIN_TRUSTED_APP) ||
-	    (!valid_ref && ((orig != TEEC_ORIGIN_COMMS) ||
+	    (!valid_ref && ((orig == TEEC_ORIGIN_TRUSTED_APP) ||
 			    (teerc != TEEC_ERROR_GENERIC &&
 			     teerc != TEEC_ERROR_BAD_PARAMETERS))))
 		goto error;
