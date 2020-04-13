@@ -1917,6 +1917,11 @@ static void xtest_tee_test_1025(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	uint8_t *empty_buf = NULL;
 
+	if (!xtest_teec_ctx.memref_null) {
+		Do_ADBG_Log("Skip test: MEMREF_NULL capability not supported");
+		return;
+	}
+
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				      xtest_teec_open_session(&session,
 							      &os_test_ta_uuid,
