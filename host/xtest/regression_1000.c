@@ -1916,9 +1916,30 @@ static void xtest_tee_test_1025(ADBG_Case_t *c)
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig = 0;
 	uint8_t *empty_buf = NULL;
+	TEEC_SharedMemory shm = { };
+
+	Do_ADBG_BeginSubCase(c, "Invalid NULL buffer memref registration");
+
+	memset(&shm, 0, sizeof(shm));
+	shm.flags = TEEC_MEM_INPUT;
+	shm.buffer = NULL;
+	shm.size = 0;
+
+	ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS,
+		    TEEC_RegisterSharedMemory(&xtest_teec_ctx, &shm));
+
+	memset(&shm, 0, sizeof(shm));
+	shm.flags = TEEC_MEM_OUTPUT;
+	shm.buffer = NULL;
+	shm.size = 0;
+
+	ADBG_EXPECT(c, TEEC_ERROR_BAD_PARAMETERS,
+		    TEEC_RegisterSharedMemory(&xtest_teec_ctx, &shm));
+
+	Do_ADBG_EndSubCase(c, "Invalid NULL buffer memref registration");
 
 	if (!xtest_teec_ctx.memref_null) {
-		Do_ADBG_Log("Skip test: MEMREF_NULL capability not supported");
+		Do_ADBG_Log("Skip subcases: MEMREF_NULL capability not supported");
 		return;
 	}
 
