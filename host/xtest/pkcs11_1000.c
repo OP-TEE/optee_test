@@ -425,12 +425,64 @@ ADBG_CASE_DEFINE(pkcs11, 1002, xtest_pkcs11_test_1002,
  * These define the genuine PINs and label to be used with the test token.
  */
 static CK_UTF8CHAR test_token_so_pin[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9, 10, };
+static CK_UTF8CHAR test_token_user_pin[] = {
+	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+};
 static CK_UTF8CHAR test_token_label[] = "PKCS11 TA test token";
 
 static CK_RV init_test_token(CK_SLOT_ID slot)
 {
 	return C_InitToken(slot, test_token_so_pin, sizeof(test_token_so_pin),
 			   test_token_label);
+}
+
+/* Login as user, eventually reset user PIN if needed */
+static CK_RV init_user_test_token(CK_SLOT_ID slot)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (rv)
+		return rv;
+
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (rv == CKR_OK) {
+		C_Logout(session);
+		C_CloseSession(session);
+		return rv;
+	}
+
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	if (rv) {
+		C_CloseSession(session);
+
+		rv = init_test_token(slot);
+		if (rv)
+			return rv;
+
+		rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+		if (rv)
+			return rv;
+
+		rv = C_Login(session, CKU_SO, test_token_so_pin,
+			     sizeof(test_token_so_pin));
+		if (rv) {
+			C_CloseSession(session);
+			return rv;
+		}
+	}
+
+	rv = C_InitPIN(session, test_token_user_pin,
+		       sizeof(test_token_user_pin));
+
+	C_Logout(session);
+	C_CloseSession(session);
+
+	return rv;
 }
 
 static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
@@ -493,6 +545,27 @@ static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE)) ||
 	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_INITIALIZED))) {
 		rv = CKR_GENERAL_ERROR;
+		goto out;
+	}
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	flags = token_info.flags;
+
+	if (!ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_COUNT_LOW)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_FINAL_TRY)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_LOCKED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_TO_BE_CHANGED)) ||
+	    !ADBG_EXPECT_TRUE(c, !!(flags & CKF_USER_PIN_INITIALIZED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE))) {
+		rv = CKR_GENERAL_ERROR;
+		goto out;
 	}
 
 out:
@@ -523,7 +596,27 @@ static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE)) ||
 	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_INITIALIZED))) {
 		rv = CKR_GENERAL_ERROR;
+		goto out;
 	}
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	flags = token_info.flags;
+
+	if (!ADBG_EXPECT_TRUE(c, !!(flags & CKF_TOKEN_INITIALIZED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_COUNT_LOW)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_FINAL_TRY)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_LOCKED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_TO_BE_CHANGED)) ||
+	    !ADBG_EXPECT_TRUE(c, !!(flags & CKF_USER_PIN_INITIALIZED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE)))
+		rv = CKR_GENERAL_ERROR;
 
 out:
 	Do_ADBG_EndSubCase(c, "C_InitToken() on uninitialized token");
@@ -540,7 +633,9 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 
 	rv = C_GetFunctionList(&ckfunc_list);
 	if (!ADBG_EXPECT_CK_OK(c, rv) ||
-	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitToken))
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitToken) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitPIN) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_SetPIN))
 		goto out;
 
 	rv = init_lib_and_find_token_slot(&slot);
