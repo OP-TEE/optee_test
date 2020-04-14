@@ -624,6 +624,87 @@ out:
 	return rv;
 }
 
+static CK_RV test_login_logout(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	Do_ADBG_BeginSubCase(c, "Test C_Login()/C_Logout()");
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Logout: should fail as we did not log in yet */
+	rv = C_Logout(session);
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv);
+
+	/* Login/re-log/logout user */
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_ALREADY_LOGGED_IN, rv);
+
+	rv = C_Logout(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Login/re-log/logout security officer */
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_ALREADY_LOGGED_IN, rv);
+
+	rv = C_Logout(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Login user then SO and reverse */
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_ANOTHER_ALREADY_LOGGED_IN, rv);
+
+	rv = C_Logout(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_ANOTHER_ALREADY_LOGGED_IN, rv);
+
+	rv = C_Logout(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	/* Login context specifc, in an invalid case (need an operation) */
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out:
+	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout()");
+	return rv;
+}
+
 static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
@@ -635,7 +716,9 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitToken) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitPIN) ||
-	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_SetPIN))
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_SetPIN) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Login) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Logout))
 		goto out;
 
 	rv = init_lib_and_find_token_slot(&slot);
@@ -659,6 +742,12 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	rv = test_already_initialized_token(c, slot);
 	if (rv != CKR_OK)
 		goto out;
+
+	rv = test_login_logout(c, slot);
+	if (rv != CKR_OK)
+		goto out;
+
+
 
 out:
 	rv = close_lib();
