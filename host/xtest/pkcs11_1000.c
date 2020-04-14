@@ -705,6 +705,74 @@ out:
 	return rv;
 }
 
+static CK_RV test_set_pin(ADBG_Case_t *c, CK_SLOT_ID slot,
+			  CK_USER_TYPE user_type)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_UTF8CHAR some_pin[] = { 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7 };
+	CK_UTF8CHAR_PTR old_pin = NULL;
+	CK_USER_TYPE ut = user_type;
+	size_t old_pin_sz = 0;
+	CK_RV rv2 = CKR_OK;
+	CK_RV rv = CKR_OK;
+
+	Do_ADBG_BeginSubCase(c, "Test C_SetPIN() user_type %lu", user_type);
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (user_type == CKU_SO) {
+		old_pin = (CK_UTF8CHAR_PTR)test_token_so_pin;
+		old_pin_sz = sizeof(test_token_so_pin);
+	} else {
+		old_pin = (CK_UTF8CHAR_PTR)test_token_user_pin;
+		old_pin_sz = sizeof(test_token_user_pin);
+		ut = CKU_USER;
+	}
+
+	if (ut == user_type) {
+		rv = C_Login(session, ut, old_pin, old_pin_sz);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out_session;
+	}
+
+	rv = C_SetPIN(session, old_pin, old_pin_sz, some_pin, sizeof(some_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv)) {
+		if (ut == user_type)
+			goto out_logout;
+		else
+			goto out_session;
+	}
+
+	if (ut == user_type) {
+		rv = C_Logout(session);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out_session;
+	}
+
+	rv = C_Login(session, ut, some_pin, sizeof(some_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_session;
+
+	rv = C_SetPIN(session, some_pin, sizeof(some_pin), old_pin, old_pin_sz);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out_logout:
+	rv2 = C_Logout(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv2) && !rv)
+		rv = rv2;
+out_session:
+	rv2 = C_CloseSession(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv2) && !rv)
+		rv = rv2;
+out:
+	Do_ADBG_EndSubCase(c, "Test C_SetPIN() user_type %lu", user_type);
+
+	return rv;
+}
+
 static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
@@ -747,8 +815,19 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	if (rv != CKR_OK)
 		goto out;
 
+	rv = test_set_pin(c, slot, CKU_USER);
+	if (rv != CKR_OK)
+		goto out;
 
+	rv = test_set_pin(c, slot, CKU_SO);
+	if (rv != CKR_OK)
+		goto out;
 
+	/*
+	 * CKU_CONTEXT_SPECIFIC is anything not CKU_USER or CKU_SO in order
+	 * to skip the initial login.
+	 */
+	test_set_pin(c, slot, CKU_CONTEXT_SPECIFIC);
 out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
