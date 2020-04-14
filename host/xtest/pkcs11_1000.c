@@ -419,3 +419,156 @@ bail:
 
 ADBG_CASE_DEFINE(pkcs11, 1002, xtest_pkcs11_test_1002,
 		 "PKCS11: Open and close PKCS#11 sessions");
+
+/*
+ * Helpers for tests where we must log into the token.
+ * These define the genuine PINs and label to be used with the test token.
+ */
+static CK_UTF8CHAR test_token_so_pin[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9, 10, };
+static CK_UTF8CHAR test_token_label[] = "PKCS11 TA test token";
+
+static CK_RV init_test_token(CK_SLOT_ID slot)
+{
+	return C_InitToken(slot, test_token_so_pin, sizeof(test_token_so_pin),
+			   test_token_label);
+}
+
+static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_TOKEN_INFO token_info = { };
+	/* Same content as test_token_so_pin[] but 1 more byte */
+	CK_UTF8CHAR pin1[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, };
+	/* Same content as test_token_so_pin[] but 1 different byte */
+	CK_UTF8CHAR pin2[] = { 0, 1, 2, 3, 4, 5, 6, 6, 8, 9, 10, };
+	CK_FLAGS flags = 0;
+
+	Do_ADBG_BeginSubCase(c, "C_InitToken() on initialized token");
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_InitToken(slot, test_token_so_pin,
+			 sizeof(test_token_so_pin) - 1, test_token_label);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, !=, CKR_OK))
+		goto out;
+
+	rv = C_InitToken(slot, pin1, sizeof(pin1), test_token_label);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, !=, CKR_OK))
+		goto out;
+
+	rv = C_InitToken(slot, pin2, sizeof(pin2), test_token_label);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, rv, !=, CKR_OK))
+		goto out;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	flags = token_info.flags;
+
+	/* Token should have set CKF_SO_PIN_COUNT_LOW to 1 */
+	if (!ADBG_EXPECT_TRUE(c, !!(flags & CKF_SO_PIN_COUNT_LOW))) {
+		rv = CKR_GENERAL_ERROR;
+		goto out;
+	}
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	flags = token_info.flags;
+
+	/*
+	 * Token should have reset CKF_SO_PIN_COUNT_LOW to 0.
+	 * Other flags should show a sane initialized state.
+	 */
+	if (!ADBG_EXPECT_TRUE(c, !(flags & CKF_SO_PIN_COUNT_LOW)) ||
+	    !ADBG_EXPECT_TRUE(c, !!(flags & CKF_TOKEN_INITIALIZED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_INITIALIZED))) {
+		rv = CKR_GENERAL_ERROR;
+	}
+
+out:
+	Do_ADBG_EndSubCase(c, "C_InitToken() on initialized token");
+
+	return rv;
+}
+
+static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_TOKEN_INFO token_info = { };
+	CK_FLAGS flags = 0;
+
+	Do_ADBG_BeginSubCase(c, "C_InitToken() on uninitialized token");
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	flags = token_info.flags;
+
+	if (!ADBG_EXPECT_TRUE(c, !!(flags & CKF_TOKEN_INITIALIZED)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_ERROR_STATE)) ||
+	    !ADBG_EXPECT_TRUE(c, !(flags & CKF_USER_PIN_INITIALIZED))) {
+		rv = CKR_GENERAL_ERROR;
+	}
+
+out:
+	Do_ADBG_EndSubCase(c, "C_InitToken() on uninitialized token");
+
+	return rv;
+}
+
+static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
+	CK_SLOT_ID slot = 0;
+	CK_TOKEN_INFO token_info = { };
+
+	rv = C_GetFunctionList(&ckfunc_list);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitToken))
+		goto out;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Abort test if token is about to lock */
+	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags & CKF_SO_PIN_FINAL_TRY)))
+		goto out;
+
+	if (!(token_info.flags & CKF_TOKEN_INITIALIZED)) {
+		rv = test_uninitialized_token(c, slot);
+		if (rv != CKR_OK)
+			goto out;
+	}
+
+	rv = test_already_initialized_token(c, slot);
+	if (rv != CKR_OK)
+		goto out;
+
+out:
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1003, xtest_pkcs11_test_1003,
+		 "PKCS11: Login to PKCS#11 token");
