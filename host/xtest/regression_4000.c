@@ -4926,16 +4926,16 @@ static void xtest_tee_test_4007_dsa(ADBG_Case_t *c)
 		const uint8_t *sub_prime;
 		size_t sub_prime_len;
 	} key_types[] = {
-		{ 1, 1024, XTEST_DSA_GK_DATA(keygen_dsa_test1) },
+		{ 0, 1024, XTEST_DSA_GK_DATA(keygen_dsa_test1) },
 		{ 0, 512, XTEST_DSA_GK_DATA(keygen_dsa512) },
-		{ 1, 576, XTEST_DSA_GK_DATA(keygen_dsa576) },
-		{ 1, 640, XTEST_DSA_GK_DATA(keygen_dsa640) },
-		{ 1, 704, XTEST_DSA_GK_DATA(keygen_dsa704) },
-		{ 1, 768, XTEST_DSA_GK_DATA(keygen_dsa768) },
-		{ 1, 832, XTEST_DSA_GK_DATA(keygen_dsa832) },
-		{ 1, 896, XTEST_DSA_GK_DATA(keygen_dsa896) },
-		{ 1, 960, XTEST_DSA_GK_DATA(keygen_dsa960) },
-		{ 1, 1024, XTEST_DSA_GK_DATA(keygen_dsa1024) },
+		{ 0, 576, XTEST_DSA_GK_DATA(keygen_dsa576) },
+		{ 0, 640, XTEST_DSA_GK_DATA(keygen_dsa640) },
+		{ 0, 704, XTEST_DSA_GK_DATA(keygen_dsa704) },
+		{ 0, 768, XTEST_DSA_GK_DATA(keygen_dsa768) },
+		{ 0, 832, XTEST_DSA_GK_DATA(keygen_dsa832) },
+		{ 0, 896, XTEST_DSA_GK_DATA(keygen_dsa896) },
+		{ 0, 960, XTEST_DSA_GK_DATA(keygen_dsa960) },
+		{ 0, 1024, XTEST_DSA_GK_DATA(keygen_dsa1024) },
 	};
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
