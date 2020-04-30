@@ -15,4 +15,9 @@
  */
 TEEC_Result xtest_uuid_from_str(TEEC_UUID *uuid, const char *s);
 
+/*
+ * Form UUIDv5 from given name space and name.
+ */
+TEEC_Result xtest_uuid_v5(TEEC_UUID *uuid, const TEEC_UUID *ns,
+			  const void *name, size_t size);
 #endif
