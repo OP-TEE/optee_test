@@ -9,9 +9,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <util.h>
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
+
+/*
+ * Some PKCS#11 object resources used in the tests
+ */
+static const CK_BYTE cktest_aes128_key[16];
 
 /*
  * Util to find a slot on which to open a session
@@ -827,3 +833,197 @@ out:
 
 ADBG_CASE_DEFINE(pkcs11, 1003, xtest_pkcs11_test_1003,
 		 "PKCS11: Login to PKCS#11 token");
+
+static CK_ATTRIBUTE cktest_token_object[] = {
+	{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+};
+
+static CK_ATTRIBUTE cktest_session_object[] = {
+	{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	&(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+};
+
+/* Create session object and token object from a session */
+static void test_create_destroy_single_object(ADBG_Case_t *c, bool persistent)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (persistent) {
+		rv = C_CreateObject(session, cktest_token_object,
+				    ARRAY_SIZE(cktest_token_object),
+				    &obj_hdl);
+	} else {
+		rv = C_CreateObject(session, cktest_session_object,
+				    ARRAY_SIZE(cktest_session_object),
+				    &obj_hdl);
+	}
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, obj_hdl);
+	ADBG_EXPECT_CK_OK(c, rv);
+out:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+static void test_create_destroy_session_objects(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl[512] = { 0 };
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	size_t n = 0;
+
+	for (n = 0; n < ARRAY_SIZE(obj_hdl); n++)
+		obj_hdl[n] = CK_INVALID_HANDLE;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(obj_hdl); n++) {
+		rv = C_CreateObject(session, cktest_session_object,
+				    ARRAY_SIZE(cktest_session_object),
+				    obj_hdl + n);
+
+		if (rv == CKR_DEVICE_MEMORY || !ADBG_EXPECT_CK_OK(c, rv))
+			break;
+	}
+
+	Do_ADBG_Log("    created object count: %zu", n);
+
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_CreateObject(session, cktest_session_object,
+			    ARRAY_SIZE(cktest_session_object),
+			    obj_hdl);
+
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+/* Create session object and token object from a session */
+static void test_create_objects_in_session(ADBG_Case_t *c, bool readwrite)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE token_obj_hld = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE session_obj_hld = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	if (readwrite)
+		session_flags |= CKF_RW_SESSION;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_CreateObject(session, cktest_token_object,
+			    ARRAY_SIZE(cktest_token_object),
+			    &token_obj_hld);
+
+	if (readwrite) {
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+	} else {
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+			goto out;
+	}
+
+	rv = C_CreateObject(session, cktest_session_object,
+			    ARRAY_SIZE(cktest_session_object),
+			    &session_obj_hld);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_tobj;
+
+	rv = C_DestroyObject(session, session_obj_hld);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out_tobj:
+	if (readwrite) {
+		rv = C_DestroyObject(session, token_obj_hld);
+		ADBG_EXPECT_CK_OK(c, rv);
+	}
+out:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+static void xtest_pkcs11_test_1004(ADBG_Case_t *c)
+{
+	Do_ADBG_BeginSubCase(c, "Create and destroy a volatile object");
+	test_create_destroy_single_object(c, false /*!persistent*/);
+	Do_ADBG_EndSubCase(c, "Create and destroy a volatile object");
+
+	Do_ADBG_BeginSubCase(c, "Create and destroy a persistent object");
+	test_create_destroy_single_object(c, true /*persistent*/);
+	Do_ADBG_EndSubCase(c, "Create and destroy a persistent object");
+
+	Do_ADBG_BeginSubCase(c, "Create and destroy many session objects");
+	test_create_destroy_session_objects(c);
+	Do_ADBG_EndSubCase(c, "Create and destroy many session objects");
+
+	Do_ADBG_BeginSubCase(c, "Create objects in a read-only session");
+	test_create_objects_in_session(c, false /*!readwrite*/);
+	Do_ADBG_EndSubCase(c, "Create objects in a read-only session");
+
+	Do_ADBG_BeginSubCase(c, "Create objects in a read/write session");
+	test_create_objects_in_session(c, true /*readwrite*/);
+	Do_ADBG_EndSubCase(c, "Create objects in a read/write session");
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1004, xtest_pkcs11_test_1004,
+		 "PKCS11: create/destroy PKCS#11 simple objects");
