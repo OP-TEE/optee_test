@@ -100,6 +100,10 @@ CFLAGS += -I$(OPTEE_PKCS11_TA_HEADERS)
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lckteec
 endif
 
+ifeq ($(CFG_OCALL),y)
+srcs += regression_1100.c
+endif
+
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
@@ -128,6 +132,7 @@ CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
 CFLAGS += -I../../ta/supp_plugin/include
+CFLAGS += -I../../ta/ocall/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
