@@ -2085,6 +2085,7 @@ ADBG_CASE_DEFINE(regression, 1026, xtest_tee_test_1026,
 
 static void xtest_tee_test_1027(ADBG_Case_t *c)
 {
+#ifdef OPENSSL_FOUND
 	TEEC_Result result = TEEC_ERROR_GENERIC;
 	uint32_t ret_orig = 0;
 	TEEC_Session session = { };
@@ -2125,6 +2126,11 @@ static void xtest_tee_test_1027(ADBG_Case_t *c)
 
 out:
 	TEEC_CloseSession(&session);
+#else /*!OPENSSL_FOUND*/
+	UNUSED(c);
+	/* xtest_uuid_v5() depends on OpenSSL */
+	Do_ADBG_Log("OpenSSL not available, skipping test 1027");
+#endif
 }
 
 ADBG_CASE_DEFINE(regression, 1027, xtest_tee_test_1027,
@@ -2132,6 +2138,7 @@ ADBG_CASE_DEFINE(regression, 1027, xtest_tee_test_1027,
 
 static void xtest_tee_test_1028(ADBG_Case_t *c)
 {
+#ifdef OPENSSL_FOUND
 	TEEC_Result result = TEEC_ERROR_GENERIC;
 	uint32_t ret_orig = 0;
 	TEEC_Session session = { };
@@ -2175,6 +2182,11 @@ static void xtest_tee_test_1028(ADBG_Case_t *c)
 
 out:
 	TEEC_CloseSession(&session);
+#else /*!OPENSSL_FOUND*/
+	UNUSED(c);
+	/* xtest_uuid_v5() depends on OpenSSL */
+	Do_ADBG_Log("OpenSSL not available, skipping test 1028");
+#endif
 }
 
 ADBG_CASE_DEFINE(regression, 1028, xtest_tee_test_1028,

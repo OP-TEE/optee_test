@@ -5,7 +5,9 @@
 
 #include <ctype.h>
 #include <endian.h>
+#ifdef OPENSSL_FOUND
 #include <openssl/evp.h>
+#endif
 #include <stdint.h>
 #include <string.h>
 #include <tee_api_types.h>
@@ -80,6 +82,7 @@ out:
 	return res;
 }
 
+#ifdef OPENSSL_FOUND
 TEEC_Result xtest_uuid_v5(TEEC_UUID *uuid, const TEEC_UUID *ns,
 			  const void *name, size_t size)
 {
@@ -147,3 +150,4 @@ out:
 	EVP_MD_CTX_destroy(mdctx);
 	return res;
 }
+#endif /*OPENSSL_FOUND*/
