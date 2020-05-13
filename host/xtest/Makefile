@@ -33,8 +33,12 @@ define cc-bits
 $(if $(filter arm, $(1)),32,$(if $(filter aarch64, $(1)),64,unknown-arch))
 endef
 
-# OpenSSL is used by GP tests series 8500 and Mbed TLS test 8103
-ifneq ($(CFG_GP_PACKAGE_PATH)$(filter y,$(CFG_TA_MBEDTLS)),)
+# OpenSSL is used by:
+# - GP tests series 8500
+# - Mbed TLS test 8103
+# - User/group login tests 1027 and 1028
+WITH_OPENSSL ?= y
+ifeq ($(WITH_OPENSSL),y)
 CFLAGS += -DOPENSSL_FOUND=1
 ifneq ($(OPTEE_OPENSSL_EXPORT),)
 LDFLAGS += -lcrypto
