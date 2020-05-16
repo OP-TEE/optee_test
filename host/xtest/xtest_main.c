@@ -67,7 +67,7 @@ void usage(char *program);
 
 void usage(char *program)
 {
-	printf("Usage: %s <options> <test_id>\n", program);
+	printf("Usage: %s <options> [[-x] <test-id>]...]\n", program);
 	printf("\n");
 	printf("options:\n");
 	printf("\t-d <device-type>   TEE device path. Default not set (use any)\n");
@@ -85,6 +85,13 @@ void usage(char *program)
 	printf("\t                   separated by a '+')\n");
 	printf("\t                   Default value: '%s'\n", gsuitename);
 	printf("\t-h                 Show usage\n");
+	printf("\t<test-id>          Add <test-id> to the list of tests to be run.\n");
+	printf("\t                   A substring match is performed. May be specified\n");
+	printf("\t                   several times. If no tests are given, all the\n");
+	printf("\t                   tests are added.\n");
+	printf("\t-x <test-id>       Exclude <test-id> from the list of tests to be\n");
+	printf("\t                   run. A substring match is performed. May be\n");
+	printf("\t                   specified several times.\n");
 	printf("applets:\n");
 	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
@@ -96,6 +103,12 @@ void usage(char *program)
 	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
 	printf("\t--stats [opts]     Various statistics ('-h' for usage)\n");
+	printf("\n");
+	printf("Examples:\n");
+	printf("\txtest -t regression 4001 4003\n");
+	printf("\t                   run regression tests 4001 and 4003\n");
+	printf("\txtest -t regression -x 1027 -x 1028\n");
+	printf("\t                   run all regression tests but 1027 and 1028\n");
 	printf("\n");
 }
 
@@ -121,6 +134,8 @@ int main(int argc, char *argv[])
 		.SuiteID_p = NULL,
 		.cases = TAILQ_HEAD_INITIALIZER(all.cases),
 	};
+	bool exclusion = false;
+	size_t last_gen_option = 1;
 
 	opterr = 0;
 
@@ -147,27 +162,51 @@ int main(int argc, char *argv[])
 	else if (argc > 1 && !strcmp(argv[1], "--stats"))
 		return stats_runner_cmd_parser(argc - 1, &argv[1]);
 
-	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
+	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1) {
 		switch (opt) {
 		case 'd':
 			_device = optarg;
+			last_gen_option = optind;
 			break;
 		case 'l':
 			p = optarg;
+			last_gen_option = optind;
 			break;
 		case 't':
 			test_suite = optarg;
+			last_gen_option = optind;
 			break;
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case '?':
+			if (optopt == 'x') {
+				/*
+				 * The -x option is not processed here,
+				 * it is part of the test IDs.
+				 */
+				goto next;
+			}
+			/* option not recognized */
+			usage(argv[0]);
+			return -1;
 		default:
 			usage(argv[0]);
 			return -1;
- 		}
+		}
+	}
+next:
+	if (last_gen_option > 1)
+		last_gen_option--;
 
-	for (index = optind; index < argc; index++)
-		printf("Test ID: %s\n", argv[index]);
+	for (index = last_gen_option; index < argc; index++) {
+		if (!strcmp(argv[index], "-x")) {
+			exclusion = true;
+			continue;
+		}
+		printf("Test ID: %s%s\n", exclusion ? "-x " : "", argv[index]);
+		exclusion = false;
+	}
 
 	if (p)
 		level = atoi(p);
@@ -212,7 +251,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* Run the tests */
-	ret = Do_ADBG_RunSuite(&all, argc - optind, argv + optind);
+	ret = Do_ADBG_RunSuite(&all, argc - last_gen_option, argv + last_gen_option);
 
 err:
 	free((void *)all.SuiteID_p);
