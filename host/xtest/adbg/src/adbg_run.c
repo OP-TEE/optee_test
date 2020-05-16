@@ -129,21 +129,27 @@ static int ADBG_RunSuite(
 	Do_ADBG_Log("######################################################");
 
 	TAILQ_FOREACH(case_def, &Runner_p->Suite_p->cases, link) {
-		if (argc > 0) {
-			bool HaveMatch = false;
-			int i = 0;
+		/* Default match if by default all tests are to be run */
+		bool HaveMatch = !argc || !strcmp(argv[0], "-x");
+		int i = 0;
 
-			for (i = 0; i < argc; i++) {
-
-				if (strstr(case_def->TestID_p, argv[i])) {
-					HaveMatch = true;
-					break;
+		for (i = 0; i < argc; i++) {
+			if (!strcmp(argv[i], "-x")) {
+				i++;
+				if (i >= argc) {
+					Do_ADBG_Log("Error: -x <test-id>");
+					return 1;
 				}
+				if (strstr(case_def->TestID_p, argv[i]))
+					HaveMatch = false;
+			} else {
+				if (strstr(case_def->TestID_p, argv[i]))
+					HaveMatch = true;
 			}
-			if (!HaveMatch) {
-				NumSkippedTestCases++;
-				continue;
-			}
+		}
+		if (!HaveMatch) {
+			NumSkippedTestCases++;
+			continue;
 		}
 
 		Case_p = ADBG_Case_New(case_def);
@@ -191,12 +197,20 @@ static int ADBG_RunSuite(
 
 	Do_ADBG_Log("+-----------------------------------------------------");
 	if (argc > 0) {
+		bool test_exclusion = false;
 		int i = 0;
 
-		for (i = 0; i < argc; i++)
+		for (i = 0; i < argc; i++) {
+			if (!strcmp(argv[i], "-x")) {
+				test_exclusion = true;
+				continue;
+			}
 			Do_ADBG_Log(
-				"Result of testsuite %s filtered by \"%s\":",
-				Runner_p->Suite_p->SuiteID_p, argv[i]);
+				"Result of testsuite %s filtered by \"%s%s\":",
+				Runner_p->Suite_p->SuiteID_p,
+				test_exclusion ? "-x " : "", argv[i]);
+			test_exclusion = false;
+		}
 	} else {
 		Do_ADBG_Log("Result of testsuite %s:",
 			    Runner_p->Suite_p->SuiteID_p);
