@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 
 #ifdef OPENSSL_FOUND
@@ -48,6 +49,10 @@ ADBG_SUITE_DEFINE(regression);
 char *_device = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
+
+/* By default bypass kernel version using UINT_MAX */
+unsigned int xtest_kernel_major = UINT_MAX;
+unsigned int xtest_kernel_minor = UINT_MAX;
 
 #ifdef WITH_GP_TESTS
 #define GP_SUITE	"+gp"
@@ -85,6 +90,11 @@ void usage(char *program)
 	printf("\t                   separated by a '+')\n");
 	printf("\t                   Default value: '%s'\n", gsuitename);
 	printf("\t-h                 Show usage\n");
+	printf("\t-k                 Skip test cases that Linux kernel may not\n");
+	printf("\t                   support. Checks kernel version with uname.\n");
+#ifdef CFG_XTEST_KERNEL_RESTRICTIONS
+	printf("\t                   Force enabled by configuration switch!\n");
+#endif
 	printf("applets:\n");
 	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
@@ -108,6 +118,48 @@ static void init_ossl(void)
 #endif
 }
 
+static int set_kernel_restriction(void)
+{
+	struct utsname os_name = { };
+	int major = 0;
+	int minor = 0;
+
+	if (uname(&os_name)) {
+		printf("Error: uname() failed\n");
+		return -1;
+	}
+
+	if (strcmp(os_name.sysname, "Linux")) {
+		fprintf(stderr, "Error: unrecognized uname.sysname %s\n",
+			os_name.sysname);
+		return -1;
+	}
+
+	if (sscanf(os_name.release, "%u.%u.", &major, &minor) != 2) {
+		fprintf(stderr, "Error: unrecognized uname.release %s\n",
+			os_name.release);
+		return -1;
+	}
+
+	if (cmp_kernel_version(major, minor,
+			       KERNEL_MAJOR_MIN, KERNEL_MINOR_MIN) < 0)
+		printf("Warning: version %u.%u too early for OP-TEE\n",
+		       major, minor);
+
+	if (cmp_kernel_version(major, minor,
+			       KERNEL_MAJOR_NEXT, KERNEL_MINOR_NEXT) >= 0)
+		printf("Warning: unknown next kernel %u.%u.\n",
+		       major, minor);
+
+	xtest_kernel_major = major;
+	xtest_kernel_minor = minor;
+
+	printf("Test restricted to mainline kernel %u.%u\n",
+	       xtest_kernel_major, xtest_kernel_minor);
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int opt = 0;
@@ -121,6 +173,7 @@ int main(int argc, char *argv[])
 		.SuiteID_p = NULL,
 		.cases = TAILQ_HEAD_INITIALIZER(all.cases),
 	};
+	int kernel_restrictions = 0;
 
 	opterr = 0;
 
@@ -147,7 +200,11 @@ int main(int argc, char *argv[])
 	else if (argc > 1 && !strcmp(argv[1], "--stats"))
 		return stats_runner_cmd_parser(argc - 1, &argv[1]);
 
-	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1)
+#ifdef CFG_XTEST_KERNEL_RESTRICTIONS
+	kernel_restrictions = 1;
+#endif
+
+	while ((opt = getopt(argc, argv, "d:l:t:h:k")) != -1) {
 		switch (opt) {
 		case 'd':
 			_device = optarg;
@@ -161,10 +218,17 @@ int main(int argc, char *argv[])
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case 'k':
+			kernel_restrictions = 1;
+			break;
 		default:
 			usage(argv[0]);
 			return -1;
- 		}
+		}
+	}
+
+	if (kernel_restrictions && set_kernel_restriction())
+		return -1;
 
 	for (index = optind; index < argc; index++)
 		printf("Test ID: %s\n", argv[index]);

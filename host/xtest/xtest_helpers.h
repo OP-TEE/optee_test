@@ -21,6 +21,25 @@
 
 extern unsigned int level;
 
+/* OP-TEE driver is introduced in kernel v4.5 */
+#define KERNEL_MAJOR_MIN	4
+#define KERNEL_MINOR_MIN	5
+/* As of now, v5.8 is the next kernel */
+#define KERNEL_MAJOR_NEXT	5
+#define KERNEL_MINOR_NEXT	8
+
+/* Return a signed +1, 0 or -1 value based on data comparison */
+#define CMP_TRILEAN(a, b) \
+	(__extension__({ \
+		__typeof__(a) _a = (a); \
+		__typeof__(b) _b = (b); \
+		\
+		_a > _b ? 1 : _a < _b ? -1 : 0; \
+	}))
+
+extern unsigned int xtest_kernel_major;
+extern unsigned int xtest_kernel_minor;
+
 /* Global context to use if any context is needed as input to a function */
 extern TEEC_Context xtest_teec_ctx;
 
@@ -39,6 +58,26 @@ TEEC_Result xtest_teec_open_session(TEEC_Session *session,
 TEEC_Result xtest_teec_open_static_session(TEEC_Session *session,
 					   TEEC_Operation *op,
 					   uint32_t *ret_orig);
+
+/* Return true is OS kernel restriction do not comply provided version */
+static inline int cmp_kernel_version(unsigned int a_major, unsigned int a_minor,
+				      unsigned int b_major, unsigned int b_minor)
+{
+	int cmp = CMP_TRILEAN(a_major, b_major);
+
+	if (cmp)
+		return cmp;
+
+	return CMP_TRILEAN(a_minor, b_minor);
+}
+
+/* Return true is OS kernel restriction comply the registered kernel version */
+static inline bool kernel_is_supported(unsigned int major, unsigned int minor)
+{
+	/* Test if registered version is higher or equal to caller arguments */
+	return cmp_kernel_version(xtest_kernel_major, xtest_kernel_minor,
+				  major, minor) >= 0;
+}
 
 #define TEEC_OPERATION_INITIALIZER	{ }
 
