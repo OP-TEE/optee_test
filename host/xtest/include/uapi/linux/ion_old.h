@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * drivers/staging/android/uapi/ion.h (This is the ION Uapi prior kernel 4.12)
  *
