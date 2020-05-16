@@ -2095,6 +2095,13 @@ static void xtest_tee_test_1027(ADBG_Case_t *c)
 	TEEC_UUID uuid_ns = { };
 	char uuid_name[TEE_UUID_NS_NAME_SIZE] = { };
 
+	if (!kernel_is_supported(KERNEL_MAJOR_NEXT, KERNEL_MINOR_NEXT)) {
+		Do_ADBG_Log("- Skip the test case, needs a patched Linux kernel.\n"
+			    "  At least up to Linux kernel v5.7, client UUID is\n"
+			    "  not implemented.\n");
+		return;
+	}
+
 	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
@@ -2148,6 +2155,13 @@ static void xtest_tee_test_1028(ADBG_Case_t *c)
 	TEEC_UUID uuid_ns = { };
 	char uuid_name[TEE_UUID_NS_NAME_SIZE] = { };
 	uint32_t group = 0;
+
+	if (!kernel_is_supported(KERNEL_MAJOR_NEXT, KERNEL_MINOR_NEXT)) {
+		Do_ADBG_Log("- Skip the test case, needs a patched Linux kernel.\n"
+			    "  At least up to Linux kernel v5.7, client UUID is\n"
+			    "  not implemented.\n");
+		return;
+	}
 
 	group = getegid();
 
