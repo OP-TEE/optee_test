@@ -2128,6 +2128,7 @@ out:
 	TEEC_CloseSession(&session);
 #else /*!OPENSSL_FOUND*/
 	UNUSED(c);
+	UNUSED(client_uuid_linux_ns);
 	/* xtest_uuid_v5() depends on OpenSSL */
 	Do_ADBG_Log("OpenSSL not available, skipping test 1027");
 #endif
