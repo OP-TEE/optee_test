@@ -1217,7 +1217,6 @@ TEE_Result ta_entry_get_global_var(uint32_t param_types, TEE_Param params[4])
 
 TEE_Result ta_entry_client_identity(uint32_t param_types, TEE_Param params[4])
 {
-	TEE_PropSetHandle *propset = NULL;
 	TEE_Result res = TEE_ERROR_GENERIC;
 	TEE_Identity identity = { };
 
