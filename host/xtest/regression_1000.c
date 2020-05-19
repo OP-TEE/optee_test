@@ -2046,7 +2046,9 @@ ADBG_CASE_DEFINE(regression, 1025, xtest_tee_test_1025,
  * Value here is random UUID that is allocated as name space identifier for
  * forming Client UUID's for TEE environment using UUIDv5 scheme.
  */
+#ifdef OPENSSL_FOUND
 static const char *client_uuid_linux_ns = "58ac9ca0-2086-4683-a1b8-ec4bc08e01b6";
+#endif
 
 /* TEEC_LOGIN_PUBLIC's Client UUID is NIL UUID */
 static TEEC_UUID client_uuid_public = { };
