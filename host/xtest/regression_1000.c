@@ -2083,6 +2083,15 @@ out:
 ADBG_CASE_DEFINE(regression, 1026, xtest_tee_test_1026,
 		 "Session: public login");
 
+/*
+ * regression_1027
+ * Depends on OpenSSL
+ * Depends on kernel commit "tee: optee: Add support for session login client UUID generation"
+ * Linaro tree: https://github.com/linaro-swg/linux/commit/ad19acdcdbc5
+ * Upstream: <put sha-1 here when known>
+ *
+ * xtest skips the test when not built with OpenSSL.
+ */
 static void xtest_tee_test_1027(ADBG_Case_t *c)
 {
 #ifdef OPENSSL_FOUND
@@ -2136,6 +2145,14 @@ out:
 ADBG_CASE_DEFINE(regression, 1027, xtest_tee_test_1027,
 		 "Session: user login for current user");
 
+/*
+ * regression_1028
+ * Depends on OpenSSL and kernel commit "tee: optee: Add support for session login client UUID generation"
+ * Linaro tree: https://github.com/linaro-swg/linux/commit/ad19acdcdbc5
+ * Upstream: <put sha-1 here when known>
+ *
+ * xtest skips the test when not built with OpenSSL.
+ */
 static void xtest_tee_test_1028(ADBG_Case_t *c)
 {
 #ifdef OPENSSL_FOUND
