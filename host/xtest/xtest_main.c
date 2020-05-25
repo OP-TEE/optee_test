@@ -188,8 +188,6 @@ int main(int argc, char *argv[])
 		}
 	}
 next:
-	if (last_gen_option > 1)
-		last_gen_option--;
 
 	for (index = last_gen_option; index < argc; index++) {
 		if (!strcmp(argv[index], "-x")) {
