@@ -23,7 +23,7 @@ TEEC_Context xtest_teec_ctx;
 
 TEEC_Result xtest_teec_ctx_init(void)
 {
-	return TEEC_InitializeContext(_device, &xtest_teec_ctx);
+	return TEEC_InitializeContext(xtest_tee_name, &xtest_teec_ctx);
 }
 
 TEEC_Result xtest_teec_open_session(TEEC_Session *session,

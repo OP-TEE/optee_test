@@ -207,7 +207,7 @@ ADBG_CASE_DEFINE(gp, <xsl:value-of select="$position" />, xtest_tee_<xsl:value-o
 </xsl:when-->
 <xsl:when test="(contains(./@name, 'UUID'))"><xsl:text>&amp;</xsl:text><xsl:value-of select="./@name" />
 </xsl:when>
-<xsl:when test="(../type/@name='ALL_TEE_NAMES' and ./@name='NULL')"><xsl:text>_device</xsl:text>
+<xsl:when test="(../type/@name='ALL_TEE_NAMES' and ./@name='NULL')"><xsl:text>xtest_tee_name</xsl:text>
 </xsl:when>
 <xsl:otherwise>
 <!--xsl:text>&amp;</xsl:text--><xsl:value-of select="./@name" />

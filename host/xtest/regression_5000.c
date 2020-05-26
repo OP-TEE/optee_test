@@ -98,7 +98,7 @@ static void Allocate_In(struct xtest_session *cs)
 		size_t size = 1024;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -122,7 +122,7 @@ static void Allocate_out_of_memory(struct xtest_session *cs)
 		size_t SIZE_OVER_MEMORY_CAPACITY = SIZE_MAX;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		ADBG_EXPECT_TEEC_RESULT(cs->c, TEEC_ERROR_OUT_OF_MEMORY,
@@ -145,7 +145,7 @@ static void OpenSession_error_notExistingTA(struct xtest_session *cs)
 		uint32_t ret_orig = 0;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		ADBG_EXPECT_COMPARE_UNSIGNED(cs->c, TEEC_SUCCESS, !=,
@@ -169,7 +169,7 @@ static void Allocate_InOut(struct xtest_session *cs)
 		uint8_t val[] = { 54, 76, 98, 32 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -193,7 +193,7 @@ static void Register_In(struct xtest_session *cs)
 		uint8_t val[] = { 32, 65, 43, 21, 98 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;
@@ -219,7 +219,7 @@ static void Register_notZeroLength_Out(struct xtest_session *cs)
 		uint8_t val[] = { 56, 67, 78, 99 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;
@@ -245,7 +245,7 @@ static void Register_InOut(struct xtest_session *cs)
 		uint8_t val[] = { 54, 76, 23, 98, 255, 23, 86 };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;
@@ -270,7 +270,7 @@ static void Register_zeroLength_Out(struct xtest_session *cs)
 		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;
@@ -294,7 +294,7 @@ static void Allocate_Out(struct xtest_session *cs)
 		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -339,7 +339,7 @@ static void AllocateThenRegister_SameMemory(struct xtest_session *cs)
 		size_t size_allocation = 32;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -367,7 +367,7 @@ static void AllocateSameMemory_twice(struct xtest_session *cs)
 		size_t size_allocation = 32;
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -395,7 +395,7 @@ static void RegisterSameMemory_twice(struct xtest_session *cs)
 		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;
@@ -429,7 +429,7 @@ static void Allocate_sharedMemory_32k(struct xtest_session *cs)
 		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(cs->c,
@@ -455,7 +455,7 @@ static void Register_sharedMemory_32k(struct xtest_session *cs)
 		TEEC_SharedMemory shm = { };
 
 		if (!ADBG_EXPECT(cs->c, TEEC_SUCCESS,
-			TEEC_InitializeContext(_device, &cs->context)))
+			TEEC_InitializeContext(xtest_tee_name, &cs->context)))
 			goto out;
 
 		shm.buffer = val;

@@ -284,7 +284,7 @@ static void *context_thread(void *arg)
 	 * Sleep 0.5 seconds before cancellation to make sure that the other
 	 * thread is in RPC_WAIT.
 	 */
-	XML_InitializeContext(((struct ctx_thr *)arg)->c, _device,
+	XML_InitializeContext(((struct ctx_thr *)arg)->c, xtest_tee_name,
 			      ((struct ctx_thr *)arg)->ctx, TEEC_SUCCESS);
 	TEEC_FinalizeContext(((struct ctx_thr *)arg)->ctx);
 

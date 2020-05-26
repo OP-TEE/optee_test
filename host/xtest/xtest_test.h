@@ -133,6 +133,6 @@ extern const TEEC_UUID storage_benchmark_ta_uuid;
 extern const TEEC_UUID socket_ta_uuid;
 extern const TEEC_UUID sdp_basic_ta_uuid;
 extern const TEEC_UUID tpm_log_test_ta_uuid;
-extern char *_device;
+extern char *xtest_tee_name;
 
 #endif /*XTEST_TEST_H*/

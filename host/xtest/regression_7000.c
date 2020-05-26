@@ -85,7 +85,7 @@ static void xtest_tee_7001(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    AllocateSharedMemory(CONTEXT01, SHARE_MEM01, SIZE_VALUE01,
 					 TEEC_MEM_INPUT));
@@ -101,7 +101,7 @@ static void xtest_tee_7002(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_ERROR_OUT_OF_MEMORY,
 		    AllocateSharedMemory(CONTEXT01, SHARE_MEM01,
 					 SIZE_OVER_MEMORY, TEEC_MEM_INPUT));
@@ -116,7 +116,7 @@ static void xtest_tee_7003(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    AllocateSharedMemory(CONTEXT01, SHARE_MEM01, BIG_SIZE,
 					 TEEC_MEM_OUTPUT));
@@ -133,7 +133,7 @@ static void xtest_tee_7004(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    AllocateSharedMemory(CONTEXT01, SHARE_MEM01, SIZE_VALUE01,
 					 TEEC_MEM_INOUT));
@@ -149,7 +149,7 @@ static void xtest_tee_7005(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    RegisterSharedMemory(CONTEXT01, SHARE_MEM01, SIZE_VALUE01,
 					 TEEC_MEM_INPUT));
@@ -165,7 +165,7 @@ static void xtest_tee_7006(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    RegisterSharedMemory(CONTEXT01, SHARE_MEM01, SIZE_VALUE01,
 					 TEEC_MEM_OUTPUT));
@@ -181,7 +181,7 @@ static void xtest_tee_7007(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    RegisterSharedMemory(CONTEXT01, SHARE_MEM01, BIG_SIZE,
 					 TEEC_MEM_INOUT));
@@ -197,7 +197,7 @@ static void xtest_tee_7008(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		    RegisterSharedMemory(CONTEXT01, SHARE_MEM01, ZERO,
 					 TEEC_MEM_OUTPUT));
@@ -213,7 +213,7 @@ static void xtest_tee_7009(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	XML_OpenSession(c, CONTEXT01, SESSION01, &UUID_Unknown,
 			TEEC_LOGIN_PUBLIC, NULL, NULL,
 			TEEC_ORIGIN_ANY_NOT_TRUSTED_APP, TEEC_UNDEFINED_ERROR);
@@ -228,7 +228,7 @@ static void xtest_tee_7010(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	ADBG_EXPECT(c, TEEC_SUCCESS,
 		AllocateSharedMemory(CONTEXT01, SHARE_MEM01, ZERO,
 				     TEEC_MEM_OUTPUT));
@@ -244,7 +244,7 @@ static void xtest_tee_7013(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, xtest_tee_init(c)))
 		return;
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	XML_OpenSession(c, CONTEXT01, SESSION01,
 			&UUID_TTA_answerSuccessTo_OpenSession_Invoke,
 			INVALID_CONNECTION_METHODS, NULL, NULL,
@@ -295,7 +295,7 @@ static void xtest_tee_7019(ADBG_Case_t *c)
 		return;
 	TEEC_createThread(CLIENT_APP01, THREAD02);
 	TEEC_SelectApp(CLIENT_APP01, THREAD01_DEFAULT);
-	XML_InitializeContext(c, _device, CONTEXT01, TEEC_SUCCESS);
+	XML_InitializeContext(c, xtest_tee_name, CONTEXT01, TEEC_SUCCESS);
 	TEEC_SelectApp(CLIENT_APP01, THREAD02);
 	thr2_ctx.c = c;
 	thr2_ctx.ctx = CONTEXT01;
