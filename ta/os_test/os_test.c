@@ -175,12 +175,15 @@ while (true) {
 	}
 
 	/* Get the property with a very small buffer */
-	vblen2 = 1;
-	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
-				  vblen2, vblen);
-	if (res != TEE_SUCCESS)
-		return res;
+	if (vblen > 1) {
+		vblen2 = 1;
+		res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+		res = check_returned_prop(__LINE__, nbuf, res,
+					  TEE_ERROR_SHORT_BUFFER,
+					  vblen2, vblen);
+		if (res != TEE_SUCCESS)
+			return res;
+	}
 
 	/* Get the property with almost the correct buffer */
 	vblen2 = vblen - 1;
@@ -319,6 +322,14 @@ while (true) {
 				res = check_binprop_ones(4, bbuf, bblen);
 				if (res)
 					return res;
+			} else if (!strcmp("myprop.binaryblock.empty1", nbuf) ||
+				   !strcmp("myprop.binaryblock.empty2", nbuf) ||
+				   !strcmp("myprop.binaryblock.empty3", nbuf)) {
+				if (bblen) {
+					EMSG("Property \"%s\": %zu byte(s)",
+					     nbuf, bblen);
+					return TEE_ERROR_GENERIC;
+				}
 			} else {
 				EMSG("Unexpected property \"%s\"", nbuf);
 				TEE_Panic(0);
@@ -395,6 +406,9 @@ static TEE_Result test_properties(void)
 		{"myprop.binaryblock.2byte-ones", P_TYPE_BINARY_BLOCK},
 		{"myprop.binaryblock.3byte-ones", P_TYPE_BINARY_BLOCK},
 		{"myprop.binaryblock.4byte-ones", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.empty1", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.empty2", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.empty3", P_TYPE_BINARY_BLOCK},
 	};
 	const size_t num_p_attrs = sizeof(p_attrs) / sizeof(p_attrs[0]);
 	size_t n = 0;
