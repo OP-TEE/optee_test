@@ -37,7 +37,7 @@ ADBG_SUITE_DEFINE(pkcs11);
 #endif
 ADBG_SUITE_DEFINE(regression);
 
-char *_device = NULL;
+char *xtest_tee_name = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1) {
 		switch (opt) {
 		case 'd':
-			_device = optarg;
+			xtest_tee_name = optarg;
 			last_gen_option = optind;
 			break;
 		case 'l':
@@ -205,7 +205,7 @@ next:
 	printf("Run test suite with level=%d\n", level);
 
 	printf("\nTEE test application started over %s TEE instance\n",
-	       _device ? _device : "default");
+	       xtest_tee_name ? xtest_tee_name : "default");
 
 	tee_res = xtest_teec_ctx_init();
 	if (tee_res != TEEC_SUCCESS) {
