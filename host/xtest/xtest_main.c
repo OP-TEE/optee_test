@@ -62,7 +62,7 @@ void usage(char *program)
 	printf("Usage: %s <options> [[-x] <test-id>]...]\n", program);
 	printf("\n");
 	printf("options:\n");
-	printf("\t-d <device-type>   TEE device path. Default not set (use any)\n");
+	printf("\t-d <TEE-identifer> TEE identifier. Use default TEE if not set\n");
 	printf("\t-l <level>         Test level [0-15].  Values higher than 0 enable\n");
 	printf("\t                   optional tests. Default: 0. All tests: 15.\n");
 	printf("\t-t <test_suite>    Available test suites: regression benchmark");
@@ -204,7 +204,8 @@ next:
 		level = 0;
 	printf("Run test suite with level=%d\n", level);
 
-	printf("\nTEE test application started with device [%s]\n", _device);
+	printf("\nTEE test application started over %s TEE instance\n",
+	       _device ? _device : "default");
 
 	tee_res = xtest_teec_ctx_init();
 	if (tee_res != TEEC_SUCCESS) {
