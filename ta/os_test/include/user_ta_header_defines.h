@@ -37,5 +37,11 @@
 	{ "myprop.binaryblock.3byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
 	   "////" }, \
 	{ "myprop.binaryblock.4byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "/////w==" },
+	   "/////w==" }, \
+	{ "myprop.binaryblock.empty1", USER_TA_PROP_TYPE_BINARY_BLOCK, \
+	   "" }, \
+	{ "myprop.binaryblock.empty2", USER_TA_PROP_TYPE_BINARY_BLOCK, \
+	   "====" }, \
+	{ "myprop.binaryblock.empty3", USER_TA_PROP_TYPE_BINARY_BLOCK, \
+	   "-%@&" /* Only invalid code */},
 #endif
