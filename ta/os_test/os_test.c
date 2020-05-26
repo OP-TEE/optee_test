@@ -51,6 +51,54 @@ static TEE_Result check_returned_prop(
 	return TEE_SUCCESS;
 }
 
+static TEE_Result check_binprop_ones(size_t size, uint8_t *bbuf, size_t bblen)
+{
+	uint8_t ones[4] = { 0xff, 0xff, 0xff, 0xff };
+
+	if (size > 4 || bblen != size) {
+		EMSG("Size error (size=%zu, bblen=%zu)", size, bblen);
+		return TEE_ERROR_GENERIC;
+	}
+	if (strncmp(bbuf, ones, bblen)) {
+		EMSG("Unexpected content");
+		DHEXDUMP(bbuf, bblen);
+		return TEE_ERROR_GENERIC;
+	}
+	return TEE_SUCCESS;
+}
+
+static TEE_Result get_binblock_property(TEE_PropSetHandle h,
+					char *nbuf,
+					uint8_t **bbuf,
+					size_t *bblen)
+{
+	TEE_Result res = TEE_ERROR_GENERIC;
+
+	*bbuf = NULL;
+	*bblen = 0;
+	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, bblen);
+
+	if (res == TEE_SUCCESS && !*bblen)
+		return TEE_SUCCESS;
+
+	if (res != TEE_ERROR_SHORT_BUFFER) {
+		EMSG("TEE_GetPropertyAsBinaryBlock() size query returned 0x%x",
+		     (unsigned int)res);
+		return res ? res : TEE_ERROR_GENERIC;
+	}
+
+	*bbuf = TEE_Malloc(*bblen, TEE_MALLOC_FILL_ZERO);
+	if (!bbuf)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, bblen);
+	if (res != TEE_SUCCESS)
+		EMSG("TEE_GetPropertyAsBinaryBlock(\"%s\") returned 0x%x",
+		     nbuf, (unsigned int)res);
+
+	return res;
+}
+
 static TEE_Result print_properties(TEE_PropSetHandle h,
 				   TEE_PropSetHandle prop_set,
 				   struct p_attr *p_attrs, size_t num_p_attrs)
@@ -69,6 +117,8 @@ while (true) {
 	uint32_t nblen_small = 0;
 	uint32_t vblen = sizeof(vbuf);
 	uint32_t vblen2 = sizeof(vbuf2);
+	uint8_t *bbuf = NULL;
+	size_t bblen = 0;
 
 	res = TEE_GetPropertyName(h, nbuf, &nblen);
 	if (res != TEE_SUCCESS) {
@@ -234,40 +284,47 @@ while (true) {
 			break;
 
 		case P_TYPE_BINARY_BLOCK:
-			{
-				char bbuf[80] = { };
-				uint32_t bblen = sizeof(bbuf);
+			res = get_binblock_property(h, nbuf, &bbuf, &bblen);
+			if (res)
+				return res;
 
-				res =
-				    TEE_GetPropertyAsBinaryBlock(h,
-								 NULL,
-								 bbuf,
-								 &bblen);
-				if (res != TEE_SUCCESS) {
-					EMSG(
-					"TEE_GetPropertyAsBinaryBlock(\"%s\") returned 0x%x\n",
-					nbuf, (unsigned int)res);
+			if (!strcmp("myprop.binaryblock", nbuf)) {
+				const char exp_bin_value[] = "Hello world!";
+
+				if (bblen != strlen(exp_bin_value) ||
+				    TEE_MemCompare(exp_bin_value, bbuf,
+						   bblen)) {
+					EMSG("Binary buffer of \"%s\" differs from \"%s\"",
+					     nbuf, exp_bin_value);
+					EMSG("Got \"%s\"", bbuf);
+					return TEE_ERROR_GENERIC;
+				}
+			} else if (!strcmp("myprop.binaryblock.1byte-ones",
+					   nbuf)) {
+				res = check_binprop_ones(1, bbuf, bblen);
+				if (res)
 					return res;
-				}
-				if (strcmp("myprop.binaryblock", nbuf) == 0) {
-					const char exp_bin_value[] =
-					    "Hello world!";
-
-					if (bblen != strlen(exp_bin_value) ||
-					    TEE_MemCompare(exp_bin_value, bbuf,
-							   bblen) != 0) {
-						EMSG(
-						"Binary buffer of \"%s\" differs from \"%s\"\n",
-							nbuf, exp_bin_value);
-						EMSG(
-						"Got \"%s\"\n",
-						     bbuf);
-						return
-						    TEE_ERROR_GENERIC;
-					}
-				}
-
+			} else if (!strcmp("myprop.binaryblock.2byte-ones",
+					   nbuf)) {
+				res = check_binprop_ones(2, bbuf, bblen);
+				if (res)
+					return res;
+			} else if (!strcmp("myprop.binaryblock.3byte-ones",
+					   nbuf)) {
+				res = check_binprop_ones(3, bbuf, bblen);
+				if (res)
+					return res;
+			} else if (!strcmp("myprop.binaryblock.4byte-ones",
+					   nbuf)) {
+				res = check_binprop_ones(4, bbuf, bblen);
+				if (res)
+					return res;
+			} else {
+				EMSG("Unexpected property \"%s\"", nbuf);
+				TEE_Panic(0);
 			}
+
+			TEE_Free(bbuf);
 			break;
 
 		default:
@@ -334,6 +391,10 @@ static TEE_Result test_properties(void)
 		{"myprop.1234", P_TYPE_IDENTITY},
 		{"myprop.hello", P_TYPE_STRING},
 		{"myprop.binaryblock", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.1byte-ones", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.2byte-ones", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.3byte-ones", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.4byte-ones", P_TYPE_BINARY_BLOCK},
 	};
 	const size_t num_p_attrs = sizeof(p_attrs) / sizeof(p_attrs[0]);
 	size_t n = 0;
