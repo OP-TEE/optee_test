@@ -388,7 +388,7 @@ static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 
-	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_RANDOM_NUMBER_GENEREATE, &op,
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_RANDOM_NUMBER_GENERATE, &op,
 				 &ret_orig);
 
 	if (res != TEEC_SUCCESS) {

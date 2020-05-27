@@ -172,7 +172,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_CRYPT_CMD_DERIVE_KEY:
 		return ta_entry_derive_key(nParamTypes, pParams);
 
-	case TA_CRYPT_CMD_RANDOM_NUMBER_GENEREATE:
+	case TA_CRYPT_CMD_RANDOM_NUMBER_GENERATE:
 		return ta_entry_random_number_generate(nParamTypes, pParams);
 
 	case TA_CRYPT_CMD_AE_INIT:
