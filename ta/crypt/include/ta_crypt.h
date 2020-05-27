@@ -262,7 +262,7 @@
  * void TEE_RandomNumberGenerate(void *randomBuffer, size_t randomBufferLen);
  * out      params[0].memref = randomBuffer
  */
-#define TA_CRYPT_CMD_RANDOM_NUMBER_GENEREATE    32
+#define TA_CRYPT_CMD_RANDOM_NUMBER_GENERATE     32
 
 /*
  * TEE_Result TEE_AEInit(TEE_OperationHandle operation,
