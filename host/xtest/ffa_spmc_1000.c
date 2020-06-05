@@ -14,10 +14,31 @@
 
 #define FFA_DRIVER_FS_PATH	"/sys/kernel/debug/arm_ffa_user"
 #define SPMC_TEST_OK 0xaa
+#define INCORRECT_ENDPOINT_ID 0xffff
+#define NORMAL_WORLD_ENDPOINT_ID	0
+
+/* Get the 32 least significant bits of a handle.*/
+#define MEM_SHARE_HANDLE_LOW(x) ((x) & 0xffffffff)
+/* Get the 32 most significant bits of a handle.*/
+#define MEM_SHARE_HANDLE_HIGH(x) (((x) >> 32) & 0xffffffff)
+
+#define MEM_SHARE_HANDLE_LOW_INDEX	1
+#define MEM_SHARE_HANDLE_HIGH_INDEX	2
+#define MEM_SHARE_HANDLE_ENDPOINT_INDEX	3
 
 enum sp_tests {
 	EP_TEST_SP,
 	EP_TEST_SP_COMMUNICATION,
+	EP_TEST_SP_INCREASE,
+	EP_TRY_R_ACCESS,
+	EP_TRY_W_ACCESS,
+	EP_RETRIEVE,
+	EP_RELINQUISH,
+	EP_SP_MEM_SHARING,
+	EP_SP_MEM_SHARING_MULTI,
+	EP_SP_MEM_SHARING_EXC,
+	EP_SP_MEM_INCORRECT_ACCESS,
+	EP_SP_NOP
 };
 
 static int ffa_fd = -1;
@@ -30,15 +51,15 @@ static const char test_endpoint3_uuid[] =
 	"23eb0100-e32a-4497-9052-2f11e584afa6";
 
 static struct ffa_ioctl_ep_desc test_endpoint1 = {
-	.uuid_ptr = (uint64_t) test_endpoint1_uuid,
+	.uuid_ptr = (uint64_t)test_endpoint1_uuid,
 };
 
 static struct ffa_ioctl_ep_desc test_endpoint2 = {
-	.uuid_ptr = (uint64_t) test_endpoint2_uuid,
+	.uuid_ptr = (uint64_t)test_endpoint2_uuid,
 };
 
 static struct ffa_ioctl_ep_desc test_endpoint3 = {
-	.uuid_ptr = (uint64_t) test_endpoint3_uuid,
+	.uuid_ptr = (uint64_t)test_endpoint3_uuid,
 };
 
 static void close_debugfs(void)
@@ -69,7 +90,7 @@ static int start_sp_test(uint16_t endpoint, enum sp_tests test,
 			 struct ffa_ioctl_msg_args *args)
 {
 	args->dst_id = endpoint;
-	args->args[0] = (uint32_t)test;
+	args->args[0] = test;
 	return ioctl(ffa_fd, FFA_IOC_MSG_SEND, args);
 }
 
@@ -79,7 +100,7 @@ static uint16_t get_endpoint_id(uint64_t endp)
 
 	/* Get ID of destination SP based on UUID */
 	if(ioctl(ffa_fd, FFA_IOC_GET_PART_ID, &sid))
-		return 0xffff;
+		return INCORRECT_ENDPOINT_ID;
 
 	return sid.id;
 }
@@ -98,7 +119,7 @@ static void xtest_ffa_spmc_test_1001(ADBG_Case_t *c)
 	}
 
 	endpoint1_id = get_endpoint_id(test_endpoint1.uuid_ptr);
-	if (endpoint1_id == 0xffff) {
+	if (endpoint1_id == INCORRECT_ENDPOINT_ID) {
 		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
 		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
 		goto out;
@@ -115,7 +136,7 @@ static void xtest_ffa_spmc_test_1001(ADBG_Case_t *c)
 
 	Do_ADBG_BeginSubCase(c, "Sp2 comms check");
 	endpoint2_id = get_endpoint_id(test_endpoint2.uuid_ptr);
-	if (endpoint2_id == 0xffff) {
+	if (endpoint2_id == INCORRECT_ENDPOINT_ID) {
 		Do_ADBG_Log("Could not contact xtest_2 sp, skipping SP test");
 		Do_ADBG_Log("Add xtest_2 sp to the image to enable tests");
 		goto out;
@@ -146,7 +167,6 @@ static void xtest_ffa_spmc_test_1001(ADBG_Case_t *c)
 	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
 
-
 out:
 	Do_ADBG_EndSubCase(c, NULL);
 	close_debugfs();
@@ -154,3 +174,308 @@ out:
 
 ADBG_CASE_DEFINE(ffa_spmc, 1001, xtest_ffa_spmc_test_1001,
 		 "Test FF-A communication");
+
+static void check_alive(ADBG_Case_t *c, uint16_t endpoint)
+{
+	struct ffa_ioctl_msg_args args = {};
+	int rc = 0;
+
+	args.dst_id = endpoint;
+	rc = start_sp_test(endpoint, EP_SP_NOP, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+}
+
+static int share_mem(uint16_t endpoint, uint64_t *handle)
+{
+	int status = false;
+	struct ffa_ioctl_shm_desc shm_desc = { .dst_id = endpoint,
+					      .size = 0x1000 };
+
+	status = ioctl(ffa_fd, FFA_IOC_SHM_INIT, &shm_desc);
+
+	if (!status)
+		*handle = shm_desc.handle;
+
+	return status;
+}
+
+static int set_up_mem(struct ffa_ioctl_ep_desc *endp,
+		      struct ffa_ioctl_msg_args *args,
+		      uint64_t *handle, ADBG_Case_t *c)
+{
+	uint16_t endpoint = 0;
+	int rc = 0;
+
+	endpoint = get_endpoint_id(endp->uuid_ptr);
+	*handle = 0;
+	/* Share memory with SP*/
+	rc = share_mem(endpoint, handle);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+
+	if (!ADBG_EXPECT_TRUE(c, handle != NULL))
+	     return TEEC_ERROR_GENERIC;
+
+	/* SP will retrieve the memory region. */
+	memset(args, 0, sizeof(*args));
+	args->dst_id = endpoint;
+	args->args[MEM_SHARE_HANDLE_LOW_INDEX] = MEM_SHARE_HANDLE_LOW(*handle);
+	args->args[MEM_SHARE_HANDLE_HIGH_INDEX] = MEM_SHARE_HANDLE_HIGH(*handle);
+	args->args[MEM_SHARE_HANDLE_ENDPOINT_INDEX] = NORMAL_WORLD_ENDPOINT_ID;
+
+	rc = start_sp_test(endpoint, EP_RETRIEVE, args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args->args[0], ==, SPMC_TEST_OK);
+
+	return TEEC_SUCCESS;
+}
+
+static void xtest_ffa_spmc_test_1002(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { 0 };
+	uint64_t handle = 0;
+	uint16_t endpoint1_id = 0;
+	int rc = 0;
+	struct ffa_ioctl_shm_desc shm_desc = { 0 };
+
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	endpoint1_id = get_endpoint_id(test_endpoint1.uuid_ptr);
+	if (endpoint1_id == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
+		goto out;
+	}
+
+	memset(&args, 0, sizeof(args));
+	rc = start_sp_test(endpoint1_id, EP_TEST_SP, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK))
+	     goto out;
+
+	/* Set up memory and have the SP retrieve it. */
+	Do_ADBG_BeginSubCase(c, "Test memory set-up");
+	memset(&args, 0, sizeof(args));
+	if (set_up_mem(&test_endpoint1, &args, &handle, c)) {
+		Do_ADBG_EndSubCase(c, "Test memory set-up");
+		goto out;
+	}
+	Do_ADBG_EndSubCase(c, "Test memory set-up");
+
+	/* Retrieve it again. */
+	Do_ADBG_BeginSubCase(c, "Test retrieve memory second time");
+	memset(&args, 0, sizeof(args));
+	args.dst_id = endpoint1_id;
+	args.args[MEM_SHARE_HANDLE_LOW_INDEX] = MEM_SHARE_HANDLE_LOW(handle);
+	args.args[MEM_SHARE_HANDLE_HIGH_INDEX] = MEM_SHARE_HANDLE_HIGH(handle);
+	args.args[MEM_SHARE_HANDLE_ENDPOINT_INDEX] = NORMAL_WORLD_ENDPOINT_ID;
+	rc = start_sp_test(endpoint1_id, EP_RETRIEVE, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	Do_ADBG_EndSubCase(c, "Test retrieve memory second time");
+
+	/*Access it. */
+	Do_ADBG_BeginSubCase(c, "Test accessing memory");
+	memset(&args, 0, sizeof(args));
+	rc = start_sp_test(endpoint1_id, EP_TRY_R_ACCESS, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+	Do_ADBG_EndSubCase(c, "Test accessing memory");
+
+	/*RELINQUISH the memory area.*/
+	Do_ADBG_BeginSubCase(c, "Test relinquish memory");
+	memset(&args, 0, sizeof(args));
+	args.args[MEM_SHARE_HANDLE_LOW_INDEX] = MEM_SHARE_HANDLE_LOW(handle);
+	args.args[MEM_SHARE_HANDLE_HIGH_INDEX] = MEM_SHARE_HANDLE_HIGH(handle);
+	rc = start_sp_test(endpoint1_id, EP_RELINQUISH, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+	check_alive(c, endpoint1_id);
+	Do_ADBG_EndSubCase(c, "Test relinquish memory");
+
+	/* Try to reclaim the mem with the SP still having access to it. */
+	Do_ADBG_BeginSubCase(c, "Test incorrect reclaim");
+	shm_desc.handle = handle;
+	shm_desc.dst_id = endpoint1_id;
+	rc = ioctl(ffa_fd, FFA_IOC_SHM_DEINIT, &shm_desc);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, <, 0);
+	Do_ADBG_EndSubCase(c, "Test incorrect reclaim");
+
+	/*RELINQUISH the memory area.*/
+	Do_ADBG_BeginSubCase(c, "Test relinquish memory second time");
+	memset(&args, 0, sizeof(args));
+	args.args[MEM_SHARE_HANDLE_LOW_INDEX] = MEM_SHARE_HANDLE_LOW(handle);
+	args.args[MEM_SHARE_HANDLE_HIGH_INDEX] = MEM_SHARE_HANDLE_HIGH(handle);
+	rc = start_sp_test(endpoint1_id, EP_RELINQUISH, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+	check_alive(c, endpoint1_id);
+	Do_ADBG_EndSubCase(c, "Test relinquish memory second time");
+
+	/* Try to reclaim again this time it should work. */
+	Do_ADBG_BeginSubCase(c, "Test correct reclaim");
+	shm_desc.handle = handle;
+	shm_desc.dst_id = endpoint1_id;
+	rc = ioctl(ffa_fd, FFA_IOC_SHM_DEINIT, &shm_desc);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, >=, 0);
+	check_alive(c, endpoint1_id);
+	Do_ADBG_EndSubCase(c, "Test correct reclaim");
+
+	/* SP will try to retrieve invalid memory region. */
+	Do_ADBG_BeginSubCase(c, "Test retrieve invalid memory region");
+	memset(&args, 0, sizeof(args));
+	args.args[MEM_SHARE_HANDLE_LOW_INDEX] = MEM_SHARE_HANDLE_LOW(handle);
+	args.args[MEM_SHARE_HANDLE_HIGH_INDEX] = MEM_SHARE_HANDLE_HIGH(handle);
+	args.args[MEM_SHARE_HANDLE_ENDPOINT_INDEX] = NORMAL_WORLD_ENDPOINT_ID;
+	rc = start_sp_test(endpoint1_id, EP_RETRIEVE, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], !=, SPMC_TEST_OK);
+	check_alive(c, endpoint1_id);
+
+	Do_ADBG_EndSubCase(c, "Test retrieve invalid memory region");
+out:
+	close_debugfs();
+}
+
+ADBG_CASE_DEFINE(ffa_spmc, 1002, xtest_ffa_spmc_test_1002,
+		 "Test FF-A memory: share memory from Normal World to SP");
+
+static void xtest_ffa_spmc_test_1003(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { 0 };
+	uint16_t endpoint1 = 0;
+	uint16_t endpoint2 = 0;
+	int rc = 0;
+
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	endpoint1 = get_endpoint_id(test_endpoint1.uuid_ptr);
+	if (endpoint1 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
+		goto out;
+	}
+
+	/* Test SP to SP memory sharing. */
+	endpoint2 = get_endpoint_id(test_endpoint2.uuid_ptr);
+	if (endpoint2 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_2 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_2 sp to the image to enable tests");
+		goto out;
+	}
+
+	memset(&args, 0, sizeof(args));
+	args.args[1] = endpoint2;
+	rc = start_sp_test(endpoint1, EP_SP_MEM_SHARING, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+
+out:
+	close_debugfs();
+}
+
+ADBG_CASE_DEFINE(ffa_spmc, 1003, xtest_ffa_spmc_test_1003,
+		 "Test FF-A memory: SP to SP");
+
+static void xtest_ffa_spmc_test_1004(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { 0 };
+	uint16_t endpoint1 = 0;
+	uint16_t endpoint2 = 0;
+	int rc = 0;
+
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	endpoint1 = get_endpoint_id(test_endpoint1.uuid_ptr);
+	if (endpoint1 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
+		goto out;
+	}
+
+	/* Test SP to SP memory sharing. */
+	endpoint2 = get_endpoint_id(test_endpoint2.uuid_ptr);
+	if (endpoint2 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_2 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_2 sp to the image to enable tests");
+		goto out;
+	}
+
+	Do_ADBG_BeginSubCase(c, "Test sharing with exc access");
+	memset(&args, 0, sizeof(args));
+	args.args[1] = endpoint2;
+	rc = start_sp_test(endpoint1, EP_SP_MEM_SHARING_EXC, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+	Do_ADBG_EndSubCase(c, "Test sharing with exc access");
+
+	Do_ADBG_BeginSubCase(c, "Test sharing with incorrect access");
+	memset(&args, 0, sizeof(args));
+	args.args[1] = endpoint2;
+	rc = start_sp_test(endpoint1, EP_SP_MEM_INCORRECT_ACCESS, &args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+	Do_ADBG_EndSubCase(c, "Test sharing with incorrect access");
+
+out:
+	close_debugfs();
+}
+
+ADBG_CASE_DEFINE(ffa_spmc, 1004, xtest_ffa_spmc_test_1004,
+		 "Test FF-A memory: Access and flags");
+
+static void xtest_ffa_spmc_test_1005(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { 0 };
+	uint16_t endpoint1 = 0;
+	uint16_t endpoint2 = 0;
+	uint16_t endpoint3 = 0;
+	int rc = 0;
+
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	endpoint1 = get_endpoint_id(test_endpoint1.uuid_ptr);
+	if (endpoint1 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
+		goto out;
+	}
+
+	endpoint2 = get_endpoint_id(test_endpoint2.uuid_ptr);
+	if (endpoint2 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_2 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_2 sp to the image to enable tests");
+		goto out;
+	}
+
+	endpoint3 = get_endpoint_id(test_endpoint3.uuid_ptr);
+	if (endpoint3 == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_3 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_3 sp to the image to enable tests");
+		goto out;
+	}
+
+	memset(&args, 0, sizeof(args));
+	args.args[1] = endpoint2;
+	args.args[2] = endpoint3;
+	rc = start_sp_test(endpoint1, EP_SP_MEM_SHARING_MULTI,&args);
+	ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK);
+
+out:
+	close_debugfs();
+}
+
+ADBG_CASE_DEFINE(regression, 1005, xtest_ffa_spmc_test_1005,
+		 "Test FF-A memory: multiple receiver");
