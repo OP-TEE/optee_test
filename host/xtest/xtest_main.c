@@ -246,6 +246,10 @@ next:
 		else if (!strcmp(token, "pkcs11"))
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_pkcs11);
 #endif
+#ifdef CFG_SPMC_TESTS
+		else if (!strcmp(token, "ffa_spmc"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_ffa_spmc);
+#endif
 		else {
 			fprintf(stderr, "Unkown test suite: %s\n", token);
 			ret = -1;
