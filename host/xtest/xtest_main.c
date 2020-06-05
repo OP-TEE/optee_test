@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2016, Linaro Limited
  * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright (c) 2022, Arm Limited and Contributors. All rights reserved.
  */
 
 #include <err.h>
@@ -35,6 +36,9 @@ ADBG_SUITE_DEFINE(gp);
 #ifdef CFG_PKCS11_TA
 ADBG_SUITE_DEFINE(pkcs11);
 #endif
+#ifdef CFG_SPMC_TESTS
+ADBG_SUITE_DEFINE(ffa_spmc);
+#endif
 ADBG_SUITE_DEFINE(regression);
 
 char *xtest_tee_name = NULL;
@@ -53,7 +57,13 @@ static const char glevel[] = "0";
 #define PKCS11_SUITE	""
 #endif
 
-static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE;
+#ifdef CFG_SPMC_TESTS
+#define FFA_SPMC_SUITE	"+ffa_spmc"
+#else
+#define FFA_SPMC_SUITE	""
+#endif
+
+static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE FFA_SPMC_SUITE;
 
 void usage(char *program);
 
@@ -71,6 +81,9 @@ void usage(char *program)
 #endif
 #ifdef CFG_PKCS11_TA
 	printf(" pkcs11");
+#endif
+#ifdef CFG_SPMC_TESTS
+	printf(" ffa_spmc");
 #endif
 	printf("\n");
 	printf("\t                   To run several suites, use multiple names\n");

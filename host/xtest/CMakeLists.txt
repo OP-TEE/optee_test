@@ -62,6 +62,9 @@ set (SRC
 	xtest_test.c
 	xtest_uuid_helpers.c
 )
+if(CFG_SECURE_PARTITION AND CFG_SPMC_TESTS)
+	list (APPEND SRC ffa_spmc_1000.c)
+endif()
 
 if (WITH_GP_TESTS)
 	add_compile_options(-DWITH_GP_TESTS=1)

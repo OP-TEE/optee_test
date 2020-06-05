@@ -58,6 +58,10 @@ srcs +=	adbg/src/adbg_case.c \
 	xtest_test.c \
 	xtest_uuid_helpers.c
 
+ifeq ($(CFG_SECURE_PARTITION)-$(CFG_SPMC_TESTS),y-y)
+srcs += ffa_spmc_1000.c
+endif
+
 ifeq ($(CFG_SECSTOR_TA_MGMT_PTA),y)
 srcs += install_ta.c
 endif
