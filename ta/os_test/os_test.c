@@ -1247,7 +1247,7 @@ err:
 
 /* ELF initialization/finalization test */
 
-int os_test_global;
+volatile int os_test_global;
 
 static void __attribute__((constructor)) os_test_init(void)
 {
