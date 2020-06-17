@@ -115,6 +115,12 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_TLS_TEST_SHLIB:
 		return ta_entry_tls_test_shlib();
 
+	case TA_OS_TEST_CMD_DL_PHDR:
+		return ta_entry_dl_phdr();
+
+	case TA_OS_TEST_CMD_DL_PHDR_DL:
+		return ta_entry_dl_phdr_dl();
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

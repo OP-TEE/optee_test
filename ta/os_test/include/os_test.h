@@ -30,5 +30,7 @@ TEE_Result ta_entry_get_global_var(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_client_identity(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_entry_tls_test_main(void);
 TEE_Result ta_entry_tls_test_shlib(void);
+TEE_Result ta_entry_dl_phdr(void);
+TEE_Result ta_entry_dl_phdr_dl(void);
 
 #endif /*OS_TEST_H */

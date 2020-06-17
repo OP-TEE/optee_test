@@ -5,6 +5,7 @@
  */
 #include <compiler.h>
 #include <dlfcn.h>
+#include <link.h>
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
@@ -1329,4 +1330,70 @@ TEE_Result ta_entry_tls_test_shlib(void)
 	}
 
 	return TEE_SUCCESS;
+}
+
+static int iterate_hdr_cb(struct dl_phdr_info *info __maybe_unused,
+			  size_t size __unused, void *data)
+{
+	int *count = data;
+
+	(*count)++;
+	IMSG("ELF module index: %d", *count);
+	IMSG(" dlpi_addr=%p", (void *)info->dlpi_addr);
+	IMSG(" dlpi_name='%s'", info->dlpi_name);
+	IMSG(" dlpi_phdr=%p", (void *)info->dlpi_phdr);
+	IMSG(" dlpi_phnum=%hu", info->dlpi_phnum);
+	IMSG(" dlpi_adds=%llu", info->dlpi_adds);
+	IMSG(" dlpi_subs=%llu", info->dlpi_subs);
+	IMSG(" dlpi_tls_modid=%zu", info->dlpi_tls_modid);
+	IMSG(" dlpi_tls_data=%p", info->dlpi_tls_data);
+
+	return 123;
+}
+
+static TEE_Result expect_dl_count_ge(size_t exp_count)
+{
+	int st = 0;
+	size_t count = 0;
+
+	st = dl_iterate_phdr(iterate_hdr_cb, (void *)&count);
+	if (st != 123) {
+		/*
+		 * dl_iterate_phdr() should return the last value returned by
+		 * the callback
+		 */
+		EMSG("Expected return value 123, got %d", st);
+		return TEE_ERROR_GENERIC;
+	}
+	if (count < exp_count) {
+		/*
+		 * Expect >= and not == since there could be more shared
+		 * libraries (for instance, CFG_ULIBS_SHARED=y)
+		 */
+		EMSG("Expected count > %zu, got: %zu", exp_count, count);
+		return TEE_ERROR_GENERIC;
+	}
+
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_entry_dl_phdr(void)
+{
+	return expect_dl_count_ge(2);
+}
+
+TEE_Result ta_entry_dl_phdr_dl(void)
+{
+	TEE_Result res = TEE_ERROR_GENERIC;
+	void *handle = NULL;
+
+	handle = dlopen("b3091a65-9751-4784-abf7-0298a7cc35ba",
+			RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
+	if (!handle)
+		return TEE_ERROR_GENERIC;
+
+	res = expect_dl_count_ge(3);
+	dlclose(handle);
+
+	return res;
 }

@@ -2226,3 +2226,30 @@ static void xtest_tee_test_1029(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1029, xtest_tee_test_1029,
 		 "Test __thread attribute");
+
+static void xtest_tee_test_1030(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Before dlopen()");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_DL_PHDR, NULL,
+				   &ret_orig));
+	Do_ADBG_EndSubCase(c, "Before dlopen()");
+
+	Do_ADBG_BeginSubCase(c, "After dlopen()");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_DL_PHDR_DL, NULL,
+				   &ret_orig));
+	Do_ADBG_EndSubCase(c, "After dlopen()");
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1030, xtest_tee_test_1030,
+		 "Test dl_iterate_phdr()");
