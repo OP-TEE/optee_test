@@ -121,6 +121,30 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_DL_PHDR_DL:
 		return ta_entry_dl_phdr_dl();
 
+#ifdef __clang__
+	case TA_OS_TEST_CMD_CXX_CTOR_MAIN:
+	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB:
+	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL:
+	case TA_OS_TEST_CMD_CXX_EXC_MAIN:
+	case TA_OS_TEST_CMD_CXX_EXC_MIXED:
+		return TEE_ERROR_NOT_SUPPORTED;
+#else
+	case TA_OS_TEST_CMD_CXX_CTOR_MAIN:
+		return ta_entry_cxx_ctor_main();
+
+	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB:
+		return ta_entry_cxx_ctor_shlib();
+
+	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL:
+		return ta_entry_cxx_ctor_shlib_dl();
+
+	case TA_OS_TEST_CMD_CXX_EXC_MAIN:
+		return ta_entry_cxx_exc_main();
+
+	case TA_OS_TEST_CMD_CXX_EXC_MIXED:
+		return ta_entry_cxx_exc_mixed();
+#endif
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

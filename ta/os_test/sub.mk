@@ -8,3 +8,7 @@ srcs-y += init.c
 srcs-y += os_test.c
 srcs-y += ta_entry.c
 srcs-$(CFG_TA_FLOAT_SUPPORT) += test_float_subj.c
+ifneq ($(COMPILER),clang)
+srcs-y += cxx_tests.cpp
+srcs-y += cxx_tests_c.c
+endif
