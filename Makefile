@@ -226,3 +226,10 @@ install:
 	$(echo) '  INSTALL ${DESTDIR}/bin'
 	$(q)mkdir -p ${DESTDIR}/bin
 	$(q)cp -a $(out-dir)/xtest/xtest ${DESTDIR}/bin
+
+.PHONY: cscope
+cscope:
+	$(echo) '  CSCOPE  .'
+	${q}rm -f cscope.*
+	${q}find $(PWD) -name "*.[ch]" -o -name "*.cpp" | grep -v /package/ > cscope.files
+	${q}cscope -b -q -k
