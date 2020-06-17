@@ -32,5 +32,10 @@ TEE_Result ta_entry_tls_test_main(void);
 TEE_Result ta_entry_tls_test_shlib(void);
 TEE_Result ta_entry_dl_phdr(void);
 TEE_Result ta_entry_dl_phdr_dl(void);
+TEE_Result ta_entry_cxx_ctor_main(void);
+TEE_Result ta_entry_cxx_ctor_shlib(void);
+TEE_Result ta_entry_cxx_ctor_shlib_dl(void);
+TEE_Result ta_entry_cxx_exc_main(void);
+TEE_Result ta_entry_cxx_exc_mixed(void);
 
 #endif /*OS_TEST_H */

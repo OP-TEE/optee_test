@@ -2253,3 +2253,57 @@ static void xtest_tee_test_1030(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1030, xtest_tee_test_1030,
 		 "Test dl_iterate_phdr()");
+
+#ifndef __clang__
+static void xtest_tee_test_1031(ADBG_Case_t *c)
+{
+	TEEC_Result ret = TEE_SUCCESS;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Global object constructor (main program)");
+	ret = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CXX_CTOR_MAIN, NULL,
+				   &ret_orig);
+	if (ret == TEEC_ERROR_NOT_SUPPORTED) {
+		printf("TA not built with C++ support, skipping C++ tests\n");
+		Do_ADBG_EndSubCase(c, "Global object constructor (main program)");
+		goto out;
+
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, ret);
+	Do_ADBG_EndSubCase(c, "Global object constructor (main program)");
+
+	Do_ADBG_BeginSubCase(c, "Global object constructor (shared library)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CXX_CTOR_SHLIB,
+				   NULL, &ret_orig));
+	Do_ADBG_EndSubCase(c, "Global object constructor (shared library)");
+
+	Do_ADBG_BeginSubCase(c, "Global object constructor (dlopen()ed lib)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL,
+				   NULL, &ret_orig));
+	Do_ADBG_EndSubCase(c, "Global object constructor (dlopen()ed lib)");
+
+	Do_ADBG_BeginSubCase(c, "Exceptions (simple)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CXX_EXC_MAIN, NULL,
+				   &ret_orig));
+	Do_ADBG_EndSubCase(c, "Exceptions (simple)");
+
+	Do_ADBG_BeginSubCase(c, "Exceptions (mixed C/C++ frames)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_CXX_EXC_MIXED, NULL,
+				   &ret_orig));
+	Do_ADBG_EndSubCase(c, "Exceptions (mixed C/C++ frames)");
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1031, xtest_tee_test_1031,
+		 "Test C++ features");
+#endif

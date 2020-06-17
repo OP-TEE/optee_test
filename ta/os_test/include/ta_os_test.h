@@ -34,5 +34,10 @@
 #define TA_OS_TEST_CMD_TLS_TEST_SHLIB       22
 #define TA_OS_TEST_CMD_DL_PHDR              23
 #define TA_OS_TEST_CMD_DL_PHDR_DL           24
+#define TA_OS_TEST_CMD_CXX_CTOR_MAIN        25
+#define TA_OS_TEST_CMD_CXX_CTOR_SHLIB       26
+#define TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL    27
+#define TA_OS_TEST_CMD_CXX_EXC_MAIN         28
+#define TA_OS_TEST_CMD_CXX_EXC_MIXED        29
 
 #endif /*TA_OS_TEST_H */
