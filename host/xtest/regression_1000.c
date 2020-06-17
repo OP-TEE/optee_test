@@ -2199,3 +2199,30 @@ out:
 
 ADBG_CASE_DEFINE(regression, 1028, xtest_tee_test_1028,
 		 "Session: group login for current user's effective group");
+
+static void xtest_tee_test_1029(ADBG_Case_t *c)
+{
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "TLS variables (main program)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_MAIN, NULL,
+				   &ret_orig));
+	Do_ADBG_EndSubCase(c, "TLS variables (main program)");
+
+	Do_ADBG_BeginSubCase(c, "TLS variables (shared library)");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_SHLIB,
+				   NULL, &ret_orig));
+	Do_ADBG_EndSubCase(c, "TLS variables (shared library)");
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1029, xtest_tee_test_1029,
+		 "Test __thread attribute");
