@@ -32,5 +32,7 @@
 #define TA_OS_TEST_CMD_CLIENT_IDENTITY      20
 #define TA_OS_TEST_CMD_TLS_TEST_MAIN        21
 #define TA_OS_TEST_CMD_TLS_TEST_SHLIB       22
+#define TA_OS_TEST_CMD_DL_PHDR              23
+#define TA_OS_TEST_CMD_DL_PHDR_DL           24
 
 #endif /*TA_OS_TEST_H */
