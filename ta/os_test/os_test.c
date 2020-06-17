@@ -1298,3 +1298,35 @@ TEE_Result ta_entry_client_identity(uint32_t param_types, TEE_Param params[4])
 
 	return res;
 }
+
+__thread int os_test_tls_a;
+__thread int os_test_tls_b = 42;
+
+TEE_Result ta_entry_tls_test_main(void)
+{
+	if (os_test_tls_a != 0) {
+		EMSG("os_test_tls_a=%d, expected 0", os_test_tls_a);
+		return TEE_ERROR_GENERIC;
+	}
+	if (os_test_tls_b != 42) {
+		EMSG("os_test_tls_b=%d, expected 42", os_test_tls_b);
+		return TEE_ERROR_GENERIC;
+	}
+
+	return TEE_SUCCESS;
+}
+
+TEE_Result ta_entry_tls_test_shlib(void)
+{
+	if (os_test_shlib_tls_a != 0) {
+		EMSG("os_test_shlib_tls_a=%d, expected 0", os_test_shlib_tls_a);
+		return TEE_ERROR_GENERIC;
+	}
+	if (os_test_shlib_tls_b != 123) {
+		EMSG("os_test_shlib_tls_b=%d, expected 123",
+		     os_test_shlib_tls_b);
+		return TEE_ERROR_GENERIC;
+	}
+
+	return TEE_SUCCESS;
+}

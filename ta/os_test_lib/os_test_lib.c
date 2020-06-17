@@ -16,6 +16,9 @@ static void __attribute__((constructor)) os_test_shlib_init(void)
 	DMSG("os_test_global=%d", os_test_global);
 }
 
+__thread int os_test_shlib_tls_a;
+__thread int os_test_shlib_tls_b = 123;
+
 int os_test_shlib_add(int a, int b)
 {
 	return a + b;
