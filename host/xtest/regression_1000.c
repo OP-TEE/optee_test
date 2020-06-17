@@ -1491,7 +1491,6 @@ out:
 ADBG_CASE_DEFINE(regression, 1018, xtest_tee_test_1018,
 		"Test memref out of bounds");
 
-#if defined(CFG_TA_DYNLINK)
 static void xtest_tee_test_1019(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
@@ -1517,7 +1516,6 @@ static void xtest_tee_test_1019(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1019, xtest_tee_test_1019,
 		"Test dynamically linked TA");
-#endif /*CFG_TA_DYNLINK*/
 
 static void xtest_tee_test_1020(ADBG_Case_t *c)
 {
