@@ -1,0 +1,106 @@
+From cd058f01be06f70c54b9608d4a7b4dae5a5bc2e0 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Wed, 19 Aug 2020 17:53:31 +0200
+Subject: [PATCH 10/11] TEE_DataStorage_API.xml
+
+Disabling cases:
+- Invoke_SeekWriteRead_Offset_0_SEEK_END_Offset_Low (9d-a6-93)
+- Invoke_SeekWriteRead_Offset_High_SEEK_CUR_Offset_Low (9d-60-98)
+- Invoke_SeekWriteRead_Offset_Low_SEEK_CUR_Offset_High (9d-6b-51)
+- Invoke_SeekWriteRead_Offset_Low_SEEK_END_Offset_Low (9d-21-93)
+- Invoke_WriteObjectData_overflow (9d-01-ce)
+These tests fails and the expected position counters doesn't seem to
+make any sense.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ packages/DataStorage/xmlstable/TEE_DataStorage_API.xml | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/packages/DataStorage/xmlstable/TEE_DataStorage_API.xml b/packages/DataStorage/xmlstable/TEE_DataStorage_API.xml
+index db43d7b71ebc..69305a880a9f 100644
+--- a/packages/DataStorage/xmlstable/TEE_DataStorage_API.xml
++++ b/packages/DataStorage/xmlstable/TEE_DataStorage_API.xml
+@@ -166262,6 +166262,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- test case is broken
+         <scenario name="Invoke_SeekWriteRead_Offset_0_SEEK_END_Offset_Low (9d-a6-93)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -167374,6 +167375,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_SeekWriteRead_Offset_0_SEEK_SET_Offset_High (9d-38-58)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -169043,6 +169045,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- test case is broken
+         <scenario name="Invoke_SeekWriteRead_Offset_High_SEEK_CUR_Offset_Low (9d-60-98)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -169599,6 +169602,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_SeekWriteRead_Offset_High_SEEK_SET_Offset_0 (9d-c9-ed)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -170710,6 +170714,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- test case is broken
+         <scenario name="Invoke_SeekWriteRead_Offset_Low_SEEK_CUR_Offset_High (9d-6b-51)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -171266,6 +171271,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_SeekWriteRead_Offset_Low_SEEK_CUR_Offset_Low (9d-7c-c4)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -172379,6 +172385,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- test case is broken
+         <scenario name="Invoke_SeekWriteRead_Offset_Low_SEEK_END_Offset_Low (9d-21-93)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -172935,6 +172942,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_SeekWriteRead_Offset_Low_SEEK_SET_Offset_0 (9d-02-ed)" destructive="no">
+             <req name="READ_OBJECT_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_ReadObjectData function attempts to read size bytes from the data stream associated with the object object into the buffer pointed to by buffer. The object handle MUST have been opened with the read access right. The bytes are read starting at the position in the data stream currently stored in the object handle. The handle’s position is incremented by the number of bytes actually read.]]></description>
+@@ -178054,6 +178062,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- test case is broken
+         <scenario name="Invoke_WriteObjectData_overflow (9d-01-ce)" destructive="no">
+             <req name="WRITE_OBJECT_DATA_ERROR_OVERFLOW">
+                 <description><![CDATA[If the value of the data position indicator resulting from this operation would be greater than TEE_DATA_MAX_POSITION]]></description>
+@@ -178658,6 +178667,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+     </initial-state>
+ </package>
+ 
+-- 
+2.25.1
+

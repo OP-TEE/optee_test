@@ -1,0 +1,38 @@
+From 1664a1487cdfb235483eb6f874f39839dee80e7e Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Wed, 24 Jun 2020 08:49:24 +0200
+Subject: [PATCH 08/11] TEE.xml
+
+Disabling the case:
+- Request_Cancellation (d3-87-46)
+Because the adaption layer we've implemented cannot deal with threads in
+a good way
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ packages/ClientAPI/xmlstable/TEE.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/packages/ClientAPI/xmlstable/TEE.xml b/packages/ClientAPI/xmlstable/TEE.xml
+index 85cd81818f5f..e59c4df02d3c 100644
+--- a/packages/ClientAPI/xmlstable/TEE.xml
++++ b/packages/ClientAPI/xmlstable/TEE.xml
+@@ -825,6 +825,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!--
+         <scenario name="Request_Cancellation (d3-87-46)" destructive="no">
+             <req name="REQUEST_CANCELLATION_PROCESSING">
+                 <description><![CDATA[This function requests the cancellation of a pending open Session operation or a Command invocation operation. As this is a synchronous API, this function must be called from a thread other than the one executing the TEEC_OpenSession or TEEC_InvokeCommand function.  It is valid to call this function using a TEEC_Operation structure any time after the Client Application has set the started field of an Operation structure to zero. In particular, an operation can be cancelled before it is actually invoked, during invocation, and after invocation. Note that the Client Application MUST reset the started field to zero each time an Operation structure is used or re-used to open a Session or invoke a Command if the new operation is to be cancellable.  In many use cases it will be necessary for the Client Application to detect whether the operation was actually cancelled, or whether it completed normally. In some implementations it MAY be possible for part of the infrastructure to cancel the operation before it reaches the Trusted Application. In these cases the return origin returned by TEEC_OpenSession or TEEC_InvokeCommand MUST be either TEEC_ORIGIN_API, TEEC_ORIGIN_COMMS, or TEEC_ORIGIN_TEE, and the return code MUST be TEEC_ERROR_CANCEL.  If the cancellation request is handled by the Trusted Application itself then the return origin returned by TEEC_OpenSession or TEEC_InvokeCommand MUST be TEE_ORIGIN_TRUSTED_APP, and the return code is defined by the Trusted Application‟s protocol. If possible, Trusted Applications SHOULD use TEEC_ERROR_CANCEL for their return code, but it is accepted that this is not always possible due to conflicts with existing return code definitions in other standards.]]></description>
+@@ -1089,6 +1090,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+     </initial-state>
+     <initial-state name="TestSuite_OtherCommandThanInvoke">
+         <scenario name="Allocate_In (29-ff-45)" destructive="no">
+-- 
+2.25.1
+

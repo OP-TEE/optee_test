@@ -1,0 +1,26 @@
+From 2bdbcc524e8f14c85c46a0e915e195e6d086ba02 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Mon, 22 Jun 2020 17:50:40 +0200
+Subject: [PATCH 03/11] TTA_TCF: patch
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h
+index 688e8cf74597..f46667883162 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.h
+@@ -59,7 +59,7 @@ bool areStringsIdentical(const char *string1, size_t length1, const char *string
+ bool areStringsIdenticalWithZeroTerminated(const char *string1, size_t length1, const char *zeroTerminatedString);
+ bool areUUIDsIdentical(TEE_UUID *UUID1, TEE_UUID *UUID2);
+ bool areIdentitiesIdentical(TEE_Identity *Identity1, TEE_Identity *Identity2);
+-bool areBinaryBlocksIdentical(const char *BinaryBlock1, uint32_t nLength1, const char *BinaryBlock2, uint32_t nLength2);
++bool areBinaryBlocksIdentical(const char *BinaryBlock1, size_t nLength1, const char *BinaryBlock2, size_t nLength2);
+ bool isPropertySet (TEE_PropSetHandle propsetOrEnumerator);
+ void getUUIDFromBuffer(TEE_UUID *pTargetUUID, char uuidvalue[16]);
+ enum propType getPropertyType(const char *propString, size_t propStringLength);
+-- 
+2.25.1
+

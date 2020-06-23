@@ -1,0 +1,1637 @@
+From a6b66e8fce014d26ea3c36d25cf200b58b0b470b Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Mon, 22 Jun 2020 18:00:29 +0200
+Subject: [PATCH 02/11] TTAs: add files needed to compile
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ TTAs_Internal_API_1_1_1/GP_defs.h             |  4 ++
+ .../TTA_Arithmetical/code_files/Makefile      |  2 +
+ .../TTA_Arithmetical/code_files/sub.mk        |  3 +
+ .../code_files/user_ta_header_defines.h       | 41 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ .../code_files/ta_answerErrorTo_Invoke_test.h | 36 +++++++++++
+ .../code_files/user_ta_header_defines.h       | 45 ++++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ .../ta_answerErrorTo_OpenSession_test.h       | 33 ++++++++++
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ ..._answerSuccessTo_OpenSession_Invoke_test.h | 36 +++++++++++
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ ...check_OpenSession_with_4_parameters_test.h | 33 ++++++++++
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../TTA_testingClientAPI/code_files/Makefile  |  2 +
+ .../TTA_testingClientAPI/code_files/sub.mk    |  3 +
+ .../code_files/ta_testingClientAPI_test.h     | 37 +++++++++++
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../TTA_testingClientAPI_Parameters.c         |  1 +
+ .../code_files/sub.mk                         |  4 ++
+ .../code_files/user_ta_header_defines.h       | 41 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../TTA_testingClientAPI_Parameters.c         |  1 +
+ .../code_files/sub.mk                         |  4 ++
+ .../code_files/user_ta_header_defines.h       | 42 +++++++++++++
+ .../TTA_Crypto/TTA_Crypto/code_files/Makefile |  2 +
+ .../TTA_Crypto/code_files/TTA_DS_commands.c   |  1 +
+ .../TTA_Crypto/TTA_Crypto/code_files/sub.mk   |  3 +
+ .../code_files/user_ta_header_defines.h       | 41 +++++++++++++
+ .../TTA_DS/TTA_DS/code_files/Makefile         |  2 +
+ .../TTA_DS/TTA_DS/code_files/sub.mk           |  3 +
+ .../code_files/user_ta_header_defines.h       | 41 +++++++++++++
+ .../TTA_TCF/TTA_TCF/code_files/Makefile       |  2 +
+ .../TTA_TCF/TTA_TCF/code_files/sub.mk         |  6 ++
+ .../TTA_TCF/TTA_TCF/code_files/ta_TCF_test.h  | 33 ++++++++++
+ .../code_files/user_ta_header_defines.h       | 61 +++++++++++++++++++
+ .../TTA_TCF/TTA_TCF_ICA/code_files/Makefile   |  2 +
+ .../TTA_TCF/TTA_TCF_ICA/code_files/sub.mk     |  3 +
+ .../code_files/user_ta_header_defines.h       | 43 +++++++++++++
+ .../TTA_TCF/TTA_TCF_ICA2/code_files/Makefile  |  2 +
+ .../TTA_TCF/TTA_TCF_ICA2/code_files/sub.mk    |  3 +
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ .../code_files/user_ta_header_defines.h       | 45 ++++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ .../code_files/user_ta_header_defines.h       | 42 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../TTA_TCF_PanicAtCreation/code_files/sub.mk |  3 +
+ .../code_files/user_ta_header_defines.h       | 41 +++++++++++++
+ .../code_files/Makefile                       |  2 +
+ .../code_files/sub.mk                         |  3 +
+ .../code_files/user_ta_header_defines.h       | 44 +++++++++++++
+ .../TTA_Time/TTA_Time/code_files/Makefile     |  2 +
+ .../TTA_Time/TTA_Time/code_files/sub.mk       |  3 +
+ .../code_files/user_ta_header_defines.h       | 42 +++++++++++++
+ TTAs_Internal_API_1_1_1/ta_common.mk          |  3 +
+ 65 files changed, 1102 insertions(+)
+ create mode 100644 TTAs_Internal_API_1_1_1/GP_defs.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/ta_answerErrorTo_Invoke_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/ta_answerErrorTo_OpenSession_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/ta_answerSuccessTo_OpenSession_Invoke_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/ta_check_OpenSession_with_4_parameters_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/ta_testingClientAPI_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/Makefile
+ create mode 120000 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/TTA_testingClientAPI_Parameters.c
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/Makefile
+ create mode 120000 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/TTA_testingClientAPI_Parameters.c
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/Makefile
+ create mode 120000 TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_DS_commands.c
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/ta_TCF_test.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/Makefile
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/sub.mk
+ create mode 100644 TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/user_ta_header_defines.h
+ create mode 100644 TTAs_Internal_API_1_1_1/ta_common.mk
+
+diff --git a/TTAs_Internal_API_1_1_1/GP_defs.h b/TTAs_Internal_API_1_1_1/GP_defs.h
+new file mode 100644
+index 000000000000..3d6ef1d53c78
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/GP_defs.h
+@@ -0,0 +1,4 @@
++#define SLogTrace(...)
++#define SLogError(...)
++#define SLogWarning(...)
++#define S_VAR_NOT_USED(x) do { (void)(x); } while (0)
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/Makefile
+new file mode 100644
+index 000000000000..20d98a04cd81
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-4c53-4152-4954484d4554
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/sub.mk
+new file mode 100644
+index 000000000000..46f37849c7b8
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_Arithmetical.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..fa248c666f4f
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/user_ta_header_defines.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID  { 0x534D4152, 0x5443, 0x4C53, { 0x41, 0x52, 0x49, 0x54, 0x48, 0x4D, 0x45, 0x54 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE )
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_Arithmetical v2.1" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/Makefile
+new file mode 100644
+index 000000000000..ba45ad4dfaac
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-542d-4353-4c54-2d54412d4552
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/sub.mk
+new file mode 100644
+index 000000000000..fa4fa3f01460
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_answerErrorTo_Invoke.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/ta_answerErrorTo_Invoke_test.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/ta_answerErrorTo_Invoke_test.h
+new file mode 100644
+index 000000000000..65a6b262cfbd
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/ta_answerErrorTo_Invoke_test.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_TTA_ANSWERERRORTOINVOKE_UUID  { \
++	0x534D4152, \
++	0x542D, \
++	0x4353, \
++	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x45, 0x52 } \
++	}
++#define COMMAND_TTA_Remember_Expected_ParamTypes      0x00000002
++#define COMMAND_TTA_Copy_ParamIn_to_ParamOut          0x00000001
++#define COMMAND_TTA_Check_ParamTypes                  0x00000003
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..664f85aeeabf
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_Invoke/code_files/user_ta_header_defines.h
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_answerErrorTo_Invoke_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_answerErrorTo_Invoke v0.4" },
++
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/Makefile
+new file mode 100644
+index 000000000000..b85d23b0be11
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5445-5252544f4f53
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/sub.mk
+new file mode 100644
+index 000000000000..810273e471cf
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_answerErrorTo_OpenSession.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/ta_answerErrorTo_OpenSession_test.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/ta_answerErrorTo_OpenSession_test.h
+new file mode 100644
+index 000000000000..b4715ff1cc10
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/ta_answerErrorTo_OpenSession_test.h
+@@ -0,0 +1,33 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_TTA_ANSWERERRORTOOPENSESSION_UUID  { \
++	0x534D4152, \
++	0x5443, \
++	0x534C, \
++	{ 0x54, 0x45, 0x52, 0x52, 0x54, 0x4F, 0x4F, 0x53 } \
++	}
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..19b2e533fbf5
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerErrorTo_OpenSession/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_answerErrorTo_OpenSession_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_answerErrorTo_OpenSession v0.2" },
++
++#endif /* USER_TA_HEADER_DEFINES_H*/
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/Makefile
+new file mode 100644
+index 000000000000..5d8b04bad8a6
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-542d-4353-4c54-2d54412d5355
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/sub.mk
+new file mode 100644
+index 000000000000..1d1f67ec7642
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_answerSuccessTo_OpenSession_Invoke.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/ta_answerSuccessTo_OpenSession_Invoke_test.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/ta_answerSuccessTo_OpenSession_Invoke_test.h
+new file mode 100644
+index 000000000000..ac7bfaf09e57
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/ta_answerSuccessTo_OpenSession_Invoke_test.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_TTA_ANSWERSUCCESSTOOPENSESSION_UUID  { \
++	0x534D4152, \
++	0x542D, \
++	0x4353, \
++	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x55 } \
++	}
++#define COMMAND_TTA_Remember_Expected_ParamTypes      0x00000002
++#define COMMAND_TTA_Copy_ParamIn_to_ParamOut          0x00000001
++#define COMMAND_TTA_Check_ParamTypes                  0x00000003
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..084fc30d393a
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_answerSuccessTo_OpenSession_Invoke/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_answerSuccessTo_OpenSession_Invoke_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_answerSuccessTo_OpenSession_Invoke v0.3" },
++
++#endif /* USER_TA_HEADER_DEFINES_H*/
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/Makefile
+new file mode 100644
+index 000000000000..68b1dc533957
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-544f-53345041524d
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/sub.mk
+new file mode 100644
+index 000000000000..3e31f1cc13a4
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_check_OpenSession_with_4_parameters.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/ta_check_OpenSession_with_4_parameters_test.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/ta_check_OpenSession_with_4_parameters_test.h
+new file mode 100644
+index 000000000000..cf0c1775d38c
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/ta_check_OpenSession_with_4_parameters_test.h
+@@ -0,0 +1,33 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_TTA_CHECKOPENSESSIONWITH4PARAMETERS_UUID  { \
++	0x534D4152, \
++	0x5443, \
++	0x534C, \
++	{ 0x54, 0x4F, 0x53, 0x34, 0x50, 0x41, 0x52, 0x4D } \
++	}
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..fbc7c28f60b2
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_check_OpenSession_with_4_parameters/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_check_OpenSession_with_4_parameters_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_check_OpenSession_with_4_parameters v0.2" },
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/Makefile
+new file mode 100644
+index 000000000000..a937f649bcf8
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-542d-4353-4c54-2d54412d5354
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/sub.mk
+new file mode 100644
+index 000000000000..e8c0db453040
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_testingClientAPI.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/ta_testingClientAPI_test.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/ta_testingClientAPI_test.h
+new file mode 100644
+index 000000000000..2efaa35f39dd
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/ta_testingClientAPI_test.h
+@@ -0,0 +1,37 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_TTA_TESTING_CLIENT_API_UUID  { \
++	0x534D4152, \
++	0x542D, \
++	0x4353, \
++	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x53, 0x54 } \
++	}
++#define COMMAND_TTA_Remember_Expected_ParamTypes      0x00000002
++#define COMMAND_TTA_Copy_ParamIn_to_ParamOut          0x00000001
++#define COMMAND_TTA_Check_ParamTypes                  0x00000003
++#define COMMAND_TTA_To_Be_Cancelled                   0x00000004
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..b42879b34851
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_testingClientAPI_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_testingClientAPI v0.5" },
++
++#endif /* USER_TA_HEADER_DEFINES_H*/
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/Makefile
+new file mode 100644
+index 000000000000..7966e463ccf8
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5443-4c4950415241
++include ../../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/TTA_testingClientAPI_Parameters.c b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/TTA_testingClientAPI_Parameters.c
+new file mode 120000
+index 000000000000..7e20440c40e7
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/TTA_testingClientAPI_Parameters.c
+@@ -0,0 +1 @@
++../../common_code_files/TTA_testingClientAPI_Parameters.c
+\ No newline at end of file
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/sub.mk
+new file mode 100644
+index 000000000000..a53b62c0e3b0
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/sub.mk
+@@ -0,0 +1,4 @@
++global-incdirs-y += ../../../../TEE_include
++srcs-y += TTA_testingClientAPI_Parameters_Invoke.c
++srcs-y += TTA_testingClientAPI_Parameters.c
++cflags-y := -include ../../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..93d585aca7e3
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_Invoke/code_files/user_ta_header_defines.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x43, 0x4C, 0x49, 0x50, 0x41, 0x52, 0x41 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE )
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_testingClientAPI_Parameters_Invoke v2.1" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/Makefile
+new file mode 100644
+index 000000000000..41ccec16b1b6
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5443-4c49504f5053
++include ../../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/TTA_testingClientAPI_Parameters.c b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/TTA_testingClientAPI_Parameters.c
+new file mode 120000
+index 000000000000..7e20440c40e7
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/TTA_testingClientAPI_Parameters.c
+@@ -0,0 +1 @@
++../../common_code_files/TTA_testingClientAPI_Parameters.c
+\ No newline at end of file
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/sub.mk
+new file mode 100644
+index 000000000000..61a8961185cd
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/sub.mk
+@@ -0,0 +1,4 @@
++global-incdirs-y += ../../../../TEE_include
++srcs-y += TTA_testingClientAPI_Parameters_OpenSession.c
++srcs-y += TTA_testingClientAPI_Parameters.c
++cflags-y := -include ../../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..5212636ce6b2
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_ClientAPI/TTA_testingClientAPI_Parameters/TTA_testingClientAPI_Parameters_OpenSession/code_files/user_ta_header_defines.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x43, 0x4C, 0x49, 0x50, 0x4F, 0x50, 0x53 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_testingClientAPI_Parameters_OpenSession v2.1" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/Makefile
+new file mode 100644
+index 000000000000..4be816754ee9
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5443-525950544f31
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_DS_commands.c b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_DS_commands.c
+new file mode 120000
+index 000000000000..59c8d082d9da
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_DS_commands.c
+@@ -0,0 +1 @@
++../../../TTA_DS/TTA_DS/code_files/TTA_DS_commands.c
+\ No newline at end of file
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/sub.mk
+new file mode 100644
+index 000000000000..a81f41cca435
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_Crypto.c TTA_DS_commands.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..48878d6c7505
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/user_ta_header_defines.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x43, 0x52, 0x59, 0x50, 0x54, 0x4F, 0x31 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE )
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_Crypto v4.2" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/Makefile
+new file mode 100644
+index 000000000000..10d6ff8634d6
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5444-415441535431
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/sub.mk
+new file mode 100644
+index 000000000000..64519a0eaa71
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_DS.c TTA_DS_commands.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..421ee908ca31
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/user_ta_header_defines.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x44, 0x41, 0x54, 0x41, 0x53, 0x54, 0x31 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE )
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_DS v4.0" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/Makefile
+new file mode 100644
+index 000000000000..b0a3ee8f90c3
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-542d-4353-4c54-2d54412d3031
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/sub.mk
+new file mode 100644
+index 000000000000..c33de9cee75e
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/sub.mk
+@@ -0,0 +1,6 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF.c
++cflags-y := -include ../../../../GP_defs.h
++cflags-y += -Wno-int-to-pointer-cast
++cflags-y += -Wno-cast-align
++cflags-y += -Wno-misleading-indentation
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/ta_TCF_test.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/ta_TCF_test.h
+new file mode 100644
+index 000000000000..f0da901f0fdd
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/ta_TCF_test.h
+@@ -0,0 +1,33 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#define TA_UUID  { \
++	0x534D4152, \
++	0x542D, \
++	0x4353, \
++	{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x30, 0x31 } \
++	}
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..3df06d336dc5
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/user_ta_header_defines.h
+@@ -0,0 +1,61 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "ta_TCF_test.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_TCF v1.9" }, \
++	{ "smc.ta.teststring", USER_TA_PROP_TYPE_STRING, \
++	"this is a test string" }, \
++	{ "smc.ta.testbooltrue", USER_TA_PROP_TYPE_BOOL, \
++	&(const bool){ true } }, \
++	{ "smc.ta.testboolfalse", USER_TA_PROP_TYPE_BOOL, \
++	&(const bool){ false } }, \
++	{ "smc.ta.testu32", USER_TA_PROP_TYPE_U32, \
++	&(const uint32_t){ 48059 } }, \
++	{ "smc.ta.testbinaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
++	"VGhpcyBpcyBhIHRleHQgYmluYXJ5IGJsb2Nr" }, \
++	{ "smc.ta.testuuid", USER_TA_PROP_TYPE_UUID, \
++	&(const TEE_UUID) { 0x534D4152, 0x542D, 0x4353, \
++		{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x30, 0x31 } } }, \
++	{ "smc.ta.testidentity", USER_TA_PROP_TYPE_IDENTITY, \
++	&(const TEE_Identity) { 0xF0000000, \
++		{ 0x534D4152, 0x542D, 0x4353, \
++		{ 0x4C, 0x54, 0x2D, 0x54, 0x41, 0x2D, 0x30, 0x31 } } } }
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/Makefile
+new file mode 100644
+index 000000000000..7fa2badee534
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5441-544346494341
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/sub.mk
+new file mode 100644
+index 000000000000..1ee47bdf5a72
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_ICA.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..51f22238def1
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA/code_files/user_ta_header_defines.h
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_TCF_ICA_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
++				TA_FLAG_SINGLE_INSTANCE)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_TCF_ICA v0.4" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
++
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/Makefile
+new file mode 100644
+index 000000000000..388b18a10524
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY =  534d4152-5443-534c-5454-434649434132
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/sub.mk
+new file mode 100644
+index 000000000000..1b787f63932d
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_ICA2.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..b8539d83c1a3
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_ICA2/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_TCF_ICA2_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE | TA_FLAG_EXEC_DDR | \
++				TA_FLAG_SINGLE_INSTANCE)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_TCF_ICA2 v0.2" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
++
++
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/Makefile
+new file mode 100644
+index 000000000000..91ae7c8a3cbe
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-4d4c-54494e535443
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/sub.mk
+new file mode 100644
+index 000000000000..e937e20a722a
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_MultipleInstanceTA.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..ab50b401786f
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_MultipleInstanceTA/code_files/user_ta_header_defines.h
+@@ -0,0 +1,45 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_TCF_MultipleInstanceTA_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE         \
++				| TA_FLAG_EXEC_DDR        \
++				| TA_FLAG_MULTI_SESSION \
++				)
++
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_testingInternalAPI_TrustedCoreFramework_MultipleInstanceTA v0.1" },
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/Makefile
+new file mode 100644
+index 000000000000..bbf464cf8393
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-434c-4f50414e4943
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/sub.mk
+new file mode 100644
+index 000000000000..4333c6e0d7d2
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_PanicAtCloseSession.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..86b1d0f1c865
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCloseSession/code_files/user_ta_header_defines.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID { 0x534D4152, 0x5443, 0x534C, { 0x43, 0x4C, 0x4F, 0x50, 0x41, 0x4E, 0x49, 0x43 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE | \
++				 TA_FLAG_MULTI_SESSION)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_TCF_PanicAtCloseSession v1.1" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/Makefile
+new file mode 100644
+index 000000000000..2e2ea217c7f7
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5443-5250414e4943
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/sub.mk
+new file mode 100644
+index 000000000000..d44f08240915
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_PanicAtCreation.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..197efebb119b
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_PanicAtCreation/code_files/user_ta_header_defines.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#define TA_UUID { 0x534D4152, 0x5443, 0x534C, { 0x54, 0x43, 0x52, 0x50, 0x41, 0x4E, 0x49, 0x43 } }
++
++#define TA_FLAGS		(TA_FLAG_MULTI_SESSION)
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_TCF_PanicAtCloseSession v1.1" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/Makefile
+new file mode 100644
+index 000000000000..b61365f4249e
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5347-4c494e535443
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/sub.mk
+new file mode 100644
+index 000000000000..3ab31a7029cf
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_TCF_SingleInstanceTA.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..136e68d84eec
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF_SingleInstanceTA/code_files/user_ta_header_defines.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++#include "TTA_TCF_SingleInstanceTA_protocol.h"
++
++#define TA_FLAGS		(TA_FLAG_USER_MODE \
++				| TA_FLAG_EXEC_DDR \
++				| TA_FLAG_SINGLE_INSTANCE \
++				)
++#define TA_STACK_SIZE		(1*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gpd.ta.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_testingInternalAPI_TrustedCoreFramework_SingleInstanceTA v0.4" },
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/Makefile b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/Makefile
+new file mode 100644
+index 000000000000..07f3d9743a59
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/Makefile
+@@ -0,0 +1,2 @@
++BINARY = 534d4152-5443-534c-5f54-494d45415049
++include ../../../ta_common.mk
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/sub.mk b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/sub.mk
+new file mode 100644
+index 000000000000..ab3ac849d1c4
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/sub.mk
+@@ -0,0 +1,3 @@
++global-incdirs-y += ../../../TEE_include
++srcs-y += TTA_Time.c
++cflags-y := -include ../../../../GP_defs.h
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/user_ta_header_defines.h b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/user_ta_header_defines.h
+new file mode 100644
+index 000000000000..1f25614bb473
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/TTA_Time/TTA_Time/code_files/user_ta_header_defines.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright (c) 2014, STMicroelectronics International N.V.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the following disclaimer.
++ *
++ * 2. Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimer in the documentation
++ * and/or other materials provided with the distribution.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
++ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef USER_TA_HEADER_DEFINES_H
++#define USER_TA_HEADER_DEFINES_H
++
++
++#define TA_UUID  { 0x534D4152, 0x5443, 0x534C, { 0x5F, 0x54, 0x49, 0x4D, 0x45, 0x41, 0x50, 0x49 } }
++
++#define TA_FLAGS		(TA_FLAG_SINGLE_INSTANCE )
++#define TA_STACK_SIZE		(2*1024)
++#define TA_DATA_SIZE		(32*1024)
++
++#define TA_CURRENT_TA_EXT_PROPERTIES \
++	{ "gp.test.description", USER_TA_PROP_TYPE_STRING, \
++	"TTA_Time v1.0" }, \
++
++#endif /* USER_TA_HEADER_DEFINES_H */
+diff --git a/TTAs_Internal_API_1_1_1/ta_common.mk b/TTAs_Internal_API_1_1_1/ta_common.mk
+new file mode 100644
+index 000000000000..b8ce142bcf0a
+--- /dev/null
++++ b/TTAs_Internal_API_1_1_1/ta_common.mk
+@@ -0,0 +1,3 @@
++# Note that it is important that that $(BINARY) is set before we include
++# ta_dev_kit.mk. In the optee_test this is done in the individual TA Makefiles.
++include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
+-- 
+2.25.1
+
