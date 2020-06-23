@@ -1,0 +1,28 @@
+From 83990e0e151d164f0d9e69053305fad2429f8cdc Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Mon, 29 Jun 2020 12:48:11 +0200
+Subject: [PATCH 05/11] GP_defs.h: enable debug prints
+
+Enables debug prints using the *MSG() macros.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ TTAs_Internal_API_1_1_1/GP_defs.h | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/GP_defs.h b/TTAs_Internal_API_1_1_1/GP_defs.h
+index 3d6ef1d53c78..91995187cae2 100644
+--- a/TTAs_Internal_API_1_1_1/GP_defs.h
++++ b/TTAs_Internal_API_1_1_1/GP_defs.h
+@@ -1,4 +1,5 @@
+-#define SLogTrace(...)
+-#define SLogError(...)
+-#define SLogWarning(...)
++#include <trace.h>
++#define SLogTrace DMSG
++#define SLogError EMSG
++#define SLogWarning IMSG
+ #define S_VAR_NOT_USED(x) do { (void)(x); } while (0)
+-- 
+2.25.1
+

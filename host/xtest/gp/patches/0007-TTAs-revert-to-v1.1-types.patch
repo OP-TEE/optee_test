@@ -1,0 +1,90 @@
+From 309bdb9181502392f1d1a978e4e97706ebf532c8 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Thu, 24 Sep 2020 11:31:34 +0200
+Subject: [PATCH 07/11] TTAs revert to v1.1 types
+
+Replacing some occurrences of size_t with uint32_t.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ .../TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c           | 4 ++--
+ .../TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto_protocol.h  | 2 +-
+ .../TTA_DS/TTA_DS/code_files/TTA_DS_commands.c              | 4 ++--
+ .../TTA_TCF/TTA_TCF/code_files/TTA_TCF.c                    | 6 +++---
+ 4 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c
+index 11de643f586d..d17448e878ca 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto.c
+@@ -298,7 +298,7 @@ void SetOperationToNull(TEE_CryptoData *pCryptoData, uint32_t lopId)
+ 		(pCryptoData->Operation3) = TEE_HANDLE_NULL;
+ }
+ 
+-bool copyOperationInfoMultipleToBuffer(const TEE_OperationInfoMultiple *pOpInfo, uint8_t *buffer, size_t *size)
++bool copyOperationInfoMultipleToBuffer(const TEE_OperationInfoMultiple *pOpInfo, uint8_t *buffer, uint32_t *size)
+ {
+ 	const size_t allocatedSize = *size;
+ 	const size_t outputSize = 32 + pOpInfo->numberOfKeys * 8;
+@@ -976,7 +976,7 @@ TEE_Result CmdGetOperationInfoMultiple(
+ 	if (numberOfKeys > MAX_NUMBER_OF_KEYS)
+ 		return TRUSTED_APP_ERROR_VALUE_OUT_OF_RANGE;
+ 
+-	operationSize = sizeof(TEE_OperationInfoMultiple) + numberOfKeys * sizeof(TEE_OperationInfoKey); // from 1.1 §6.1.3
++	operationSize = sizeof(TEE_OperationInfoMultiple) + numberOfKeys * sizeof(TEE_OperationInfoKey); // from 1.1 ?6.1.3
+ 
+ 	returnCode = TEE_GetOperationInfoMultiple(operation, pCryptoData->OperationInfoMultiple, &operationSize);
+ 
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto_protocol.h b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto_protocol.h
+index 51c827cdb796..13f816d8f0ae 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto_protocol.h
++++ b/TTAs_Internal_API_1_1_1/TTA_Crypto/TTA_Crypto/code_files/TTA_Crypto_protocol.h
+@@ -47,7 +47,7 @@ void writeUint32ToBuffer(uint32_t value, uint8_t buffer[]);
+ bool getOperation(TEE_CryptoData *pCryptoData, uint32_t lopId, TEE_OperationHandle *pOperation);
+ bool getKey(TEE_CryptoData *pCryptoData, uint32_t lkeyId, TEE_ObjectHandle *pKey);
+ void SetOperationToNull(TEE_CryptoData *pCryptoData, uint32_t lopId);
+-bool copyOperationInfoMultipleToBuffer(const TEE_OperationInfoMultiple *pOpInfo, uint8_t *buffer, size_t *size);
++bool copyOperationInfoMultipleToBuffer(const TEE_OperationInfoMultiple *pOpInfo, uint8_t *buffer, uint32_t *size);
+ 
+ TEE_Result CmdTTAEnsureIntermediateBufferSize(
+ 		void*       pSessionContext,
+diff --git a/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/TTA_DS_commands.c b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/TTA_DS_commands.c
+index 31efbbb01710..d828e7b4e383 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/TTA_DS_commands.c
++++ b/TTAs_Internal_API_1_1_1/TTA_DS/TTA_DS/code_files/TTA_DS_commands.c
+@@ -940,9 +940,9 @@ TEE_Result CmdGetNextPersistentObject(
+ 		TEE_Param   			pParams[4])
+ {
+ 	uint8_t localBuffer[TEE_OBJECT_ID_MAX_LEN] = { 0 };
+-	size_t localBufferLength = NELEM(localBuffer);
++	uint32_t localBufferLength = NELEM(localBuffer);
+ 	void *objectID;
+-	size_t *objectIDLen;
++	uint32_t *objectIDLen;
+ 	TEE_ObjectEnumHandle objectEnumerator;
+ 	TEE_ObjectInfo *pObjectInfo;
+ 	TEE_Result returnCode;
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+index 8d1df25dea69..14e642cd6193 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+@@ -665,13 +665,13 @@ TEE_Result CmdTEEGetPropertyAsXXX_fromEnum(
+ 	TEE_PropSetHandle nEnum;
+ 	TEE_PropSetHandle nPropSet;
+ 	char pPropName[PROPERTY_NAME_MAX_SIZE];
+-	size_t nPropNameSize = 0;
++	uint32_t nPropNameSize = 0;
+ 	TEE_MemMove(pPropName, pParams[1].memref.buffer,
+ 		    pParams[1].memref.size);
+ 	pPropName[pParams[1].memref.size] = 0;
+ 	char pOutputString1[PROPERTY_OUTPUT_STRING_MAX_SIZE], pOutputString2[PROPERTY_OUTPUT_STRING_MAX_SIZE];
+-	size_t nOutputString1Length = 0;
+-	size_t nOutputString2Length = 0;
++	uint32_t nOutputString1Length = 0;
++	uint32_t nOutputString2Length = 0;
+ 	bool nOutputBool1;
+ 	bool nOutputBool2;
+ 	uint32_t nOutputInt1;
+-- 
+2.25.1
+

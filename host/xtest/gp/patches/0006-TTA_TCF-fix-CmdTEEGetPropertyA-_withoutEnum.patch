@@ -1,0 +1,192 @@
+From 1f8d4686cd7c42ad59c9411e1dd7ceea97f5de9d Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Tue, 7 Jul 2020 17:19:50 +0200
+Subject: [PATCH 06/11] TTA_TCF: fix CmdTEEGetPropertyA*_withoutEnum()
+
+Property name must not reside in non-secure shared memory when passed as
+argument to TEE_GetPropertyAs*().
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ .../TTA_TCF/TTA_TCF/code_files/TTA_TCF.c      | 56 +++++++++++++------
+ 1 file changed, 39 insertions(+), 17 deletions(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+index b7c44c67fe32..8d1df25dea69 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+@@ -311,7 +311,7 @@ TEE_Result CmdTEEGetPropertyAsString_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	char* pOutputName;
+ 
+ 	TEE_Result cmdResult;
+@@ -330,12 +330,15 @@ TEE_Result CmdTEEGetPropertyAsString_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+-	if (pPropName == NULL)
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsString_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* Read the output parameters */
+ 	pOutputName = pParams[2].memref.buffer;
+@@ -359,7 +362,7 @@ TEE_Result CmdTEEGetPropertyAsBool_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	char nTrue[4] = "true";
+ 	char nFalse[5] = "false";
+ 	bool nOutputBool;
+@@ -381,12 +384,16 @@ TEE_Result CmdTEEGetPropertyAsBool_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+ 	if (pPropName == NULL)
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsBool_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* if all input/output data are correct */
+ 	cmdResult = TEE_GetPropertyAsBool(nPropSet, pPropName, &nOutputBool);
+@@ -412,7 +419,7 @@ TEE_Result CmdTEEGetPropertyAsInt_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	char nResultString[5] = "48059";
+ 	char nWrongResultString[11] = "wrong value";
+ 	uint32_t nIntResult;
+@@ -435,12 +442,15 @@ TEE_Result CmdTEEGetPropertyAsInt_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+-	if (pPropName == NULL)
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsInt_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* if all input/output data are correct */
+ 	cmdResult = TEE_GetPropertyAsU32(nPropSet, pPropName, &nIntResult);
+@@ -466,7 +476,7 @@ TEE_Result CmdTEEGetPropertyAsBinaryBlock_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	void* pOutputBinaryBlock;
+ 	TEE_Result cmdResult;
+ 
+@@ -485,12 +495,15 @@ TEE_Result CmdTEEGetPropertyAsBinaryBlock_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+-	if ((pPropName == NULL))
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsBinaryBlock_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* Read the output parameters */
+ 	pOutputBinaryBlock = pParams[2].memref.buffer;
+@@ -515,7 +528,7 @@ TEE_Result CmdTEEGetPropertyAsUUID_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	char nWrongResultString[10] = "wrong uuid";
+ 	char nResultUUIDString[36] = "534D4152-542D-4353-4C54-2D54412D3031";
+ 	char nClockSeqAndNode[8] = SMC_TA_TESTUUID_CLOCKSEQANDNODE;
+@@ -537,12 +550,15 @@ TEE_Result CmdTEEGetPropertyAsUUID_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+-	if ((pPropName == NULL))
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsUUID_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* Read the output parameters */
+ 	if (pParams[2].memref.buffer == NULL)
+@@ -579,7 +595,7 @@ TEE_Result CmdTEEGetPropertyAsIdentity_withoutEnum(
+ {
+ 	/** VARIABLES **/
+ 	TEE_PropSetHandle nPropSet;
+-	char* pPropName;
++	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	char nWrongResultString[14] = "wrong identity";
+ 	char nResultIdentityString[45] = "F0000000:534D4152-542D-4353-4C54-2D54412D3031";
+ 	char nClockSeqAndNode[8] = SMC_TA_TESTUUID_CLOCKSEQANDNODE;
+@@ -602,12 +618,15 @@ TEE_Result CmdTEEGetPropertyAsIdentity_withoutEnum(
+ 	/* Read the input parameter */
+ 	nPropSet = (TEE_PropSetHandle)pParams[0].value.a;
+ 
+-	pPropName = pParams[1].memref.buffer;
+-	if ((pPropName == NULL))
++	if (!pParams[1].memref.buffer ||
++	    pParams[1].memref.size >= sizeof(pPropName))
+ 	{
+ 		SLogError("CmdTEEGetPropertyAsIdentity_withoutEnum: property name Input parameter is NULL");
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 
+ 	/* Read the output parameters */
+ 	if (pParams[2].memref.buffer == NULL)
+@@ -647,6 +666,9 @@ TEE_Result CmdTEEGetPropertyAsXXX_fromEnum(
+ 	TEE_PropSetHandle nPropSet;
+ 	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	size_t nPropNameSize = 0;
++	TEE_MemMove(pPropName, pParams[1].memref.buffer,
++		    pParams[1].memref.size);
++	pPropName[pParams[1].memref.size] = 0;
+ 	char pOutputString1[PROPERTY_OUTPUT_STRING_MAX_SIZE], pOutputString2[PROPERTY_OUTPUT_STRING_MAX_SIZE];
+ 	size_t nOutputString1Length = 0;
+ 	size_t nOutputString2Length = 0;
+-- 
+2.25.1
+

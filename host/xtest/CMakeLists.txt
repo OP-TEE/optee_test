@@ -61,6 +61,31 @@ set (SRC
 	xtest_uuid_helpers.c
 )
 
+if (WITH_GP_TESTS)
+	add_compile_options(-DWITH_GP_TESTS=1)
+
+	macro(__GEN_GP_FILE outfile xmldir name basedir)
+		add_custom_command(
+			OUTPUT	${outfile}
+			COMMAND	xalan -in ${basedir}/${name}.xml
+				      -xsl gp/${name}.xsl -out ${outfile}
+			DEPENDS ${basedir}/${name}.xml gp/${name}.xsl
+		)
+	endmacro(__GEN_GP_FILE)
+	macro(GEN_GP_FILE outfile xmldir name)
+		__GEN_GP_FILE(${outfile} ${xmldir} ${name}
+			      gp-suite/packages/${xmldir})
+		list (APPEND SRC ${outfile})
+	endmacro(GEN_GP_FILE)
+
+	GEN_GP_FILE(gp_10000.c ClientAPI/xmlstable TEE)
+	GEN_GP_FILE(gp_20000.c TrustedCoreFw/xmlstable TEE_Internal_API)
+	GEN_GP_FILE(gp_30000.c DataStorage/xmlstable TEE_DataStorage_API)
+	GEN_GP_FILE(gp_40000.c Time_Arithmetical/xmlstable TEE_TimeArithm_API)
+	GEN_GP_FILE(gp_50000.c Crypto/xmlstable TEE_Crypto_API)
+	set (GP_INCLUDES PRIVATE gp/include)
+endif()
+
 set_source_files_properties(
 	regression_4100.c PROPERTIES COMPILE_FLAGS -Wno-unsafe-loop-optimizations
 )
@@ -95,9 +120,9 @@ target_compile_options (${PROJECT_NAME} PRIVATE -include conf.h)
 target_include_directories(${PROJECT_NAME}
 	PRIVATE .
 	PRIVATE adbg/include
-	PRIVATE xml/include
 	PRIVATE ${OPTEE_TEST_SDK}/host_include
 	PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
+	${GP_INCLUDES}
 )
 
 target_link_libraries (${PROJECT_NAME}

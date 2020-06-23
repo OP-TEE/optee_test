@@ -1,0 +1,26 @@
+From 1664c3124576d8b2065206e99016bfa6a5d9ac34 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Tue, 23 Jun 2020 13:43:40 +0200
+Subject: [PATCH 04/11] TTA_Arithmetical: patch
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ .../TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h     | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h
+index 063f4b59e218..13cb801eeb20 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h
++++ b/TTAs_Internal_API_1_1_1/TTA_Arithmetical/TTA_Arithmetical/code_files/TTA_Arithmetical_protocol.h
+@@ -61,7 +61,7 @@ typedef struct {
+ 
+ TTA_Internal_Data* SetUpTTAInternalData(void);
+ void ResetTTAInternalData(TTA_Internal_Data *pInternalData);
+-TEE_BigIntFMM* AllocateAndInitializeFMM(uint32_t nModulusSizeInBytes);
++TEE_BigIntFMM* AllocateAndInitializeFMM(size_t nModulusSizeInBytes);
+ TEE_BigInt* AllocateAndInitialize(uint32_t nSizeInBytes);
+ uint32_t CmdGetBigIntSignInUint32(TEE_BigInt *pBigInt);
+ TEE_Result CmdTEEBigIntCmp(
+-- 
+2.25.1
+

@@ -1,0 +1,96 @@
+From a7caa35eff3487c0bd777f7df6f5337219b8d9dd Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Tue, 7 Jul 2020 11:17:14 +0200
+Subject: [PATCH 09/11] TEE_Internal_API.xml
+
+Disabling cases:
+- Invoke_CheckMemoryAccessRight_BufferRead_AccessWrite_error (a7-35-f1)
+- Invoke_CheckMemoryAccessRight_BufferWrite_AccessRead_error (a7-98-4b)
+As OP-TEE doesn't check the direction of the passed memrefs
+
+Disabling the case:
+- Invoke_GetCancellationFlag_RequestedCancel (a7-71-11
+Because the adaption layer we've implemented cannot deal with threads in
+a good way.
+
+Disabling the case:
+- Invoke_GetPropertyAsBinaryBlock_withoutEnum_success (a7-26-c1)
+Because it assumes base64 coded binary properties and is also
+in the list of excluded conformance tests.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ packages/TrustedCoreFw/xmlstable/TEE_Internal_API.xml | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/packages/TrustedCoreFw/xmlstable/TEE_Internal_API.xml b/packages/TrustedCoreFw/xmlstable/TEE_Internal_API.xml
+index f9824238451a..0e96e3bde8e9 100644
+--- a/packages/TrustedCoreFw/xmlstable/TEE_Internal_API.xml
++++ b/packages/TrustedCoreFw/xmlstable/TEE_Internal_API.xml
+@@ -523,6 +523,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- CheckMemoryAccessRight
+         <scenario name="Invoke_CheckMemoryAccessRight_BufferRead_AccessWrite_error (a7-35-f1)" destructive="no">
+             <req name="CHECK_MEMORY_ACCESS_RIGHTS_ACCESS_DENIED">
+                 <description><![CDATA[The TEE_CheckMemoryAccessRights function causes the Implementation to examine a buffer of memory specified in the parameters buffer and size and to determine whether the current Trusted Application instance has the access rights requested in the arameter accessFlags. If the characteristics of the buffer are compatible with accessFlags, then the function returns TEE_SUCCESS. Otherwise, it returns TEE_ERROR_ACCESS_DENIED.]]></description>
+@@ -697,6 +698,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_CheckMemoryAccessRight_BufferShared_AccessAnyOwnerNotSet_error (a7-99-f7)" destructive="no">
+             <req name="CHECK_MEMORY_ACCESS_RIGHTS_ACCESS_DENIED">
+                 <description><![CDATA[The TEE_CheckMemoryAccessRights function causes the Implementation to examine a buffer of memory specified in the parameters buffer and size and to determine whether the current Trusted Application instance has the access rights requested in the arameter accessFlags. If the characteristics of the buffer are compatible with accessFlags, then the function returns TEE_SUCCESS. Otherwise, it returns TEE_ERROR_ACCESS_DENIED.]]></description>
+@@ -1045,6 +1047,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- CheckMemoryAccessRight
+         <scenario name="Invoke_CheckMemoryAccessRight_BufferWrite_AccessRead_error (a7-98-4b)" destructive="no">
+             <req name="CHECK_MEMORY_ACCESS_RIGHTS_ACCESS_DENIED">
+                 <description><![CDATA[The TEE_CheckMemoryAccessRights function causes the Implementation to examine a buffer of memory specified in the parameters buffer and size and to determine whether the current Trusted Application instance has the access rights requested in the arameter accessFlags. If the characteristics of the buffer are compatible with accessFlags, then the function returns TEE_SUCCESS. Otherwise, it returns TEE_ERROR_ACCESS_DENIED.]]></description>
+@@ -1219,6 +1222,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_CheckMemoryAccessRight_BufferWrite_AccessWrite_success (a7-32-44)" destructive="no">
+             <req name="CHECK_MEMORY_ACCESS_RIGHTS_OK">
+                 <description><![CDATA[The TEE_CheckMemoryAccessRights function causes the Implementation to examine a buffer of memory specified in the parameters buffer and size and to determine whether the current Trusted Application instance has the access rights requested in the arameter accessFlags. If the characteristics of the buffer are compatible with accessFlags, then the function returns TEE_SUCCESS. Otherwise, it returns TEE_ERROR_ACCESS_DENIED.]]></description>
+@@ -2254,6 +2258,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- cancellation
+         <scenario name="Invoke_GetCancellationFlag_RequestedCancel (a7-71-11)" destructive="no">
+             <req name="GET_CANCELLATION_FLAG">
+                 <description><![CDATA[The TEE_GetCancellationFlag function determines whether the current task’s Cancellation Flag is set. If cancellations are masked, this function MUST return false. This function cannot panic.]]></description>
+@@ -2524,6 +2529,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_GetInstanceData_noPreviousSetInstance_null (a7-7d-9b)" destructive="no">
+             <req name="GET_INSTANCE_DATA_SUCCESS">
+                 <description><![CDATA[The TEE_GetInstanceData function retrieves the instance data pointer set by the Trusted Application using the TEE_GetInstanceData function. Return Value: The value returned is the previously set pointer to the Trusted Application instance data, or NULL if no instance data pointer has yet been set.]]></description>
+@@ -3716,6 +3722,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!--
+         <scenario name="Invoke_GetPropertyAsBinaryBlock_withoutEnum_success (a7-26-c1)" destructive="no">
+             <req name="CLOSE_SESSION_ENTRY_POINT_SUCCESS">
+                 <description><![CDATA[The Trusted Application implementation is responsible for freeing any resources consumed by the session being closed. Note that the Trusted Application cannot refuse to close a session, but can hold the closing until it returns from TA_CloseSessionEntryPoint. This is why this function cannot return a return code.]]></description>
+@@ -3920,6 +3927,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_GetPropertyAsBool_withoutEnum_badFormat_error (a7-63-46)" destructive="no">
+             <req name="GET_PROPERTY_AS_BOOL_ERROR_BAD_FORMAT">
+                 <description><![CDATA[If the property value cannot be converted to a boolean]]></description>
+-- 
+2.25.1
+

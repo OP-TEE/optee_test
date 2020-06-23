@@ -1,0 +1,39 @@
+From af6aa988020a21895688dd2d8221119fbe6d3cf3 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Wed, 19 Aug 2020 17:53:31 +0200
+Subject: [PATCH 11/11] TEE_Crypto_API.xml
+
+Disabling case:
+- Invoke_Crypto_MACInit_init_vector_not_required_length (50-ea-af)
+
+CBC MAC doesn't take any IV so TEE_MACInit() is supposed to ignore IV
+and IVLen.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ packages/Crypto/xmlstable/TEE_Crypto_API.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/packages/Crypto/xmlstable/TEE_Crypto_API.xml b/packages/Crypto/xmlstable/TEE_Crypto_API.xml
+index 11013c152fb2..b8246376866e 100644
+--- a/packages/Crypto/xmlstable/TEE_Crypto_API.xml
++++ b/packages/Crypto/xmlstable/TEE_Crypto_API.xml
+@@ -130401,6 +130401,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- CMAC doesn't take any IV either
+         <scenario name="Invoke_Crypto_MACInit_init_vector_not_required_length (50-ea-af)" destructive="no">
+             <req name="MAC_INIT_PANIC">
+                 <description><![CDATA[Panic Reasons  • operation is not a valid operation handle of class TEE_OPERATION_MAC.  • No key is programmed in the operation.  • The Initialization Vector does not have the length required by the algorithm.   • Hardware or cryptographic algorithm failure  • If the Implementation detects any other error.]]></description>
+@@ -130747,6 +130748,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_MACInit_invalid_operation_class (50-27-d0)" destructive="no">
+             <req name="MAC_INIT_PANIC">
+                 <description><![CDATA[Panic Reasons  • operation is not a valid operation handle of class TEE_OPERATION_MAC.  • No key is programmed in the operation.  • The Initialization Vector does not have the length required by the algorithm.   • Hardware or cryptographic algorithm failure  • If the Implementation detects any other error.]]></description>
+-- 
+2.25.1
+
