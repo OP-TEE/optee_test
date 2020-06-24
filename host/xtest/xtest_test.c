@@ -25,10 +25,6 @@
 #include <__tee_tcpsocket_defines.h>
 #include <__tee_udpsocket_defines.h>
 #include <ta_sdp_basic.h>
-#ifdef WITH_GP_TESTS
-#include <tee_api_types.h>
-#include <TTA_DS_protocol.h>
-#endif
 
 ADBG_ENUM_TABLE_DEFINE_BEGIN(TEEC_Result)
 ADBG_ENUM_TABLE_ENTRY(TEEC_SUCCESS),
@@ -200,6 +196,3 @@ const TEEC_UUID storage_benchmark_ta_uuid = TA_STORAGE_BENCHMARK_UUID;
 const TEEC_UUID socket_ta_uuid = TA_SOCKET_UUID;
 const TEEC_UUID sdp_basic_ta_uuid = TA_SDP_BASIC_UUID;
 const TEEC_UUID tpm_log_test_ta_uuid = TA_TPM_LOG_TEST_UUID;
-#ifdef WITH_GP_TESTS
-const TEEC_UUID gp_tta_ds_uuid = TA_TTA_DS_UUID;
-#endif
