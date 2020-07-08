@@ -52,9 +52,9 @@ static TEE_Result check_returned_prop(
 	return TEE_SUCCESS;
 }
 
-static TEE_Result check_binprop_ones(size_t size, uint8_t *bbuf, size_t bblen)
+static TEE_Result check_binprop_ones(size_t size, char *bbuf, size_t bblen)
 {
-	uint8_t ones[4] = { 0xff, 0xff, 0xff, 0xff };
+	char ones[4] = { 0xff, 0xff, 0xff, 0xff };
 
 	if (size > 4 || bblen != size) {
 		EMSG("Size error (size=%zu, bblen=%zu)", size, bblen);
@@ -69,17 +69,16 @@ static TEE_Result check_binprop_ones(size_t size, uint8_t *bbuf, size_t bblen)
 }
 
 static TEE_Result get_binblock_property(TEE_PropSetHandle h,
-					char *nbuf,
-					uint8_t **bbuf,
-					size_t *bblen)
+					char *nbuf, char **bbuf, size_t *bblen)
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
+	uint32_t block_len = 0;
 
 	*bbuf = NULL;
 	*bblen = 0;
-	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, bblen);
+	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, &block_len);
 
-	if (res == TEE_SUCCESS && !*bblen)
+	if (res == TEE_SUCCESS && !block_len)
 		return TEE_SUCCESS;
 
 	if (res != TEE_ERROR_SHORT_BUFFER) {
@@ -88,14 +87,16 @@ static TEE_Result get_binblock_property(TEE_PropSetHandle h,
 		return res ? res : TEE_ERROR_GENERIC;
 	}
 
-	*bbuf = TEE_Malloc(*bblen, TEE_MALLOC_FILL_ZERO);
+	*bbuf = TEE_Malloc(block_len, TEE_MALLOC_FILL_ZERO);
 	if (!bbuf)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
-	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, bblen);
+	res = TEE_GetPropertyAsBinaryBlock(h, NULL, *bbuf, &block_len);
 	if (res != TEE_SUCCESS)
 		EMSG("TEE_GetPropertyAsBinaryBlock(\"%s\") returned 0x%x",
 		     nbuf, (unsigned int)res);
+	else
+		*bblen = block_len;
 
 	return res;
 }
@@ -118,7 +119,7 @@ while (true) {
 	uint32_t nblen_small = 0;
 	uint32_t vblen = sizeof(vbuf);
 	uint32_t vblen2 = sizeof(vbuf2);
-	uint8_t *bbuf = NULL;
+	char *bbuf = NULL;
 	size_t bblen = 0;
 
 	res = TEE_GetPropertyName(h, nbuf, &nblen);
