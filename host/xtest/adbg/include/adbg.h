@@ -59,6 +59,20 @@ typedef struct adbg_suite_def {
 				 &case_def, link); \
 	}
 
+#define ADBG_CASE_DEFINE_FRONT(Suite, TestID, Run, Title) \
+	__attribute__((constructor)) static void \
+	__adbg_test_case_ ## TestID(void) \
+	{ \
+		static ADBG_Case_Definition_t case_def = { \
+			.TestID_p = #Suite "_" #TestID, \
+			.Title_p = Title, \
+			.Run_fp = Run, \
+		}; \
+		\
+		TAILQ_INSERT_HEAD(&(ADBG_Suite_ ## Suite).cases, \
+				 &case_def, link); \
+	}
+
 /*
  * Suite definitions
  */

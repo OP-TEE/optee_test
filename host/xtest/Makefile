@@ -110,6 +110,12 @@ srcs  += gp_7000.c \
 	 gp_9000.c
 endif
 
+# Should be the last object added to be able to capture the code coverage
+# of the test suite
+ifeq ($(CFG_GCOV_SUPPORT),y)
+srcs += gcov.c
+endif
+
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
@@ -136,6 +142,9 @@ CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
+ifeq ($(CFG_GCOV_SUPPORT),y)
+CFLAGS += -I../../ta/gcov/include
+endif
 
 ifdef CFG_GP_PACKAGE_PATH
 CFLAGS += -I../../ta/GP_TTA_Arithmetical

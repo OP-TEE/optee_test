@@ -32,6 +32,10 @@ TA_DIRS := create_fail_test \
 	   aes_perf \
 	   socket
 
+ifeq ($(CFG_GCOV_SUPPORT),y)
+TA_DIRS += gcov
+endif
+
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
 endif
