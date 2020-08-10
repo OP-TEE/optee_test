@@ -19,6 +19,29 @@
  */
 static const CK_BYTE cktest_aes128_key[16];
 
+static const CK_BYTE cktest_aes128_iv[16];
+
+static const CK_AES_CTR_PARAMS cktest_aes_ctr_params = {
+	.ulCounterBits = 1,
+};
+
+static CK_MECHANISM cktest_aes_ecb_mechanism = {
+	CKM_AES_ECB,
+	NULL, 0,
+};
+static CK_MECHANISM cktest_aes_cbc_mechanism = {
+	CKM_AES_CBC,
+	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
+};
+static CK_MECHANISM cktest_aes_ctr_mechanism = {
+	CKM_AES_CTR,
+	(CK_BYTE_PTR)&cktest_aes_ctr_params, sizeof(cktest_aes_ctr_params),
+};
+static CK_MECHANISM cktest_aes_cts_mechanism = {
+	CKM_AES_CTS,
+	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
+};
+
 /*
  * Util to find a slot on which to open a session
  */
@@ -1027,3 +1050,416 @@ static void xtest_pkcs11_test_1004(ADBG_Case_t *c)
 
 ADBG_CASE_DEFINE(pkcs11, 1004, xtest_pkcs11_test_1004,
 		 "PKCS11: create/destroy PKCS#11 simple objects");
+
+
+static const CK_MECHANISM_TYPE allowed_only_aes_ecb[] = {
+	CKM_AES_ECB,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_ecb[] = {
+	CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTR, CKM_AES_CTS,
+	CKM_AES_GCM, CKM_AES_CCM,
+};
+static const CK_MECHANISM_TYPE allowed_only_aes_cbcnopad[] = {
+	CKM_AES_CBC,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_cbcnopad[] = {
+	CKM_AES_ECB, CKM_AES_CBC_PAD, CKM_AES_CTR, CKM_AES_CTS,
+	CKM_AES_GCM, CKM_AES_CCM,
+};
+static const CK_MECHANISM_TYPE allowed_only_aes_ctr[] = {
+	CKM_AES_CTR,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_ctr[] = {
+	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTS,
+	CKM_AES_GCM, CKM_AES_CCM,
+};
+static const CK_MECHANISM_TYPE allowed_only_aes_cts[] = {
+	CKM_AES_CTS,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_cts[] = {
+	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTR,
+	CKM_AES_GCM, CKM_AES_CCM,
+};
+
+#define CKTEST_AES_KEY \
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+			sizeof(CK_OBJECT_CLASS) },		\
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES},		\
+			sizeof(CK_KEY_TYPE) },			\
+	{ CKA_VALUE,	(void *)cktest_aes128_key,		\
+			sizeof(cktest_aes128_key) }
+
+#define CKTEST_AES_ALLOWED_KEY(_allowed) \
+	{ CKA_ALLOWED_MECHANISMS, (void *)_allowed, sizeof(_allowed), }
+
+#define CK_KEY_ALLOWED_AES_TEST(_label, _allowed) \
+	static CK_ATTRIBUTE _label[] = {				\
+		CKTEST_AES_KEY,						\
+		{ CKA_ENCRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		CKTEST_AES_ALLOWED_KEY(_allowed),			\
+	}
+
+#define CK_KEY_ALLOWED_AES_ENC_TEST(_label, _allowed) \
+	static CK_ATTRIBUTE _label[] = {				\
+		CKTEST_AES_KEY,						\
+		{ CKA_ENCRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		CKTEST_AES_ALLOWED_KEY(_allowed),			\
+	}
+#define CK_KEY_ALLOWED_AES_DEC_TEST(_label, _allowed) \
+	static CK_ATTRIBUTE _label[] = {				\
+		CKTEST_AES_KEY,						\
+		{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) }, \
+		CKTEST_AES_ALLOWED_KEY(_allowed),			\
+	}
+
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_ecb, allowed_only_aes_ecb);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_ecb, allowed_not_aes_ecb);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_cbcnopad, allowed_only_aes_cbcnopad);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_cbcnopad, allowed_not_aes_cbcnopad);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_cts, allowed_only_aes_cts);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_cts, allowed_not_aes_cts);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_ctr, allowed_only_aes_ctr);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_ctr, allowed_not_aes_ctr);
+
+struct cktest_allowed_test {
+	CK_ATTRIBUTE_PTR attr_key;
+	CK_ULONG attr_count;
+	CK_MECHANISM_PTR mechanism;
+};
+
+#define CKTEST_KEY_MECHA(key, mecha) {	\
+		.attr_key = key,		\
+		.attr_count = ARRAY_SIZE(key),	\
+		.mechanism = mecha,		\
+	}
+
+static const struct cktest_allowed_test cktest_allowed_valid[] = {
+	CKTEST_KEY_MECHA(cktest_aes_only_ecb, &cktest_aes_ecb_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_only_cbcnopad, &cktest_aes_cbc_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_only_cts, &cktest_aes_cts_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_only_ctr, &cktest_aes_ctr_mechanism),
+};
+
+static const struct cktest_allowed_test cktest_allowed_invalid[] = {
+	CKTEST_KEY_MECHA(cktest_aes_not_ecb, &cktest_aes_ecb_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_cbcnopad, &cktest_aes_cbc_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_cts, &cktest_aes_cts_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_ctr, &cktest_aes_ctr_mechanism),
+};
+
+/* Create session object and token object from a session */
+static CK_RV cipher_init_final(ADBG_Case_t *c, CK_SESSION_HANDLE session,
+				CK_ATTRIBUTE_PTR attr_key, CK_ULONG attr_count,
+				CK_MECHANISM_PTR mechanism, uint32_t mode,
+				CK_RV expected_rc)
+{
+	CK_RV rv2 = CKR_GENERAL_ERROR;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_OBJECT_HANDLE object = CK_INVALID_HANDLE;
+
+	switch (mode) {
+	case TEE_MODE_ENCRYPT:
+	case TEE_MODE_DECRYPT:
+		break;
+	default:
+		ADBG_EXPECT_TRUE(c, false);
+	}
+
+	rv = C_CreateObject(session, attr_key, attr_count, &object);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return rv;
+
+	if (mode == TEE_MODE_ENCRYPT)
+		rv = C_EncryptInit(session, mechanism, object);
+	if (mode == TEE_MODE_DECRYPT)
+		rv = C_DecryptInit(session, mechanism, object);
+
+	if (!ADBG_EXPECT_CK_RESULT(c, expected_rc, rv)) {
+		rv = CKR_GENERAL_ERROR;
+		goto out;
+	}
+
+	if (rv) {
+		/*
+		 * If we're here it was the expected error code above and
+		 * we're supposed to return OK below.
+		 */
+		rv = CKR_OK;
+	} else {
+		if (mode == TEE_MODE_ENCRYPT)
+			rv = C_EncryptFinal(session, NULL, NULL);
+		if (mode == TEE_MODE_DECRYPT)
+			rv = C_DecryptFinal(session, NULL, NULL);
+
+		/* Only check that the operation is no more active */
+		if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
+			rv = CKR_GENERAL_ERROR;
+	}
+
+out:
+	rv2 = C_DestroyObject(session, object);
+	ADBG_EXPECT_CK_OK(c, rv2);
+
+	if (rv)
+		return rv;
+	else
+		return rv2;
+}
+
+CK_KEY_ALLOWED_AES_ENC_TEST(cktest_aes_enc_only_cts, allowed_only_aes_cts);
+
+CK_KEY_ALLOWED_AES_DEC_TEST(cktest_aes_dec_only_ctr, allowed_only_aes_ctr);
+
+static void xtest_pkcs11_test_1005(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+	size_t n = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(cktest_allowed_valid); n++) {
+
+		Do_ADBG_BeginSubCase(c, "valid usage #%zu", n);
+
+		rv = cipher_init_final(c, session,
+					cktest_allowed_valid[n].attr_key,
+					cktest_allowed_valid[n].attr_count,
+					cktest_allowed_valid[n].mechanism,
+					TEE_MODE_ENCRYPT,
+					CKR_OK);
+
+		ADBG_EXPECT_CK_OK(c, rv);
+
+		Do_ADBG_EndSubCase(c, NULL);
+		if (rv)
+			goto out;
+
+	}
+
+	for (n = 0; n < ARRAY_SIZE(cktest_allowed_invalid); n++) {
+		Do_ADBG_BeginSubCase(c, "invalid usage #%zu", n);
+
+		rv = cipher_init_final(c, session,
+					cktest_allowed_invalid[n].attr_key,
+					cktest_allowed_invalid[n].attr_count,
+					cktest_allowed_invalid[n].mechanism,
+					TEE_MODE_ENCRYPT,
+					CKR_KEY_FUNCTION_NOT_PERMITTED);
+
+		ADBG_EXPECT_CK_OK(c, rv);
+
+		Do_ADBG_EndSubCase(c, NULL);
+		if (rv)
+			goto out;
+
+	}
+
+out:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+
+ADBG_CASE_DEFINE(pkcs11, 1005, xtest_pkcs11_test_1005,
+		"PKCS11: Check ciphering with valid and invalid keys #1");
+
+static void xtest_pkcs11_test_1006(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Encrypt only AES CTS key */
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_cts,
+				ARRAY_SIZE(cktest_aes_enc_only_cts),
+				&cktest_aes_cts_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_OK);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_cts,
+				ARRAY_SIZE(cktest_aes_enc_only_cts),
+				&cktest_aes_cts_mechanism,
+				TEE_MODE_DECRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Decrypt only AES CTR key */
+	rv = cipher_init_final(c, session,
+				cktest_aes_dec_only_ctr,
+				ARRAY_SIZE(cktest_aes_dec_only_ctr),
+				&cktest_aes_ctr_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = cipher_init_final(c, session,
+				cktest_aes_dec_only_ctr,
+				ARRAY_SIZE(cktest_aes_dec_only_ctr),
+				&cktest_aes_ctr_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+out:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+ADBG_CASE_DEFINE(pkcs11, 1006, xtest_pkcs11_test_1006,
+		"PKCS11: Check ciphering with valid and invalid keys #2");
+
+static CK_RV open_cipher_session(ADBG_Case_t *c,
+				 CK_SLOT_ID slot, CK_SESSION_HANDLE_PTR session,
+				 CK_ATTRIBUTE_PTR attr_key, CK_ULONG attr_count,
+				 CK_MECHANISM_PTR mechanism, uint32_t mode)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_OBJECT_HANDLE object = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+
+	switch (mode) {
+	case TEE_MODE_ENCRYPT:
+	case TEE_MODE_DECRYPT:
+		break;
+	default:
+		ADBG_EXPECT_TRUE(c, false);
+		return CKR_GENERAL_ERROR;
+	}
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, session);
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return rv;
+
+	rv = C_CreateObject(*session, attr_key, attr_count, &object);
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return rv;
+
+	if (mode == TEE_MODE_ENCRYPT)
+		rv = C_EncryptInit(*session, mechanism, object);
+	if (mode == TEE_MODE_DECRYPT)
+		rv = C_DecryptInit(*session, mechanism, object);
+
+	if (rv == CKR_DEVICE_MEMORY)
+		return rv;
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return CKR_GENERAL_ERROR;
+
+	return rv;
+}
+
+static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE sessions[128];
+	size_t n = 0;
+
+	for (n = 0; n < ARRAY_SIZE(sessions); n++)
+		sessions[n] = CK_INVALID_HANDLE;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+
+		rv = open_cipher_session(c, slot, &sessions[n],
+					 cktest_allowed_valid[0].attr_key,
+					 cktest_allowed_valid[0].attr_count,
+					 cktest_allowed_valid[0].mechanism,
+					 TEE_MODE_ENCRYPT);
+
+		/* Failure due to memory allocation is not a error case */
+		if (rv == CKR_DEVICE_MEMORY)
+			break;
+
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+	}
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, n, >, 0))
+		goto out;
+
+	Do_ADBG_Log("    created sessions count: %zu", n);
+
+	/* Closing session with out bound and invalid IDs (or negative ID) */
+	rv = C_CloseSession(sessions[n - 1] + 1024);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
+	rv = C_CloseSession(CK_INVALID_HANDLE);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
+	rv = C_CloseSession(~0);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
+
+	/* Closing each session: all related resources shall be free */
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+		if (sessions[n] == CK_INVALID_HANDLE)
+			continue;
+
+		rv = C_CloseSession(sessions[n]);
+		ADBG_EXPECT_CK_OK(c, rv);
+		sessions[n] = CK_INVALID_HANDLE;
+	}
+
+	/* Open and close another session */
+	rv = open_cipher_session(c, slot, &sessions[0],
+				 cktest_allowed_valid[0].attr_key,
+				 cktest_allowed_valid[0].attr_count,
+				 cktest_allowed_valid[0].mechanism,
+				 TEE_MODE_ENCRYPT);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_CloseSession(sessions[0]);
+	ADBG_EXPECT_CK_OK(c, rv);
+	sessions[0] = CK_INVALID_HANDLE;
+
+out:
+	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
+		if (sessions[n] == CK_INVALID_HANDLE)
+			continue;
+
+		rv = C_CloseSession(sessions[n]);
+		ADBG_EXPECT_CK_OK(c, rv);
+	}
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+ADBG_CASE_DEFINE(pkcs11, 1007, xtest_pkcs11_test_1007,
+		"PKCS11: Check operations release at session closure");
