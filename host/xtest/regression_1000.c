@@ -2202,6 +2202,7 @@ ADBG_CASE_DEFINE(regression, 1028, xtest_tee_test_1028,
 
 static void xtest_tee_test_1029(ADBG_Case_t *c)
 {
+	TEEC_Result res = TEEC_SUCCESS;
 	TEEC_Session session = { 0 };
 	uint32_t ret_orig = 0;
 
@@ -2211,15 +2212,23 @@ static void xtest_tee_test_1029(ADBG_Case_t *c)
 		return;
 
 	Do_ADBG_BeginSubCase(c, "TLS variables (main program)");
-	ADBG_EXPECT_TEEC_SUCCESS(c,
-		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_MAIN, NULL,
-				   &ret_orig));
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_MAIN, NULL,
+				 &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED)
+		Do_ADBG_Log(" - 1029 -   skip test, "
+			    "TA returned TEEC_ERROR_NOT_SUPPORTED");
+	else
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
 	Do_ADBG_EndSubCase(c, "TLS variables (main program)");
 
 	Do_ADBG_BeginSubCase(c, "TLS variables (shared library)");
-	ADBG_EXPECT_TEEC_SUCCESS(c,
-		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_SHLIB,
-				   NULL, &ret_orig));
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TLS_TEST_SHLIB, NULL,
+				 &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED)
+		Do_ADBG_Log(" - 1029 -   skip test, "
+			    "TA returned TEEC_ERROR_NOT_SUPPORTED");
+	else
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
 	Do_ADBG_EndSubCase(c, "TLS variables (shared library)");
 
 	TEEC_CloseSession(&session);
