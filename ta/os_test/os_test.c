@@ -1301,6 +1301,7 @@ TEE_Result ta_entry_client_identity(uint32_t param_types, TEE_Param params[4])
 	return res;
 }
 
+#if defined(__clang__) || !defined(__aarch64__) || __GNUC__ >= 8
 __thread int os_test_tls_a;
 __thread int os_test_tls_b = 42;
 
@@ -1332,6 +1333,17 @@ TEE_Result ta_entry_tls_test_shlib(void)
 
 	return TEE_SUCCESS;
 }
+#else
+TEE_Result ta_entry_tls_test_main(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+TEE_Result ta_entry_tls_test_shlib(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+#endif
 
 static int iterate_hdr_cb(struct dl_phdr_info *info __maybe_unused,
 			  size_t size __unused, void *data)
