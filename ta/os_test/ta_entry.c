@@ -121,7 +121,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_DL_PHDR_DL:
 		return ta_entry_dl_phdr_dl();
 
-#if defined(__clang__) || (defined(__aarch64__) && __GNUC__ < 8)
+#ifdef __clang__
 	case TA_OS_TEST_CMD_CXX_CTOR_MAIN:
 	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB:
 	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL:

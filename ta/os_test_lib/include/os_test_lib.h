@@ -11,10 +11,8 @@
 int os_test_shlib_add(int a, int b);
 void os_test_shlib_panic(void);
 
-#if defined(__clang__) || !defined(__aarch64__) || __GNUC__ >= 8
 extern __thread int os_test_shlib_tls_a;
 extern __thread int os_test_shlib_tls_b;
-#endif
 
 TEE_Result os_test_shlib_cxx_ctor(void);
 
