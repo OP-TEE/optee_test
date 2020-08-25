@@ -8,9 +8,7 @@ srcs-y += init.c
 srcs-y += os_test.c
 srcs-y += ta_entry.c
 srcs-$(CFG_TA_FLOAT_SUPPORT) += test_float_subj.c
-# C++ tests don't work with Clang, and for Aarch64 they require GCC >= 8
-c++-supported := $(shell env echo -e '\#if !defined(__clang__) && (!defined(__aarch64__) || __GNUC__ >= 8)\ny\n\#endif' | $(CC$(sm)) -E -P -)
-ifeq ($(c++-supported),y)
+ifneq ($(COMPILER),clang)
 # Profiling (-pg) is disabled for C++ tests because in case it is used for
 # function tracing (CFG_FTRACE_SUPPORT=y) then the exception handling code in
 # the C++ runtime won't be able to unwind the (modified) stack.
