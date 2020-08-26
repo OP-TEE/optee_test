@@ -2123,8 +2123,7 @@ static void xtest_tee_test_6020_single(ADBG_Case_t *c, uint32_t storage_id)
 				TA_STORAGE_CMD_OPEN_ID_IN_SHM,
 				file_01, sizeof(file_01),
 				TEE_DATA_FLAG_ACCESS_WRITE |
-				TEE_DATA_FLAG_ACCESS_WRITE_META |
-				TEE_DATA_FLAG_OVERWRITE,
+				TEE_DATA_FLAG_ACCESS_WRITE_META,
 				0,
 				NULL, 0,
 				&obj,
@@ -2161,8 +2160,7 @@ static void xtest_tee_test_6020_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	res = fs_open(&sess, file_01, sizeof(file_01),
 				TEE_DATA_FLAG_ACCESS_WRITE |
-				TEE_DATA_FLAG_ACCESS_WRITE_META |
-				TEE_DATA_FLAG_OVERWRITE,
+				TEE_DATA_FLAG_ACCESS_WRITE_META,
 				&obj,
 				storage_id);
 
@@ -2190,8 +2188,7 @@ static void xtest_tee_test_6020_single(ADBG_Case_t *c, uint32_t storage_id)
 
 	res = fs_open(&sess, file_01, sizeof(file_01),
 				TEE_DATA_FLAG_ACCESS_WRITE |
-				TEE_DATA_FLAG_ACCESS_WRITE_META |
-				TEE_DATA_FLAG_OVERWRITE,
+				TEE_DATA_FLAG_ACCESS_WRITE_META,
 				&obj,
 				storage_id);
 
