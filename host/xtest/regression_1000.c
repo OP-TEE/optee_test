@@ -2316,3 +2316,36 @@ out:
 ADBG_CASE_DEFINE(regression, 1031, xtest_tee_test_1031,
 		 "Test C++ features");
 #endif
+
+static void xtest_tee_test_1032(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Context ctx = { };
+	TEEC_SharedMemory shm1 = {
+		.buffer = xtest_tee_test_1032,
+		.size = 32,
+		.flags = TEEC_MEM_INPUT,
+	};
+	static const uint8_t dummy_data[32] = { 1, 2, 3, 4, };
+	TEEC_SharedMemory shm2 = {
+		.buffer = (void *)dummy_data,
+		.size = sizeof(dummy_data),
+		.flags = TEEC_MEM_INPUT,
+	};
+
+	res = TEEC_InitializeContext(xtest_tee_name, &ctx);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = TEEC_RegisterSharedMemory(&ctx, &shm1);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		TEEC_ReleaseSharedMemory(&shm1);
+
+	res = TEEC_RegisterSharedMemory(&ctx, &shm2);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		TEEC_ReleaseSharedMemory(&shm2);
+
+	TEEC_FinalizeContext(&ctx);
+}
+ADBG_CASE_DEFINE(regression, 1032, xtest_tee_test_1032,
+		"Register read-only shared memory");
