@@ -161,27 +161,47 @@ TEE_Result ta_storage_cmd_close(uint32_t param_types, TEE_Param params[4])
 TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
+	TEE_Result res = TEE_SUCCESS;
+	void *b0 = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_VALUE_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_ReadObjectData(o, params[0].memref.buffer,
-				  params[0].memref.size, &params[1].value.b);
+	b0 = TEE_Malloc(params[0].memref.size, 0);
+	if (!b0)
+		return TEE_ERROR_OUT_OF_MEMORY;
+
+	res = TEE_ReadObjectData(o, b0, params[0].memref.size,
+				 &params[1].value.b);
+	if (!res)
+		TEE_MemMove(params[0].memref.buffer, b0, params[0].memref.size);
+	TEE_Free(b0);
+
+	return res;
 }
 
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
+	TEE_Result res = TEE_SUCCESS;
+	void *b0 = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	return TEE_WriteObjectData(o, params[0].memref.buffer,
-				   params[0].memref.size);
+	b0 = TEE_Malloc(params[0].memref.size, 0);
+	if (!b0)
+		return TEE_ERROR_OUT_OF_MEMORY;
+	TEE_MemMove(b0, params[0].memref.buffer, params[0].memref.size);
+
+	res = TEE_WriteObjectData(o, b0, params[0].memref.size);
+	TEE_Free(b0);
+
+	return res;
 }
 
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
@@ -319,7 +339,9 @@ TEE_Result ta_storage_cmd_start_enum(uint32_t param_types, TEE_Param params[4])
 TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectEnumHandle oe = VAL2HANDLE(params[0].value.a);
+	TEE_Result res = TEE_SUCCESS;
 	TEE_ObjectInfo *obj = NULL;
+	void *b2 = NULL;
 
 	if (TEE_PARAM_TYPE_GET(param_types, 0) != TEE_PARAM_TYPE_VALUE_INPUT)
 		return TEE_ERROR_BAD_PARAMETERS;
@@ -327,6 +349,9 @@ TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_BAD_PARAMETERS;
 	if (TEE_PARAM_TYPE_GET(param_types, 3) != TEE_PARAM_TYPE_NONE)
 		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (params[2].memref.size < TEE_OBJECT_ID_MAX_LEN)
+		return TEE_ERROR_SHORT_BUFFER;
 
 	if (TEE_PARAM_TYPE_GET(param_types, 1) == TEE_PARAM_TYPE_NONE)
 		obj = NULL;
@@ -337,16 +362,30 @@ TEE_Result ta_storage_cmd_next_enum(uint32_t param_types, TEE_Param params[4])
 			return TEE_ERROR_SHORT_BUFFER;
 		}
 		params[1].memref.size = sizeof(TEE_ObjectInfo);
-		obj = (TEE_ObjectInfo *)params[1].memref.buffer;
+		obj = TEE_Malloc(sizeof(TEE_ObjectInfo), 0);
+		if (!obj)
+			return TEE_ERROR_OUT_OF_MEMORY;
 	} else
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	if (params[2].memref.size < TEE_OBJECT_ID_MAX_LEN)
-		return TEE_ERROR_SHORT_BUFFER;
+	b2 = TEE_Malloc(params[2].memref.size, 0);
+	if (!b2) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
 
-	return TEE_GetNextPersistentObject(oe, obj,
-					   params[2].memref.buffer,
-					   &params[2].memref.size);
+	res = TEE_GetNextPersistentObject(oe, obj, b2, &params[2].memref.size);
+	if (res)
+		goto out;
+
+	TEE_MemMove(params[2].memref.buffer, b2, params[2].memref.size);
+	if (obj)
+		TEE_MemMove(params[1].memref.buffer, obj, sizeof(*obj));
+out:
+	TEE_Free(b2);
+	TEE_Free(obj);
+
+	return res;
 }
 
 static TEE_Result check_obj(TEE_ObjectInfo *o1, TEE_ObjectInfo *o2)
@@ -568,7 +607,7 @@ TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 					    TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
-	TEE_ObjectInfo *info = NULL;
+	TEE_ObjectInfo info = { };
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
@@ -576,8 +615,13 @@ TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	info = (TEE_ObjectInfo *)params[1].memref.buffer;
-	res = TEE_GetObjectInfo1(o, info);
+	if (params[1].memref.size < sizeof(info))
+		return TEE_ERROR_SHORT_BUFFER;
+	res = TEE_GetObjectInfo1(o, &info);
+	if (!res) {
+		params[1].memref.size = sizeof(info);
+		TEE_MemMove(params[1].memref.buffer, &info, sizeof(info));
+	}
 
 	return res;
 }
