@@ -30,18 +30,6 @@
 		"hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong" }, \
 	{ "myprop.binaryblock", USER_TA_PROP_TYPE_BINARY_BLOCK, \
 	   "SGVsbG8gd29ybGQh" }, \
-	{ "myprop.binaryblock.1byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "/w==" }, \
-	{ "myprop.binaryblock.2byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "//8=" }, \
-	{ "myprop.binaryblock.3byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "////" }, \
-	{ "myprop.binaryblock.4byte-ones", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "/////w==" }, \
-	{ "myprop.binaryblock.empty1", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "" }, \
-	{ "myprop.binaryblock.empty2", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "====" }, \
-	{ "myprop.binaryblock.empty3", USER_TA_PROP_TYPE_BINARY_BLOCK, \
-	   "-%@&" /* Only invalid code */},
+	{ "myprop.binaryblock.empty", USER_TA_PROP_TYPE_BINARY_BLOCK, \
+	   "" },
 #endif

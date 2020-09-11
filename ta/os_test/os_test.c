@@ -52,22 +52,6 @@ static TEE_Result check_returned_prop(
 	return TEE_SUCCESS;
 }
 
-static TEE_Result check_binprop_ones(size_t size, char *bbuf, size_t bblen)
-{
-	char ones[4] = { 0xff, 0xff, 0xff, 0xff };
-
-	if (size > 4 || bblen != size) {
-		EMSG("Size error (size=%zu, bblen=%zu)", size, bblen);
-		return TEE_ERROR_GENERIC;
-	}
-	if (strncmp(bbuf, ones, bblen)) {
-		EMSG("Unexpected content");
-		DHEXDUMP(bbuf, bblen);
-		return TEE_ERROR_GENERIC;
-	}
-	return TEE_SUCCESS;
-}
-
 static TEE_Result get_binblock_property(TEE_PropSetHandle h,
 					char *nbuf, char **bbuf, size_t *bblen)
 {
@@ -294,9 +278,9 @@ while (true) {
 				return res;
 
 			if (!strcmp("myprop.binaryblock", nbuf)) {
-				const char exp_bin_value[] = "Hello world!";
+				const char exp_bin_value[] = "SGVsbG8gd29ybGQh";
 
-				if (bblen != strlen(exp_bin_value) ||
+				if (bblen != sizeof(exp_bin_value) ||
 				    TEE_MemCompare(exp_bin_value, bbuf,
 						   bblen)) {
 					EMSG("Binary buffer of \"%s\" differs from \"%s\"",
@@ -304,32 +288,15 @@ while (true) {
 					EMSG("Got \"%s\"", bbuf);
 					return TEE_ERROR_GENERIC;
 				}
-			} else if (!strcmp("myprop.binaryblock.1byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(1, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.2byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(2, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.3byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(3, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.4byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(4, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.empty1", nbuf) ||
-				   !strcmp("myprop.binaryblock.empty2", nbuf) ||
-				   !strcmp("myprop.binaryblock.empty3", nbuf)) {
-				if (bblen) {
-					EMSG("Property \"%s\": %zu byte(s)",
-					     nbuf, bblen);
+			} else if (!strcmp("myprop.binaryblock.empty", nbuf)) {
+				const char exp_bin_value[] = "";
+
+				if (bblen != sizeof(exp_bin_value) ||
+				    TEE_MemCompare(exp_bin_value, bbuf,
+						   bblen)) {
+					EMSG("Binary buffer of \"%s\" differs from \"%s\"",
+					     nbuf, exp_bin_value);
+					EMSG("Got \"%s\"", bbuf);
 					return TEE_ERROR_GENERIC;
 				}
 			} else {
@@ -404,13 +371,7 @@ static TEE_Result test_properties(void)
 		{"myprop.1234", P_TYPE_IDENTITY},
 		{"myprop.hello", P_TYPE_STRING},
 		{"myprop.binaryblock", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.1byte-ones", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.2byte-ones", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.3byte-ones", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.4byte-ones", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.empty1", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.empty2", P_TYPE_BINARY_BLOCK},
-		{"myprop.binaryblock.empty3", P_TYPE_BINARY_BLOCK},
+		{"myprop.binaryblock.empty", P_TYPE_BINARY_BLOCK},
 	};
 	const size_t num_p_attrs = sizeof(p_attrs) / sizeof(p_attrs[0]);
 	size_t n = 0;
