@@ -87,7 +87,6 @@ LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/host/xtest/adbg/include\
-		$(LOCAL_PATH)/host/xtest/xml/include \
 		$(LOCAL_PATH)/ta/concurrent/include \
 		$(LOCAL_PATH)/ta/concurrent_large/include \
 		$(LOCAL_PATH)/ta/create_fail_test/include \
