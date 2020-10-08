@@ -114,7 +114,6 @@ objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
-CFLAGS += -I./xml/include
 CFLAGS += -I$(out-dir)/xtest
 
 CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
