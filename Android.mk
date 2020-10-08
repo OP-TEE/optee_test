@@ -49,7 +49,6 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_4100.c \
 	regression_5000.c \
 	regression_6000.c \
-	regression_7000.c \
 	regression_8000.c \
 	regression_8100.c \
 	sha_perf.c \
