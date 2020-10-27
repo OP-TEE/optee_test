@@ -8,7 +8,6 @@
 #define XML_TIMEARITHM_API_H_
 
 #include <assert.h>
-#include <compiler.h>
 #include <openssl/bn.h>
 #include <pthread.h>
 #include <stdio.h>

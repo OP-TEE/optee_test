@@ -9,7 +9,6 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
-#include <compiler.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -355,7 +354,7 @@ exit:
 	return res;
 }
 
-static TEEC_Result Invoke_SetInstanceData(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_SetInstanceData(ADBG_Case_t *c,
 					  TEEC_Session *sess, uint32_t cmdId,
 					  char *data)
 {
@@ -455,7 +454,7 @@ mem01_exit:
 	return res;
 }
 
-static TEEC_Result Invoke_CheckMemoryAccessRight(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_CheckMemoryAccessRight(ADBG_Case_t *c,
 						 TEEC_Session *sess,
 						 uint32_t cmdId,
 						 uint32_t memoryParamType,
@@ -502,13 +501,13 @@ mem01_exit:
 	return res;
 }
 
-static TEEC_Result Invoke_MemMove(ADBG_Case_t *c __unused, TEEC_Session *sess,
+static TEEC_Result Invoke_MemMove(ADBG_Case_t *c, TEEC_Session *sess,
 				  uint32_t cmdId, uint32_t memorySize)
 {
 	return Invoke_Simple_Function_v1(c, sess, cmdId, memorySize, 0);
 }
 
-static TEEC_Result Invoke_AllocatePropertyEnumerator(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_AllocatePropertyEnumerator(ADBG_Case_t *c,
 						     TEEC_Session *sess,
 						     uint32_t cmdId,
 						     uint32_t *enumerator)

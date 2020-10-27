@@ -8,7 +8,6 @@
 #define XML_CLIENT_API_H_
 
 #include <assert.h>
-#include <compiler.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
