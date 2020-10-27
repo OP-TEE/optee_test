@@ -8,7 +8,6 @@
 #define XML_DATASTORAGE_API_H_
 
 #include <assert.h>
-#include <compiler.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1299,7 +1298,7 @@ static TEEC_Result Invoke_AllocateTransientObject(ADBG_Case_t *c,
 					 obj_size);
 }
 
-static TEEC_Result Invoke_GetObjectInfo1(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_GetObjectInfo1(ADBG_Case_t *c,
 					 TEEC_Session *sess, uint32_t cmd,
 					 uint32_t obj_handle, uint32_t obj_info)
 {
@@ -1523,7 +1522,7 @@ static uint32_t get_attribute_and_advance(uint32_t attr_list, size_t *n)
 	return ATTRIBUTE_NONE;
 }
 
-static TEEC_Result Invoke_PopulateTransientObject(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_PopulateTransientObject(ADBG_Case_t *c,
 						  TEEC_Session *sess,
 						  uint32_t cmd,
 						  uint32_t obj_handle,
@@ -1568,9 +1567,9 @@ static TEEC_Result Invoke_CopyObjectAttributes(ADBG_Case_t *c,
 static TEEC_Result Invoke_InitValueAttribute(ADBG_Case_t *c, TEEC_Session *sess,
 					     uint32_t cmd, uint32_t attr,
 					     uint32_t attr_id, uint32_t a,
-					     uint32_t __unused a_size,
+					     uint32_t a_size,
 					     uint32_t b,
-					     uint32_t __unused b_size)
+					     uint32_t b_size)
 {
 	return Invoke_Simple_Function_v2(c, sess, cmd, attr, attr_id, a, b);
 }
@@ -1713,7 +1712,7 @@ static TEEC_Result Invoke_FreePersistentObjectEnumerator(ADBG_Case_t *c,
 }
 
 
-static TEEC_Result Invoke_GenerateKey(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_GenerateKey(ADBG_Case_t *c,
 				      TEEC_Session *sess, uint32_t cmd,
 				      uint32_t obj_handle, uint32_t key_size,
 				      uint32_t attr_list)
@@ -1736,7 +1735,7 @@ static TEEC_Result Invoke_GenerateKey(ADBG_Case_t *c __unused,
 	return TEEC_InvokeCommand(sess, cmd, &op, &org);
 }
 
-static TEEC_Result GetObjectValueAttribute_helper(ADBG_Case_t *c __unused,
+static TEEC_Result GetObjectValueAttribute_helper(ADBG_Case_t *c,
 						  TEEC_Session *sess,
 						  uint32_t n, uint32_t cmd,
 						  uint32_t obj,

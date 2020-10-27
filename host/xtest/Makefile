@@ -170,7 +170,7 @@ CFLAGS += -Wall -Wcast-align -Werror \
 	  -Wmissing-include-dirs -Wmissing-noreturn \
 	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith \
 	  -Wshadow -Wstrict-prototypes -Wswitch-default \
-	  -Wwrite-strings \
+	  -Wwrite-strings -Wno-unused-parameter \
 	  -Wno-declaration-after-statement \
 	  -Wno-unsafe-loop-optimizations \
 	  -Wno-missing-field-initializers -Wno-format-zero-length

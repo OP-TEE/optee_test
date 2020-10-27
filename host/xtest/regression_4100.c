@@ -2,7 +2,6 @@
 /* Copyright (c) 2018, Linaro Limited */
 
 #include <adbg.h>
-#include <compiler.h>
 #include <ctype.h>
 #include <inttypes.h>
 #include <stdarg.h>

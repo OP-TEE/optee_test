@@ -3,7 +3,6 @@
  * Copyright (c) 2019, Linaro Limited
  */
 
-#include <compiler.h>
 #include <dirent.h>
 #include <err.h>
 #include <errno.h>
@@ -80,7 +79,7 @@ static int close_sess(TEEC_Context *ctx, TEEC_Session *sess)
 	return EXIT_SUCCESS;
 }
 
-static int stat_pager(int argc, char *argv[] __unused)
+static int stat_pager(int argc, char *argv[])
 {
 	TEEC_Context ctx = { };
 	TEEC_Session sess = { };
@@ -113,7 +112,7 @@ static int stat_pager(int argc, char *argv[] __unused)
 	return close_sess(&ctx, &sess);
 }
 
-static int stat_alloc(int argc, char *argv[] __unused)
+static int stat_alloc(int argc, char *argv[])
 {
 	TEEC_Context ctx = { };
 	TEEC_Session sess = { };
@@ -185,7 +184,7 @@ static int stat_alloc(int argc, char *argv[] __unused)
 	return close_sess(&ctx, &sess);
 }
 
-static int stat_memleak(int argc, char *argv[] __unused)
+static int stat_memleak(int argc, char *argv[])
 {
 	TEEC_Context ctx = { };
 	TEEC_Session sess = { };

@@ -4,7 +4,6 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
-#include <compiler.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -257,8 +256,8 @@ out:
 	return ret;
 }
 #else /*!OPENSSL_FOUND*/
-static bool verify_cert(ADBG_Case_t *c __unused, const char *ca __unused,
-			const char *mid __unused, const char *cert __unused)
+static bool verify_cert(ADBG_Case_t *c, const char *ca,
+			const char *mid, const char *cert)
 {
 	Do_ADBG_Log("OpenSSL not available, skipping certificate verification");
 	return true;

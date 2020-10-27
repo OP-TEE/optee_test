@@ -8,7 +8,6 @@
 #define XML_CRYPTO_API_H_
 
 #include <assert.h>
-#include <compiler.h>
 #include <err.h>
 #include <openssl/bn.h>
 #include <openssl/dsa.h>
@@ -1055,7 +1054,7 @@ static void collapse_crypto_buffers(struct crypto_buffer *in_buffer,
 	}
 }
 
-static TEEC_Result Invoke_Crypto_AllocateOperation(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_Crypto_AllocateOperation(ADBG_Case_t *c,
 						   TEEC_Session *s,
 						   uint32_t cmd, uint32_t algo,
 						   uint32_t mode,
@@ -1089,7 +1088,7 @@ static TEEC_Result Invoke_Crypto_AllocateOperation(ADBG_Case_t *c __unused,
 	return res;
 }
 
-static TEEC_Result Invoke_Crypto_GetOperationInfo(ADBG_Case_t *c __unused,
+static TEEC_Result Invoke_Crypto_GetOperationInfo(ADBG_Case_t *c ,
 						  TEEC_Session *s,
 						  uint32_t cmd,
 						  uint32_t op_handle)
@@ -1644,8 +1643,8 @@ static TEEC_Result Invoke_Crypto_AEEncryptFinal(ADBG_Case_t *c, TEEC_Session *s,
 						uint32_t op_handle,
 						const void *part_data,
 						size_t partd_length,
-						const void *full_data __unused,
-						size_t fdata_length __unused,
+						const void *full_data,
+						size_t fdata_length,
 						uint32_t case_buf,
 						uint32_t chunk_id)
 {
@@ -1737,7 +1736,7 @@ mem01_exit:
 static TEEC_Result Invoke_Crypto_AEDecryptFinal(ADBG_Case_t *c, TEEC_Session *s,
 						uint32_t cmd,
 						uint32_t op_handle,
-						const void *part_data __unused,
+						const void *part_data,
 						size_t partd_length,
 						const void *full_data,
 						size_t fdata_length,
@@ -1984,8 +1983,8 @@ mem01_exit:
 static TEEC_Result
 Invoke_Crypto_AsymmetricSignDigest(ADBG_Case_t *c, TEEC_Session *s,
 				   uint32_t cmd, uint32_t oph,
-				   const void *full_data __unused,
-				   size_t fdata_length __unused,
+				   const void *full_data,
+				   size_t fdata_length,
 				   uint32_t case_buf)
 {
 	TEEC_Result res;
@@ -2049,7 +2048,7 @@ mem01_exit:
 static TEEC_Result
 Invoke_Crypto_AsymmetricVerifyDigest(ADBG_Case_t *c, TEEC_Session *s,
 				     uint32_t cmd, uint32_t oph,
-				     const void *full_data __unused,
+				     const void *full_data,
 				     size_t fdata_length, uint32_t buffer_case,
 				     uint32_t valid_sig)
 {
@@ -3134,7 +3133,7 @@ static bool padding_is_pkcs1_v1_5(uint32_t algo)
 	}
 }
 
-static int ossl_err_cb(const char *str, size_t len, void *u __unused)
+static int ossl_err_cb(const char *str, size_t len, void *u)
 {
 	warnx("%*s", (int)len, str);
 	return 0;
@@ -3240,8 +3239,8 @@ out:
 }
 
 static bool rsa_verify_digest(ADBG_Case_t *c, const struct rsa_key_vals *kv,
-			      uint32_t algo __unused,
-			      const void *digest, size_t digest_len __unused,
+			      uint32_t algo,
+			      const void *digest, size_t digest_len,
 			      const struct crypto_buffer *in_sdgst)
 {
 	const EVP_MD *md = algo_to_md(algo);
