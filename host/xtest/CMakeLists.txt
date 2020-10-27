@@ -86,10 +86,6 @@ if (WITH_GP_TESTS)
 	set (GP_INCLUDES PRIVATE gp/include)
 endif()
 
-set_source_files_properties(
-	regression_4100.c PROPERTIES COMPILE_FLAGS -Wno-unsafe-loop-optimizations
-)
-
 if (CFG_GP_SOCKETS)
 	list (APPEND SRC
 		regression_2000.c
