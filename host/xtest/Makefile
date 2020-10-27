@@ -167,12 +167,11 @@ CFLAGS += -Wall -Wcast-align -Werror \
 	  -Werror-implicit-function-declaration -Wextra -Wfloat-equal \
 	  -Wformat-nonliteral -Wformat-security -Wformat=2 -Winit-self \
 	  -Wmissing-declarations -Wmissing-format-attribute \
-	  -Wmissing-include-dirs -Wmissing-noreturn \
+	  -Wmissing-include-dirs \
 	  -Wmissing-prototypes -Wnested-externs -Wpointer-arith \
 	  -Wshadow -Wstrict-prototypes -Wswitch-default \
 	  -Wwrite-strings -Wno-unused-parameter \
 	  -Wno-declaration-after-statement \
-	  -Wno-unsafe-loop-optimizations \
 	  -Wno-missing-field-initializers -Wno-format-zero-length
 endif
 

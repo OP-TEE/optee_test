@@ -15,7 +15,7 @@ add_compile_options (
 	-Wfloat-equal -Wformat-nonliteral -Wformat-security
 	-Wformat=2 -Winit-self -Wmissing-declarations
 	-Wmissing-format-attribute -Wmissing-include-dirs
-	-Wmissing-noreturn -Wmissing-prototypes -Wnested-externs
+	-Wmissing-prototypes -Wnested-externs
 	-Wpointer-arith -Wshadow -Wstrict-prototypes
 	-Wswitch-default -Wunsafe-loop-optimizations
 	-Wwrite-strings -Werror -fPIC
