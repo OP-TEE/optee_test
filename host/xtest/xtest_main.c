@@ -35,6 +35,9 @@ ADBG_SUITE_DEFINE(gp);
 #ifdef CFG_PKCS11_TA
 ADBG_SUITE_DEFINE(pkcs11);
 #endif
+#ifdef CFG_APPLOGIN
+ADBG_SUITE_DEFINE(applogin);
+#endif
 ADBG_SUITE_DEFINE(regression);
 
 char *xtest_tee_name = NULL;
@@ -53,7 +56,13 @@ static const char glevel[] = "0";
 #define PKCS11_SUITE	""
 #endif
 
-static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE;
+#ifdef CFG_APPLOGIN
+#define APPLOGIN_SUITE	"+applogin"
+#else
+#define APPLOGIN_SUITE	""
+#endif
+
+static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE APPLOGIN_SUITE;
 
 void usage(char *program);
 
@@ -71,6 +80,9 @@ void usage(char *program)
 #endif
 #ifdef CFG_PKCS11_TA
 	printf(" pkcs11");
+#endif
+#ifdef CFG_APPLOGIN
+	printf(" applogin");
 #endif
 	printf("\n");
 	printf("\t                   To run several suites, use multiple names\n");
@@ -232,6 +244,10 @@ next:
 #ifdef CFG_PKCS11_TA
 		else if (!strcmp(token, "pkcs11"))
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_pkcs11);
+#endif
+#ifdef CFG_APPLOGIN
+		else if (!strcmp(token, "applogin"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_applogin);
 #endif
 		else {
 			fprintf(stderr, "Unkown test suite: %s\n", token);

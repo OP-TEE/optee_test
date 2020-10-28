@@ -69,6 +69,10 @@ ifeq ($(CFG_PKCS11_TA),y)
 srcs += pkcs11_1000.c
 endif
 
+ifeq ($(CFG_APPLOGIN),y)
+srcs += applogin_1000.c
+endif
+
 define my-embed-file
 $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
@@ -117,6 +121,10 @@ endif
 
 ifeq ($(CFG_PKCS11_TA),y)
 LOCAL_CFLAGS += -DCFG_PKCS11_TA
+endif
+
+ifeq ($(CFG_APPLOGIN),y)
+LOCAL_CFLAGS += -DCFG_APPLOGIN
 endif
 
 ## $(OPTEE_BIN) is the path of tee.bin like
