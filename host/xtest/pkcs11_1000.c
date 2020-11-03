@@ -14,6 +14,8 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
+#include <regression_4000_data.h>
+
 /*
  * Some PKCS#11 object resources used in the tests
  */
@@ -40,6 +42,24 @@ static CK_MECHANISM cktest_aes_ctr_mechanism = {
 static CK_MECHANISM cktest_aes_cts_mechanism = {
 	CKM_AES_CTS,
 	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
+};
+static CK_MECHANISM cktest_hmac_md5_mechanism = {
+	CKM_MD5_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha1_mechanism = {
+	CKM_SHA_1_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha224_mechanism = {
+	CKM_SHA224_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha256_mechanism = {
+	CKM_SHA256_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha384_mechanism = {
+	CKM_SHA384_HMAC, NULL, 0,
+};
+static CK_MECHANISM cktest_hmac_sha512_mechanism = {
+	CKM_SHA512_HMAC, NULL, 0,
 };
 
 /*
@@ -1463,3 +1483,407 @@ out:
 }
 ADBG_CASE_DEFINE(pkcs11, 1007, xtest_pkcs11_test_1007,
 		"PKCS11: Check operations release at session closure");
+
+#define CK_MAC_KEY_HMAC(_type, _key_array) \
+	{								\
+		{ CKA_SIGN, 	&(CK_BBOOL){CK_TRUE},			\
+				sizeof(CK_BBOOL) },			\
+		{ CKA_VERIFY, 	&(CK_BBOOL){CK_TRUE},			\
+				sizeof(CK_BBOOL) },			\
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+				sizeof(CK_OBJECT_CLASS) },		\
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){_type},			\
+				sizeof(CK_KEY_TYPE) },			\
+		{ CKA_VALUE,	(void *)(_key_array),			\
+				sizeof(_key_array) }			\
+	}
+
+static CK_ATTRIBUTE cktest_hmac_md5_key[] =
+	CK_MAC_KEY_HMAC(CKK_MD5_HMAC, mac_data_md5_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha1_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA_1_HMAC, mac_data_sha1_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha224_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA224_HMAC, mac_data_sha224_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha256_key1[] =
+	CK_MAC_KEY_HMAC(CKK_SHA256_HMAC, mac_data_sha256_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha256_key2[] =
+	CK_MAC_KEY_HMAC(CKK_SHA256_HMAC, mac_data_sha256_key2);
+
+static CK_ATTRIBUTE cktest_hmac_sha384_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA384_HMAC, mac_data_sha384_key1);
+
+static CK_ATTRIBUTE cktest_hmac_sha512_key[] =
+	CK_MAC_KEY_HMAC(CKK_SHA512_HMAC, mac_data_sha512_key1);
+
+struct mac_test {
+	CK_ATTRIBUTE_PTR attr_key;
+	CK_ULONG attr_count;
+	CK_MECHANISM_PTR mechanism;
+	size_t in_incr;
+	const uint8_t *in;
+	size_t in_len;
+	const uint8_t *out;
+	size_t out_len;
+	bool multiple_incr;
+};
+
+#define CKTEST_MAC_TEST(key, mecha, input_incr, input, output, incr) {	\
+		.attr_key = key,		\
+		.attr_count = ARRAY_SIZE(key),	\
+		.mechanism = mecha,		\
+		.in_incr = input_incr,		\
+		.in = input,				\
+		.in_len = ARRAY_SIZE(input),		\
+		.out = output,				\
+		.out_len = ARRAY_SIZE(output),		\
+		.multiple_incr = incr			\
+	}
+
+static const struct mac_test cktest_mac_cases[] = {
+	CKTEST_MAC_TEST(cktest_hmac_md5_key, &cktest_hmac_md5_mechanism,
+			4, mac_data_md5_in1, mac_data_md5_out1, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha1_key, &cktest_hmac_sha1_mechanism,
+			5, mac_data_sha1_in1, mac_data_sha1_out1, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha224_key, &cktest_hmac_sha224_mechanism,
+			8, mac_data_sha224_in1, mac_data_sha224_out1, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha256_key1, &cktest_hmac_sha256_mechanism,
+			1, mac_data_sha256_in1, mac_data_sha256_out1, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha256_key2, &cktest_hmac_sha256_mechanism,
+			7, mac_data_sha256_in2, mac_data_sha256_out2, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha384_key, &cktest_hmac_sha384_mechanism,
+			11, mac_data_sha384_in1, mac_data_sha384_out1, false),
+	CKTEST_MAC_TEST(cktest_hmac_sha512_key, &cktest_hmac_sha512_mechanism,
+			13, mac_data_sha512_in1, mac_data_sha512_out1, false),
+};
+
+static void xtest_pkcs11_test_1008(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
+	uint8_t out[512] = { 0 };
+	CK_ULONG out_size = 0;
+	struct mac_test const *test = NULL;
+	size_t n = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_close_lib;
+
+	for (n = 0; n < ARRAY_SIZE(cktest_mac_cases); n++) {
+
+		test = &cktest_mac_cases[n];
+		Do_ADBG_BeginSubCase(c, "Sign case %zu algo (%s)", n,
+				     ckm2str(test->mechanism->mechanism));
+
+		rv = C_CreateObject(session, test->attr_key, test->attr_count,
+				    &key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err;
+
+		/* Test signature in 1 step */
+		if (test->in != NULL) {
+			rv = C_SignInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_SignUpdate(session,
+					  (void *)test->in, test->in_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Test too short buffer case */
+			out_size = 1;
+			rv = C_SignFinal(session, out, &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+				goto err_destr_obj;
+
+			/*
+			 * Test NULL buffer case with size as 0
+			 * to get the out_size
+			 */
+			out_size = 0;
+			rv = C_SignFinal(session, NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Get to full output */
+			memset(out, 0, out_size);
+			rv = C_SignFinal(session, out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			(void)ADBG_EXPECT_BUFFER(c, test->out,
+						 test->out_len,
+						 out, out_size);
+		}
+
+		/* Test 2 step update signature */
+		rv = C_SignInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		if (test->in != NULL) {
+			rv = C_SignUpdate(session,
+					  (void *)test->in, test->in_incr);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_SignUpdate(session,
+					  (void *)(test->in + test->in_incr),
+					  test->in_len - test->in_incr);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+		}
+
+		out_size = sizeof(out);
+		memset(out, 0, sizeof(out));
+
+		rv = C_SignFinal(session, out, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		(void)ADBG_EXPECT_BUFFER(c, test->out,
+					 test->out_len, out, out_size);
+
+		/* Test 3 signature in one shot */
+		if (test->in != NULL) {
+			rv = C_SignInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Test too short buffer case */
+			out_size = 1;
+			rv = C_Sign(session,(void *)test->in, test->in_len,
+				    out, &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+				goto err_destr_obj;
+
+			/*
+			 * Test NULL buffer case with size as 0
+			 * to get the out_size
+			 */
+			out_size = 0;
+			rv = C_Sign(session, (void *)test->in, test->in_len,
+				    NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Get to full output */
+			memset(out, 0, out_size);
+			rv = C_Sign(session,(void *)test->in, test->in_len,
+				    out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			(void)ADBG_EXPECT_BUFFER(c, test->out,
+						 test->out_len,
+						 out, out_size);
+		}
+
+		rv = C_DestroyObject(session, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+	goto out;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+err:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+err_close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1008, xtest_pkcs11_test_1008,
+		 "PKCS11: Check Compliance of C_Sign - HMAC algorithms");
+
+static void xtest_pkcs11_test_1009(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
+	struct mac_test const *test = NULL;
+	size_t n = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_close_lib;
+
+	for (n = 0; n < ARRAY_SIZE(cktest_mac_cases); n++) {
+
+		test = &cktest_mac_cases[n];
+		Do_ADBG_BeginSubCase(c, "Verify case %zu algo (%s)", n,
+				     ckm2str(test->mechanism->mechanism));
+
+		rv = C_CreateObject(session, test->attr_key, test->attr_count,
+				    &key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err;
+
+		/* Test Verification in 1 step */
+		if (test->in != NULL) {
+			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_VerifyUpdate(session, (void *)test->in,
+					    test->in_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_VerifyFinal(session,
+					   (void *)test->out, test->out_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+		}
+
+		/* Test 2 step update verification*/
+		rv = C_VerifyInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		if (test->in != NULL) {
+			rv = C_VerifyUpdate(session,
+					    (void *)test->in, test->in_incr);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_VerifyUpdate(session,
+					    (void *)(test->in + test->in_incr),
+					    test->in_len - test->in_incr);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+		}
+
+		rv = C_VerifyFinal(session, (void *)test->out, test->out_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Error as Operation has already completed */
+		rv = C_Verify(session,
+			      (void *)test->in, test->in_len,
+			      (void *)test->out, test->out_len);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED,
+					   rv))
+			goto err_destr_obj;
+
+		/* Test 3 verification in one shot */
+		if (test->in != NULL) {
+			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_Verify(session,
+				      (void *)test->in, test->in_len,
+				      (void *)test->out, test->out_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Try calling Verify again */
+			rv = C_Verify(session,
+				      (void *)test->in, test->in_len,
+				      (void *)test->out, test->out_len);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						  CKR_OPERATION_NOT_INITIALIZED,
+						  rv))
+				goto err_destr_obj;
+		}
+
+		/*
+		 * Test 4 verification 
+		 * Error - Signature Length Range with C_VerifyFinal
+		 */
+		if (test->in != NULL) {
+			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_VerifyUpdate(session, (void *)test->in,
+					    test->in_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_VerifyFinal(session, (void *)test->out, 3);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_LEN_RANGE,
+						   rv))
+				goto err_destr_obj;
+		}
+
+		/*
+		 * Test 5 verification
+		 * Error - Signature Length Range with C_Verify
+		 */
+		if (test->in != NULL) {
+			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_Verify(session,
+				      (void *)test->in, test->in_len,
+				      (void *)test->out, 0);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_LEN_RANGE,
+						   rv))
+				goto err_destr_obj;
+		}
+
+		/* Test 6 verification - Invalid Operation sequence */
+		if (test->in != NULL) {
+			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			rv = C_Verify(session,
+				      (void *)test->in, test->in_len,
+				      (void *)test->out, test->out_len);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Init session has already terminated with C_Verify */
+			rv = C_VerifyUpdate(session, (void *)test->in,
+					    test->in_len);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						  CKR_OPERATION_NOT_INITIALIZED,
+						  rv))
+				goto err_destr_obj;
+		}
+
+		rv = C_DestroyObject(session, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+	goto out;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+err:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+err_close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1009, xtest_pkcs11_test_1009,
+		 "PKCS11: Check Compliance of C_Verify - HMAC Algorithms");
