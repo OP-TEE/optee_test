@@ -54,9 +54,16 @@ typedef struct adbg_suite_def {
 			.Title_p = Title, \
 			.Run_fp = Run, \
 		}; \
+		struct adbg_case_def_head *ch = &(ADBG_Suite_ ## Suite).cases; \
+		struct adbg_case_def *cd = NULL; \
 		\
-		TAILQ_INSERT_TAIL(&(ADBG_Suite_ ## Suite).cases, \
-				 &case_def, link); \
+		TAILQ_FOREACH(cd, ch, link) \
+			if (strcmp(case_def.TestID_p, cd->TestID_p) < 0) \
+				break; \
+		if (cd) \
+			TAILQ_INSERT_BEFORE(cd, &case_def, link); \
+		else \
+			TAILQ_INSERT_TAIL(ch, &case_def, link); \
 	}
 
 /*
