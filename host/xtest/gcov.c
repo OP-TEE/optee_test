@@ -1,15 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright 2020 NXP
  */
 #include <string.h>
 
 #include <adbg.h>
+#include <pta_gcov.h>
+#include <ta_gcov.h>
+#include <tee_client_api.h>
 #include <xtest_helpers.h>
 #include <xtest_test.h>
-
-#include <tee_client_api.h>
-#include <ta_gcov.h>
-#include <pta_gcov.h>
 
 struct gcov_dump_conf {
 	const char *desc;
@@ -23,7 +23,7 @@ static void do_get_version_command(ADBG_Case_t *c, TEEC_UUID *uuid,
 {
 	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, uuid, NULL, &ret_orig)))
@@ -58,7 +58,7 @@ static void do_dump_command(ADBG_Case_t *c, const struct gcov_dump_conf *conf)
 {
 	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	ADBG_EXPECT_NOT_NULL(c, conf);
 
@@ -93,7 +93,7 @@ static void do_core_reset_command(ADBG_Case_t *c)
 	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_UUID pta_uuid = PTA_GCOV_UUID;
-	uint32_t ret_orig;
+	uint32_t ret_orig = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &pta_uuid, NULL, &ret_orig)))
@@ -132,7 +132,7 @@ ADBG_CASE_DEFINE_FRONT(regression, 31001, xtest_tee_test_31001,
 
 static void xtest_tee_test_31005(ADBG_Case_t *c)
 {
-	long unsigned int i;
+	long unsigned int i = 0;
 	TEEC_UUID ta_uuid = TA_GCOV_UUID;
 	TEEC_UUID pta_uuid = PTA_GCOV_UUID;
 

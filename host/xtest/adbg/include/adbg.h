@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright 2020 NXP
  */
 
 #ifndef ADBG_H

@@ -1,15 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright 2020 NXP
  */
 
 #define STR_TRACE_USER_TA "GCOV"
 
-#include <tee_internal_api.h>
-#include <tee_internal_api_extensions.h>
-
 #include <gcov.h>
 #include <pta_gcov.h>
 #include "ta_gcov.h"
+#include <tee_internal_api.h>
+#include <tee_internal_api_extensions.h>
 
 TEE_Result TA_CreateEntryPoint(void)
 {
@@ -69,10 +69,10 @@ static TEE_Result dump_core(uint32_t param_types, TEE_Param params[4])
 						   TEE_PARAM_TYPE_NONE);
 	uint32_t cRT = TEE_TIMEOUT_INFINITE;
 	TEE_UUID uuid = (TEE_UUID)PTA_GCOV_UUID;
-	TEE_TASessionHandle sess;
-	uint32_t err_origin;
+	TEE_TASessionHandle sess = { 0 };
+	uint32_t err_origin = 0;
 	uint32_t int_ptypes = 0;
-	TEE_Param int_params[TEE_NUM_PARAMS] = {0};
+	TEE_Param int_params[TEE_NUM_PARAMS] = { 0 };
 
 	if (param_types != exp_param_types) {
 		EMSG("Wrong param_types, exp %x, got %x", exp_param_types,
@@ -102,9 +102,9 @@ static TEE_Result dump_core(uint32_t param_types, TEE_Param params[4])
 		EMSG("TEE_InvokeTACommand failed with code 0x%x origin 0x%x",
 		     res, err_origin);
 
-exit:
 	TEE_CloseTASession(sess);
 
+exit:
 	return res;
 }
 

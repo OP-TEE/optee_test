@@ -10,6 +10,7 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE create_fail_test/include
 	INTERFACE crypt/include
 	INTERFACE enc_fs/include
+	INTERFACE gcov/include
 	INTERFACE os_test/include
 	INTERFACE rpc_test/include
 	INTERFACE sdp_basic/include
@@ -20,5 +21,4 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE socket/include
 	INTERFACE storage_benchmark/include
 	INTERFACE tpm_log_test/include
-	INTERFACE gcov/include
 )
