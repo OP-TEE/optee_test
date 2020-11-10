@@ -1,5 +1,6 @@
 cppflags-$(CFG_TA_FLOAT_SUPPORT) += -DCFG_TA_FLOAT_SUPPORT=1
 cppflags-$(WITH_TLS_TESTS) += -DWITH_TLS_TESTS=1
+cppflags-$(WITH_CXX_TESTS) += -DWITH_CXX_TESTS=1
 
 global-incdirs-y += include
 global-incdirs-y += ../crypt/include
@@ -9,7 +10,7 @@ srcs-y += init.c
 srcs-y += os_test.c
 srcs-y += ta_entry.c
 srcs-$(CFG_TA_FLOAT_SUPPORT) += test_float_subj.c
-ifneq ($(COMPILER),clang)
+ifeq ($(WITH_CXX_TESTS),y)
 # Profiling (-pg) is disabled for C++ tests because in case it is used for
 # function tracing (CFG_FTRACE_SUPPORT=y) then the exception handling code in
 # the C++ runtime won't be able to unwind the (modified) stack.
