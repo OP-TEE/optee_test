@@ -11,8 +11,10 @@
 int os_test_shlib_add(int a, int b);
 void os_test_shlib_panic(void);
 
+#if defined(WITH_TLS_TESTS)
 extern __thread int os_test_shlib_tls_a;
 extern __thread int os_test_shlib_tls_b;
+#endif
 
 TEE_Result os_test_shlib_cxx_ctor(void);
 
