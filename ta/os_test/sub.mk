@@ -1,4 +1,5 @@
 cppflags-$(CFG_TA_FLOAT_SUPPORT) += -DCFG_TA_FLOAT_SUPPORT=1
+cppflags-$(WITH_TLS_TESTS) += -DWITH_TLS_TESTS=1
 
 global-incdirs-y += include
 global-incdirs-y += ../crypt/include
