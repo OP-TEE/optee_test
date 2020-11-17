@@ -4500,7 +4500,7 @@ static bool test_keygen_attributes(ADBG_Case_t *c, TEEC_Session *s,
 				return false;
 
 			if (attrs[m].keysize_check)
-				ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+				ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, <=,
 							     key_size / 8);
 
 			if (out_size > 0) {
