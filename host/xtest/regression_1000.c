@@ -749,19 +749,15 @@ static void xtest_tee_test_1008(ADBG_Case_t *c)
 	{
 		size_t n = 0;
 
-		(void)ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_GENERIC,
-			xtest_teec_open_session(&session_crypt,
-						&create_fail_test_ta_uuid, NULL,
-						&ret_orig));
-		/*
-		 * Run this several times to see that there's no memory leakage.
-		 */
 		for (n = 0; n < 100; n++) {
 			Do_ADBG_Log("n = %zu", n);
 			(void)ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_GENERIC,
 				xtest_teec_open_session(&session_crypt,
 					&create_fail_test_ta_uuid,
 					NULL, &ret_orig));
+			/* level > 0 may be used to detect/debug memory leaks */
+			if (!level)
+				break;
 		}
 	}
 	Do_ADBG_EndSubCase(c, "Create session fail");
