@@ -259,6 +259,10 @@ out:
 static bool verify_cert(ADBG_Case_t *c, const char *ca,
 			const char *mid, const char *cert)
 {
+	UNUSED(c);
+	UNUSED(ca);
+	UNUSED(mid);
+	UNUSED(cert);
 	Do_ADBG_Log("OpenSSL not available, skipping certificate verification");
 	return true;
 }

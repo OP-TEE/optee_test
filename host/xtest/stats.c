@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <tee_client_api.h>
 #include <unistd.h>
+#include "xtest_helpers.h"
 #include "xtest_test.h"
 #include "stats.h"
 
@@ -87,6 +88,7 @@ static int stat_pager(int argc, char *argv[])
 	uint32_t eo = 0;
 	TEEC_Operation op = { };
 
+	UNUSED(argv);
 	if (argc != 1)
 		return usage();
 
@@ -123,6 +125,7 @@ static int stat_alloc(int argc, char *argv[])
 	size_t stats_size_bytes = 0;
 	size_t n = 0;
 
+	UNUSED(argv);
 	if (argc != 1)
 		return usage();
 
@@ -191,6 +194,7 @@ static int stat_memleak(int argc, char *argv[])
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t eo = 0;
 
+	UNUSED(argv);
 	if (argc != 1)
 		return usage();
 
