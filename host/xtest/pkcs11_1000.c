@@ -1597,6 +1597,12 @@ static void xtest_pkcs11_test_1008(ADBG_Case_t *c)
 			if (!ADBG_EXPECT_CK_OK(c, rv))
 				goto err_destr_obj;
 
+			/* Pass input buffer of size 0 */
+			rv = C_SignUpdate(session,
+					  (void *)test->in, 0);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
 			rv = C_SignUpdate(session,
 					  (void *)test->in, test->in_len);
 			if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -1743,6 +1749,11 @@ static void xtest_pkcs11_test_1009(ADBG_Case_t *c)
 		/* Test Verification in 1 step */
 		if (test->in != NULL) {
 			rv = C_VerifyInit(session, test->mechanism, key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Pass input buffer with size 0 - No affect */
+			rv = C_VerifyUpdate(session, (void *)test->in, 0);
 			if (!ADBG_EXPECT_CK_OK(c, rv))
 				goto err_destr_obj;
 
