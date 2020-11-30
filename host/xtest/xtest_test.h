@@ -20,9 +20,6 @@ ADBG_SUITE_DECLARE(gp);
 #ifdef CFG_PKCS11_TA
 ADBG_SUITE_DECLARE(pkcs11);
 #endif
-#ifdef CFG_APPLOGIN
-ADBG_SUITE_DECLARE(applogin);
-#endif
 ADBG_SUITE_DECLARE(regression);
 
 /* TEEC_Result */

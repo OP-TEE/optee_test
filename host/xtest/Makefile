@@ -100,12 +100,6 @@ CFLAGS += -I$(OPTEE_PKCS11_TA_HEADERS)
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lckteec
 endif
 
-ifeq ($(CFG_APPLOGIN),y)
-srcs += applogin_1000.c
-
-CFLAGS += -DCFG_APPLOGIN
-endif
-
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./

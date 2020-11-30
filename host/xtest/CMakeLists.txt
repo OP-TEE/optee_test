@@ -106,11 +106,6 @@ if (CFG_PKCS11_TA)
 	list (APPEND SRC pkcs11_1000.c)
 endif()
 
-if (CFG_APPLOGIN)
-	list (APPEND SRC applogin_1000.c)
-	add_compile_options(-DCFG_APPLOGIN=y)
-endif()
-
 ################################################################################
 # Built binary
 ################################################################################
