@@ -2382,7 +2382,7 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 		return;
 	}
 
-	snprintf(uuid_name, TEE_UUID_NS_NAME_SIZE + 4, "app=%s", app);
+	snprintf(uuid_name, sizeof(uuid_name), "app=%s", app);
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
@@ -2451,7 +2451,7 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 		return;
 	}
 
-	snprintf(uuid_name, TEE_UUID_NS_NAME_SIZE + 16, "uid=%x:app=%s", geteuid(), app);
+	snprintf(uuid_name, sizeof(uuid_name), "uid=%x:app=%s", geteuid(), app);
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
@@ -2523,7 +2523,7 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 		return;
 	}
 
-	snprintf(uuid_name, TEE_UUID_NS_NAME_SIZE + 16, "gid=%x:app=%s", group, app);
+	snprintf(uuid_name, sizeof(uuid_name), "gid=%x:app=%s", group, app);
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
