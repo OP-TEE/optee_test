@@ -2552,6 +2552,7 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 #else /*!OPENSSL_FOUND*/
+	UNUSED(c);
 	/* xtest_uuid_v5() depends on OpenSSL */
 	Do_ADBG_Log("OpenSSL not available, skipping test 1035");
 #endif
