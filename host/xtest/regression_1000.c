@@ -2386,6 +2386,11 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 	len = snprintf(uuid_name, sizeof(uuid_name), "app=%s", app);
 	if (!ADBG_EXPECT_TRUE(c, len > 0))
 		return;
+
+	/*
+	 * The kernel truncates the 'name' string to calculate the client UUID
+	 * to PATH_MAX. Truncate it at the same place as the kernel.
+	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
@@ -2458,6 +2463,11 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 	len = snprintf(uuid_name, sizeof(uuid_name), "uid=%x:app=%s", geteuid(), app);
 	if (!ADBG_EXPECT_TRUE(c, len > 0))
 		return;
+
+	/*
+	 * The kernel truncates the 'name' string to calculate the client UUID
+	 * to PATH_MAX. Truncate it at the same place as the kernel.
+	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
@@ -2533,6 +2543,11 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 	len = snprintf(uuid_name, sizeof(uuid_name), "gid=%x:app=%s", group, app);
 	if (!ADBG_EXPECT_TRUE(c, len > 0))
 		return;
+
+	/*
+	 * The kernel truncates the 'name' string to calculate the client UUID
+	 * to PATH_MAX. Truncate it at the same place as the kernel.
+	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
 	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
