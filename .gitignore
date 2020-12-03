@@ -3,6 +3,8 @@ GPATH
 GRTAGS
 GSYMS
 GTAGS
+tags
+TAGS
 out/*
 ta/GP_*
 host/xtest/global_platform/
