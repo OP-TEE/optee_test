@@ -2370,7 +2370,7 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 	TEEC_UUID uuid_ns = { };
 	char uuid_name[TEE_UUID_NS_NAME_SIZE + 4] = { };
 	char app[PATH_MAX] = { };
-	int len;
+	int len = 0;
 
 	res = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
@@ -2447,7 +2447,7 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 	TEEC_UUID uuid_ns = { };
 	char uuid_name[TEE_UUID_NS_NAME_SIZE + 16] = { };
 	char app[PATH_MAX] = { };
-	int len;
+	int len = 0;
 
 	res = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
@@ -2525,7 +2525,7 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 	char uuid_name[TEE_UUID_NS_NAME_SIZE + 16] = { };
 	char app[PATH_MAX] = { };
 	uint32_t group = 0;
-	int len;
+	int len = 0;
 
 	group = getegid();
 
