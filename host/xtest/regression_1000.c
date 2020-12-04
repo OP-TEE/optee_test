@@ -2361,7 +2361,7 @@ ADBG_CASE_DEFINE(regression, 1032, xtest_tee_test_1032,
 static void xtest_tee_test_1033(ADBG_Case_t *c)
 {
 #ifdef OPENSSL_FOUND
-	TEEC_Result result = TEEC_ERROR_GENERIC;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_orig = 0;
 	TEEC_Session session = { };
 	uint32_t login = UINT32_MAX;
@@ -2372,9 +2372,9 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 	char app[PATH_MAX] = { };
 	int len;
 
-	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
+	res = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
 	if (readlink("/proc/self/exe", app, PATH_MAX) < 0) {
@@ -2393,21 +2393,21 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
-	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
+	res = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
 			       strlen(uuid_name));
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
+	res = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
 				  TEEC_LOGIN_APPLICATION, NULL, NULL,
 				  &ret_orig);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
+	res = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out;
 
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, login, ==, TEEC_LOGIN_APPLICATION);
@@ -2438,7 +2438,7 @@ ADBG_CASE_DEFINE(regression, 1033, xtest_tee_test_1033,
 static void xtest_tee_test_1034(ADBG_Case_t *c)
 {
 #ifdef OPENSSL_FOUND
-	TEEC_Result result = TEEC_ERROR_GENERIC;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_orig = 0;
 	TEEC_Session session = { };
 	uint32_t login = UINT32_MAX;
@@ -2449,9 +2449,9 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 	char app[PATH_MAX] = { };
 	int len;
 
-	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
+	res = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
 	if (readlink("/proc/self/exe", app, PATH_MAX) < 0) {
@@ -2470,21 +2470,21 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
-	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
+	res = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
 			       strlen(uuid_name));
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
+	res = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
 				  TEEC_LOGIN_USER_APPLICATION, NULL, NULL,
 				  &ret_orig);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
+	res = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out;
 
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, login, ==, TEEC_LOGIN_USER_APPLICATION);
@@ -2515,7 +2515,7 @@ ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 static void xtest_tee_test_1035(ADBG_Case_t *c)
 {
 #ifdef OPENSSL_FOUND
-	TEEC_Result result = TEEC_ERROR_GENERIC;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_orig = 0;
 	TEEC_Session session = { };
 	uint32_t login = UINT32_MAX;
@@ -2529,9 +2529,9 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 
 	group = getegid();
 
-	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
+	res = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
 	if (readlink("/proc/self/exe", app, PATH_MAX) < 0) {
@@ -2550,21 +2550,21 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 	 */
 	uuid_name[TEE_UUID_NS_NAME_SIZE] = 0;
 
-	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
+	res = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
 			       strlen(uuid_name));
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
+	res = TEEC_OpenSession(&xtest_teec_ctx, &session, &os_test_ta_uuid,
 				  TEEC_LOGIN_GROUP_APPLICATION, &group, NULL,
 				  &ret_orig);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	result = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
+	res = ta_os_test_cmd_client_identity(&session, &login, &client_uuid);
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out;
 
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, login, ==,
