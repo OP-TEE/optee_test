@@ -61,6 +61,12 @@ static CK_MECHANISM cktest_hmac_sha384_mechanism = {
 static CK_MECHANISM cktest_hmac_sha512_mechanism = {
 	CKM_SHA512_HMAC, NULL, 0,
 };
+static CK_MECHANISM cktest_gensecret_keygen_mechanism = {
+	CKM_GENERIC_SECRET_KEY_GEN, NULL, 0,
+};
+static CK_MECHANISM cktest_aes_keygen_mechanism = {
+	CKM_AES_KEY_GEN, NULL, 0,
+};
 
 /*
  * Util to find a slot on which to open a session
@@ -1887,3 +1893,213 @@ err_close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1009, xtest_pkcs11_test_1009,
 		 "PKCS11: Check Compliance of C_Verify - HMAC Algorithms");
+
+/* Bad key type */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_error1[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+};
+
+/* Missing VALUE_LEN */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_error2[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
+						sizeof(CK_KEY_TYPE) },
+};
+
+/* Bad object class */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_error3[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_DATA}, sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
+						sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+};
+
+/* Invalid template with CKA_LOCAL */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_error4[] = {
+	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_LOCAL, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+};
+
+/* Valid template to generate a generic secret */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_valid1[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
+						sizeof(CK_KEY_TYPE) },
+	{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+};
+
+/* Valid template to generate a generic secret with only VALUE_LEN */
+static CK_ATTRIBUTE cktest_generate_gensecret_object_valid2[] = {
+	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+};
+
+
+/* Valid template to generate an all AES purpose key */
+static CK_ATTRIBUTE cktest_generate_aes_object[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+};
+
+static void xtest_pkcs11_test_1010(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
+	struct mac_test const *test = &cktest_mac_cases[0];
+	uint8_t out[512] = { 0 };
+	CK_ULONG out_len = 512;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/*
+	 * Generate Generic Secret key using invalid templates
+	 */
+	Do_ADBG_BeginSubCase(c, "Generate Secret Key with Invalid Templates");
+
+	/* NULL Template with !null template length */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism, NULL,
+			   3, &key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto err;
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_error1,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_error1),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCONSISTENT, rv))
+		goto err;
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_error2,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_error2),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCOMPLETE, rv))
+		goto err;
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_error3,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_error3),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCONSISTENT, rv))
+		goto err;
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_error4,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_error4),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCONSISTENT, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Generate a Generic Secret object.
+	 * Try to encrypt with, it should fail...
+	 */
+	Do_ADBG_BeginSubCase(c, "Generate Generic Secret Key - Try Encrypting");
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_valid1,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_valid1),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	rv = C_EncryptInit(session, &cktest_aes_cbc_mechanism, key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_FUNCTION_NOT_PERMITTED, rv))
+		goto err_destr_obj;
+
+	rv = C_DestroyObject(session, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Generate a Generic Secret object.
+	 * Try to sign with it, it should pass...
+	 */
+	Do_ADBG_BeginSubCase(c, "Generate Generic Secret Key - Try Signing");
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_valid2,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_valid2),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	rv = C_SignInit(session, test->mechanism, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_Sign(session, (void *)test->in, test->in_len,
+		      (void *)out, &out_len);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_DestroyObject(session, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Generate a 128 bit AES Secret Key.
+	 * Try to encrypt with, it should pass...
+	 */
+	Do_ADBG_BeginSubCase(c, "Generate AES Key - Try Encrypting");
+
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   cktest_generate_aes_object,
+			   ARRAY_SIZE(cktest_generate_aes_object),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	rv = C_EncryptInit(session, &cktest_aes_cbc_mechanism, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_EncryptFinal(session, NULL, NULL);
+	/* Only check that the operation is no more active */
+	if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
+		goto err;
+
+	rv = C_DestroyObject(session, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	goto out;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+err:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1010, xtest_pkcs11_test_1010,
+		 "PKCS11: Key Generation");
