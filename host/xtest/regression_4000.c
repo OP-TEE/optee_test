@@ -2070,11 +2070,13 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
 	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_OperationHandle op2 = TEE_HANDLE_NULL;
 	TEE_ObjectHandle key1_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle key2_handle = TEE_HANDLE_NULL;
 	uint8_t out[2048] = { };
 	size_t out_size = 0;
 	size_t out_offs = 0;
+	size_t out_offs2 = 0;
 	uint32_t ret_orig = 0;
 	size_t n = 0;
 
@@ -2122,6 +2124,12 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_operation(c, &session, &op,
+				ciph_cases[n].algo, ciph_cases[n].mode,
+				op_key_size)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_operation(c, &session, &op2,
 				ciph_cases[n].algo, ciph_cases[n].mode,
 				op_key_size)))
 			goto out;
@@ -2195,8 +2203,13 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 			ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
 				ciph_cases[n].in_incr);
 
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_copy_operation(c, &session, op2, op)))
+			goto out;
+
 		out_offs += out_size;
 		out_size = sizeof(out) - out_offs;
+		out_offs2 = out_offs;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_cipher_do_final(c, &session, op,
@@ -2211,8 +2224,28 @@ static void xtest_tee_test_4003(ADBG_Case_t *c)
 		(void)ADBG_EXPECT_BUFFER(c, ciph_cases[n].out,
 					 ciph_cases[n].out_len, out, out_offs);
 
+		/* test on the copied op2 */
+		out_size = sizeof(out) - out_offs2;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_cipher_do_final(c, &session, op2,
+				ciph_cases[n].in + ciph_cases[n].in_incr,
+				ciph_cases[n].in_len - ciph_cases[n].in_incr,
+				out + out_offs2,
+				&out_size)))
+			goto out;
+
+		out_offs2 += out_size;
+
+		ADBG_EXPECT_BUFFER(c, ciph_cases[n].out, ciph_cases[n].out_len,
+				   out, out_offs2);
+
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_operation(c, &session, op2)))
 			goto out;
 
 		Do_ADBG_EndSubCase(c, NULL);
