@@ -719,6 +719,38 @@ static TEE_Result test_float(void)
 }
 #endif /*CFG_TA_FLOAT_SUPPORT*/
 
+#if defined(CFG_TA_BGET_TEST)
+/* From libutils */
+int bget_main_test(void *(*malloc_func)(size_t), void (*free_func)(void *));
+
+static void *malloc_wrapper(size_t size)
+{
+	return tee_map_zi(size, 0);
+}
+
+static void free_wrapper(void *ptr __unused)
+{
+}
+
+static TEE_Result test_bget(void)
+{
+	DMSG("Testing bget");
+	if (bget_main_test(malloc_wrapper, free_wrapper)) {
+		EMSG("bget_main_test failed");
+		return TEE_ERROR_GENERIC;
+	}
+	DMSG("Bget OK");
+	return TEE_SUCCESS;
+}
+#else
+static TEE_Result test_bget(void)
+{
+	IMSG("Bget test disabled");
+	return TEE_SUCCESS;
+}
+#endif
+
+
 static __noinline __noreturn void call_longjmp(jmp_buf env)
 {
 	DMSG("Calling longjmp");
@@ -766,6 +798,10 @@ TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 		return res;
 
 	res = test_setjmp();
+	if (res != TEE_SUCCESS)
+		return res;
+
+	res = test_bget();
 	if (res != TEE_SUCCESS)
 		return res;
 
