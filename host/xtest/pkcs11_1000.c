@@ -363,7 +363,7 @@ static void xtest_pkcs11_test_1002(ADBG_Case_t *c)
 	session_flags = CKF_RW_SESSION;
 
 	rv = C_OpenSession(slot, session_flags, NULL, 0, &session[0]);
-	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_PARALLEL_NOT_SUPPORTED, rv))
 		goto bail;
 
 	session_flags = CKF_SERIAL_SESSION;
