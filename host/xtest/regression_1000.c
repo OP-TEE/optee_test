@@ -1238,16 +1238,16 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP TA");
 
 	test = TEST_TA_TO_PTA;
-	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a SDP pTA");
+	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a test pTA (invoke_tests.pta)");
 	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
-	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP pTA");
+	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a test pTA (invoke_tests.pta)");
 
 	test = TEST_NS_TO_PTA;
-	Do_ADBG_BeginSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
+	Do_ADBG_BeginSubCase(c, "SDP: NSec CA invokes a test pTA (invoke_tests.pta) (should fail)");
 	ret = sdp_basic_test(test, size, loop, ion_heap, rnd_offset, 0);
 	ADBG_EXPECT(c, 1, ret);
-	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes SDP pTA (should fail)");
+	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes a test pTA (invoke_tests.pta) (should fail)");
 
 	Do_ADBG_BeginSubCase(c, "SDP: Invoke TA with out of bounds SDP memref");
 	ret = sdp_out_of_bounds_memref_test(size, ion_heap, 0);
