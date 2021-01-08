@@ -76,18 +76,31 @@ static CK_RV close_lib(void)
 	return C_Finalize(0);
 }
 
+/*
+ * init_lib_and_find_token_slot() targets a PKCS11 slot with
+ * the following description label padded with space characters.
+ */
+#define DEBUG_SLOT_DESCRIPTION		"OP-TEE PKCS11 TA debug slot"
+
 static CK_RV init_lib_and_find_token_slot(CK_SLOT_ID *slot)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
-	CK_SLOT_ID_PTR slots = NULL;
+	CK_SLOT_ID_PTR slot_ids = NULL;
 	CK_ULONG count = 0;
+	CK_SLOT_INFO slot_info = { 0 };
+	uint8_t debug_slot_descr[sizeof(slot_info.slotDescription)] = { 0 };
+	char string[] = DEBUG_SLOT_DESCRIPTION;
+	size_t n = 0;
+
+	memset(debug_slot_descr, ' ', sizeof(debug_slot_descr));
+	memcpy(debug_slot_descr, string, strlen(string));
 
 	rv = C_Initialize(0);
 	if (rv)
 		return rv;
 
 	rv = C_GetSlotList(CK_TRUE, NULL, &count);
-	if (rv != CKR_OK)
+	if (rv)
 		goto bail;
 
 	if (count < 1) {
@@ -95,21 +108,36 @@ static CK_RV init_lib_and_find_token_slot(CK_SLOT_ID *slot)
 		goto bail;
 	}
 
-	slots = malloc(count * sizeof(CK_SLOT_ID));
-	if (!slots) {
+	slot_ids = malloc(count * sizeof(CK_SLOT_ID));
+	if (!slot_ids) {
 		rv = CKR_HOST_MEMORY;
 		goto bail;
 	}
 
-	rv = C_GetSlotList(CK_TRUE, slots, &count);
+	rv = C_GetSlotList(CK_TRUE, slot_ids, &count);
 	if (rv)
 		goto bail;
 
-	/* Use the last slot */
-	*slot = slots[count - 1];
+	for (n = 0; n < count; n++) {
+
+		rv = C_GetSlotInfo(slot_ids[n], &slot_info);
+		if (rv)
+			goto bail;
+
+		if (!memcmp(debug_slot_descr, slot_info.slotDescription,
+			    sizeof(slot_info.slotDescription))) {
+			*slot = slot_ids[n];
+			break;
+		} else {
+			rv = CKR_GENERAL_ERROR;
+		}
+	}
+
+	if (rv != CKR_OK)
+		Do_ADBG_Log("Can't find OP-TEE debug & test slot/token");
 
 bail:
-	free(slots);
+	free(slot_ids);
 	if (rv)
 		close_lib();
 
