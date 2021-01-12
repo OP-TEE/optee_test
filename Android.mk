@@ -24,10 +24,6 @@ LOCAL_SHARED_LIBRARIES := libteec
 
 TA_DIR ?= /vendor/lib/optee_armtz
 
-ifeq ($(CFG_PKCS11_TA),y)
-LOCAL_SHARED_LIBRARIES += libckteec
-endif
-
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
@@ -67,6 +63,8 @@ endif
 
 ifeq ($(CFG_PKCS11_TA),y)
 srcs += pkcs11_1000.c
+LOCAL_CFLAGS += -DCFG_PKCS11_TA
+LOCAL_SHARED_LIBRARIES += libckteec
 endif
 
 define my-embed-file
@@ -87,8 +85,7 @@ LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/host/xtest/adbg/include\
-		$(LOCAL_PATH)/ta/concurrent/include \
-		$(LOCAL_PATH)/ta/concurrent_large/include \
+		$(LOCAL_PATH)/ta/include \
 		$(LOCAL_PATH)/ta/create_fail_test/include \
 		$(LOCAL_PATH)/ta/crypt/include \
 		$(LOCAL_PATH)/ta/enc_fs/include \
@@ -97,8 +94,9 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/ta/sims/include \
 		$(LOCAL_PATH)/ta/miss/include \
 		$(LOCAL_PATH)/ta/sims_keepalive/include \
-		$(LOCAL_PATH)/ta/include \
 		$(LOCAL_PATH)/ta/storage_benchmark/include \
+		$(LOCAL_PATH)/ta/concurrent/include \
+		$(LOCAL_PATH)/ta/concurrent_large/include \
 		$(LOCAL_PATH)/ta/sha_perf/include \
 		$(LOCAL_PATH)/ta/aes_perf/include \
 		$(LOCAL_PATH)/ta/socket/include \
@@ -113,10 +111,6 @@ LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
 
 ifneq ($(TA_DIR),)
 LOCAL_CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
-endif
-
-ifeq ($(CFG_PKCS11_TA),y)
-LOCAL_CFLAGS += -DCFG_PKCS11_TA
 endif
 
 ## $(OPTEE_BIN) is the path of tee.bin like
