@@ -2565,3 +2565,278 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1011, xtest_pkcs11_test_1011,
 		 "PKCS11: Test Find Objects");
+
+static void xtest_pkcs11_test_1012(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_hdl = CK_INVALID_HANDLE;
+	size_t i = 0;
+
+	CK_OBJECT_CLASS obj_class = CKO_DATA;
+	CK_BBOOL obj_token = CK_FALSE;
+	CK_BBOOL obj_private = CK_FALSE;
+	uint8_t obj_value[5] = { 1, 2, 3, 4, 5 };
+	const char *obj_label = "Label";
+
+	CK_ATTRIBUTE object_template[] = {
+		{ CKA_CLASS, &obj_class, sizeof(obj_class) },
+		{ CKA_TOKEN, &obj_token, sizeof(obj_token) },
+		{ CKA_PRIVATE, &obj_private, sizeof(obj_private) },
+		{ CKA_VALUE, obj_value, sizeof(obj_value) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)obj_label, strlen(obj_label) },
+	};
+
+	CK_OBJECT_CLASS secret_class = CKO_SECRET_KEY;
+	CK_BBOOL secret_token = CK_FALSE;
+	CK_BBOOL secret_private = CK_FALSE;
+	CK_KEY_TYPE secret_key_type = CKK_GENERIC_SECRET;
+	CK_ULONG secret_len = 32;
+	CK_MECHANISM_TYPE secret_allowed_mecha[] = { CKM_SHA_1_HMAC,
+						     CKM_SHA224_HMAC,
+						     CKM_SHA256_HMAC };
+
+	CK_ATTRIBUTE secret_template[] = {
+		{ CKA_CLASS, &secret_class, sizeof(secret_class) },
+		{ CKA_TOKEN, &secret_token, sizeof(secret_token) },
+		{ CKA_PRIVATE, &secret_private, sizeof(secret_private) },
+		{ CKA_KEY_TYPE, &secret_key_type, sizeof(secret_key_type) },
+		{ CKA_VALUE_LEN, &secret_len, sizeof(secret_len) },
+		{ CKA_ALLOWED_MECHANISMS, secret_allowed_mecha,
+		  sizeof(secret_allowed_mecha) }
+	};
+
+	CK_BBOOL g_token = CK_TRUE;
+	CK_BBOOL g_private = CK_TRUE;
+	CK_OBJECT_CLASS g_class = ~0;
+	uint8_t g_value[128] = { 0 };
+	CK_MECHANISM_TYPE g_mecha_list[10] = { 0 };
+
+	uint8_t *data_ptr = NULL;
+
+	CK_ATTRIBUTE get_attr_template_bc[] = {
+		{ CKA_TOKEN, &g_token, sizeof(g_token) },
+		{ CKA_CLASS, &g_class, sizeof(g_class) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_cb[] = {
+		{ CKA_CLASS, &g_class, sizeof(g_class) },
+		{ CKA_TOKEN, &g_token, sizeof(g_token) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_ve[] = {
+		{ CKA_VALUE, &g_value, sizeof(obj_value) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_vl[] = {
+		{ CKA_VALUE, &g_value, sizeof(g_value) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_bvecb[] = {
+		{ CKA_TOKEN, &g_token, sizeof(g_token) },
+		{ CKA_VALUE, &g_value, sizeof(obj_value) },
+		{ CKA_CLASS, &g_class, sizeof(g_class) },
+		{ CKA_TOKEN, &g_private, sizeof(g_private) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_bvlcb[] = {
+		{ CKA_TOKEN, &g_token, sizeof(g_token) },
+		{ CKA_VALUE, &g_value, sizeof(g_value) },
+		{ CKA_CLASS, &g_class, sizeof(g_class) },
+		{ CKA_TOKEN, &g_private, sizeof(g_private) },
+	};
+
+	CK_ATTRIBUTE get_attr_template_am[] = {
+		{ CKA_ALLOWED_MECHANISMS, &g_mecha_list, sizeof(g_mecha_list) },
+	};
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = C_CreateObject(session, object_template,
+			    ARRAY_SIZE(object_template), &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Sub test: Test Boolean (1 byte) + object class (CK_ULONG)
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - boolean + class");
+	g_token = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_bc,
+				 ARRAY_SIZE(get_attr_template_bc));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_DATA);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: object class (CK_ULONG) + Test Boolean (1 byte)
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - class + boolean");
+	g_token = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_cb,
+				 ARRAY_SIZE(get_attr_template_cb));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_DATA);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: value with exact size
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - value with exact size buffer");
+	memset(g_value, 0xCC, sizeof(g_value));
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_ve,
+				 ARRAY_SIZE(get_attr_template_ve));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, get_attr_template_ve[0].ulValueLen, ==, sizeof(obj_value));
+	ADBG_EXPECT_EQUAL(c, g_value, obj_value, sizeof(obj_value));
+	for (i = sizeof(obj_value); i < sizeof(g_value); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, g_value[i], ==, 0xCC))
+			break;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: value with larger buffer
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - value with larger buffer");
+	memset(g_value, 0xCC, sizeof(g_value));
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_vl,
+				 ARRAY_SIZE(get_attr_template_vl));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, get_attr_template_vl[0].ulValueLen, ==, sizeof(obj_value));
+	ADBG_EXPECT_EQUAL(c, g_value, obj_value, sizeof(obj_value));
+	for (i = sizeof(obj_value); i < sizeof(g_value); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, g_value[i], ==, 0xCC))
+			break;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: bool + value with exact size + class + bool
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - bool + value with exact size + class + bool");
+	memset(g_value, 0xCC, sizeof(g_value));
+	g_token = CK_TRUE;
+	g_private = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_bvecb,
+				 ARRAY_SIZE(get_attr_template_bvecb));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, get_attr_template_bvecb[1].ulValueLen,
+				     ==, sizeof(obj_value));
+	ADBG_EXPECT_EQUAL(c, g_value, obj_value, sizeof(obj_value));
+	for (i = sizeof(obj_value); i < sizeof(g_value); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, g_value[i], ==, 0xCC))
+			break;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_DATA);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_private, ==, CK_FALSE);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: bool + value with larger buffer + class + bool
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - bool + value with larger buffer + class + bool");
+	memset(g_value, 0xCC, sizeof(g_value));
+	g_token = CK_TRUE;
+	g_private = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_bvlcb,
+				 ARRAY_SIZE(get_attr_template_bvlcb));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, get_attr_template_bvlcb[1].ulValueLen,
+				     ==, sizeof(obj_value));
+	ADBG_EXPECT_EQUAL(c, g_value, obj_value, sizeof(obj_value));
+	for (i = sizeof(obj_value); i < sizeof(g_value); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, g_value[i], ==, 0xCC))
+			break;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_DATA);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_private, ==, CK_FALSE);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: allowed mechanism list
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - allowed mechanism list");
+	memset(g_mecha_list, 0xCC, sizeof(g_mecha_list));
+
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   secret_template, ARRAY_SIZE(secret_template),
+			   &key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, key_hdl, get_attr_template_am,
+				 ARRAY_SIZE(get_attr_template_am));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, get_attr_template_am[0].ulValueLen, ==,
+				     sizeof(secret_allowed_mecha));
+
+	for (i = 0; i < sizeof(secret_allowed_mecha) / sizeof(*secret_allowed_mecha); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, g_mecha_list[i], ==, secret_allowed_mecha[i]))
+			break;
+
+	data_ptr = (uint8_t *)g_mecha_list;
+	for (i = sizeof(secret_allowed_mecha); i < sizeof(g_mecha_list); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, data_ptr[i], ==, 0xCC))
+			break;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1012, xtest_pkcs11_test_1012,
+		 "PKCS11: Serializer tests");
