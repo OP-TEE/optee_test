@@ -2339,10 +2339,32 @@ static void xtest_pkcs11_test_1011(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	rv = C_Logout(session);
-	ADBG_EXPECT_CK_OK(c, rv);
+	Do_ADBG_EndSubCase(c, NULL);
 
-	logged_in = false;
+	/*
+	 * Sub test: finalize search without getting the handles found
+	 */
+	Do_ADBG_BeginSubCase(c, "Initiate and finalize straight a search");
+
+	rv = C_FindObjectsInit(session, find_template,
+			       ARRAY_SIZE(find_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_FindObjectsFinal(session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Check if object handles returned when creating objects with this
+	 * session are still valid
+	 */
+	for (i = 0; i < object_id; i++) {
+		rv = C_GetAttributeValue(session, obj_hdl[i], get_attr_template,
+					 ARRAY_SIZE(get_attr_template));
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+	}
 	Do_ADBG_EndSubCase(c, NULL);
 
 	/*
@@ -2350,6 +2372,11 @@ static void xtest_pkcs11_test_1011(ADBG_Case_t *c)
 	 * objects (2)
 	 */
 	Do_ADBG_BeginSubCase(c, "Find created Data objects when logged out");
+
+	rv = C_Logout(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	logged_in = false;
 
 	rv = test_find_objects(c, session, find_template,
 			       ARRAY_SIZE(find_template),
@@ -2439,36 +2466,9 @@ static void xtest_pkcs11_test_1011(ADBG_Case_t *c)
 
 	rv = test_find_objects(c, session, find_template,
 			       ARRAY_SIZE(find_template),
-			       obj_found, ARRAY_SIZE(obj_found), 4);
+			       obj_found, ARRAY_SIZE(obj_found), 3);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
-
-	Do_ADBG_EndSubCase(c, NULL);
-
-	/*
-	 * Sub test: finalize search without getting the handles found
-	 */
-	Do_ADBG_BeginSubCase(c, "Initiate and finalize straight a search");
-
-	rv = C_FindObjectsInit(session, find_template,
-			       ARRAY_SIZE(find_template));
-	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
-
-	rv = C_FindObjectsFinal(session);
-	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
-
-	/*
-	 * Check if object handles returned when creating objects with this
-	 * session are still valid
-	 */
-	for (i = 0; i < object_id; i++) {
-		rv = C_GetAttributeValue(session, obj_hdl[i], get_attr_template,
-					 ARRAY_SIZE(get_attr_template));
-		if (!ADBG_EXPECT_CK_OK(c, rv))
-			goto out;
-	}
 
 	rv = C_Logout(session);
 	ADBG_EXPECT_CK_OK(c, rv);
