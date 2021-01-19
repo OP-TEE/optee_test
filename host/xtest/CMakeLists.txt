@@ -115,6 +115,7 @@ target_compile_options (${PROJECT_NAME} PRIVATE -include conf.h)
 
 target_include_directories(${PROJECT_NAME}
 	PRIVATE .
+	PRIVATE ../supp_plugin/include
 	PRIVATE adbg/include
 	PRIVATE ${OPTEE_TEST_SDK}/host_include
 	PRIVATE ${CMAKE_CURRENT_BINARY_DIR}

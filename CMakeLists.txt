@@ -31,3 +31,4 @@ endif(CCACHE_FOUND)
 
 add_subdirectory (ta)
 add_subdirectory (host/xtest)
+add_subdirectory (host/supp_plugin)

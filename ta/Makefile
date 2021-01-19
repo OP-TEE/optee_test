@@ -30,7 +30,8 @@ TA_DIRS := create_fail_test \
 	   storage_benchmark \
 	   sha_perf \
 	   aes_perf \
-	   socket
+	   socket \
+	   supp_plugin
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic

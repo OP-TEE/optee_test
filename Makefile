@@ -9,6 +9,7 @@ endif
 endif
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+-include $(OPTEE_CLIENT_EXPORT)/../optee_client_config.mk
 
 ifneq ($V,1)
 	q := @
@@ -26,7 +27,7 @@ CROSS_COMPILE_TA ?= $(CROSS_COMPILE)
 
 .PHONY: all
 ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
-all: xtest ta
+all: xtest ta test_plugin
 else
 all:
 	$(q)echo "TA_DEV_KIT_DIR is not correctly defined" && false
@@ -45,11 +46,17 @@ ta:
 			  O=$(out-dir) \
 			  $@
 
+.PHONY: test_plugin
+test_plugin:
+	$(q)$(MAKE) -C host/supp_plugin CROSS_COMPILE="$(CROSS_COMPILE_HOST)" \
+			     O=$(out-dir)
+
 .PHONY: clean
 ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 clean:
 	$(q)$(MAKE) -C host/xtest O=$(out-dir) $@
 	$(q)$(MAKE) -C ta O=$(out-dir) $@
+	$(q)$(MAKE) -C host/supp_plugin O=$(out-dir) $@
 else
 clean:
 	$(q)echo "TA_DEV_KIT_DIR is not correctly defined"
@@ -72,6 +79,9 @@ install:
 	$(echo) '  INSTALL ${DESTDIR}/bin'
 	$(q)mkdir -p ${DESTDIR}/bin
 	$(q)cp -a $(out-dir)/xtest/xtest ${DESTDIR}/bin
+	$(echo) '  INSTALL ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)'
+	$(q)mkdir -p ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
+	$(q)cp $(out-dir)/supp_plugin/*.plugin ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
 
 .PHONY: cscope
 cscope:

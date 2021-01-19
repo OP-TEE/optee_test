@@ -104,6 +104,7 @@ objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
+CFLAGS += -I../supp_plugin/include
 CFLAGS += -I$(out-dir)/xtest
 
 CFLAGS += -I$(OPTEE_CLIENT_EXPORT)/include
@@ -126,6 +127,7 @@ CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
+CFLAGS += -I../../ta/supp_plugin/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
