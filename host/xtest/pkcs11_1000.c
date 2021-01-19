@@ -284,6 +284,50 @@ static void xtest_pkcs11_test_1001(ADBG_Case_t *c)
 	}
 
 	Do_ADBG_EndSubCase(c, "Test C_GetMechanism{List|Info}()");
+	Do_ADBG_BeginSubCase(c, "Test C_GetMechanismList() with larger result buffer");
+
+	for (i = 0; i < slot_count; i++) {
+		CK_SLOT_ID slot = slot_ids[i];
+		CK_ULONG real_mecha_count = 0;
+		CK_ULONG alloc_mecha_count = 0;
+		uint8_t *data_ptr = NULL;
+		size_t j = 0;
+
+		rv = C_GetMechanismList(slot, NULL, &real_mecha_count);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		if (real_mecha_count == 0)
+			continue;
+
+		/* Allocate more memory for mechanisms than required */
+		alloc_mecha_count = real_mecha_count + 16;
+		mecha_count = alloc_mecha_count;
+
+		free(mecha_types);
+		mecha_types = calloc(mecha_count, sizeof(*mecha_types));
+		if (!ADBG_EXPECT_NOT_NULL(c, mecha_types))
+			goto out;
+		memset(mecha_types, 0xCC,
+		       alloc_mecha_count * sizeof(*mecha_types));
+
+		rv = C_GetMechanismList(slot, mecha_types, &mecha_count);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, mecha_count, ==,
+						  real_mecha_count))
+			goto out;
+
+		data_ptr = (uint8_t *)mecha_types;
+		for (j = real_mecha_count * sizeof(*mecha_types);
+		     j < alloc_mecha_count * sizeof(*mecha_types); j++)
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, data_ptr[j], ==,
+							  0xCC))
+				break;
+	}
+
+	Do_ADBG_EndSubCase(c, "Test C_GetMechanismList() with larger result buffer");
 	Do_ADBG_BeginSubCase(c, "Test C_Get*Info() with invalid reference");
 
 	rv = C_GetSlotInfo(max_slot_id + 1, &slot_info);
