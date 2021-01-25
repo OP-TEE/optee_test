@@ -2884,3 +2884,234 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1012, xtest_pkcs11_test_1012,
 		 "PKCS11: Serializer tests");
+
+static void xtest_pkcs11_test_1013(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE rw_session = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE ro_session = CK_INVALID_HANDLE;
+	CK_FLAGS rw_session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_FLAGS ro_session_flags = CKF_SERIAL_SESSION;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	const char *label = "Dummy Objects";
+	bool ro_logged_in = false;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Open a RW session */
+	rv = C_OpenSession(slot, rw_session_flags, NULL, 0, &rw_session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Open a RO session */
+	rv = C_OpenSession(slot, ro_session_flags, NULL, 0, &ro_session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/*
+	 * Sub test: Check object creation from a R/O Public session
+	 */
+	Do_ADBG_BeginSubCase(c, "Create objects in R/O Public Session");
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_FALSE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Session Private Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_FALSE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	/* Token Public Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_TRUE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+		goto out;
+
+	/* Token Private Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_TRUE,
+				CK_TRUE, label);
+	/* For Token object creation, SESSION_READ_ONLY will take priority */
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Check access for a R/W Public session
+	 */
+	Do_ADBG_BeginSubCase(c, "Create objects in R/O Public Session");
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Session Private Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	/* Token Public Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Token Private Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Check access for a R/O User session
+	 */
+	Do_ADBG_BeginSubCase(c, "Create objects in R/O User Session");
+
+	/* Login to Test Token */
+	rv = C_Login(ro_session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ro_logged_in = true;
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_FALSE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Session Private Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_FALSE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Token Public Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_TRUE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+		goto out;
+
+	/* Token Private Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(ro_session, &obj_hdl, CK_TRUE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Check access for a R/W User session
+	 */
+	Do_ADBG_BeginSubCase(c, "Create objects in R/W User Session");
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Session Private Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Token Public Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Token Private Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Log out */
+	ADBG_EXPECT_CK_OK(c, C_Logout(ro_session));
+	ro_logged_in = false;
+
+	/* Close RO session */
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(ro_session));
+	ro_session = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Check access for a R/W SO session
+	 */
+	Do_ADBG_BeginSubCase(c, "Create objects in R/W SO Session");
+
+	/* Login as security officer in RW session */
+	rv = C_Login(rw_session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Session Public Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto logout;
+
+	/* Session Private Obj CKA_TOKEN = CK_FALSE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_FALSE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto logout;
+
+	/* Token Public Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_FALSE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_FALSE, label);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto logout;
+
+	/* Token Private Obj CKA_TOKEN = CK_TRUE, CKA_PRIVATE = CK_TRUE */
+	rv = create_data_object(rw_session, &obj_hdl, CK_TRUE,
+				CK_TRUE, label);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto logout;
+
+logout:
+	ADBG_EXPECT_CK_OK(c, C_Logout(rw_session));
+out:
+	if (ro_logged_in)
+		ADBG_EXPECT_CK_OK(c, C_Logout(ro_session));
+
+	if (ro_session != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_CloseSession(ro_session));
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(rw_session));
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	destroy_persistent_objects(c, slot);
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+
+}
+ADBG_CASE_DEFINE(pkcs11, 1013, xtest_pkcs11_test_1013,
+		 "PKCS11: Object creation upon session type");
