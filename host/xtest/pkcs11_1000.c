@@ -3115,3 +3115,217 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1013, xtest_pkcs11_test_1013,
 		 "PKCS11: Object creation upon session type");
+
+static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	const char *id = "1";
+	const char *label = "Dummy Objects";
+	const char *new_label = "New Object lable";
+	size_t n = 0;
+	char *g_label[100] = { };
+	char *g_id[100] = { };
+	CK_MECHANISM_TYPE secret_allowed_mecha[] = { CKM_SHA_1_HMAC,
+						     CKM_SHA224_HMAC,
+						     CKM_SHA256_HMAC };
+	CK_ATTRIBUTE secret_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+		{ CKA_TOKEN, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DESTROYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
+						sizeof(CK_KEY_TYPE) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+		{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_ALLOWED_MECHANISMS, secret_allowed_mecha,
+		  sizeof(secret_allowed_mecha) },
+	};
+	CK_BBOOL g_derive = CK_FALSE;
+	CK_BBOOL g_sign = CK_FALSE;
+	CK_BBOOL g_verify = CK_FALSE;
+	CK_BBOOL g_encrypt = CK_FALSE;
+	CK_BBOOL g_decrypt = CK_FALSE;
+	CK_BBOOL g_wrap = CK_FALSE;
+	CK_BBOOL g_unwrap = CK_FALSE;
+	CK_ATTRIBUTE get_template[] = {
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)g_label, sizeof(g_label) },
+		{ CKA_ID, (CK_BYTE_PTR)g_id, sizeof(g_id) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &g_sign, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &g_verify, sizeof(CK_BBOOL) },
+		{ CKA_ENCRYPT, &g_encrypt, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_template[] = {
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)new_label, strlen(new_label) },
+		{ CKA_ID, (CK_BYTE_PTR)id, strlen(id) },
+		{ CKA_DERIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		/* CKA_SENSITIVE -> CK_FALSE to CK_TRUE is allowed */
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		/* CKA_EXTRACTABLE -> CK_TRUE to CK_FALSE is allowed */
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		/* CKA_COPYABLE -> CK_TRUE to CK_FALSE is allowed */
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_inv_template1[] = {
+		/* Attributes Not Modifiable */
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_DATA},
+						sizeof(CK_OBJECT_CLASS) },
+		{ CKA_LOCAL, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &(CK_BBOOL){CK_FALSE},
+							sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &(CK_BBOOL){CK_FALSE},
+							sizeof(CK_BBOOL) },
+		{ CKA_TOKEN,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_DESTROYABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		/* Change not allowed from CK_TRUE -> CK_FALSE */
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		/* Change not allowed from CK_FALSE -> CK_TRUE */
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_inv_template2[] = {
+		{ CKA_APPLICATION, (CK_UTF8CHAR_PTR)label, sizeof(label) },
+	};
+	CK_ATTRIBUTE set_trusted_template[] = {
+		{ CKA_TRUSTED, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Open a RW session */
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Create a secret key object */
+	rv = C_CreateObject(session, secret_key_template,
+			    ARRAY_SIZE(secret_key_template), &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	Do_ADBG_BeginSubCase(c, "Set attributes on secret key object");
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_BUFFER(c, label, strlen(label), g_label,
+				get_template[0].ulValueLen) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_unwrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_encrypt, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, get_template[1].ulValueLen, ==, 0))
+		goto out;
+
+	rv = C_SetAttributeValue(session, obj_hdl, set_template,
+				 ARRAY_SIZE(set_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	get_template[0].ulValueLen = sizeof(g_label);
+	get_template[1].ulValueLen = sizeof(g_id);
+	rv = C_GetAttributeValue(session, obj_hdl, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_BUFFER(c, new_label, strlen(new_label), g_label,
+				get_template[0].ulValueLen) ||
+	    !ADBG_EXPECT_BUFFER(c, id, strlen(id), g_id,
+				get_template[1].ulValueLen) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_unwrap, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_encrypt, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_FALSE))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test Invalid template with R/O Attributes");
+
+	for (n = 0; n < ARRAY_SIZE(set_inv_template1); n++) {
+		rv = C_SetAttributeValue(session, obj_hdl,
+					 &set_inv_template1[n], 1);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_READ_ONLY, rv))
+			goto out;
+	}
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test Invalid template with Invalid Attribute");
+
+	rv = C_SetAttributeValue(session, obj_hdl, set_inv_template2,
+				 ARRAY_SIZE(set_inv_template2));
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_TYPE_INVALID, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Set CKA_TRUSTED with and w/o SO Login");
+
+	rv = C_SetAttributeValue(session, obj_hdl, set_trusted_template,
+				 ARRAY_SIZE(set_trusted_template));
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_READ_ONLY, rv))
+		goto out;
+
+	/* Login as SO in RW session */
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_SetAttributeValue(session, obj_hdl, set_trusted_template,
+				 ARRAY_SIZE(set_trusted_template));
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	ADBG_EXPECT_CK_OK(c, C_Logout(session));
+out:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, obj_hdl));
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+close_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1014, xtest_pkcs11_test_1014,
+		 "PKCS11: Test C_SetAttributeValue()");
