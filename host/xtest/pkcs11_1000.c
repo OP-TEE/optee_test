@@ -3329,3 +3329,326 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1014, xtest_pkcs11_test_1014,
 		 "PKCS11: Test C_SetAttributeValue()");
+
+static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE rw_session = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE ro_session = CK_INVALID_HANDLE;
+	CK_FLAGS rw_session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_FLAGS ro_session_flags = CKF_SERIAL_SESSION;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl_ro = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl_cp = CK_INVALID_HANDLE;
+	const char *label = "Dummy Objects";
+	CK_ATTRIBUTE secret_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+		{ CKA_TOKEN, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DESTROYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+	};
+	CK_BBOOL g_token = CK_FALSE;
+	CK_BBOOL g_private = CK_FALSE;
+	CK_BBOOL g_modify = CK_FALSE;
+	CK_BBOOL g_copy = CK_FALSE;
+	CK_BBOOL g_destroy = CK_FALSE;
+	CK_BBOOL g_extract = CK_FALSE;
+	CK_BBOOL g_sensitive = CK_FALSE;
+	CK_BBOOL g_nextract = CK_FALSE;
+	CK_BBOOL g_asensitive = CK_FALSE;
+	CK_BBOOL g_local =  CK_FALSE;
+	CK_ATTRIBUTE get_template[] = {
+		{ CKA_TOKEN, &g_token, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &g_private, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &g_modify, sizeof(CK_BBOOL) },
+		{ CKA_COPYABLE, &g_copy, sizeof(CK_BBOOL) },
+		{ CKA_DESTROYABLE, &g_destroy, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &g_extract, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &g_sensitive, sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE copy_template[] = {
+		{ CKA_TOKEN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE copy_template_inv[] = {
+		{ CKA_APPLICATION, (CK_UTF8CHAR_PTR)label, sizeof(label) },
+	};
+	CK_ATTRIBUTE copy_template_priv[] = {
+		{ CKA_PRIVATE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_template[] = {
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+	};
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Open a RW session */
+	rv = C_OpenSession(slot, rw_session_flags, NULL, 0, &rw_session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Open a RO session */
+	rv = C_OpenSession(slot, ro_session_flags, NULL, 0, &ro_session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	/* Generate a secret key object in rw session */
+	rv = C_GenerateKey(rw_session, &cktest_aes_keygen_mechanism,
+			   secret_key_template,
+			   ARRAY_SIZE(secret_key_template), &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	/* Check its attribute values */
+	rv = C_GetAttributeValue(rw_session, obj_hdl, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_private, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_modify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_copy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_destroy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
+		goto close_session;
+
+	/* Create a secret key object in ro session*/
+	rv = C_CreateObject(ro_session, secret_key_template,
+			    ARRAY_SIZE(secret_key_template), &obj_hdl_ro);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	/*
+	 * Duplicate the object generated in RW session using C_GenerateKey() to
+	 * another object. Pass Template as NULL and test the attributes of
+	 * new created object.
+	 */
+	Do_ADBG_BeginSubCase(c, "Copy Local Obj with NULL Template");
+	rv = C_CopyObject(rw_session, obj_hdl, NULL, 0, &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Check its attribute values, should match the original object.
+	 * CKA_LOCAL shall be TRUE even in copied object as original object
+	 * was generated using C_GenerateKey()
+	 */
+	rv = C_GetAttributeValue(rw_session, obj_hdl_cp, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_private, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_modify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_copy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_destroy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
+		goto out;
+
+	rv = C_DestroyObject(rw_session, obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	obj_hdl_cp = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Duplicate the object generated in RO session using C_CreateObject()
+	 * to another object. Pass Template as NULL and test the attributes of
+	 * new created object.
+	 */
+	Do_ADBG_BeginSubCase(c, "Copy a non-local object with NULL Template");
+
+	/* Copy ro session object */
+	rv = C_CopyObject(ro_session, obj_hdl_ro, NULL, 0, &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Check its attribute values, should match the original object.
+	 * CKA_LOCAL shall be FALSE even in copied object as original object
+	 * was generated using C_CreateObject()
+	 */
+	rv = C_GetAttributeValue(ro_session, obj_hdl_cp, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_private, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_modify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_copy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_destroy, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
+		goto out;
+
+	rv = C_DestroyObject(ro_session, obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	obj_hdl_cp = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Test copying object with a valid template and check if attributes
+	 * get modified as indicated in the template. Checks modification of
+	 * attributes like CKA_TOKEN, CKA_MODIFIABLE which were not modifiable
+	 * via C_SetAttributeValue(). Also modifies the CKA_SENSITIVE,
+	 * CKA_EXTRACTABLE and checks corresponding values of RO attributes
+	 * CKA_ALWAYS_SENSITIVE and CKA_NEVER_EXTRACTABLE.
+	 */
+	Do_ADBG_BeginSubCase(c, "Copy Object with Valid Template");
+
+	/*
+	 * Copy Session Object as a Token object
+	 * Properties CKA_MODIFIABLE turned to FALSE
+	 * CKA_EXTRACTABLE changed from TRUE to FALSE
+	 * CKA_NEVER_EXTRACTABLE should be FALSE.
+	 * CKA_SENSITIVE set to TRUE
+	 * However CKA_ALWAYS_SENSITIVE should be FALSE
+	 */
+	rv = C_CopyObject(rw_session, obj_hdl, copy_template,
+			  ARRAY_SIZE(copy_template), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Check the changed attribute values */
+	rv = C_GetAttributeValue(rw_session, obj_hdl_cp, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_modify, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
+		goto out;
+
+	/*
+	 * The copied object has CKA_MODIFIABLE set to FALSE. Check if
+	 * call to C_SetAttributeValue() returns CKR_ACTION_PROHIBITED
+	 */
+	rv = C_SetAttributeValue(rw_session, obj_hdl_cp, set_template,
+				 ARRAY_SIZE(set_template));
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ACTION_PROHIBITED, rv))
+		goto out;
+
+	rv = C_DestroyObject(rw_session, obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	obj_hdl_cp = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Test changing the CKA_PRIVATE to TRUE when copying object.
+	 * Fails when user is not logged in. Passes after user logs in
+	 */
+	Do_ADBG_BeginSubCase(c, "Copy Object as a Private Object");
+
+	/* The first attempt will fail as user is not logged in */
+	rv = C_CopyObject(rw_session, obj_hdl, copy_template_priv,
+			  ARRAY_SIZE(copy_template_priv), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	/* Login to Test Token and repeat*/
+	rv = C_Login(rw_session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Try copying a public object to a private object - should pass */
+	rv = C_CopyObject(rw_session, obj_hdl, copy_template_priv,
+			  ARRAY_SIZE(copy_template_priv), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_OK(c, rv)) {
+		ADBG_EXPECT_CK_OK(c, C_Logout(rw_session));
+		goto out;
+	}
+
+	if (!ADBG_EXPECT_CK_OK(c, C_Logout(rw_session)))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Copy Object with Invalid Template");
+
+	rv = C_CopyObject(rw_session, obj_hdl, copy_template_inv,
+			  ARRAY_SIZE(copy_template_inv), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_TYPE_INVALID, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Copy Object with COPYABLE false");
+
+	rv = C_SetAttributeValue(rw_session, obj_hdl, set_template,
+				 ARRAY_SIZE(set_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_CopyObject(rw_session, obj_hdl, copy_template,
+			  ARRAY_SIZE(copy_template), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ACTION_PROHIBITED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Copy session object to token in RO session");
+
+	rv = C_CopyObject(ro_session, obj_hdl_ro, copy_template,
+			  ARRAY_SIZE(copy_template), &obj_hdl_cp);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_READ_ONLY, rv))
+		goto out;
+
+out:
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/* Destroy any token objects which may have been created */
+	destroy_persistent_objects(c, slot);
+
+close_session:
+	/* Closing session will also destroy all session objects */
+	if (ro_session != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_CloseSession(ro_session));
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(rw_session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1015, xtest_pkcs11_test_1015,
+		 "PKCS11: Test C_CopyObject()");
