@@ -2354,6 +2354,7 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
+	size_t count = 0;
 
 	/* TA will ping the test plugin during open session operation */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
@@ -2418,7 +2419,8 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 		fp = fopen(test_fname, "r");
 		ADBG_EXPECT_NOT_NULL(c, fp);
 		if (fp) {
-			fread(from_file, sizeof(char), sizeof(to_plugin), fp);
+			count = fread(from_file, sizeof(char), sizeof(to_plugin), fp);
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, count, ==, sizeof(to_plugin));
 			ADBG_EXPECT_EQUAL(c, to_plugin, from_file, sizeof(to_plugin));
 			fclose(fp);
 			remove(test_fname);
