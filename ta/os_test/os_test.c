@@ -69,7 +69,7 @@ static TEE_Result check_binprop_ones(size_t size, char *bbuf, size_t bblen)
 }
 
 static TEE_Result get_binblock_property(TEE_PropSetHandle h,
-					char *nbuf, char **bbuf, size_t *bblen)
+					char *nbuf __unused, char **bbuf, size_t *bblen)
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
 	uint32_t block_len = 0;
