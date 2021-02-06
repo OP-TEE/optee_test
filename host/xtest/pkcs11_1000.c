@@ -3652,3 +3652,92 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1015, xtest_pkcs11_test_1015,
 		 "PKCS11: Test C_CopyObject()");
+
+static void xtest_pkcs11_test_1016(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	uint8_t buffer[64] = { 0 };
+	size_t i = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	Do_ADBG_BeginSubCase(c, "Seed random bytes");
+
+	memset(buffer, 0xCC, sizeof(buffer));
+
+	rv = C_SeedRandom(session, buffer, sizeof(buffer));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Seed random bytes with zero length buffer");
+
+	rv = C_SeedRandom(session, buffer, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_SeedRandom(session, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Generate random bytes");
+
+	memset(buffer, 0xCC, sizeof(buffer));
+
+	rv = C_GenerateRandom(session, buffer, 61);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Verify that end of buffer is still 0xCC */
+	for (i = 61; i < sizeof(buffer); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, buffer[i], ==, 0xCC))
+			break;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Generate random bytes with zero length buffer");
+
+	memset(buffer, 0xCC, sizeof(buffer));
+
+	rv = C_GenerateRandom(session, buffer, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Verify that whole buffer is still 0xCC */
+	for (i = 0; i < sizeof(buffer); i++)
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, buffer[i], ==, 0xCC))
+			break;
+
+	rv = C_GenerateRandom(session, NULL, 0);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out:
+	Do_ADBG_EndSubCase(c, NULL);
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1016, xtest_pkcs11_test_1016,
+		 "PKCS11: Random number generator tests");
