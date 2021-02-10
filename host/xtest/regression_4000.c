@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
+ * Copyright (c) 2021, SumUp Services GmbH
  */
 
 #include <stdio.h>
@@ -1100,6 +1101,11 @@ struct xtest_mac_case {
 		       mac_cmac_ ## vect ## _key, (in_incr), \
 		       mac_cmac_ ## vect ## _data, mac_cmac_ ## vect ## _out)
 
+#define XTEST_MAC_DES3_CMAC_CASE(vect, in_incr) \
+	XTEST_MAC_CASE(TEE_ALG_DES3_CMAC, TEE_TYPE_DES3, \
+			mac_des3_cmac_ ## vect ## _key, (in_incr), \
+			mac_des3_cmac_ ## vect ## _data, mac_des3_cmac_ ## vect ## _out)
+
 static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CASE(TEE_ALG_HMAC_MD5, TEE_TYPE_HMAC_MD5,
 		       mac_data_md5_key1,
@@ -1154,6 +1160,19 @@ static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CMAC_CASE(vect10, 9),
 	XTEST_MAC_CMAC_CASE(vect11, 9),
 	XTEST_MAC_CMAC_CASE(vect12, 9),
+
+	{ TEE_ALG_DES3_CMAC, TEE_TYPE_DES3, mac_des3_cmac_vect1_key,
+	  ARRAY_SIZE(mac_des3_cmac_vect1_key), 0, NULL, 0, mac_des3_cmac_vect1_out,
+	  ARRAY_SIZE(mac_des3_cmac_vect1_out) },
+	XTEST_MAC_DES3_CMAC_CASE(vect2, 3),
+	XTEST_MAC_DES3_CMAC_CASE(vect3, 9),
+	XTEST_MAC_DES3_CMAC_CASE(vect4, 9),
+	{ TEE_ALG_DES3_CMAC, TEE_TYPE_DES3, mac_des3_cmac_vect5_key,
+	  ARRAY_SIZE(mac_des3_cmac_vect5_key), 0, NULL, 0, mac_des3_cmac_vect5_out,
+	  ARRAY_SIZE(mac_des3_cmac_vect5_out) },
+	XTEST_MAC_DES3_CMAC_CASE(vect6, 3),
+	XTEST_MAC_DES3_CMAC_CASE(vect7, 5),
+	XTEST_MAC_DES3_CMAC_CASE(vect8, 9),
 
 	XTEST_MAC_CASE(TEE_ALG_HMAC_SM3, TEE_TYPE_HMAC_SM3,
 		       mac_data_sm3_d31_key,
