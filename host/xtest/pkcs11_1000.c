@@ -1970,12 +1970,12 @@ static CK_ATTRIBUTE cktest_generate_gensecret_object_error3[] = {
 	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_DATA}, sizeof(CK_OBJECT_CLASS) },
 	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
 						sizeof(CK_KEY_TYPE) },
-	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 };
 
 /* Invalid template with CKA_LOCAL */
 static CK_ATTRIBUTE cktest_generate_gensecret_object_error4[] = {
-	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 	{ CKA_LOCAL, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 };
 
@@ -1987,12 +1987,12 @@ static CK_ATTRIBUTE cktest_generate_gensecret_object_valid1[] = {
 						sizeof(CK_KEY_TYPE) },
 	{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 	{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
-	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 };
 
 /* Valid template to generate a generic secret with only VALUE_LEN */
 static CK_ATTRIBUTE cktest_generate_gensecret_object_valid2[] = {
-	{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 	{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 };
 
@@ -3144,7 +3144,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
 						sizeof(CK_KEY_TYPE) },
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
-		{ CKA_VALUE_LEN, &(CK_ULONG){16 * 8}, sizeof(CK_ULONG) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 		{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 		{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
