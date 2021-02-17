@@ -3741,3 +3741,435 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1016, xtest_pkcs11_test_1016,
 		 "PKCS11: Random number generator tests");
+
+static CK_RV derive_sym_key(CK_SESSION_HANDLE session,
+			    CK_OBJECT_HANDLE parent_key,
+			    CK_MECHANISM_TYPE mechanism, size_t data_len,
+			    CK_OBJECT_HANDLE_PTR derv_key_hdl, size_t key_len,
+			    CK_OBJECT_CLASS key_class, CK_KEY_TYPE key_type,
+			    CK_BBOOL sensitive, CK_BBOOL extble)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	uint8_t buffer[512] = { 0 };
+	uint8_t iv[16] = { 0 };
+	CK_MECHANISM mech_derive = { 0 };
+	CK_KEY_DERIVATION_STRING_DATA key_derv_param = { 0 };
+	CK_AES_CBC_ENCRYPT_DATA_PARAMS aes_cbc_param = { 0 };
+	CK_ATTRIBUTE derived_key_template[] = {
+		{ CKA_CLASS, &key_class, sizeof(key_class) },
+		{ CKA_KEY_TYPE, &key_type, sizeof(key_type) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &sensitive, sizeof(sensitive) },
+		{ CKA_EXTRACTABLE, &extble, sizeof(extble) },
+		{ CKA_VALUE_LEN, &key_len, sizeof(key_len) }
+	};
+
+	if (data_len > sizeof(buffer))
+		return rv;
+
+	switch (mechanism) {
+	case CKM_AES_ECB_ENCRYPT_DATA:
+		key_derv_param.pData = buffer;
+		key_derv_param.ulLen = data_len;
+		mech_derive.mechanism = mechanism;
+		mech_derive.pParameter = &key_derv_param;
+		mech_derive.ulParameterLen = sizeof(key_derv_param);
+		break;
+	case CKM_AES_CBC_ENCRYPT_DATA:
+		memcpy(aes_cbc_param.iv, iv, 16);
+		aes_cbc_param.pData = buffer;
+		aes_cbc_param.length = data_len;
+		mech_derive.mechanism = mechanism;
+		mech_derive.pParameter = &aes_cbc_param;
+		mech_derive.ulParameterLen = sizeof(aes_cbc_param);
+		break;
+	case CKM_AES_ECB:
+		/* Not a derivation algorithm */
+		mech_derive.mechanism = mechanism;
+		mech_derive.pParameter = NULL;
+		mech_derive.ulParameterLen = 0;
+		break;
+	default:
+		return rv;
+	}
+
+	/* Don't use VALUE_LEN parameter if key_len passed is 0 */
+	if (key_len)
+		rv = C_DeriveKey(session, &mech_derive, parent_key,
+				 derived_key_template,
+				 ARRAY_SIZE(derived_key_template),
+				 derv_key_hdl);
+	else
+		/* last attribute in template is the derived key size */
+		rv = C_DeriveKey(session, &mech_derive, parent_key,
+				 derived_key_template,
+				 ARRAY_SIZE(derived_key_template) - 1,
+				 derv_key_hdl);
+	return rv;
+}
+
+static void xtest_pkcs11_test_1017(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_OBJECT_HANDLE derv_key_hdl = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE aes_key1 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE aes_key2 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE aes_key_enc = CK_INVALID_HANDLE;
+	size_t data_len = 0;
+	size_t key_len = 0;
+	CK_BBOOL g_extract = CK_FALSE;
+	CK_BBOOL g_sensitive = CK_FALSE;
+	CK_BBOOL g_nextract = CK_FALSE;
+	CK_BBOOL g_asensitive = CK_FALSE;
+	CK_BBOOL g_local =  CK_FALSE;
+	CK_OBJECT_CLASS g_class = CKO_VENDOR_DEFINED;
+	CK_KEY_TYPE g_key_type = CKK_VENDOR_DEFINED;
+	uint8_t g_val[516] = { 0 };
+	CK_ULONG secret_len = 0;
+	CK_ATTRIBUTE get_template[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_EXTRACTABLE, &g_extract, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &g_sensitive, sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &secret_len, sizeof(secret_len) },
+		/*
+		 * CKA_VALUE should remain last attribute in template,
+		 * in this test case as we check the length returned
+		 * from last index of the get_template in this test.
+		 */
+		{ CKA_VALUE, g_val, sizeof(g_val) },
+	};
+	uint32_t idx = ARRAY_SIZE(get_template) - 1;
+	CK_ATTRIBUTE parent_template1[] = {
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+		{ CKA_DERIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE parent_template2[] = {
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE parent_template_wo_derive[] = {
+		{ CKA_SENSITIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+	};
+	CK_ATTRIBUTE parent_template_w_enc_der[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+	};
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/*
+	 * Parent AES Key 1
+	 * SENSITIVE = TRUE, EXTRACTABLE = FALSE
+	 * ALWAYS_SENSITIVE = TRUE, NEVER_EXTRACTABLE = TRUE
+	 */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   parent_template1, ARRAY_SIZE(parent_template1),
+			   &aes_key1);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	/*
+	 * Parent AES Key 2
+	 * SENSITIVE = FALSE, EXTRACTABLE = TRUE
+	 * ALWAYS_SENSITIVE = FALSE, NEVER_EXTRACTABLE = FALSE
+	 */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   parent_template2, ARRAY_SIZE(parent_template2),
+			   &aes_key2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	Do_ADBG_BeginSubCase(c, "Derive Generic secret - AES-ECB Mechanism");
+
+	/*
+	 * Use AES key 1 as Parent key
+	 * 1. VALUE_LEN attribute not given in derivation template. Length
+	 * of key should be same as that of data length.
+	 * 2. Derivation template has SENSITIVE = TRUE, EXTRACTABLE = FALSE
+	 * Parent key has ALWAYS_SENSITIVE = TRUE, NEVER_EXTRACTABLE = TRUE
+	 * So derived key, ALWAYS_SENSITIVE will be same as SENSITIVE and
+	 * NEVER_EXTRACTABLE will be opposite of EXTRACTABLE
+	 * 3. LOCAL should be false
+	 */
+	data_len = 512;
+	key_len = 0;
+	rv = derive_sym_key(session, aes_key1, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_GENERIC_SECRET, CK_TRUE, CK_FALSE);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, derv_key_hdl, get_template,
+				 ARRAY_SIZE(get_template) - 1);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, secret_len, ==, data_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==,
+					  CKK_GENERIC_SECRET) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_TRUE))
+		goto out;
+
+	rv = C_DestroyObject(session, derv_key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Derive AES key using AES-EBC");
+
+	/*
+	 * Use AES key 2 as Parent key
+	 * 1. VALUE_LEN < DATA_LEN, Derived key should have VALUE_LEN key size
+	 * 2. Derivation template has SENSITIVE = TRUE, EXTRACTABLE = FALSE
+	 * Parent key has ALWAYS_SENSITIVE = FALSE, NEVER_EXTRACTABLE = FALSE
+	 * So derived key, ALWAYS_SENSITIVE will be FALSE and
+	 * NEVER_EXTRACTABLE will be FALSE
+	 * 3. LOCAL should be false
+	 */
+	data_len = 32;
+	key_len = 16;
+	rv = derive_sym_key(session, aes_key2, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_TRUE, CK_FALSE);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* This being a SENSITIVE object, we can't get the VALUE */
+	rv = C_GetAttributeValue(session, derv_key_hdl, get_template,
+				 ARRAY_SIZE(get_template) - 1);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, secret_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_AES) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE))
+		goto out;
+
+	rv = C_DestroyObject(session, derv_key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Derive AES key using AES-CBC");
+
+	/*
+	 * Use AES key 1 as Parent key
+	 * 1. VALUE_LEN = DATA_LEN, Derived key should have VALUE_LEN key size
+	 * 2. Derivation template has SENSITIVE = FALSE, EXTRACTABLE = FALSE
+	 * Parent key has ALWAYS_SENSITIVE = TRUE, NEVER_EXTRACTABLE = TRUE
+	 * So derived key, ALWAYS_SENSITIVE will be same as SENSITIVE and
+	 * NEVER_EXTRACTABLE will be opposite of EXTRACTABLE
+	 * 3. LOCAL should be false
+	 */
+	data_len = 32;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key1, CKM_AES_CBC_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_FALSE);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, derv_key_hdl, get_template,
+				 ARRAY_SIZE(get_template) - 1);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, secret_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_AES) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_TRUE))
+		goto out;
+
+	rv = C_DestroyObject(session, derv_key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Derive Generic secret key using AES-CBC");
+	/*
+	 * Use AES key 2 as Parent key
+	 * 1. VALUE_LEN < DATA_LEN, Derived key should have VALUE_LEN key size
+	 * 2. Derivation template has SENSITIVE = FALSE, EXTRACTABLE = TRUE
+	 * Parent key has ALWAYS_SENSITIVE = TRUE, NEVER_EXTRACTABLE = TRUE
+	 * So derived key, ALWAYS_SENSITIVE will be same as SENSITIVE and
+	 * NEVER_EXTRACTABLE will be opposite of EXTRACTABLE
+	 * 3. LOCAL should be false
+	 */
+	data_len = 512;
+	key_len = 256;
+	rv = derive_sym_key(session, aes_key2, CKM_AES_CBC_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_GENERIC_SECRET, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, derv_key_hdl, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, get_template[idx].ulValueLen, ==,
+					  key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, secret_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==,
+					  CKK_GENERIC_SECRET) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE))
+		goto out;
+
+	rv = C_DestroyObject(session, derv_key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Invalid parameters during derivation");
+
+	/* Length of data used for derivation < key length */
+	data_len = 16;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key1, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_DATA_LEN_RANGE, rv))
+		goto out;
+
+	/* Data is not multiple of 16 */
+	data_len = 18;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key1, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_DATA_LEN_RANGE, rv))
+		goto out;
+
+	/* Wrong Mechanism */
+	rv = derive_sym_key(session, aes_key1, CKM_AES_ECB,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_MECHANISM_INVALID, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Failure if operation already active");
+
+	/* Generate an AES key which can perform Encryption */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   parent_template_w_enc_der,
+			   ARRAY_SIZE(parent_template_w_enc_der),
+			   &aes_key_enc);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_EncryptInit(session, &cktest_aes_cbc_mechanism, aes_key_enc);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	data_len = 32;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key2, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_ACTIVE, rv))
+		goto out;
+
+	rv = C_EncryptFinal(session, NULL, NULL);
+	/* Only check that the operation is no more active */
+	if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Failure if parent key CKA_ENCRYPT is TRUE");
+
+	data_len = 32;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key_enc, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	/*
+	 * Not strictly expecting FUNCTION_FAILED but expecting a failure
+	 * as we have added a restriction that keys with attribute CKA_ENCRYPT
+	 * set can't be used for derivation.
+	 */
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_FUNCTION_FAILED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Failure if parent key CKA_DERIVE is FALSE");
+
+	rv = C_DestroyObject(session, aes_key1);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   parent_template_wo_derive,
+			   ARRAY_SIZE(parent_template_wo_derive),
+			   &aes_key1);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	data_len = 32;
+	key_len = 32;
+	rv = derive_sym_key(session, aes_key1, CKM_AES_ECB_ENCRYPT_DATA,
+			    data_len, &derv_key_hdl, key_len, CKO_SECRET_KEY,
+			    CKK_AES, CK_FALSE, CK_TRUE);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_TYPE_INCONSISTENT, rv))
+		goto out;
+
+out:
+	Do_ADBG_EndSubCase(c, NULL);
+
+close_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1017, xtest_pkcs11_test_1017,
+		 "PKCS11: AES Key Derivation tests");
