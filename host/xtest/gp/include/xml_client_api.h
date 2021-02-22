@@ -269,12 +269,12 @@ static void init_mem(uint8_t *buf, size_t buf_size, size_t begin_size,
 #define TEEC_initialize_memory(shm, tmpMem, offset, _size, value_beginning, \
 			       value_middle, value_end) \
 	do { \
-		if ((long)shm != IGNORE) {\
+		if ((unsigned long)shm != IGNORE) {\
 			TEEC_SharedMemory *__shm = (void *)(long)shm; \
 			init_mem(__shm->buffer, __shm->size, offset, _size, \
 				 value_beginning, value_middle, value_end); \
 			assert(tempMem == IGNORE); \
-		} else if ((long)tmpMem != IGNORE) {\
+		} else if ((unsigned long)tmpMem != IGNORE) {\
 			/* \
 			 * We can't tell the size of tmpMem, so we assume \
 			 * it's offset + size large. \
