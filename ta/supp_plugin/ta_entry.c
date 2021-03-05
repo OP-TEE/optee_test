@@ -69,31 +69,20 @@ static TEE_Result write_array(uint32_t param_types,
 			      TEE_Param params[TEE_NUM_PARAMS])
 {
 	uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
-					  TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					  TEE_PARAM_TYPE_VALUE_OUTPUT,
 					  TEE_PARAM_TYPE_NONE,
 					  TEE_PARAM_TYPE_NONE);
 	TEE_Result res = TEE_ERROR_GENERIC;
 	size_t outlen = 0;
-	char *buf = NULL;
+	uint8_t *d = params[0].memref.buffer;
 
 	if (exp_pt != param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	buf = malloc(params[0].memref.size);
-	if (!buf)
-		return TEE_ERROR_OUT_OF_MEMORY;
-
-	/*
-	 * Plugins use a same buffer for input and output data.
-	 * Make copy of input data to avoid erasing of it by the output.
-	 *
-	 * Output data contain file name the input data will be stored.
-	 */
-	memcpy(buf, params[0].memref.buffer, params[0].memref.size);
-	res = tee_invoke_supp_plugin(&uuid, TEST_PLUGIN_CMD_WRITE_ARR, 0, buf,
+	res = tee_invoke_supp_plugin(&uuid, TEST_PLUGIN_CMD_WRITE_ARR, 0,
+				     params[0].memref.buffer,
 				     params[0].memref.size, &outlen);
-	memcpy(params[1].memref.buffer, buf, outlen);
-	free(buf);
+	params[1].value.a = d[0];
 
 	return res;
 }

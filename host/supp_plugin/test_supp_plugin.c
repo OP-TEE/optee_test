@@ -32,32 +32,20 @@ static TEEC_Result pass_values(unsigned int sub_cmd, void *data,
 	return TEEC_SUCCESS;
 }
 
-static TEEC_Result write_test_arr(unsigned int sub_cmd, void *data,
+static TEEC_Result proc_input_arr(unsigned int sub_cmd, void *data,
 				  size_t data_len, size_t *out_len)
 {
 	(void)sub_cmd;
-	(void)out_len;
 
-	int fd = -1;
-	int n = -1;
-	char template[] = "/tmp/testplugin-XXXXXX";
-	char fname[PATH_MAX] = { 0 };
+	size_t i = 0;
+	uint8_t sum = 0;
+	uint8_t *d = data;
 
-	strcpy(fname, template);
+	for (; i < data_len; ++i)
+		sum += d[i];
 
-	fd = mkstemp(fname);
-	if (fd < 0)
-		return TEEC_ERROR_GENERIC;
-
-	n = write(fd, (const void *)data, data_len);
-	if (n < 0) {
-		close(fd);
-		return TEEC_ERROR_GENERIC;
-	}
-
-	*out_len = sizeof(template);
-	memcpy(data, (const void *)fname, *out_len);
-	close(fd);
+	d[0] = sum;
+	*out_len = sizeof(sum);
 
 	return TEEC_SUCCESS;
 }
@@ -88,7 +76,7 @@ static TEEC_Result test_plugin_invoke(unsigned int cmd, unsigned int sub_cmd,
 	case TEST_PLUGIN_CMD_PASS_VALUES:
 		return pass_values(sub_cmd, data, data_len, out_len);
 	case TEST_PLUGIN_CMD_WRITE_ARR:
-		return write_test_arr(sub_cmd, data, data_len, out_len);
+		return proc_input_arr(sub_cmd, data, data_len, out_len);
 	case TEST_PLUGIN_CMD_GET_ARR:
 		return get_test_arr(sub_cmd, data, data_len, out_len);
 	default:
