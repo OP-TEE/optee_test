@@ -5,6 +5,9 @@
 
 #include <ck_debug.h>
 #include <inttypes.h>
+#ifdef OPENSSL_FOUND
+#include <openssl/evp.h>
+#endif
 #include <pkcs11.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -4173,3 +4176,812 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1017, xtest_pkcs11_test_1017,
 		 "PKCS11: AES Key Derivation tests");
+
+/* Digest test patterns */
+static const char digest_test_pattern[] = "The quick brown fox jumps over the lazy dog";
+static const char digest_test_pattern_empty[] = "";
+
+/* MD5 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_md5[] = {
+	0x9e, 0x10, 0x7d, 0x9d, 0x37, 0x2b, 0xb6, 0x82, 0x6b, 0xd8, 0x1d, 0x35,
+	0x42, 0xa4, 0x19, 0xd6
+};
+static const uint8_t digest_test_pattern_empty_md5[] = {
+	0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98,
+	0xec, 0xf8, 0x42, 0x7e
+};
+
+/* SHA-1 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_sha1[] = {
+	0x2f, 0xd4, 0xe1, 0xc6, 0x7a, 0x2d, 0x28, 0xfc, 0xed, 0x84, 0x9e, 0xe1,
+	0xbb, 0x76, 0xe7, 0x39, 0x1b, 0x93, 0xeb, 0x12
+};
+static const uint8_t digest_test_pattern_empty_sha1[] = {
+	0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef,
+	0x95, 0x60, 0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09
+};
+
+/* SHA-224 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_sha224[] = {
+	0x73, 0x0e, 0x10, 0x9b, 0xd7, 0xa8, 0xa3, 0x2b, 0x1c, 0xb9, 0xd9, 0xa0,
+	0x9a, 0xa2, 0x32, 0x5d, 0x24, 0x30, 0x58, 0x7d, 0xdb, 0xc0, 0xc3, 0x8b,
+	0xad, 0x91, 0x15, 0x25
+};
+static const uint8_t digest_test_pattern_empty_sha224[] = {
+	0xd1, 0x4a, 0x02, 0x8c, 0x2a, 0x3a, 0x2b, 0xc9, 0x47, 0x61, 0x02, 0xbb,
+	0x28, 0x82, 0x34, 0xc4, 0x15, 0xa2, 0xb0, 0x1f, 0x82, 0x8e, 0xa6, 0x2a,
+	0xc5, 0xb3, 0xe4, 0x2f
+};
+
+/* SHA-256 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_sha256[] = {
+	0xd7, 0xa8, 0xfb, 0xb3, 0x07, 0xd7, 0x80, 0x94, 0x69, 0xca, 0x9a, 0xbc,
+	0xb0, 0x08, 0x2e, 0x4f, 0x8d, 0x56, 0x51, 0xe4, 0x6d, 0x3c, 0xdb, 0x76,
+	0x2d, 0x02, 0xd0, 0xbf, 0x37, 0xc9, 0xe5, 0x92
+};
+static const uint8_t digest_test_pattern_empty_sha256[] = {
+	0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8,
+	0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c,
+	0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55
+};
+
+/* SHA-384 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_sha384[] = {
+	0xca, 0x73, 0x7f, 0x10, 0x14, 0xa4, 0x8f, 0x4c, 0x0b, 0x6d, 0xd4, 0x3c,
+	0xb1, 0x77, 0xb0, 0xaf, 0xd9, 0xe5, 0x16, 0x93, 0x67, 0x54, 0x4c, 0x49,
+	0x40, 0x11, 0xe3, 0x31, 0x7d, 0xbf, 0x9a, 0x50, 0x9c, 0xb1, 0xe5, 0xdc,
+	0x1e, 0x85, 0xa9, 0x41, 0xbb, 0xee, 0x3d, 0x7f, 0x2a, 0xfb, 0xc9, 0xb1
+};
+static const uint8_t digest_test_pattern_empty_sha384[] = {
+	0x38, 0xb0, 0x60, 0xa7, 0x51, 0xac, 0x96, 0x38, 0x4c, 0xd9, 0x32, 0x7e,
+	0xb1, 0xb1, 0xe3, 0x6a, 0x21, 0xfd, 0xb7, 0x11, 0x14, 0xbe, 0x07, 0x43,
+	0x4c, 0x0c, 0xc7, 0xbf, 0x63, 0xf6, 0xe1, 0xda, 0x27, 0x4e, 0xde, 0xbf,
+	0xe7, 0x6f, 0x65, 0xfb, 0xd5, 0x1a, 0xd2, 0xf1, 0x48, 0x98, 0xb9, 0x5b
+};
+
+/* SHA-512 checksums for digest test patterns */
+static const uint8_t digest_test_pattern_sha512[] = {
+	0x07, 0xe5, 0x47, 0xd9, 0x58, 0x6f, 0x6a, 0x73, 0xf7, 0x3f, 0xba, 0xc0,
+	0x43, 0x5e, 0xd7, 0x69, 0x51, 0x21, 0x8f, 0xb7, 0xd0, 0xc8, 0xd7, 0x88,
+	0xa3, 0x09, 0xd7, 0x85, 0x43, 0x6b, 0xbb, 0x64, 0x2e, 0x93, 0xa2, 0x52,
+	0xa9, 0x54, 0xf2, 0x39, 0x12, 0x54, 0x7d, 0x1e, 0x8a, 0x3b, 0x5e, 0xd6,
+	0xe1, 0xbf, 0xd7, 0x09, 0x78, 0x21, 0x23, 0x3f, 0xa0, 0x53, 0x8f, 0x3d,
+	0xb8, 0x54, 0xfe, 0xe6
+};
+static const uint8_t digest_test_pattern_empty_sha512[] = {
+	0xcf, 0x83, 0xe1, 0x35, 0x7e, 0xef, 0xb8, 0xbd, 0xf1, 0x54, 0x28, 0x50,
+	0xd6, 0x6d, 0x80, 0x07, 0xd6, 0x20, 0xe4, 0x05, 0x0b, 0x57, 0x15, 0xdc,
+	0x83, 0xf4, 0xa9, 0x21, 0xd3, 0x6c, 0xe9, 0xce, 0x47, 0xd0, 0xd1, 0x3c,
+	0x5d, 0x85, 0xf2, 0xb0, 0xff, 0x83, 0x18, 0xd2, 0x87, 0x7e, 0xec, 0x2f,
+	0x63, 0xb9, 0x31, 0xbd, 0x47, 0x41, 0x7a, 0x81, 0xa5, 0x38, 0x32, 0x7a,
+	0xf9, 0x27, 0xda, 0x3e
+};
+
+#define DIGEST_TEST(_test_name, _mecha, _data, _digest) \
+	{ \
+		.test_name = _test_name, \
+		.mecha = _mecha, \
+		.data = _data, \
+		.data_size = sizeof(_data) - 1, \
+		.digest = _digest, \
+		.digest_size = sizeof(_digest) \
+	}
+
+/* Digest simple test suite */
+static struct {
+	const char *test_name;
+	CK_MECHANISM_TYPE mecha;
+	const void *data;
+	CK_ULONG data_size;
+	const uint8_t *digest;
+	CK_ULONG digest_size;
+} digest_test_patterns[] = {
+	DIGEST_TEST("CKM_MD5/empty", CKM_MD5, digest_test_pattern_empty,
+		    digest_test_pattern_empty_md5),
+	DIGEST_TEST("CKM_MD5/test pattern", CKM_MD5, digest_test_pattern,
+		    digest_test_pattern_md5),
+	DIGEST_TEST("CKM_SHA_1/empty", CKM_SHA_1, digest_test_pattern_empty,
+		    digest_test_pattern_empty_sha1),
+	DIGEST_TEST("CKM_SHA_1/test pattern", CKM_SHA_1, digest_test_pattern,
+		    digest_test_pattern_sha1),
+	DIGEST_TEST("CKM_SHA224/empty", CKM_SHA224, digest_test_pattern_empty,
+		    digest_test_pattern_empty_sha224),
+	DIGEST_TEST("CKM_SHA224/test pattern", CKM_SHA224, digest_test_pattern,
+		    digest_test_pattern_sha224),
+	DIGEST_TEST("CKM_SHA256/empty", CKM_SHA256, digest_test_pattern_empty,
+		    digest_test_pattern_empty_sha256),
+	DIGEST_TEST("CKM_SHA256/test pattern", CKM_SHA256, digest_test_pattern,
+		    digest_test_pattern_sha256),
+	DIGEST_TEST("CKM_SHA384/empty", CKM_SHA384, digest_test_pattern_empty,
+		    digest_test_pattern_empty_sha384),
+	DIGEST_TEST("CKM_SHA384/test pattern", CKM_SHA384, digest_test_pattern,
+		    digest_test_pattern_sha384),
+	DIGEST_TEST("CKM_SHA512/empty", CKM_SHA512, digest_test_pattern_empty,
+		    digest_test_pattern_empty_sha512),
+	DIGEST_TEST("CKM_SHA512/test pattern", CKM_SHA512, digest_test_pattern,
+		    digest_test_pattern_sha512),
+};
+
+static CK_ATTRIBUTE digest_generate_aes_object[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+	  sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){ CKK_AES }, sizeof(CK_KEY_TYPE) },
+	{ CKA_TOKEN, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_PRIVATE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+};
+
+static CK_ATTRIBUTE digest_generate_gensecret_object[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+	  sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){ CKK_GENERIC_SECRET },
+	  sizeof(CK_KEY_TYPE) },
+	{ CKA_TOKEN, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_PRIVATE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+};
+
+static CK_ATTRIBUTE digest_data_object[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_DATA },
+	  sizeof(CK_OBJECT_CLASS) },
+	{ CKA_TOKEN, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	{ CKA_PRIVATE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+};
+
+static void xtest_pkcs11_test_1018(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	bool logged_in = false;
+	uint8_t data[128] = { 0 };
+	CK_ULONG data_size = 0;
+	uint8_t digest[64] = { 0 };
+	CK_ULONG digest_size = 0;
+	const uint8_t *expect_digest = NULL;
+	CK_ULONG expect_digest_size = 0;
+	CK_MECHANISM mechanism = { CKM_MD5, NULL, 0 };
+	uint8_t secret_data[128] = { 0 };
+	CK_ULONG secret_data_size __maybe_unused = 0;
+	CK_ATTRIBUTE digest_get_secret_value[] = {
+		{ CKA_VALUE, &secret_data, sizeof(secret_data) },
+	};
+	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
+#ifdef OPENSSL_FOUND
+	EVP_MD_CTX *mdctx = NULL;
+	unsigned char hash[EVP_MAX_MD_SIZE] = { 0 };
+	unsigned int md_len = 0;
+	int ret = 0;
+#endif
+	size_t i = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Test out simple successful cases with init+update+final*/
+	for (i = 0; i < ARRAY_SIZE(digest_test_patterns); i++) {
+		Do_ADBG_BeginSubCase(c, "Simple digest tests - update - %s",
+				     digest_test_patterns[i].test_name);
+
+		mechanism.mechanism = digest_test_patterns[i].mecha;
+		memset(data, 0xCC, sizeof(data));
+		memset(digest, 0xCC, sizeof(digest));
+		digest_size = sizeof(digest);
+
+		memcpy(data, digest_test_patterns[i].data,
+		       digest_test_patterns[i].data_size);
+		data_size = digest_test_patterns[i].data_size;
+
+		expect_digest = digest_test_patterns[i].digest;
+		expect_digest_size = digest_test_patterns[i].digest_size;
+
+		rv = C_DigestInit(session, &mechanism);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		rv = C_DigestUpdate(session, data, data_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		rv = C_DigestFinal(session, digest, &digest_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		if (!ADBG_EXPECT_BUFFER(c, expect_digest, expect_digest_size,
+					digest,	digest_size))
+			goto out;
+
+		/* Verify that end of buffer is still 0xCC */
+		for (i = expect_digest_size; i < sizeof(digest); i++)
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, digest[i], ==,
+							  0xCC))
+				goto out;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+
+	/* Test out simple successful cases */
+	for (i = 0; i < ARRAY_SIZE(digest_test_patterns); i++) {
+		Do_ADBG_BeginSubCase(c, "Simple digest tests - oneshot - %s",
+				     digest_test_patterns[i].test_name);
+
+		mechanism.mechanism = digest_test_patterns[i].mecha;
+		memset(data, 0xCC, sizeof(data));
+		memset(digest, 0xCC, sizeof(digest));
+		digest_size = sizeof(digest);
+
+		memcpy(data, digest_test_patterns[i].data,
+		       digest_test_patterns[i].data_size);
+		data_size = digest_test_patterns[i].data_size;
+
+		expect_digest = digest_test_patterns[i].digest;
+		expect_digest_size = digest_test_patterns[i].digest_size;
+
+		rv = C_DigestInit(session, &mechanism);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		rv = C_Digest(session, data, data_size, digest, &digest_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+
+		if (!ADBG_EXPECT_BUFFER(c, expect_digest, expect_digest_size,
+					digest,	digest_size))
+			goto out;
+
+		/* Verify that end of buffer is still 0xCC */
+		for (i = expect_digest_size; i < sizeof(digest); i++)
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, digest[i], ==,
+							  0xCC))
+				goto out;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+
+	/* Test out key updates */
+
+	Do_ADBG_BeginSubCase(c, "Simple digest tests - AES key update - SHA-256");
+
+	/* Login to Test Token */
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	logged_in = true;
+
+	/* Generate AES key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   digest_generate_aes_object,
+			   ARRAY_SIZE(digest_generate_aes_object),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	memset(secret_data, 0xCC, sizeof(data));
+	digest_get_secret_value[0].ulValueLen = sizeof(secret_data);
+
+	/* Get value of generated secret for verification purposes */
+	rv = C_GetAttributeValue(session, key_handle, digest_get_secret_value,
+				 ARRAY_SIZE(digest_get_secret_value));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	secret_data_size = digest_get_secret_value[0].ulValueLen;
+
+	/* Calculate digest with PKCS11 */
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestKey(session, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Verify digest with openssl */
+#ifdef OPENSSL_FOUND
+	mdctx = EVP_MD_CTX_create();
+	if (!ADBG_EXPECT_NOT_NULL(c, mdctx))
+		goto out;
+	ret = EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestUpdate(mdctx, data, data_size);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestUpdate(mdctx, secret_data, secret_data_size);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestFinal_ex(mdctx, hash, &md_len);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	EVP_MD_CTX_destroy(mdctx);
+	mdctx = NULL;
+
+	if (!ADBG_EXPECT_BUFFER(c, hash, md_len, digest, digest_size))
+		goto out;
+#else
+	Do_ADBG_Log("OpenSSL not available, skipping C_DigestKey verification");
+#endif
+
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+	key_handle = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Simple digest tests - generic secret key update - SHA-256");
+
+	/* Generate generic secret key */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   digest_generate_gensecret_object,
+			   ARRAY_SIZE(digest_generate_gensecret_object),
+			   &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	memset(secret_data, 0xCC, sizeof(data));
+	digest_get_secret_value[0].ulValueLen = sizeof(secret_data);
+
+	/* Get value of generated secret for verification purposes */
+	rv = C_GetAttributeValue(session, key_handle, digest_get_secret_value,
+				 ARRAY_SIZE(digest_get_secret_value));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	secret_data_size = digest_get_secret_value[0].ulValueLen;
+
+	/* Calculate digest with PKCS11 */
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestKey(session, key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Verify digest with openssl */
+#ifdef OPENSSL_FOUND
+	mdctx = EVP_MD_CTX_create();
+	if (!ADBG_EXPECT_NOT_NULL(c, mdctx))
+		goto out;
+	ret = EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestUpdate(mdctx, data, data_size);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestUpdate(mdctx, secret_data, secret_data_size);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	ret = EVP_DigestFinal_ex(mdctx, hash, &md_len);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, ret, ==, 1))
+		goto out;
+	EVP_MD_CTX_destroy(mdctx);
+	mdctx = NULL;
+
+	if (!ADBG_EXPECT_BUFFER(c, hash, md_len, digest, digest_size))
+		goto out;
+#else
+	Do_ADBG_Log("OpenSSL not available, skipping C_DigestKey verification");
+#endif
+
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+	key_handle = CK_INVALID_HANDLE;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Query digest size - C_DigestFinal");
+
+	mechanism.mechanism = digest_test_patterns[0].mecha;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = 0;
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	expect_digest = digest_test_patterns[0].digest;
+	expect_digest_size = digest_test_patterns[0].digest_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, NULL, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, digest_size, ==,
+					  expect_digest_size))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (!ADBG_EXPECT_BUFFER(c, expect_digest, expect_digest_size,
+				digest,	digest_size))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Query digest size - C_Digest");
+
+	mechanism.mechanism = digest_test_patterns[0].mecha;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = 0;
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	expect_digest = digest_test_patterns[0].digest;
+	expect_digest_size = digest_test_patterns[0].digest_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, NULL, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, digest_size, ==,
+					  expect_digest_size))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	if (!ADBG_EXPECT_BUFFER(c, expect_digest, expect_digest_size,
+				digest,	digest_size))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Query digest size - buffer too small");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = 0;
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, digest_size, ==, 32))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/* Test bad arguments & operation terminations */
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestUpdate");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, NULL, 10);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestFinal with NULL digest");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, NULL, NULL);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestFinal with digest but NULL size");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestUpdate(session, data, data_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, NULL);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_DigestFinal(session, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_Digest with NULL data but non-zero size");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Digest(session, NULL, 10, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_Digest with NULL digest");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, NULL, NULL);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestFinal with digest but NULL size");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, digest, NULL);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	rv = C_Digest(session, data, data_size, digest, &digest_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestKey with invalid key handle");
+
+	rv = C_CreateObject(session, digest_data_object,
+			    ARRAY_SIZE(digest_data_object), &key_handle);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestKey(session, 9999);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_HANDLE_INVALID, rv))
+		goto out;
+
+	rv = C_DigestKey(session, key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test bad arguments - C_DigestKey with non-secret key type");
+
+	mechanism.mechanism = CKM_SHA256;
+
+	memset(data, 0xCC, sizeof(data));
+	memset(digest, 0xCC, sizeof(digest));
+	digest_size = sizeof(digest);
+
+	memcpy(data, digest_test_patterns[0].data,
+	       digest_test_patterns[0].data_size);
+	data_size = digest_test_patterns[0].data_size;
+
+	rv = C_DigestInit(session, &mechanism);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DigestKey(session, key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_INDIGESTIBLE, rv))
+		goto out;
+
+	rv = C_DigestKey(session, key_handle);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out;
+
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+	key_handle = CK_INVALID_HANDLE;
+
+out:
+#ifdef OPENSSL_FOUND
+	if (!ADBG_EXPECT_POINTER(c, NULL, mdctx)) {
+		Do_ADBG_Log("Unexpected failure in openssl functions: %d",
+			    ret);
+		EVP_MD_CTX_destroy(mdctx);
+	}
+#endif
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	if (logged_in)
+		ADBG_EXPECT_CK_OK(c, C_Logout(session));
+
+	if (key_handle != CK_INVALID_HANDLE) {
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+		key_handle = CK_INVALID_HANDLE;
+	}
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1018, xtest_pkcs11_test_1018,
+		 "PKCS11: Digest tests");
