@@ -3147,7 +3147,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_GENERIC_SECRET},
 						sizeof(CK_KEY_TYPE) },
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
-		{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+		{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
 		{ CKA_SIGN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 		{ CKA_VERIFY, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
@@ -3162,6 +3162,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 	CK_BBOOL g_decrypt = CK_FALSE;
 	CK_BBOOL g_wrap = CK_FALSE;
 	CK_BBOOL g_unwrap = CK_FALSE;
+	uint32_t g_len = 0;
 	CK_ATTRIBUTE get_template[] = {
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)g_label, sizeof(g_label) },
 		{ CKA_ID, (CK_BYTE_PTR)g_id, sizeof(g_id) },
@@ -3172,6 +3173,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
 		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
 		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &g_len, sizeof(CK_ULONG) },
 	};
 	CK_ATTRIBUTE set_template[] = {
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)new_label, strlen(new_label) },
@@ -3253,6 +3255,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_TRUE) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_TRUE) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_len, ==, 16) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, get_template[1].ulValueLen, ==, 0))
 		goto out;
 
@@ -3345,6 +3348,18 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 	CK_OBJECT_HANDLE obj_hdl_ro = CK_INVALID_HANDLE;
 	CK_OBJECT_HANDLE obj_hdl_cp = CK_INVALID_HANDLE;
 	const char *label = "Dummy Objects";
+	CK_ATTRIBUTE secret_key_create_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+		{ CKA_TOKEN, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
+		{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_COPYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_DESTROYABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
+		{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+	};
 	CK_ATTRIBUTE secret_key_template[] = {
 		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
 						sizeof(CK_OBJECT_CLASS) },
@@ -3441,8 +3456,8 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 		goto close_session;
 
 	/* Create a secret key object in ro session*/
-	rv = C_CreateObject(ro_session, secret_key_template,
-			    ARRAY_SIZE(secret_key_template), &obj_hdl_ro);
+	rv = C_CreateObject(ro_session, secret_key_create_template,
+			    ARRAY_SIZE(secret_key_create_template), &obj_hdl_ro);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_session;
 
@@ -4322,7 +4337,7 @@ static CK_ATTRIBUTE digest_generate_gensecret_object[] = {
 	{ CKA_PRIVATE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
 	{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
 	{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
-	{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){ 32 }, sizeof(CK_ULONG) },
 };
 
 static CK_ATTRIBUTE digest_data_object[] = {
