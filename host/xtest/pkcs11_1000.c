@@ -3503,6 +3503,11 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_session;
 
+	/*
+	 * All objects in this test are session objects hence released at
+	 * session closure on test completion.
+	 */
+
 	/* Generate a secret key object in rw session */
 	rv = C_GenerateKey(rw_session, &cktest_aes_keygen_mechanism,
 			   secret_key_template,
@@ -5458,3 +5463,639 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1019, xtest_pkcs11_test_1019,
 		 "PKCS11: Elliptic Curve key generation and signing");
+
+#define WRAPPED_TEST_KEY_SIZE	48
+
+static void xtest_pkcs11_test_1020(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_OBJECT_HANDLE wrapping_key1 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE wrapping_key2 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE wrapping_key_inv = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_sz24 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_sens = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_inv = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE unwrapped_key = CK_INVALID_HANDLE;
+	CK_ATTRIBUTE set_w_unw_template[] = {
+		{ CKA_WRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_wwt_template[] = {
+		{ CKA_WRAP_WITH_TRUSTED, &(CK_BBOOL){ CK_TRUE },
+		  sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE set_trusted_template[] = {
+		{ CKA_TRUSTED, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE wrap_template[] = {
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE unwrap_template[] = {
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE wrapping_key_template[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE wrapping_key_temp_w_indirect[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_WRAP_TEMPLATE, &wrap_template, sizeof(wrap_template) },
+		{ CKA_UNWRAP_TEMPLATE, &unwrap_template,
+		  sizeof(unwrap_template) },
+	};
+	CK_ATTRIBUTE unwrap_template2[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_AES }, sizeof(CK_KEY_TYPE) },
+		{ CKA_TOKEN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+	};
+	CK_ATTRIBUTE wrapping_key_temp_w_indirect2[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP_TEMPLATE, &unwrap_template2,
+		  sizeof(unwrap_template2) },
+	};
+	CK_ATTRIBUTE wrapping_key_template_inv1[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE key_template[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE key_template_sens[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE key_template_inv1[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE key_sz24_template[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 24 }, sizeof(CK_ULONG) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE new_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_GENERIC_SECRET },
+		  sizeof(CK_KEY_TYPE) },
+		{ CKA_ENCRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE}, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE new_key_template_sens[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_AES }, sizeof(CK_KEY_TYPE) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE new_key_template2[] = {
+		{ CKA_DERIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE new_key_template3[] = {
+		{ CKA_VALUE_LEN, &(CK_ULONG){ 16 }, sizeof(CK_ULONG) },
+		{ CKA_PRIVATE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE new_key_template4[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_GENERIC_SECRET },
+		  sizeof(CK_KEY_TYPE) },
+		{ CKA_PRIVATE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_BBOOL g_extract = CK_FALSE;
+	CK_BBOOL g_sensitive = CK_TRUE;
+	CK_BBOOL g_nextract = CK_TRUE;
+	CK_BBOOL g_asensitive = CK_TRUE;
+	CK_BBOOL g_local = CK_TRUE;
+	CK_BBOOL g_token = CK_FALSE;
+	CK_BBOOL g_derive = CK_FALSE;
+	CK_OBJECT_CLASS g_class = CKO_VENDOR_DEFINED;
+	CK_KEY_TYPE g_key_type = CKK_VENDOR_DEFINED;
+	uint8_t g_val[WRAPPED_TEST_KEY_SIZE] = { 0 };
+	CK_ULONG key_len = 0;
+	uint8_t g_unwrapped_val[WRAPPED_TEST_KEY_SIZE] = { 0 };
+	CK_ULONG unwrapped_key_len = 0;
+	/* Keep last attribute as CKA_VALUE */
+	CK_ATTRIBUTE get_template_unwrapped[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_EXTRACTABLE, &g_extract, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &g_sensitive, sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_TOKEN, &g_token, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_VALUE_LEN, &unwrapped_key_len,
+		  sizeof(unwrapped_key_len) },
+		{ CKA_VALUE, g_unwrapped_val, sizeof(g_unwrapped_val) },
+	};
+	CK_ATTRIBUTE get_template[] = {
+		{ CKA_VALUE_LEN, &key_len, sizeof(key_len) },
+		{ CKA_VALUE, g_val, sizeof(g_val) },
+	};
+	uint8_t buf[WRAPPED_TEST_KEY_SIZE] = { 0 };
+	CK_ULONG size = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Wrapping Key - AES Key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   wrapping_key_template,
+			   ARRAY_SIZE(wrapping_key_template), &wrapping_key1);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	/* Key to be wrapped - AES key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   key_template, ARRAY_SIZE(key_template),
+			   &key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	Do_ADBG_BeginSubCase(c, "Test key wrap with AES ECB");
+
+	/*
+	 * Test NULL buffer and NULL out_size to verify bad argument processing
+	 */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       NULL, NULL);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv))
+		goto out;
+
+	/*
+	 * Test NULL buffer case with size as 0 to get the out_size
+	 */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       NULL, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, <=, sizeof(buf)))
+		goto out;
+
+	/*
+	 * Test NULL buffer case with size non zero size to get the out_size
+	 */
+	size = 1;
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       NULL, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, <=, sizeof(buf)))
+		goto out;
+
+	/* Test short buffer */
+	size = 12;
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, <=, sizeof(buf)))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Get the size of the original key which was wrapped in key_len.
+	 * This will be compared to the length of the key after unwrapping.
+	 */
+	rv = C_GetAttributeValue(session, key, get_template,
+				 ARRAY_SIZE(get_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test key unwrap with AES ECB");
+
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, buf,
+			 size, new_key_template, ARRAY_SIZE(new_key_template),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * The key created after unwrapping should have CKA_LOCAL = FALSE,
+	 * CKA_ALWAYS_SENSITIVE and CKA_NEVER_EXTRACTABLE as FALSE.
+	 * Default value of CKA_EXTRACTABLE if not specified in the template
+	 * is TRUE. We have deliberately set CKA_SENSITIVE to false for
+	 * both original key and unwrapped_key. This is done to be able to
+	 * extract the value of keys and compare them. This is done mainly
+	 * for testing. In actual examples, we expect CKA_SENSITIVE of keys
+	 * to be wrapped to be TRUE.
+	 */
+	rv = C_GetAttributeValue(session, unwrapped_key, get_template_unwrapped,
+				 ARRAY_SIZE(get_template_unwrapped));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_BUFFER(c, g_unwrapped_val, unwrapped_key_len, g_val,
+				key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==,
+					  CKK_GENERIC_SECRET) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE))
+		goto out;
+
+	rv = C_DestroyObject(session, unwrapped_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Invalid UnWrap cases");
+
+	/* Failure when unwrapping as a private session key */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, buf,
+			 size, new_key_template4, ARRAY_SIZE(new_key_template4),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	/* Provide incomplete template */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, buf,
+			 size, new_key_template2, ARRAY_SIZE(new_key_template2),
+			 &unwrapped_key);
+
+	/*
+	 * The error code can also be CKR_TEMPLATE_INCOMPLETE. The
+	 * current implementation returns CKR_TEMPLATE_INCONSISTENT
+	 */
+	if (!ADBG_EXPECT_TRUE(c, rv == CKR_TEMPLATE_INCOMPLETE ||
+				 rv == CKR_TEMPLATE_INCONSISTENT))
+		goto out;
+
+	/* Try unwrapping with a key without CKA_UNWRAP */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, key, buf, size,
+			 new_key_template, ARRAY_SIZE(new_key_template),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_UNWRAPPING_KEY_TYPE_INCONSISTENT, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Invalid Wrap cases");
+
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   wrapping_key_template_inv1,
+			   ARRAY_SIZE(wrapping_key_template_inv1),
+			   &wrapping_key_inv);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Wrapping key used without CKA_WRAP set */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key_inv,
+		       key, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_WRAPPING_KEY_TYPE_INCONSISTENT, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, wrapping_key_inv);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	/* Use invalid wrapping key handle */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key_inv,
+		       key, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_WRAPPING_KEY_HANDLE_INVALID, rv))
+		goto out;
+
+	/* CKA_EXTRACTABLE attribute of the key to be wrapped is CKA_FALSE */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   key_template_inv1, ARRAY_SIZE(key_template_inv1),
+			   &key_inv);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       key_inv, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_UNEXTRACTABLE, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, key_inv);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	/* Use invalid key handle */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       key_inv, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_HANDLE_INVALID, rv))
+		goto out;
+
+	/* Try wrapping the wrapping key */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       wrapping_key1, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_WRAPPING_KEY_HANDLE_INVALID, rv))
+		goto out;
+
+	/* Use invalid mechanism */
+	rv = C_WrapKey(session, &cktest_hmac_md5_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_MECHANISM_INVALID, rv))
+		goto out;
+
+	/* Try wrapping when an operation is already active */
+	rv = C_EncryptInit(session, &cktest_aes_cbc_mechanism, key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_ACTIVE, rv))
+		goto out;
+
+	rv = C_EncryptFinal(session, NULL, NULL);
+	/* Only check that the operation is no more active */
+	if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
+		goto out;
+
+	/*
+	 * Try wrapping using CKK_GENERIC_SECRET when mechanism used is
+	 * AES_ECB. Generate a secret key object in rw session.
+	 */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_gensecret_object_valid1,
+			   ARRAY_SIZE(cktest_generate_gensecret_object_valid1),
+			   &key_inv);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Make the Generic secret key wrapping/unwrapping key */
+	rv = C_SetAttributeValue(session, key_inv, set_w_unw_template,
+				 ARRAY_SIZE(set_w_unw_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, key_inv, key, buf,
+		       &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_WRAPPING_KEY_TYPE_INCONSISTENT, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, key_inv);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Wrap with different length key");
+
+	/* Generate Key of size 192 bits */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   key_sz24_template, ARRAY_SIZE(key_sz24_template),
+			   &key_sz24);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	size = 0;
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       key_sz24, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, 32))
+		goto out;
+
+	size = 24;
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       key_sz24, buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, 32))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1,
+		       key_sz24, buf, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, 32))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test Wrap/Unwrap with indirect template");
+
+	/* Wrapping Key with indirect templates - AES Key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   wrapping_key_temp_w_indirect,
+			   ARRAY_SIZE(wrapping_key_temp_w_indirect),
+			   &wrapping_key2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Attribute mismatch with CKA_WRAP_TEMPLATE.
+	 * Error expected when wrapping a key whose template doesn't match with
+	 * the CKA_WRAP_TEMPLATE in the wrapping_key. In this example, the
+	 * CKA_WRAP_TEMPLATE expects CKA_SENSITIVE of the key to be wrapped to
+	 * be TRUE which is not the case here.
+	 */
+	size = sizeof(buf);
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_HANDLE_INVALID, rv))
+		goto out;
+
+	/* Generate SENSITIVE Key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   key_template_sens, ARRAY_SIZE(key_template_sens),
+			   &key_sens);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2,
+		       key_sens, buf, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Unwrap to create key with SENSITIVE set as FALSE.
+	 * This should fail as indirect attribute CKA_UNWRAP_TEMPLATE restricts
+	 * creation of key with CKA_SENSITIVE as FALSE.
+	 */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, buf,
+			 size, new_key_template, ARRAY_SIZE(new_key_template),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCONSISTENT, rv))
+		goto out;
+
+	/* Unwrap a wrapped sensitive key to create a SENSITIVE key */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, buf,
+			 size, new_key_template_sens,
+			 ARRAY_SIZE(new_key_template_sens), &unwrapped_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Get the attributes of created. Skip last attribute in
+	 * get_template_wrapped as that is CKA_VALUE which would give an
+	 * error for a sensitive key
+	 */
+	rv = C_GetAttributeValue(session, unwrapped_key, get_template_unwrapped,
+				 ARRAY_SIZE(get_template_unwrapped) - 1);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, unwrapped_key_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_AES) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE))
+		goto out;
+
+	if (!ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, unwrapped_key)) ||
+	    !ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, wrapping_key2)) ||
+	    !ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_sens)))
+		goto out;
+
+	/* Create wrapping key with indirect template specifying class & key */
+	rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
+			   wrapping_key_temp_w_indirect2,
+			   ARRAY_SIZE(wrapping_key_temp_w_indirect2),
+			   &wrapping_key2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	size = sizeof(buf);
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Use minimal new key template just specifying attribute of key */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, buf,
+			 size, new_key_template2, ARRAY_SIZE(new_key_template2),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, unwrapped_key, get_template_unwrapped,
+				 ARRAY_SIZE(get_template_unwrapped) - 1);
+
+	/* Destroy created token object */
+	if (!ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, unwrapped_key)))
+		goto out;
+
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, unwrapped_key_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_AES) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE))
+		goto out;
+
+	/*
+	 * Unwrap with NULL template when CKA_UNWRAP_TEMPLATE has all
+	 * attributes to generate a key
+	 */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, buf,
+			 size, NULL, 0, &unwrapped_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_GetAttributeValue(session, unwrapped_key, get_template_unwrapped,
+				 ARRAY_SIZE(get_template_unwrapped) - 1);
+
+	/* Destroy created token object */
+	if (!ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, unwrapped_key)))
+		goto out;
+
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, unwrapped_key_len, ==, key_len) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_SECRET_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_AES) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE)) {
+		goto out;
+	}
+
+	/* Unwrap and try create a Private token object */
+	rv = C_UnwrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key2, buf,
+			 size, new_key_template3, ARRAY_SIZE(new_key_template3),
+			 &unwrapped_key);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Test usage of CKA_WRAP_WITH_TRUSTED");
+
+	/* Set Attribute WRAP_WITH_TRUSTED on the key */
+	rv = C_SetAttributeValue(session, key, set_wwt_template,
+				 ARRAY_SIZE(set_wwt_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/*
+	 * Try wrapping the key with attribute CKA_WRAP_WITH_TRUSTED with
+	 * normal wrapping key
+	 */
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_KEY_NOT_WRAPPABLE, rv))
+		goto out;
+
+	/* Login as SO in RW session */
+	rv = C_Login(session, CKU_SO, test_token_so_pin,
+		     sizeof(test_token_so_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_SetAttributeValue(session, wrapping_key1, set_trusted_template,
+				 ARRAY_SIZE(set_trusted_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_CK_OK(c, C_Logout(session)))
+		goto out;
+
+	rv = C_WrapKey(session, &cktest_aes_ecb_mechanism, wrapping_key1, key,
+		       buf, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+out:
+	Do_ADBG_EndSubCase(c, NULL);
+close_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1020, xtest_pkcs11_test_1020,
+		 "PKCS11: AES Key Wrap/UnWrap tests");
