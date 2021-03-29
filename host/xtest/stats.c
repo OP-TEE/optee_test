@@ -104,12 +104,12 @@ static int stat_pager(int argc, char *argv[])
 		     res, eo);
 
 	printf("Pager statistics (Number of):\n");
-	printf("Available physical pages: %"PRId32"\n", op.params[0].value.a);
-	printf("Faults:                   %"PRId32"\n", op.params[0].value.b);
-	printf("R/O faults:               %"PRId32"\n", op.params[1].value.a);
-	printf("R/W faults:               %"PRId32"\n", op.params[1].value.b);
-	printf("Hidden faults:            %"PRId32"\n", op.params[2].value.a);
-	printf("Zi pages released:        %"PRId32"\n", op.params[2].value.b);
+	printf("Unlocked pages:     %"PRId32"\n", op.params[0].value.a);
+	printf("Page pool size:     %"PRId32"\n", op.params[0].value.b);
+	printf("R/O faults:         %"PRId32"\n", op.params[1].value.a);
+	printf("R/W faults:         %"PRId32"\n", op.params[1].value.b);
+	printf("Hidden faults:      %"PRId32"\n", op.params[2].value.a);
+	printf("Zi pages released:  %"PRId32"\n", op.params[2].value.b);
 
 	return close_sess(&ctx, &sess);
 }
