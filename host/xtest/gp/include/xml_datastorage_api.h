@@ -242,7 +242,7 @@ TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE_GEN_OUT_OF_RANGE_INF[] = {
 };
 
 static const uint8_t TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE_GEN_NOT_ODD[] = {
-	0x02, 0x00, 0x01, /* 65538 */
+	0x01, 0x00, 0x02, /* 65538 */
 };
 
 static const uint8_t TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE_65537[] = {
@@ -250,7 +250,7 @@ static const uint8_t TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE_65537[] = {
 };
 
 static const uint8_t TEE_ATTR_RSA_PUBLIC_EXPONENT_VALUE_NOT_GEN_DEFAULT[] = {
-	0xd1, 0x01, 0x01, /* 66001 */
+	0x01, 0x01, 0xd1, /* 66001 */
 };
 
 static const uint8_t TEE_ATTR_AES_192_VALUE01[] = {
