@@ -5000,3 +5000,373 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1018, xtest_pkcs11_test_1018,
 		 "PKCS11: Digest tests");
+
+/**
+ *    0:d=0  hl=2 l=  22 cons: SEQUENCE
+ *    2:d=1  hl=2 l=  20 cons:  SET
+ *    4:d=2  hl=2 l=  18 cons:   SEQUENCE
+ *    6:d=3  hl=2 l=   3 prim:    OBJECT            :commonName
+ *   11:d=3  hl=2 l=  11 prim:    UTF8STRING        :common name
+ */
+static uint8_t subject_common_name[] = {
+	0x30, 0x16, 0x31, 0x14, 0x30, 0x12, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0c,
+	0x0b, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x20, 0x6e, 0x61, 0x6d, 0x65
+};
+
+/**
+ *    0:d=0  hl=2 l=   8 prim: OBJECT            :prime256v1
+ */
+static uint8_t ecdsa_nist_p256[] = {
+	0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03,
+	0x01, 0x07
+};
+
+/**
+ *    0:d=0  hl=2 l=   5 prim: OBJECT            :secp384r1
+ */
+static uint8_t ecdsa_nist_p384[] = {
+	0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22
+};
+
+/**
+ *    0:d=0  hl=2 l=   5 prim: OBJECT            :secp521r1
+ */
+static uint8_t ecdsa_nist_p521[] = {
+	0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23
+};
+
+#define EC_SIGN_TEST(_test_name, _mecha, _data) \
+	{ \
+		.test_name = _test_name, \
+		.mecha = _mecha, \
+		.data = _data, \
+		.data_size = sizeof(_data) - 1, \
+	}
+
+/* List of elliptic curve signing multi stage digest mechas */
+static struct {
+	const char *test_name;
+	CK_MECHANISM_TYPE mecha;
+	const void *data;
+	CK_ULONG data_size;
+} ec_sign_tests[] = {
+	EC_SIGN_TEST("CKM_ECDSA_SHA1", CKM_ECDSA_SHA1, digest_test_pattern),
+	EC_SIGN_TEST("CKM_ECDSA_SHA224", CKM_ECDSA_SHA224, digest_test_pattern),
+	EC_SIGN_TEST("CKM_ECDSA_SHA256", CKM_ECDSA_SHA256, digest_test_pattern),
+	EC_SIGN_TEST("CKM_ECDSA_SHA384", CKM_ECDSA_SHA384, digest_test_pattern),
+	EC_SIGN_TEST("CKM_ECDSA_SHA512", CKM_ECDSA_SHA512, digest_test_pattern),
+};
+
+static int test_ec_operations(ADBG_Case_t *c, CK_SESSION_HANDLE session,
+			      const char *curve_name, uint8_t *curve,
+			      size_t curve_size)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+
+	CK_MECHANISM mechanism = {
+		CKM_EC_KEY_PAIR_GEN, NULL, 0
+	};
+	CK_MECHANISM sign_mechanism = {
+		CKM_ECDSA, NULL, 0
+	};
+	CK_BYTE id[] = { 123 };
+
+	CK_ATTRIBUTE public_key_template[] = {
+		{ CKA_ENCRYPT, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_EC_PARAMS, ecdsa_nist_p256, sizeof(ecdsa_nist_p256) }
+	};
+
+	CK_ATTRIBUTE private_key_template[] = {
+		{ CKA_TOKEN, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SUBJECT, subject_common_name,
+		  sizeof(subject_common_name) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) }
+	};
+
+	CK_OBJECT_CLASS g_class = 0;
+	CK_KEY_TYPE g_key_type = 0;
+	CK_BYTE g_id[32] = { 0 };
+	CK_DATE g_start_date = { 0 };
+	CK_DATE g_end_date = { 0 };
+	CK_BBOOL g_derive = CK_FALSE;
+	CK_BBOOL g_local = CK_FALSE;
+	CK_MECHANISM_TYPE g_keygen_mecha = 0;
+	CK_BYTE g_subject[64] = { 0 };
+	CK_BBOOL g_encrypt = CK_FALSE;
+	CK_BBOOL g_verify = CK_FALSE;
+	CK_BBOOL g_verify_recover = CK_FALSE;
+	CK_BBOOL g_wrap = CK_FALSE;
+	CK_BBOOL g_trusted = CK_FALSE;
+	CK_BYTE g_public_key_info[1024] = { 0 };
+	CK_BBOOL g_sensitive = CK_FALSE;
+	CK_BBOOL g_decrypt = CK_FALSE;
+	CK_BBOOL g_sign = CK_FALSE;
+	CK_BBOOL g_sign_recover = CK_FALSE;
+	CK_BBOOL g_unwrap = CK_FALSE;
+	CK_BBOOL g_extract = CK_FALSE;
+	CK_BBOOL g_asensitive = CK_FALSE;
+	CK_BBOOL g_nextract = CK_FALSE;
+	CK_BBOOL g_wrap_with_trusted = CK_FALSE;
+	CK_BBOOL g_always_authenticate = CK_FALSE;
+
+	CK_ATTRIBUTE get_public_template[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_ID, g_id, sizeof(g_id) },
+		{ CKA_START_DATE, &g_start_date, sizeof(CK_DATE) },
+		{ CKA_END_DATE, &g_end_date, sizeof(CK_DATE) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(CK_MECHANISM_TYPE) },
+		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
+		{ CKA_ENCRYPT, &g_encrypt, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &g_verify, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY_RECOVER, &g_verify_recover, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
+		{ CKA_TRUSTED, &g_trusted, sizeof(CK_BBOOL) },
+		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
+	};
+
+	CK_ATTRIBUTE get_private_template[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_ID, g_id, sizeof(g_id) },
+		{ CKA_START_DATE, &g_start_date, sizeof(CK_DATE) },
+		{ CKA_END_DATE, &g_end_date, sizeof(CK_DATE) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(CK_MECHANISM_TYPE) },
+		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
+		{ CKA_SENSITIVE, &g_sensitive, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &g_sign, sizeof(CK_BBOOL) },
+		{ CKA_SIGN_RECOVER, &g_sign_recover, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &g_extract, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
+		{ CKA_WRAP_WITH_TRUSTED, &g_wrap_with_trusted, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_AUTHENTICATE, &g_always_authenticate, sizeof(CK_BBOOL) },
+		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
+	};
+
+	uint8_t signature[512] = { 0 };
+	CK_ULONG signature_len = 0;
+
+	size_t i = 0;
+
+	Do_ADBG_BeginSubCase(c, "%s: Generate key pair",
+			     curve_name);
+
+	public_key_template[3].pValue = curve;
+	public_key_template[3].ulValueLen = curve_size;
+
+	rv = C_GenerateKeyPair(session, &mechanism, public_key_template,
+			       ARRAY_SIZE(public_key_template),
+			       private_key_template,
+			       ARRAY_SIZE(private_key_template),
+			       &public_key, &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	/* reset get public key template */
+	memset(g_id, 0, sizeof(g_id));
+	memset(g_subject, 0, sizeof(g_subject));
+	memset(g_public_key_info, 0, sizeof(g_public_key_info));
+	get_public_template[2].ulValueLen = sizeof(g_id);
+	get_public_template[8].ulValueLen = sizeof(g_subject);
+	get_public_template[14].ulValueLen = sizeof(g_public_key_info);
+
+	rv = C_GetAttributeValue(session, public_key, get_public_template,
+				 ARRAY_SIZE(get_public_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PUBLIC_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_EC) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
+					  CKM_EC_KEY_PAIR_GEN) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_encrypt, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify_recover, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_trusted, ==, CK_FALSE))
+		goto err_destr_obj;
+
+	/* reset get private key template */
+	memset(g_id, 0, sizeof(g_id));
+	memset(g_subject, 0, sizeof(g_subject));
+	memset(g_public_key_info, 0, sizeof(g_public_key_info));
+	get_private_template[2].ulValueLen = sizeof(g_id);
+	get_private_template[8].ulValueLen = sizeof(g_subject);
+	get_private_template[19].ulValueLen = sizeof(g_public_key_info);
+
+	rv = C_GetAttributeValue(session, private_key, get_private_template,
+				 ARRAY_SIZE(get_private_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PRIVATE_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_EC) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
+					  CKM_EC_KEY_PAIR_GEN) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign_recover, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_unwrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap_with_trusted, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_always_authenticate, ==, CK_FALSE))
+		goto err_destr_obj;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c,
+			     "%s: Sign & verify tests - oneshot - CKM_ECDSA",
+			     curve_name);
+
+	sign_mechanism.mechanism = CKM_ECDSA;
+	memset(signature, 0, sizeof(signature));
+	signature_len = sizeof(signature);
+
+	rv = C_SignInit(session, &sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_Sign(session, (void *)digest_test_pattern_sha256,
+		    sizeof(digest_test_pattern_sha256), (void *)signature,
+		    &signature_len);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_VerifyInit(session, &sign_mechanism, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_Verify(session, (void *)digest_test_pattern_sha256,
+		    sizeof(digest_test_pattern_sha256), (void *)signature,
+		    signature_len);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	for (i = 0; i < ARRAY_SIZE(ec_sign_tests); i++) {
+		Do_ADBG_BeginSubCase(c, "%s: Sign & verify - oneshot - %s",
+				     curve_name, ec_sign_tests[i].test_name);
+
+		sign_mechanism.mechanism = ec_sign_tests[i].mecha;
+		memset(signature, 0, sizeof(signature));
+		signature_len = sizeof(signature);
+
+		rv = C_SignInit(session, &sign_mechanism, private_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Sign(session, (void *)ec_sign_tests[i].data,
+			    ec_sign_tests[i].data_size,
+			    (void *)signature, &signature_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_VerifyInit(session, &sign_mechanism, public_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Verify(session, (void *)ec_sign_tests[i].data,
+			      ec_sign_tests[i].data_size,
+			      (void *)signature, signature_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+
+	Do_ADBG_BeginSubCase(c, "%s: Destroy keys", curve_name);
+
+	rv = C_DestroyObject(session, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	rv = C_DestroyObject(session, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	return 1;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, private_key));
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
+err:
+	Do_ADBG_EndSubCase(c, NULL);
+
+	return 0;
+}
+
+static void xtest_pkcs11_test_1019(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	int ret = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Login to Test Token */
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ret = test_ec_operations(c, session, "P-256", ecdsa_nist_p256,
+				 sizeof(ecdsa_nist_p256));
+	if (!ret)
+		goto out;
+	ret = test_ec_operations(c, session, "P-384", ecdsa_nist_p384,
+				 sizeof(ecdsa_nist_p384));
+	if (!ret)
+		goto out;
+
+	if (level > 0) {
+		ret = test_ec_operations(c, session, "P-521", ecdsa_nist_p521,
+					 sizeof(ecdsa_nist_p521));
+		if (!ret)
+			goto out;
+	}
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1019, xtest_pkcs11_test_1019,
+		 "PKCS11: Elliptic Curve key generation and signing");
