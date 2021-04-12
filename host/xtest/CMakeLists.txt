@@ -103,6 +103,7 @@ if (CFG_SECURE_DATA_PATH)
 endif()
 
 if (CFG_PKCS11_TA)
+	add_compile_options(-DCFG_PKCS11_TA)
 	list (APPEND SRC pkcs11_1000.c)
 endif()
 
