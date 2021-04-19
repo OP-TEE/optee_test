@@ -93,15 +93,13 @@ endif
 
 ifeq ($(CFG_PKCS11_TA),y)
 srcs += pkcs11_1000.c
-
-OPTEE_PKCS11_TA_HEADERS ?= ../../../optee_client/libckteec/include
-CFLAGS += -DCFG_PKCS11_TA
-CFLAGS += -I$(OPTEE_PKCS11_TA_HEADERS)
-LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lckteec
 endif
 
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
+ifeq ($(CFG_PKCS11_TA),y)
+CFLAGS += -DCFG_PKCS11_TA
+endif
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
@@ -149,6 +147,9 @@ CFLAGS += -Wall -Wcast-align -Werror \
 CFLAGS += -g3
 
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lteec
+ifeq ($(CFG_PKCS11_TA),y)
+LDFLAGS += -lckteec
+endif
 LDFLAGS += -lpthread -lm
 
 .PHONY: all
