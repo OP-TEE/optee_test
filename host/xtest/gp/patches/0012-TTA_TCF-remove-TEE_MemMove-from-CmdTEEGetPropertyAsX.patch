@@ -1,0 +1,34 @@
+From c2431936b80e2064d52a380c715cd3260ce54d54 Mon Sep 17 00:00:00 2001
+From: Jerome Forissier <jerome@forissier.org>
+Date: Fri, 23 Apr 2021 09:25:55 +0200
+Subject: [PATCH] TTA_TCF: remove TEE_MemMove() from
+ CmdTEEGetPropertyAsXXX_fromEnum()
+
+Patch 0006-TTA_TCF-fix-CmdTEEGetPropertyA-_withoutEnum.patch introduced
+a TEE_MemMove() call in CmdTEEGetPropertyAsXXX_fromEnum(). This call is
+wrong, because in this function pParams[1] is always of type
+TEE_PARAM_TYPE_VALUE_INPUT (in other words, not a memory reference).
+
+Fixes: https://github.com/OP-TEE/optee_os/issues/4561
+Signed-off-by: Jerome Forissier <jerome@forissier.org>
+---
+ .../TTA_TCF/TTA_TCF/code_files/TTA_TCF.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+index 14e642c..0c7c743 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+@@ -666,9 +666,6 @@ TEE_Result CmdTEEGetPropertyAsXXX_fromEnum(
+ 	TEE_PropSetHandle nPropSet;
+ 	char pPropName[PROPERTY_NAME_MAX_SIZE];
+ 	uint32_t nPropNameSize = 0;
+-	TEE_MemMove(pPropName, pParams[1].memref.buffer,
+-		    pParams[1].memref.size);
+-	pPropName[pParams[1].memref.size] = 0;
+ 	char pOutputString1[PROPERTY_OUTPUT_STRING_MAX_SIZE], pOutputString2[PROPERTY_OUTPUT_STRING_MAX_SIZE];
+ 	uint32_t nOutputString1Length = 0;
+ 	uint32_t nOutputString2Length = 0;
+-- 
+2.27.0
+
