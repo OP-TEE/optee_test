@@ -1,0 +1,38 @@
+From a3116f3eb2595600a6b1d40b7b25e2b36770d2f6 Mon Sep 17 00:00:00 2001
+From: Jerome Forissier <jerome@forissier.org>
+Date: Tue, 27 Apr 2021 17:34:40 +0200
+Subject: [PATCH] Disable
+ Invoke_GetTAPersistentTimeNotSet_and_SetTAPersistentTime_success (ce-7b-17)
+
+Test case Invoke_GetTAPersistentTimeNotSet_and_SetTAPersistentTime_success
+depends on the ability to erase the persistent time previously set by a
+TA. OP-TEE doesn't provide any way to do that, so disable this test.
+
+Signed-off-by: Jerome Forissier <jerome@forissier.org>
+---
+ packages/Time_Arithmetical/xmlstable/TEE_TimeArithm_API.xml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/packages/Time_Arithmetical/xmlstable/TEE_TimeArithm_API.xml b/packages/Time_Arithmetical/xmlstable/TEE_TimeArithm_API.xml
+index 7d905dc..8c17155 100644
+--- a/packages/Time_Arithmetical/xmlstable/TEE_TimeArithm_API.xml
++++ b/packages/Time_Arithmetical/xmlstable/TEE_TimeArithm_API.xml
+@@ -54397,6 +54397,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- Test_Tool_Erase_Persistent_Time
+         <scenario name="Invoke_GetTAPersistentTimeNotSet_and_SetTAPersistentTime_success (ce-7b-17)" destructive="no">
+             <req name="GET_TA_PERSISTENT_TIME_ERROR_TIME_NOT_SET">
+                 <description><![CDATA[This function can return the following statuses (as well as other status values discussed in “Return Code”): • TEE_ERROR_TIME_NOT_SET is the initial status and means the persistent time has not been set. The Trusted Application MUST set its persistent time by calling the function TEE_SetTAPersistentTime.]]></description>
+@@ -54568,6 +54569,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_SetTAPersistentTime_and_GetTAPersistentTime_overflow (ce-1b-d0)" destructive="no">
+             <req name="GET_TA_PERSISTENT_TIME_ERROR_OVERFLOW">
+                 <description><![CDATA[The number of seconds in the TA Persistent Time may exceed the range of the uint32_t integer type. In this case, the function MUST return the error TEE_ERROR_OVERFLOW, but still computes the TA Persistent Time as specified above, except that the number of seconds is truncated to 32 bits before being written to time->seconds. For example, if the Trusted Application sets its persistent time to 2^32 -100 seconds, then after 100 seconds, the TA Persistent Time is 2^32, which is not representable with a uint32_t. In this case, the function TEE_GetTAPersistentTime MUST return TEE_ERROR_OVERFLOW and set time->seconds to 0 (which is 2^32 truncated to 32 bits).]]></description>
+-- 
+2.27.0
+
