@@ -9,7 +9,7 @@ endif
 endif
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
--include $(OPTEE_CLIENT_EXPORT)/../optee_client_config.mk
+-include $(OPTEE_CLIENT_EXPORT)/include/optee_client_config.mk
 
 ifneq ($V,1)
 	q := @
