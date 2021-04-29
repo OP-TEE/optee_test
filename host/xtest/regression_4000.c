@@ -1160,6 +1160,7 @@ static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CMAC_CASE(vect10, 9),
 	XTEST_MAC_CMAC_CASE(vect11, 9),
 	XTEST_MAC_CMAC_CASE(vect12, 9),
+	XTEST_MAC_CMAC_CASE(vect12, 16),
 
 	{ TEE_ALG_DES3_CMAC, TEE_TYPE_DES3, mac_des3_cmac_vect1_key,
 	  ARRAY_SIZE(mac_des3_cmac_vect1_key), 0, NULL, 0, mac_des3_cmac_vect1_out,
