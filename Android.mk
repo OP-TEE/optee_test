@@ -17,6 +17,9 @@ TA_DEV_KIT_DIR ?= ../invalid_include_path
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 
+################################################################################
+# Build xtest                                                                  #
+################################################################################
 include $(CLEAR_VARS)
 LOCAL_MODULE := xtest
 LOCAL_VENDOR_MODULE := true
@@ -85,8 +88,10 @@ $(eval $(call my-embed-file,regression_8100_my_csr,cert/my.csr))
 LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
-		$(LOCAL_PATH)/host/xtest/adbg/include\
+		$(LOCAL_PATH)/host/xtest/adbg/include \
+		$(LOCAL_PATH)/host/supp_plugin/include \
 		$(LOCAL_PATH)/ta/include \
+		$(LOCAL_PATH)/ta/supp_plugin/include \
 		$(LOCAL_PATH)/ta/create_fail_test/include \
 		$(LOCAL_PATH)/ta/crypt/include \
 		$(LOCAL_PATH)/ta/enc_fs/include \
@@ -122,4 +127,37 @@ LOCAL_ADDITIONAL_DEPENDENCIES += $(OPTEE_BIN)
 
 include $(BUILD_EXECUTABLE)
 
+################################################################################
+# Build tee-supplicant test plugin                                             #
+################################################################################
+include $(CLEAR_VARS)
+
+PLUGIN_UUID = f07bfc66-958c-4a15-99c0-260e4e7375dd
+
+PLUGIN                  = $(PLUGIN_UUID).plugin
+PLUGIN_INCLUDES_DIR     = $(LOCAL_PATH)/host/supp_plugin/include
+
+LOCAL_MODULE := $(PLUGIN)
+LOCAL_MODULE_RELATIVE_PATH := tee-supplicant/plugins
+LOCAL_VENDOR_MODULE := true
+# below is needed to locate optee_client exported headers
+LOCAL_SHARED_LIBRARIES := libteec
+
+LOCAL_SRC_FILES += host/supp_plugin/test_supp_plugin.c
+LOCAL_C_INCLUDES += $(PLUGIN_INCLUDES_DIR)
+LOCAL_CFLAGS += -Wno-unused-parameter
+
+$(info $$LOCAL_SRC_FILES = ${LOCAL_SRC_FILES})
+
+LOCAL_MODULE_TAGS := optional
+
+# Build the 32-bit and 64-bit versions.
+LOCAL_MULTILIB := both
+LOCAL_MODULE_TARGET_ARCH := arm arm64
+
+include $(BUILD_SHARED_LIBRARY)
+
+################################################################################
+# Build TAs                                                                    #
+################################################################################
 include $(LOCAL_PATH)/ta/Android.mk
