@@ -3772,7 +3772,7 @@ static CK_RV derive_sym_key(CK_SESSION_HANDLE session,
 	uint8_t iv[16] = { 0 };
 	CK_MECHANISM mech_derive = { 0 };
 	CK_KEY_DERIVATION_STRING_DATA key_derv_param = { 0 };
-	CK_AES_CBC_ENCRYPT_DATA_PARAMS aes_cbc_param = { 0 };
+	CK_AES_CBC_ENCRYPT_DATA_PARAMS aes_cbc_param = { };
 	CK_ATTRIBUTE derived_key_template[] = {
 		{ CKA_CLASS, &key_class, sizeof(key_class) },
 		{ CKA_KEY_TYPE, &key_type, sizeof(key_type) },
