@@ -125,6 +125,7 @@ CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
+CFLAGS += -I../../ta/large/include
 CFLAGS += -I../../ta/supp_plugin/include
 
 TA_DIR ?= /lib/optee_armtz

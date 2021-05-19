@@ -4,28 +4,29 @@
  */
 
 #include "xtest_test.h"
+#include <enc_fs_key_manager_test.h>
 #include <pta_invoke_tests.h>
-#include <tee_client_api.h>
-#include <ta_create_fail_test.h>
-#include <ta_crypt.h>
-#include <ta_os_test.h>
-#include <ta_rpc_test.h>
-#include <ta_sims_test.h>
-#include <ta_miss_test.h>
-#include <ta_sims_keepalive_test.h>
-#include <ta_storage.h>
 #include <ta_concurrent.h>
 #include <ta_concurrent_large.h>
-#include <enc_fs_key_manager_test.h>
-#include <ta_storage_benchmark.h>
+#include <ta_create_fail_test.h>
+#include <ta_crypt.h>
+#include <ta_large.h>
+#include <ta_miss_test.h>
+#include <ta_os_test.h>
+#include <ta_rpc_test.h>
+#include <ta_sdp_basic.h>
+#include <ta_sims_keepalive_test.h>
+#include <ta_sims_test.h>
 #include <ta_socket.h>
-#include <ta_tpm_log_test.h>
+#include <ta_storage_benchmark.h>
+#include <ta_storage.h>
 #include <ta_supp_plugin.h>
+#include <ta_tpm_log_test.h>
 #include <tee_api_defines.h>
+#include <tee_client_api.h>
 #include <__tee_isocket_defines.h>
 #include <__tee_tcpsocket_defines.h>
 #include <__tee_udpsocket_defines.h>
-#include <ta_sdp_basic.h>
 
 ADBG_ENUM_TABLE_DEFINE_BEGIN(TEEC_Result)
 ADBG_ENUM_TABLE_ENTRY(TEEC_SUCCESS),
@@ -198,3 +199,4 @@ const TEEC_UUID socket_ta_uuid = TA_SOCKET_UUID;
 const TEEC_UUID sdp_basic_ta_uuid = TA_SDP_BASIC_UUID;
 const TEEC_UUID tpm_log_test_ta_uuid = TA_TPM_LOG_TEST_UUID;
 const TEEC_UUID supp_plugin_test_ta_uuid = TA_SUPP_PLUGIN_UUID;
+const TEEC_UUID large_ta_uuid = TA_LARGE_UUID;

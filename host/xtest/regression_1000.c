@@ -2473,3 +2473,17 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1033, xtest_tee_test_1033,
 		 "Test the supplicant plugin framework");
+
+static void xtest_tee_test_1034(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	res = xtest_teec_open_session(&session, &large_ta_uuid, NULL,
+				      &ret_orig);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
+		 "Test loading a large TA");
