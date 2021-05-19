@@ -134,6 +134,7 @@ extern const TEEC_UUID socket_ta_uuid;
 extern const TEEC_UUID sdp_basic_ta_uuid;
 extern const TEEC_UUID tpm_log_test_ta_uuid;
 extern const TEEC_UUID supp_plugin_test_ta_uuid;
+extern const TEEC_UUID large_ta_uuid;
 extern char *xtest_tee_name;
 
 #endif /*XTEST_TEST_H*/
