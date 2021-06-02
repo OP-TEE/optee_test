@@ -344,8 +344,7 @@ static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 			filename, sizeof(filename),
 			TEE_DATA_FLAG_ACCESS_READ |
 			TEE_DATA_FLAG_ACCESS_WRITE |
-			TEE_DATA_FLAG_ACCESS_WRITE_META |
-			TEE_DATA_FLAG_OVERWRITE,
+			TEE_DATA_FLAG_ACCESS_WRITE_META,
 			&object);
 	if (res != TEE_SUCCESS) {
 		EMSG("Failed to open persistent object, res=0x%08x",
