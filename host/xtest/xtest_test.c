@@ -21,6 +21,7 @@
 #include <ta_socket.h>
 #include <ta_tpm_log_test.h>
 #include <ta_supp_plugin.h>
+#include <ta_ocall_test.h>
 #include <tee_api_defines.h>
 #include <__tee_isocket_defines.h>
 #include <__tee_tcpsocket_defines.h>
@@ -198,3 +199,4 @@ const TEEC_UUID socket_ta_uuid = TA_SOCKET_UUID;
 const TEEC_UUID sdp_basic_ta_uuid = TA_SDP_BASIC_UUID;
 const TEEC_UUID tpm_log_test_ta_uuid = TA_TPM_LOG_TEST_UUID;
 const TEEC_UUID supp_plugin_test_ta_uuid = TA_SUPP_PLUGIN_UUID;
+const TEEC_UUID ocall_ta_uuid = TA_OCALL_UUID;

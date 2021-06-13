@@ -37,6 +37,10 @@ ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
 endif
 
+ifeq ($(CFG_OCALL),y)
+TA_DIRS += ocall
+endif
+
 .PHONY: all
 all: ta
 

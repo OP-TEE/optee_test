@@ -8,6 +8,7 @@
 #define XTEST_TEST_H
 #include <adbg.h>
 #include <tee_client_api.h>
+#include <tee_client_api_extensions.h>
 
 #ifdef CFG_PKCS11_TA
 #include <pkcs11.h>
@@ -134,6 +135,7 @@ extern const TEEC_UUID socket_ta_uuid;
 extern const TEEC_UUID sdp_basic_ta_uuid;
 extern const TEEC_UUID tpm_log_test_ta_uuid;
 extern const TEEC_UUID supp_plugin_test_ta_uuid;
+extern const TEEC_UUID ocall_ta_uuid;
 extern char *xtest_tee_name;
 
 #endif /*XTEST_TEST_H*/

@@ -95,6 +95,10 @@ ifeq ($(CFG_PKCS11_TA),y)
 srcs += pkcs11_1000.c
 endif
 
+ifeq ($(CFG_OCALL),y)
+srcs += regression_1100.c
+endif
+
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 ifeq ($(CFG_PKCS11_TA),y)
@@ -126,6 +130,7 @@ CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
 CFLAGS += -I../../ta/tpm_log_test/include
 CFLAGS += -I../../ta/supp_plugin/include
+CFLAGS += -I../../ta/ocall/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
