@@ -2076,9 +2076,9 @@ ADBG_CASE_DEFINE(regression, 1026, xtest_tee_test_1026,
 /*
  * regression_1027
  * Depends on OpenSSL
- * Depends on kernel commit "tee: optee: Add support for session login client UUID generation"
- * Linaro tree: https://github.com/linaro-swg/linux/commit/ad19acdcdbc5
- * Upstream: <put sha-1 here when known>
+ * Depends on kernel commit c5b4312bea5d ("tee: optee: Add support for session
+ * login client UUID generation")
+ * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c5b4312bea5d
  *
  * xtest skips the test when not built with OpenSSL.
  */
@@ -2138,9 +2138,9 @@ ADBG_CASE_DEFINE(regression, 1027, xtest_tee_test_1027,
 
 /*
  * regression_1028
- * Depends on OpenSSL and kernel commit "tee: optee: Add support for session login client UUID generation"
- * Linaro tree: https://github.com/linaro-swg/linux/commit/ad19acdcdbc5
- * Upstream: <put sha-1 here when known>
+ * Depends on kernel commit c5b4312bea5d ("tee: optee: Add support for session
+ * login client UUID generation")
+ * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c5b4312bea5d
  *
  * xtest skips the test when not built with OpenSSL.
  */
