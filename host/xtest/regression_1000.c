@@ -1199,7 +1199,7 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
 	Do_ADBG_EndSubCase(c, "Using small concurrency TA");
 
-#ifndef CFG_PAGED_USER_TA
+#if !defined(CFG_PAGED_USER_TA) && !defined(CFG_VIRTUALIZATION)
 	Do_ADBG_BeginSubCase(c, "Using large concurrency TA");
 	mean_concurrency = 0;
 	for (i = 0; i < nb_loops; i++) {
@@ -2474,6 +2474,7 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1033, xtest_tee_test_1033,
 		 "Test the supplicant plugin framework");
 
+#ifndef CFG_VIRTUALIZATION
 static void xtest_tee_test_1034(ADBG_Case_t *c)
 {
 	TEEC_Result res = TEEC_SUCCESS;
@@ -2487,3 +2488,4 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
+#endif
