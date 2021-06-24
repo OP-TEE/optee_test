@@ -54,6 +54,7 @@ static int __printf(2, 3) myasprintf(char **strp, const char *fmt, ...)
 
 	va_start(ap, fmt);
 	rc = vsnprintf(str, rc, fmt, ap);
+	va_end(ap);
 	if (rc <= 0)
 		goto out;
 
@@ -63,14 +64,15 @@ static int __printf(2, 3) myasprintf(char **strp, const char *fmt, ...)
 		goto out;
 	}
 
+	va_start(ap, fmt);
 	rc = vsnprintf(str, rc, fmt, ap);
+	va_end(ap);
 	if (rc <= 0)
 		free(str);
 	else
 		*strp = str;
 
 out:
-	va_end(ap);
 	return rc;
 }
 
