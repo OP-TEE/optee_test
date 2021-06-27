@@ -1676,6 +1676,15 @@ static void xtest_pkcs11_test_1008(ADBG_Case_t *c)
 			if (!ADBG_EXPECT_CK_OK(c, rv))
 				goto err_destr_obj;
 
+			/*
+			 * Test NULL buffer case with size as non-zero
+			 * to get the out_size
+			 */
+			out_size = 42;
+			rv = C_SignFinal(session, NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
 			/* Get to full output */
 			memset(out, 0, out_size);
 			rv = C_SignFinal(session, out, &out_size);
@@ -1733,6 +1742,16 @@ static void xtest_pkcs11_test_1008(ADBG_Case_t *c)
 			 * to get the out_size
 			 */
 			out_size = 0;
+			rv = C_Sign(session, (void *)test->in, test->in_len,
+				    NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/*
+			 * Test NULL buffer case with size as non-zero
+			 * to get the out_size
+			 */
+			out_size = 42;
 			rv = C_Sign(session, (void *)test->in, test->in_len,
 				    NULL, &out_size);
 			if (!ADBG_EXPECT_CK_OK(c, rv))
