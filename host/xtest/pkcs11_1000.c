@@ -2693,6 +2693,16 @@ static void xtest_pkcs11_test_1012(ADBG_Case_t *c)
 		{ CKA_TOKEN, &g_token, sizeof(g_token) },
 	};
 
+	CK_ATTRIBUTE get_attr_template_query_bc[] = {
+		{ CKA_TOKEN, NULL, 0 },
+		{ CKA_CLASS, NULL, 0 },
+	};
+
+	CK_ATTRIBUTE get_attr_template_query_cb[] = {
+		{ CKA_CLASS, NULL, 0 },
+		{ CKA_TOKEN, NULL, 0 },
+	};
+
 	CK_ATTRIBUTE get_attr_template_ve[] = {
 		{ CKA_VALUE, &g_value, sizeof(obj_value) },
 	};
@@ -2772,6 +2782,44 @@ static void xtest_pkcs11_test_1012(ADBG_Case_t *c)
 
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_DATA);
 	ADBG_EXPECT_COMPARE_UNSIGNED(c, g_token, ==, CK_FALSE);
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Query size boolean (1 byte) + object class (CK_ULONG)
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - query size boolean + class");
+	g_token = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_query_bc,
+				 ARRAY_SIZE(get_attr_template_query_bc));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		get_attr_template_query_bc[0].ulValueLen, ==, 1);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		get_attr_template_query_bc[1].ulValueLen, ==, sizeof(CK_ULONG));
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	/*
+	 * Sub test: Query size object class (CK_ULONG) + boolean (1 byte)
+	 */
+	Do_ADBG_BeginSubCase(c, "Get Attribute - query size class + boolean");
+	g_token = CK_TRUE;
+	g_class = ~0;
+
+	rv = C_GetAttributeValue(session, obj_hdl, get_attr_template_query_cb,
+				 ARRAY_SIZE(get_attr_template_query_cb));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		get_attr_template_query_cb[0].ulValueLen, ==, sizeof(CK_ULONG));
+	ADBG_EXPECT_COMPARE_UNSIGNED(c,
+		get_attr_template_query_cb[1].ulValueLen, ==, 1);
 
 	Do_ADBG_EndSubCase(c, NULL);
 
