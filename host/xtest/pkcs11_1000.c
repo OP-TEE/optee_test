@@ -3449,6 +3449,7 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 	CK_BBOOL g_nextract = CK_FALSE;
 	CK_BBOOL g_asensitive = CK_FALSE;
 	CK_BBOOL g_local =  CK_FALSE;
+	CK_BYTE g_value[16] = { };
 	CK_ATTRIBUTE get_template[] = {
 		{ CKA_TOKEN, &g_token, sizeof(CK_BBOOL) },
 		{ CKA_PRIVATE, &g_private, sizeof(CK_BBOOL) },
@@ -3460,6 +3461,9 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
 		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
 		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+	};
+	CK_ATTRIBUTE get_value_template[] = {
+		{ CKA_VALUE, &g_value, sizeof(g_value) }
 	};
 	CK_ATTRIBUTE copy_template[] = {
 		{ CKA_TOKEN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
@@ -3520,6 +3524,15 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_FALSE) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_FALSE) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
+		goto close_session;
+
+	/* Check that we can get (secret) CKA_VALUE */
+	get_value_template[0].ulValueLen = sizeof(g_value);
+	rv = C_GetAttributeValue(rw_session, obj_hdl, get_value_template,
+				 ARRAY_SIZE(get_value_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, get_value_template[0].ulValueLen,
+					  ==, sizeof(g_value)))
 		goto close_session;
 
 	/* Create a secret key object in ro session*/
@@ -3640,6 +3653,14 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
 	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_FALSE))
 		goto out;
+
+	/* Check that we cannot anymore get (secret) CKA_VALUE */
+	get_value_template[0].ulValueLen = sizeof(g_value);
+	rv = C_GetAttributeValue(rw_session, obj_hdl_cp, get_value_template,
+				 ARRAY_SIZE(get_value_template));
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_SENSITIVE, rv) ||
+	    !(get_value_template[0].ulValueLen == CK_UNAVAILABLE_INFORMATION))
+		goto close_session;
 
 	/*
 	 * The copied object has CKA_MODIFIABLE set to FALSE. Check if
