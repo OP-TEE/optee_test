@@ -1099,6 +1099,7 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 	};
 	uint8_t out[32] = { };
 	pthread_t thr[NUM_THREADS] = { };
+	bool skip = false;
 
 	Do_ADBG_BeginSubCase(c, "Busy loop repeat %zu", repeat * 10);
 	*mean_concurrency = 0;
@@ -1125,6 +1126,12 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 
 	for (n = 0; n < nt; n++) {
 		ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL));
+		if (arg[n].res == TEEC_ERROR_OUT_OF_MEMORY &&
+		    !memcmp(uuid, &concurrent_large_ta_uuid, sizeof(*uuid))) {
+			Do_ADBG_Log("TEEC_ERROR_OUT_OF_MEMORY - ignored");
+			skip = true;
+			continue;
+		}
 		ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res);
 		if (arg[n].max_concurrency > max_concurrency)
 			max_concurrency = arg[n].max_concurrency;
@@ -1136,9 +1143,12 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 	 * the kernel (Preemptible Kernel (Low-Latency Desktop) gives the
 	 * best result there).
 	 */
-	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, >, 0);
-	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, <=, NUM_THREADS);
-	*mean_concurrency += max_concurrency;
+	if (!skip) {
+		(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, >, 0);
+		(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, max_concurrency, <=,
+						   NUM_THREADS);
+		*mean_concurrency += max_concurrency;
+	}
 	Do_ADBG_EndSubCase(c, "Busy loop repeat %zu", repeat * 10);
 
 	Do_ADBG_BeginSubCase(c, "SHA-256 loop repeat %zu", repeat);
@@ -1162,8 +1172,13 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 	}
 
 	for (n = 0; n < nt; n++) {
-		if (ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL)) &&
-		    ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
+		ADBG_EXPECT(c, 0, pthread_join(thr[n], NULL));
+		if (arg[n].res == TEEC_ERROR_OUT_OF_MEMORY &&
+		    !memcmp(uuid, &concurrent_large_ta_uuid, sizeof(*uuid))) {
+			Do_ADBG_Log("TEEC_ERROR_OUT_OF_MEMORY - ignored");
+			continue;
+		}
+		if (ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
 			ADBG_EXPECT_BUFFER(c, sha256_out, sizeof(sha256_out),
 					   arg[n].out, arg[n].out_len);
 		if (arg[n].max_concurrency > max_concurrency)
@@ -1199,7 +1214,6 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
 	Do_ADBG_EndSubCase(c, "Using small concurrency TA");
 
-#if !defined(CFG_PAGED_USER_TA) && !defined(CFG_VIRTUALIZATION)
 	Do_ADBG_BeginSubCase(c, "Using large concurrency TA");
 	mean_concurrency = 0;
 	for (i = 0; i < nb_loops; i++) {
@@ -1212,7 +1226,6 @@ static void xtest_tee_test_1013(ADBG_Case_t *c)
 	Do_ADBG_Log("    Number of parallel threads: %d", NUM_THREADS);
 	Do_ADBG_Log("    Mean concurrency: %g", mean_concurrency);
 	Do_ADBG_EndSubCase(c, "Using large concurrency TA");
-#endif
 }
 ADBG_CASE_DEFINE(regression, 1013, xtest_tee_test_1013,
 		"Test concurrency with concurrent TA");
