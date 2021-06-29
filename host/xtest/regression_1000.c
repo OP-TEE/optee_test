@@ -2487,7 +2487,6 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1033, xtest_tee_test_1033,
 		 "Test the supplicant plugin framework");
 
-#ifndef CFG_VIRTUALIZATION
 static void xtest_tee_test_1034(ADBG_Case_t *c)
 {
 	TEEC_Result res = TEEC_SUCCESS;
@@ -2496,9 +2495,12 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 
 	res = xtest_teec_open_session(&session, &large_ta_uuid, NULL,
 				      &ret_orig);
-	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+	if (res == TEEC_ERROR_OUT_OF_MEMORY) {
+		Do_ADBG_Log("TEEC_ERROR_OUT_OF_MEMORY - ignored");
+	} else {
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
 		TEEC_CloseSession(&session);
+	}
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
-#endif
