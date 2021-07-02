@@ -6848,3 +6848,386 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1022, xtest_pkcs11_test_1022,
 		 "PKCS11: RSA PSS key generation and signing");
+
+static const char rsa_oaep_message[] = "Hello World";
+static char rsa_oaep_label[] = "TestLabel";
+
+#define RSA_OAEP_CRYPT_TEST(_test_name, _min_rsa_bits, _hash_algo, _mgf_algo, \
+			    _source_data, _source_data_len) \
+	{ \
+		.test_name = _test_name, \
+		.min_rsa_bits = _min_rsa_bits, \
+		.hash_algo = _hash_algo, \
+		.mgf_algo = _mgf_algo, \
+		.source_data = _source_data, \
+		.source_data_len = _source_data_len, \
+	}
+
+/* List of RSA OAEP crypto params to test out */
+static struct {
+	const char *test_name;
+	uint32_t min_rsa_bits;
+	CK_MECHANISM_TYPE hash_algo;
+	CK_RSA_PKCS_MGF_TYPE mgf_algo;
+	void *source_data;
+	size_t source_data_len;
+} rsa_oaep_crypt_tests[] = {
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA1", 1024, CKM_SHA_1, CKG_MGF1_SHA1,
+			    NULL, 0),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA1/label", 1024, CKM_SHA_1,
+			    CKG_MGF1_SHA1, rsa_oaep_label,
+			    sizeof(rsa_oaep_label)),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA224", 1024, CKM_SHA224,
+			    CKG_MGF1_SHA224, NULL, 0),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA224/label", 1024, CKM_SHA224,
+			    CKG_MGF1_SHA224, rsa_oaep_label,
+			    sizeof(rsa_oaep_label)),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA256", 1024, CKM_SHA256,
+			    CKG_MGF1_SHA256, NULL, 0),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA256/label", 1024, CKM_SHA256,
+			    CKG_MGF1_SHA256, rsa_oaep_label,
+			    sizeof(rsa_oaep_label)),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA384", 1024, CKM_SHA384,
+			    CKG_MGF1_SHA384, NULL, 0),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA384/label", 1024, CKM_SHA384,
+			    CKG_MGF1_SHA384, rsa_oaep_label,
+			    sizeof(rsa_oaep_label)),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA512", 2048, CKM_SHA512,
+			    CKG_MGF1_SHA512, NULL, 0),
+	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA512/label", 2048, CKM_SHA512,
+			    CKG_MGF1_SHA512, rsa_oaep_label,
+			    sizeof(rsa_oaep_label)),
+};
+
+static int test_rsa_oaep_operations(ADBG_Case_t *c,
+				    CK_SESSION_HANDLE session,
+				    const char *rsa_name, uint32_t rsa_bits)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+
+	CK_MECHANISM mechanism = {
+		CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0
+	};
+	CK_MECHANISM crypt_mechanism = {
+		CKM_RSA_PKCS_OAEP, NULL, 0
+	};
+	CK_RSA_PKCS_OAEP_PARAMS oaep_params = {
+		CKM_SHA256, CKG_MGF1_SHA256, CKZ_DATA_SPECIFIED, NULL, 0
+	};
+	CK_BYTE public_exponent[] = { 1, 0, 1 };
+	CK_BYTE id[] = { 123 };
+	CK_ULONG modulus_bits = 0;
+	CK_ATTRIBUTE public_key_template[] = {
+		{ CKA_ENCRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_MODULUS_BITS, &modulus_bits, sizeof(CK_ULONG) },
+		{ CKA_PUBLIC_EXPONENT, public_exponent,
+		  sizeof(public_exponent) }
+	};
+	CK_ATTRIBUTE private_key_template[] = {
+		{ CKA_TOKEN, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SUBJECT, subject_common_name,
+		  sizeof(subject_common_name) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) }
+	};
+
+	CK_OBJECT_CLASS g_class = 0;
+	CK_KEY_TYPE g_key_type = 0;
+	CK_BYTE g_id[32] = { 0 };
+	CK_DATE g_start_date = { 0 };
+	CK_DATE g_end_date = { 0 };
+	CK_BBOOL g_derive = CK_FALSE;
+	CK_BBOOL g_local = CK_FALSE;
+	CK_MECHANISM_TYPE g_keygen_mecha = 0;
+	CK_BYTE g_subject[64] = { 0 };
+	CK_BBOOL g_encrypt = CK_FALSE;
+	CK_BBOOL g_verify = CK_FALSE;
+	CK_BBOOL g_verify_recover = CK_FALSE;
+	CK_BBOOL g_wrap = CK_FALSE;
+	CK_BBOOL g_trusted = CK_FALSE;
+	CK_BYTE g_public_key_info[1024] = { 0 };
+	CK_BBOOL g_sensitive = CK_FALSE;
+	CK_BBOOL g_decrypt = CK_FALSE;
+	CK_BBOOL g_sign = CK_FALSE;
+	CK_BBOOL g_sign_recover = CK_FALSE;
+	CK_BBOOL g_unwrap = CK_FALSE;
+	CK_BBOOL g_extract = CK_FALSE;
+	CK_BBOOL g_asensitive = CK_FALSE;
+	CK_BBOOL g_nextract = CK_FALSE;
+	CK_BBOOL g_wrap_with_trusted = CK_FALSE;
+	CK_BBOOL g_always_authenticate = CK_FALSE;
+
+	/* Note: Tests below expects specific order of elements */
+	CK_ATTRIBUTE get_public_template[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_ID, g_id, sizeof(g_id) },
+		{ CKA_START_DATE, &g_start_date, sizeof(CK_DATE) },
+		{ CKA_END_DATE, &g_end_date, sizeof(CK_DATE) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(CK_MECHANISM_TYPE) },
+		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
+		{ CKA_ENCRYPT, &g_encrypt, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &g_verify, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY_RECOVER, &g_verify_recover, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
+		{ CKA_TRUSTED, &g_trusted, sizeof(CK_BBOOL) },
+		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
+	};
+
+	/* Note: Tests below expects specific order of elements */
+	CK_ATTRIBUTE get_private_template[] = {
+		{ CKA_CLASS, &g_class, sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&g_key_type, sizeof(CK_KEY_TYPE) },
+		{ CKA_ID, g_id, sizeof(g_id) },
+		{ CKA_START_DATE, &g_start_date, sizeof(CK_DATE) },
+		{ CKA_END_DATE, &g_end_date, sizeof(CK_DATE) },
+		{ CKA_DERIVE, &g_derive, sizeof(CK_BBOOL) },
+		{ CKA_LOCAL, &g_local, sizeof(CK_BBOOL) },
+		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(CK_MECHANISM_TYPE) },
+		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
+		{ CKA_SENSITIVE, &g_sensitive, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &g_sign, sizeof(CK_BBOOL) },
+		{ CKA_SIGN_RECOVER, &g_sign_recover, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
+		{ CKA_EXTRACTABLE, &g_extract, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(CK_BBOOL) },
+		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(CK_BBOOL) },
+		{ CKA_WRAP_WITH_TRUSTED, &g_wrap_with_trusted, sizeof(CK_BBOOL) },
+		{ CKA_ALWAYS_AUTHENTICATE, &g_always_authenticate, sizeof(CK_BBOOL) },
+		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
+	};
+	uint8_t ciphertext[512] = { 0 };
+	CK_ULONG ciphertext_len = 0;
+	uint8_t plaintext[512] = { 0 };
+	CK_ULONG plaintext_len = 0;
+	size_t i = 0;
+
+	Do_ADBG_BeginSubCase(c, "%s: Generate key pair", rsa_name);
+
+	modulus_bits = rsa_bits;
+
+	rv = C_GenerateKeyPair(session, &mechanism, public_key_template,
+			       ARRAY_SIZE(public_key_template),
+			       private_key_template,
+			       ARRAY_SIZE(private_key_template),
+			       &public_key, &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	/* reset get public key template */
+	memset(g_id, 0, sizeof(g_id));
+	assert(get_public_template[2].type == CKA_ID);
+	get_public_template[2].ulValueLen = sizeof(g_id);
+
+	memset(g_subject, 0, sizeof(g_subject));
+	assert(get_public_template[8].type == CKA_SUBJECT);
+	get_public_template[8].ulValueLen = sizeof(g_subject);
+
+	memset(g_public_key_info, 0, sizeof(g_public_key_info));
+	assert(get_public_template[14].type == CKA_PUBLIC_KEY_INFO);
+	get_public_template[14].ulValueLen = sizeof(g_public_key_info);
+
+	rv = C_GetAttributeValue(session, public_key,
+				 get_public_template,
+				 ARRAY_SIZE(get_public_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PUBLIC_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_RSA) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
+					  CKM_RSA_PKCS_KEY_PAIR_GEN) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_encrypt, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify_recover, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_trusted, ==, CK_FALSE))
+		goto err_destr_obj;
+
+	/* reset get private key template */
+	memset(g_id, 0, sizeof(g_id));
+	assert(get_private_template[2].type == CKA_ID);
+	get_private_template[2].ulValueLen = sizeof(g_id);
+
+	memset(g_subject, 0, sizeof(g_subject));
+	assert(get_private_template[8].type == CKA_SUBJECT);
+	get_private_template[8].ulValueLen = sizeof(g_subject);
+
+	memset(g_public_key_info, 0, sizeof(g_public_key_info));
+	assert(get_private_template[19].type == CKA_PUBLIC_KEY_INFO);
+	get_private_template[19].ulValueLen = sizeof(g_public_key_info);
+
+	rv = C_GetAttributeValue(session, private_key,
+				 get_private_template,
+				 ARRAY_SIZE(get_private_template));
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PRIVATE_KEY) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_RSA) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
+					  CKM_RSA_PKCS_KEY_PAIR_GEN) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign_recover, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_unwrap, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_TRUE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap_with_trusted, ==, CK_FALSE) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_always_authenticate, ==, CK_FALSE))
+		goto err_destr_obj;
+
+	for (i = 0; i < ARRAY_SIZE(rsa_oaep_crypt_tests); i++) {
+		/*
+		 * Note: this order of end/begin here is just to get ADBG
+		 * SubCases in sync with error handling.
+		 */
+		Do_ADBG_EndSubCase(c, NULL);
+
+		Do_ADBG_BeginSubCase(c, "%s: Encrypt & decrypt - oneshot - %s",
+				     rsa_name,
+				     rsa_oaep_crypt_tests[i].test_name);
+
+		crypt_mechanism.mechanism = CKM_RSA_PKCS_OAEP;
+		crypt_mechanism.pParameter = &oaep_params;
+		crypt_mechanism.ulParameterLen = sizeof(oaep_params);
+		oaep_params.hashAlg = rsa_oaep_crypt_tests[i].hash_algo;
+		oaep_params.mgf = rsa_oaep_crypt_tests[i].mgf_algo;
+		oaep_params.pSourceData = rsa_oaep_crypt_tests[i].source_data;
+		oaep_params.ulSourceDataLen = rsa_oaep_crypt_tests[i].source_data_len;
+
+		memset(ciphertext, 0, sizeof(ciphertext));
+		memset(plaintext, 0, sizeof(plaintext));
+
+		ciphertext_len = 0;
+
+		memcpy(plaintext, rsa_oaep_message, sizeof(rsa_oaep_message));
+		plaintext_len = sizeof(rsa_oaep_message);
+
+		rv = C_EncryptInit(session, &crypt_mechanism, public_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Encrypt(session, plaintext, plaintext_len, NULL,
+			       &ciphertext_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Encrypt(session, plaintext, plaintext_len, ciphertext,
+			       &ciphertext_len);
+		if (rsa_bits >= rsa_oaep_crypt_tests[i].min_rsa_bits) {
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+		} else {
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_DATA_LEN_RANGE, rv))
+				goto err_destr_obj;
+			continue;
+		}
+
+		memset(plaintext, 0, sizeof(plaintext));
+		plaintext_len = 0;
+
+		rv = C_DecryptInit(session, &crypt_mechanism, private_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Decrypt(session, ciphertext, ciphertext_len, NULL,
+			       &plaintext_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_Decrypt(session, ciphertext, ciphertext_len, plaintext,
+			       &plaintext_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv) ||
+		    !ADBG_EXPECT_BUFFER(c, rsa_oaep_message,
+					sizeof(rsa_oaep_message), plaintext,
+					plaintext_len))
+			goto err_destr_obj;
+	}
+
+	rv = C_DestroyObject(session, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_pub_obj;
+
+	rv = C_DestroyObject(session, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	return 1;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, private_key));
+err_destr_pub_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
+err:
+	Do_ADBG_EndSubCase(c, NULL);
+
+	return 0;
+}
+
+static void xtest_pkcs11_test_1023(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	int ret = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Login to Test Token */
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	ret = test_rsa_oaep_operations(c, session, "RSA-1024", 1024);
+	if (!ret)
+		goto out;
+	ret = test_rsa_oaep_operations(c, session, "RSA-2048", 2048);
+	if (!ret)
+		goto out;
+	if (level > 0) {
+		ret = test_rsa_oaep_operations(c, session, "RSA-3072", 3072);
+		if (!ret)
+			goto out;
+		ret = test_rsa_oaep_operations(c, session, "RSA-4096", 4096);
+		if (!ret)
+			goto out;
+	}
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1023, xtest_pkcs11_test_1023,
+		 "PKCS11: RSA OAEP key generation and crypto operations");
