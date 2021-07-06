@@ -24,6 +24,8 @@
 
 #include <assert.h>
 
+#include <mbedtls_config_kernel.h>
+
 static TEEC_Result ta_crypt_cmd_reset_operation(ADBG_Case_t *c, TEEC_Session *s,
 						TEE_OperationHandle oph)
 {
@@ -2724,6 +2726,8 @@ struct xtest_ac_case {
 	XTEST_AC_CASE(level, algo, mode, vect, XTEST_AC_ECDSA_UNION(vect))
 
 static const struct xtest_ac_case xtest_ac_cases[] = {
+
+#if !defined(CFG_CRYPTOLIB_NAME_mbedtls) ||  defined(MBEDTLS_RSA_NO_CRT)
 	/* RSA test without crt parameters */
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT,
 			  ac_rsassa_vect1, NULL_ARRAY, WITHOUT_SALT),
@@ -2858,7 +2862,7 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_RSA_CASE(1, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1,
 			  TEE_MODE_ENCRYPT,
 			  ac_rsaes_oaep_vect10, NULL_ARRAY, WITHOUT_SALT),
-
+#endif /* !CFG_CRYPTOLIB_NAME_mbedtls || !MBEDTLS_RSA_NO_CRT */
 	/* RSA test with crt parameters */
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT,
 			  ac_rsassa_vect1, ARRAY, WITHOUT_SALT),
