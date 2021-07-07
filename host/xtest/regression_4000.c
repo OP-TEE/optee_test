@@ -1225,6 +1225,7 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 	TEE_OperationHandle op1 = TEE_HANDLE_NULL;
 	TEE_OperationHandle op2 = TEE_HANDLE_NULL;
 	TEE_OperationHandle op3 = TEE_HANDLE_NULL;
+	TEE_OperationHandle op4 = TEE_HANDLE_NULL;
 	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
 	uint8_t out[64] = { };
 	size_t out_size = 0;
@@ -1270,6 +1271,11 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_operation(c, &session, &op4,
+				mac_cases[n].algo, TEE_MODE_MAC, key_size)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_transient_object(c, &session,
 				mac_cases[n].key_type, key_size, &key_handle)))
 			goto out;
@@ -1295,6 +1301,10 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_copy_operation(c, &session, op3, op1)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_copy_operation(c, &session, op4, op1)))
 			goto out;
 
 		offs = 0;
@@ -1350,6 +1360,13 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 			goto out;
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_mac_final_compare(c, &session, op4,
+				mac_cases[n].in, mac_cases[n].in_len,
+				mac_cases[n].out,
+				mac_cases[n].out_len - 1)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op1)))
 			goto out;
 
@@ -1359,6 +1376,10 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op3)))
+			goto out;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_operation(c, &session, op4)))
 			goto out;
 
 		Do_ADBG_EndSubCase(c, NULL);
