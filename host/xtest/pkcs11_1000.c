@@ -1265,9 +1265,16 @@ static CK_RV cipher_init_final(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		if (mode == TEE_MODE_DECRYPT)
 			rv = C_DecryptFinal(session, NULL, NULL);
 
-		/* Only check that the operation is no more active */
-		if (!ADBG_EXPECT_TRUE(c, rv != CKR_BUFFER_TOO_SMALL))
+		/*
+		 * Check that return value is expected so that operation is
+		 * released
+		 */
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_ARGUMENTS_BAD, rv)) {
 			rv = CKR_GENERAL_ERROR;
+			goto out;
+		}
+
+		rv = CKR_OK;
 	}
 
 out:
