@@ -7,7 +7,11 @@
 #include <ck_debug.h>
 #include <inttypes.h>
 #ifdef OPENSSL_FOUND
+#include <openssl/asn1.h>
+#include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/x509.h>
 #endif
 #include <pkcs11.h>
 #include <stdio.h>
@@ -7398,3 +7402,388 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1023, xtest_pkcs11_test_1023,
 		 "PKCS11: RSA OAEP key generation and crypto operations");
+
+static const char x509_example_root_ca[] =
+	"-----BEGIN CERTIFICATE-----\n"
+	"MIICDTCCAZOgAwIBAgIBATAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJGSTEVMBMG\n"
+	"A1UECgwMTWFudWZhY3R1cmVyMRgwFgYDVQQDDA9FeGFtcGxlIFJvb3QgQ0EwIBcN\n"
+	"MjEwODE0MDc1NTU1WhgPOTk5OTEyMzEyMzU5NTlaMD4xCzAJBgNVBAYTAkZJMRUw\n"
+	"EwYDVQQKDAxNYW51ZmFjdHVyZXIxGDAWBgNVBAMMD0V4YW1wbGUgUm9vdCBDQTB2\n"
+	"MBAGByqGSM49AgEGBSuBBAAiA2IABP6jFf4PuIo0t78AeONf2ENbip4GdG9rfstp\n"
+	"bWMvH/0BIn2ioMbapYSK1WcVlOKUaZRrbRzoYWD7ZpwSYFwtd1XmMQkLJ1baIdrt\n"
+	"jibL9yBCYRJJLsmTHn5UiLCoA2EiFaNjMGEwHQYDVR0OBBYEFApC6125F2th+ujZ\n"
+	"PVxTtsI8llA1MB8GA1UdIwQYMBaAFApC6125F2th+ujZPVxTtsI8llA1MA8GA1Ud\n"
+	"EwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMAoGCCqGSM49BAMDA2gAMGUCMACW\n"
+	"r0/EpTD1uJ9JLsyC8aGP2rSr44J50K6fT0h3LZWMhL5fGkkNTCdmuWbWZznTswIx\n"
+	"APjyNm4f///vWUN3XFd+BRhS2YHR43c0K4oNVyLqigoMoSqu0zXt9Xm+Lsu5iqgJ\n"
+	"NQ==\n"
+	"-----END CERTIFICATE-----\n";
+
+static void xtest_pkcs11_test_1024(ADBG_Case_t *c)
+{
+#ifndef OPENSSL_FOUND
+	Do_ADBG_Log("OpenSSL not available, skipping X.509 Certificate tests");
+#else
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	BIO *x509_bio = NULL;
+	X509 *x509_cert = NULL;
+	uint8_t *x509_cert_der = NULL;
+	int x509_cert_der_size = 0;
+	X509_NAME *x509_subject_name = NULL;
+	uint8_t *x509_subject_name_der = NULL;
+	int x509_subject_name_der_size = 0;
+	X509_NAME *x509_issuer_name = NULL;
+	uint8_t *x509_issuer_name_der = NULL;
+	int x509_issuer_name_der_size = 0;
+	ASN1_INTEGER *x509_serial_number = NULL;
+	uint8_t *x509_serial_number_der = NULL;
+	int x509_serial_number_der_size = 0;
+	uint8_t *p = NULL;
+	CK_BYTE id[] = { 123 };
+	const char *label = "example-root-ca";
+	/* Note: Tests below expects specific order of elements */
+	CK_ATTRIBUTE certificate_object[] = {
+		{ CKA_TOKEN,	&(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){ CKO_CERTIFICATE },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_CERTIFICATE_TYPE, &(CK_CERTIFICATE_TYPE){ CKC_X_509 },
+		  sizeof(CK_CERTIFICATE_TYPE) },
+		{ CKA_CERTIFICATE_CATEGORY,
+		  &(CK_ULONG){ CK_CERTIFICATE_CATEGORY_UNSPECIFIED },
+		  sizeof(CK_ULONG) },
+		{ CKA_NAME_HASH_ALGORITHM, &(CK_MECHANISM_TYPE){ CKM_SHA_1 },
+		  sizeof(CK_MECHANISM_TYPE) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE,	NULL, 0 },
+		{ CKA_ISSUER,	NULL, 0 },
+		{ CKA_SUBJECT,	NULL, 0 },
+		{ CKA_SERIAL_NUMBER,	NULL, 0 },
+	};
+	/* Note: Tests below expects specific order of elements */
+	CK_ATTRIBUTE certificate_object2[] = {
+		{ CKA_TOKEN,	&(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){ CKO_CERTIFICATE },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_CERTIFICATE_TYPE, &(CK_CERTIFICATE_TYPE){ CKC_X_509 },
+		  sizeof(CK_CERTIFICATE_TYPE) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE,	NULL, 0 },
+		{ CKA_ISSUER,	NULL, 0 },
+		{ CKA_SUBJECT,	NULL, 0 },
+		{ CKA_SERIAL_NUMBER,	NULL, 0 },
+	};
+	/* Note: Tests below expects specific order of elements */
+	/* CKA_CERTIFICATE_CATEGORY is specified below with invalid ID */
+	CK_ATTRIBUTE invalid_category_object[] = {
+		{ CKA_TOKEN,	&(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){ CKO_CERTIFICATE },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_CERTIFICATE_TYPE, &(CK_CERTIFICATE_TYPE){ CKC_X_509 },
+		  sizeof(CK_CERTIFICATE_TYPE) },
+		{ CKA_CERTIFICATE_CATEGORY, &(CK_ULONG){ -1 },
+		  sizeof(CK_ULONG) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE,	NULL, 0 },
+		{ CKA_ISSUER,	NULL, 0 },
+		{ CKA_SUBJECT,	NULL, 0 },
+		{ CKA_SERIAL_NUMBER,	NULL, 0 },
+	};
+	/* Note: Tests below expects specific order of elements */
+	/* CKA_CERTIFICATE_CATEGORY is specified below with invalid size */
+	CK_ATTRIBUTE invalid_category_object2[] = {
+		{ CKA_TOKEN,	&(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){ CKO_CERTIFICATE },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_CERTIFICATE_TYPE, &(CK_CERTIFICATE_TYPE){ CKC_X_509 },
+		  sizeof(CK_CERTIFICATE_TYPE) },
+		{ CKA_CERTIFICATE_CATEGORY,
+		  &(CK_ULONG){ CK_CERTIFICATE_CATEGORY_UNSPECIFIED }, 0 },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE,	NULL, 0 },
+		{ CKA_ISSUER,	NULL, 0 },
+		{ CKA_SUBJECT,	NULL, 0 },
+		{ CKA_SERIAL_NUMBER,	NULL, 0 },
+	};
+	/* Note: Tests below expects specific order of elements */
+	/* CKA_NAME_HASH_ALGORITHM is specified below with invalid size */
+	CK_ATTRIBUTE invalid_name_hash_alg_size[] = {
+		{ CKA_TOKEN,	&(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){ CKO_CERTIFICATE },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_CERTIFICATE_TYPE, &(CK_CERTIFICATE_TYPE){ CKC_X_509 },
+		  sizeof(CK_CERTIFICATE_TYPE) },
+		{ CKA_NAME_HASH_ALGORITHM, &(CK_MECHANISM_TYPE){ CKM_SHA_1 },
+		  sizeof(CK_MECHANISM_TYPE) - 1 },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_LABEL, (CK_UTF8CHAR_PTR)label, strlen(label) },
+		{ CKA_VALUE,	NULL, 0 },
+		{ CKA_ISSUER,	NULL, 0 },
+		{ CKA_SUBJECT,	NULL, 0 },
+		{ CKA_SERIAL_NUMBER,	NULL, 0 },
+	};
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Login to Test Token */
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	Do_ADBG_BeginSubCase(c, "Import X.509 Certificate");
+
+	/* Parse PEM to OpenSSL's internal X509 format */
+	x509_bio = BIO_new_mem_buf(x509_example_root_ca, -1);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_bio))
+		goto out;
+
+	x509_cert = PEM_read_bio_X509(x509_bio, NULL, 0, NULL);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_cert))
+		goto out;
+
+	BIO_free(x509_bio);
+	x509_bio = NULL;
+
+	/* Make DER version for storing it in token */
+	x509_cert_der_size = i2d_X509(x509_cert, NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_cert_der_size, >, 0))
+		goto out;
+
+	x509_cert_der = OPENSSL_malloc(x509_cert_der_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_cert_der))
+		goto out;
+
+	p = x509_cert_der;
+	x509_cert_der_size = i2d_X509(x509_cert, &p);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_cert_der_size, >, 0))
+		goto out;
+
+	/* Extract needed details from certificate */
+
+	/* Extract subject name */
+	x509_subject_name = X509_get_subject_name(x509_cert);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_subject_name))
+		goto out;
+
+	x509_subject_name_der_size = i2d_X509_NAME(x509_subject_name, NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_subject_name_der_size, >, 0))
+		goto out;
+
+	x509_subject_name_der = OPENSSL_malloc(x509_subject_name_der_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_subject_name_der))
+		goto out;
+
+	p = x509_subject_name_der;
+	x509_subject_name_der_size = i2d_X509_NAME(x509_subject_name, &p);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_subject_name_der_size, >, 0))
+		goto out;
+
+	/* Extract issuer's name */
+	x509_issuer_name = X509_get_issuer_name(x509_cert);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_issuer_name))
+		goto out;
+
+	x509_issuer_name_der_size = i2d_X509_NAME(x509_issuer_name, NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_issuer_name_der_size, >, 0))
+		goto out;
+
+	x509_issuer_name_der = OPENSSL_malloc(x509_issuer_name_der_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_issuer_name_der))
+		goto out;
+
+	p = x509_issuer_name_der;
+	x509_issuer_name_der_size = i2d_X509_NAME(x509_issuer_name, &p);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_issuer_name_der_size, >, 0))
+		goto out;
+
+	/* Extract certificate's serial number */
+	x509_serial_number = X509_get_serialNumber(x509_cert);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_serial_number))
+		goto out;
+
+	x509_serial_number_der_size = i2d_ASN1_INTEGER(x509_serial_number, NULL);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_serial_number_der_size, >, 0))
+		goto out;
+
+	x509_serial_number_der = OPENSSL_malloc(x509_serial_number_der_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, x509_serial_number_der))
+		goto out;
+
+	p = x509_serial_number_der;
+	x509_serial_number_der_size = i2d_ASN1_INTEGER(x509_serial_number, &p);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, x509_serial_number_der_size, >, 0))
+		goto out;
+
+	/* Create the actual object in session */
+	assert(certificate_object[7].type == CKA_VALUE);
+	certificate_object[7].pValue = x509_cert_der;
+	certificate_object[7].ulValueLen = x509_cert_der_size;
+
+	assert(certificate_object[8].type == CKA_ISSUER);
+	certificate_object[8].pValue = x509_issuer_name_der;
+	certificate_object[8].ulValueLen = x509_issuer_name_der_size;
+
+	assert(certificate_object[9].type == CKA_SUBJECT);
+	certificate_object[9].pValue = x509_subject_name_der;
+	certificate_object[9].ulValueLen = x509_subject_name_der_size;
+
+	assert(certificate_object[10].type == CKA_SERIAL_NUMBER);
+	certificate_object[10].pValue = x509_serial_number_der;
+	certificate_object[10].ulValueLen = x509_serial_number_der_size;
+
+	rv = C_CreateObject(session, certificate_object,
+			    ARRAY_SIZE(certificate_object), &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Import X.509 Certificate with default values");
+
+	/* Create the actual object in session */
+	assert(certificate_object2[5].type == CKA_VALUE);
+	certificate_object2[5].pValue = x509_cert_der;
+	certificate_object2[5].ulValueLen = x509_cert_der_size;
+
+	assert(certificate_object2[6].type == CKA_ISSUER);
+	certificate_object2[6].pValue = x509_issuer_name_der;
+	certificate_object2[6].ulValueLen = x509_issuer_name_der_size;
+
+	assert(certificate_object2[7].type == CKA_SUBJECT);
+	certificate_object2[7].pValue = x509_subject_name_der;
+	certificate_object2[7].ulValueLen = x509_subject_name_der_size;
+
+	assert(certificate_object2[8].type == CKA_SERIAL_NUMBER);
+	certificate_object2[8].pValue = x509_serial_number_der;
+	certificate_object2[8].ulValueLen = x509_serial_number_der_size;
+
+	rv = C_CreateObject(session, certificate_object2,
+			    ARRAY_SIZE(certificate_object2), &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = C_DestroyObject(session, obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Try import with invalid category");
+
+	/* Create the actual object in session */
+	assert(invalid_category_object[6].type == CKA_VALUE);
+	invalid_category_object[6].pValue = x509_cert_der;
+	invalid_category_object[6].ulValueLen = x509_cert_der_size;
+
+	assert(invalid_category_object[7].type == CKA_ISSUER);
+	invalid_category_object[7].pValue = x509_issuer_name_der;
+	invalid_category_object[7].ulValueLen = x509_issuer_name_der_size;
+
+	assert(invalid_category_object[8].type == CKA_SUBJECT);
+	invalid_category_object[8].pValue = x509_subject_name_der;
+	invalid_category_object[8].ulValueLen = x509_subject_name_der_size;
+
+	assert(invalid_category_object[9].type == CKA_SERIAL_NUMBER);
+	invalid_category_object[9].pValue = x509_serial_number_der;
+	invalid_category_object[9].ulValueLen = x509_serial_number_der_size;
+
+	rv = C_CreateObject(session, invalid_category_object,
+			    ARRAY_SIZE(invalid_category_object), &obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_VALUE_INVALID, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Try import with invalid category size");
+
+	/* Create the actual object in session */
+	assert(invalid_category_object2[6].type == CKA_VALUE);
+	invalid_category_object2[6].pValue = x509_cert_der;
+	invalid_category_object2[6].ulValueLen = x509_cert_der_size;
+
+	assert(invalid_category_object2[7].type == CKA_ISSUER);
+	invalid_category_object2[7].pValue = x509_issuer_name_der;
+	invalid_category_object2[7].ulValueLen = x509_issuer_name_der_size;
+
+	assert(invalid_category_object2[8].type == CKA_SUBJECT);
+	invalid_category_object2[8].pValue = x509_subject_name_der;
+	invalid_category_object2[8].ulValueLen = x509_subject_name_der_size;
+
+	assert(invalid_category_object2[9].type == CKA_SERIAL_NUMBER);
+	invalid_category_object2[9].pValue = x509_serial_number_der;
+	invalid_category_object2[9].ulValueLen = x509_serial_number_der_size;
+
+	rv = C_CreateObject(session, invalid_category_object2,
+			    ARRAY_SIZE(invalid_category_object2), &obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_VALUE_INVALID, rv))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Try import with invalid name hash alg size");
+
+	/* Create the actual object in session */
+	assert(invalid_name_hash_alg_size[6].type == CKA_VALUE);
+	invalid_name_hash_alg_size[6].pValue = x509_cert_der;
+	invalid_name_hash_alg_size[6].ulValueLen = x509_cert_der_size;
+
+	assert(invalid_name_hash_alg_size[7].type == CKA_ISSUER);
+	invalid_name_hash_alg_size[7].pValue = x509_issuer_name_der;
+	invalid_name_hash_alg_size[7].ulValueLen = x509_issuer_name_der_size;
+
+	assert(invalid_name_hash_alg_size[8].type == CKA_SUBJECT);
+	invalid_name_hash_alg_size[8].pValue = x509_subject_name_der;
+	invalid_name_hash_alg_size[8].ulValueLen = x509_subject_name_der_size;
+
+	assert(invalid_name_hash_alg_size[9].type == CKA_SERIAL_NUMBER);
+	invalid_name_hash_alg_size[9].pValue = x509_serial_number_der;
+	invalid_name_hash_alg_size[9].ulValueLen = x509_serial_number_der_size;
+
+	rv = C_CreateObject(session, invalid_name_hash_alg_size,
+			    ARRAY_SIZE(invalid_name_hash_alg_size), &obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ATTRIBUTE_VALUE_INVALID, rv))
+		goto out;
+
+out:
+	OPENSSL_free(x509_serial_number_der);
+	OPENSSL_free(x509_issuer_name_der);
+	OPENSSL_free(x509_subject_name_der);
+	OPENSSL_free(x509_cert_der);
+	X509_free(x509_cert);
+	BIO_free(x509_bio);
+
+	Do_ADBG_EndSubCase(c, NULL);
+close_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+#endif
+}
+ADBG_CASE_DEFINE(pkcs11, 1024, xtest_pkcs11_test_1024,
+		 "PKCS11: X509 Certificate operations");
