@@ -988,6 +988,8 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 	long int stack = 0;
 	long int stack_addr = (long int)&stack;
 	void (*volatile null_fn_ptr)(void) = NULL;
+	char *zero_size_malloc = NULL;
+	volatile char c = 0;
 
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT, 0, 0, 0) &&
 	    param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
@@ -1009,6 +1011,18 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 		break;
 	case 5:
 		undef_instr();
+		break;
+	case 6:
+		zero_size_malloc = TEE_Malloc(0, 0);
+		if (!zero_size_malloc)
+			return TEE_ERROR_GENERIC;
+		c = *zero_size_malloc;
+		break;
+	case 7:
+		zero_size_malloc = TEE_Malloc(0, 0);
+		if (!zero_size_malloc)
+			return TEE_ERROR_GENERIC;
+		*zero_size_malloc = 0;
 		break;
 	default:
 		break;

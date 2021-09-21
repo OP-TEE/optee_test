@@ -851,7 +851,7 @@ static void xtest_tee_test_1010(ADBG_Case_t *c)
 	unsigned int idx = 0;
 	size_t memref_sz[] = { 1024, 65536 };
 
-	for (n = 1; n <= 5; n++) {
+	for (n = 1; n <= 7; n++) {
 		Do_ADBG_BeginSubCase(c, "Invalid memory access %u", n);
 		xtest_tee_test_invalid_mem_access(c, n);
 		Do_ADBG_EndSubCase(c, "Invalid memory access %u", n);
