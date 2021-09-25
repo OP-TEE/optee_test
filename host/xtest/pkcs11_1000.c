@@ -48,6 +48,9 @@ static CK_MECHANISM cktest_aes_cts_mechanism = {
 	CKM_AES_CTS,
 	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
 };
+static CK_MECHANISM cktest_aes_cmac_mechanism = {
+	CKM_AES_CMAC, NULL, 0,
+};
 static CK_MECHANISM cktest_hmac_md5_mechanism = {
 	CKM_MD5_HMAC, NULL, 0,
 };
@@ -69,6 +72,11 @@ static CK_MECHANISM cktest_hmac_sha512_mechanism = {
 
 static const CK_ULONG cktest_general_mechanism_hmac_len = 8;
 
+static CK_MECHANISM cktest_aes_cmac_general_mechanism = {
+	CKM_AES_CMAC_GENERAL,
+	(CK_VOID_PTR)&cktest_general_mechanism_hmac_len,
+	sizeof(CK_ULONG),
+};
 static CK_MECHANISM cktest_hmac_general_md5_mechanism = {
 	CKM_MD5_HMAC_GENERAL,
 	(CK_VOID_PTR)&cktest_general_mechanism_hmac_len,
@@ -1580,6 +1588,29 @@ out:
 ADBG_CASE_DEFINE(pkcs11, 1007, xtest_pkcs11_test_1007,
 		"PKCS11: Check operations release at session closure");
 
+#define CK_MAC_KEY_AES(_key_array) \
+	{								\
+		{ CKA_SIGN,	&(CK_BBOOL){CK_TRUE},			\
+				sizeof(CK_BBOOL) },			\
+		{ CKA_VERIFY,	&(CK_BBOOL){CK_TRUE},			\
+				sizeof(CK_BBOOL) },			\
+		{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+				sizeof(CK_OBJECT_CLASS) },		\
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES},		\
+				sizeof(CK_KEY_TYPE) },			\
+		{ CKA_VALUE,	(void *)(_key_array),			\
+				sizeof(_key_array) },			\
+	}
+
+static CK_ATTRIBUTE cktest_aes_cmac_key1[] =
+	CK_MAC_KEY_AES(mac_cmac_vect1_key);
+
+static CK_ATTRIBUTE cktest_aes_cmac_key2[] =
+	CK_MAC_KEY_AES(mac_cmac_vect5_key);
+
+static CK_ATTRIBUTE cktest_aes_cmac_key3[] =
+	CK_MAC_KEY_AES(mac_cmac_vect9_key);
+
 #define CK_MAC_KEY_HMAC(_type, _key_array) \
 	{								\
 		{ CKA_SIGN, 	&(CK_BBOOL){CK_TRUE},			\
@@ -1636,10 +1667,28 @@ struct mac_test {
 		.in_len = ARRAY_SIZE(input),		\
 		.out = output,				\
 		.out_len = ARRAY_SIZE(output),		\
+		.multiple_incr = incr,			\
+	}
+
+#define CKTEST_CMAC_TEST(key, mecha, input_incr, input, output, incr) {	\
+		.attr_key = key,		\
+		.attr_count = ARRAY_SIZE(key),	\
+		.mechanism = mecha,		\
+		.in_incr = input_incr,		\
+		.in = input,				\
+		.in_len = 0,				\
+		.out = output,				\
+		.out_len = ARRAY_SIZE(output),		\
 		.multiple_incr = incr			\
 	}
 
 static const struct mac_test cktest_mac_cases[] = {
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key1, &cktest_aes_cmac_mechanism,
+			 0, NULL, mac_cmac_vect1_out, false),
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key2, &cktest_aes_cmac_mechanism,
+			 0, NULL, mac_cmac_vect5_out, false),
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key3, &cktest_aes_cmac_mechanism,
+			 0, NULL, mac_cmac_vect9_out, false),
 	CKTEST_MAC_TEST(cktest_hmac_md5_key, &cktest_hmac_md5_mechanism,
 			4, mac_data_md5_in1, mac_data_md5_out1, false),
 	CKTEST_MAC_TEST(cktest_hmac_sha1_key, &cktest_hmac_sha1_mechanism,
@@ -1654,6 +1703,15 @@ static const struct mac_test cktest_mac_cases[] = {
 			11, mac_data_sha384_in1, mac_data_sha384_out1, false),
 	CKTEST_MAC_TEST(cktest_hmac_sha512_key, &cktest_hmac_sha512_mechanism,
 			13, mac_data_sha512_in1, mac_data_sha512_out1, false),
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key1,
+			 &cktest_aes_cmac_general_mechanism, 0, NULL,
+			 mac_cmac_vect1_out, false),
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key2,
+			 &cktest_aes_cmac_general_mechanism, 0, NULL,
+			 mac_cmac_vect5_out, false),
+	CKTEST_CMAC_TEST(cktest_aes_cmac_key3,
+			 &cktest_aes_cmac_general_mechanism, 0, NULL,
+			 mac_cmac_vect9_out, false),
 	CKTEST_MAC_TEST(cktest_hmac_md5_key,
 			&cktest_hmac_general_md5_mechanism, 4,
 			mac_data_md5_in1, mac_data_md5_out1, false),
@@ -1680,6 +1738,7 @@ static const struct mac_test cktest_mac_cases[] = {
 static bool ckm_is_hmac_general(struct mac_test const *test)
 {
 	switch (test->mechanism->mechanism) {
+	case CKM_AES_CMAC_GENERAL:
 	case CKM_MD5_HMAC_GENERAL:
 	case CKM_SHA_1_HMAC_GENERAL:
 	case CKM_SHA224_HMAC_GENERAL:
