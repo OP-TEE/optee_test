@@ -1622,7 +1622,7 @@ static CK_ATTRIBUTE cktest_aes_cmac_key3[] =
 		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){_type},			\
 				sizeof(CK_KEY_TYPE) },			\
 		{ CKA_VALUE,	(void *)(_key_array),			\
-				sizeof(_key_array) }			\
+				sizeof(_key_array) },			\
 	}
 
 static CK_ATTRIBUTE cktest_hmac_md5_key[] =
@@ -1679,7 +1679,7 @@ struct mac_test {
 		.in_len = 0,				\
 		.out = output,				\
 		.out_len = ARRAY_SIZE(output),		\
-		.multiple_incr = incr			\
+		.multiple_incr = incr,			\
 	}
 
 static const struct mac_test cktest_mac_cases[] = {
