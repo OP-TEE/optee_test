@@ -7,3 +7,5 @@ define strip-trailing-slashes-and-dots
 $(eval _o := $(patsubst %/,%,$(patsubst %/.,%,$(1))))$(if \
 	$(filter-out $(1),$(_o)),$(call strip-trailing-slashes-and-dots,$(_o)),$(_o))
 endef
+
+PYTHON3 ?= python3

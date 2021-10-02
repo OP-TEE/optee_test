@@ -16,12 +16,17 @@ if(OPENSSL_FOUND)
 	set (OPENSSL_PRIVATE_LINK OpenSSL::Crypto)
 endif()
 
+find_package(Python COMPONENTS Interpreter Development)
+if(NOT Python_Interpreter_FOUND)
+	message(FATAL_ERROR "Python interpreter not found")
+endif()
+
 include(GNUInstallDirs)
 
 macro(EMBED_8100FILE prefix infile)
 	add_custom_command(
 		OUTPUT  regression_8100_${prefix}.h
-		COMMAND ${OPTEE_TEST_ROOT_DIR}/scripts/file_to_c.py --inf ${infile}
+		COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/file_to_c.py --inf ${infile}
 	--out ${CMAKE_CURRENT_BINARY_DIR}/regression_8100_${prefix}.h
 	--name regression_8100_${prefix}
 		DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/file_to_c.py ${infile}

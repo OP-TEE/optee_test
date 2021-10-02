@@ -193,7 +193,7 @@ $(out-dir)/$(1).rsp: $(out-dir)/gcmtestvectors.zip
 
 $(out-dir)/xtest/$(1).h: $(out-dir)/$(1).rsp
 	@echo '  GEN     $$@'
-	$(q)../../scripts/rsp_to_gcm_test.py --inf $$< --outf $$@ --mode=$(2) \
+	$(q)$(PYTHON3) ../../scripts/rsp_to_gcm_test.py --inf $$< --outf $$@ --mode=$(2) \
 		$(if $(filter y,$(CFG_GCM_NIST_VECTORS_LIMITED)),--limited)
 
 $(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1).h
@@ -210,7 +210,7 @@ cleanfiles += $(out-dir)/xtest/$(1).h
 
 $(out-dir)/xtest/$(1).h: $(2)
 	@echo '  GEN     $$@'
-	$(q)../../scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
+	$(q)$(PYTHON3) ../../scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
 $(CURDIR)/regression_8100.c: $(out-dir)/xtest/$(1).h
 endef
