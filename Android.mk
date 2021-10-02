@@ -16,6 +16,7 @@ VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown
 TA_DEV_KIT_DIR ?= ../invalid_include_path
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+include scripts/common.mk
 
 ################################################################################
 # Build xtest                                                                  #
@@ -74,7 +75,7 @@ endif
 define my-embed-file
 $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
-	@$(LOCAL_PATH)/scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
+	@$(PYTHON3) $(LOCAL_PATH)/scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
 LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_HEADERS)/$(1).h
 
