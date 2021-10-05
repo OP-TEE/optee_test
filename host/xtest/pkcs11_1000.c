@@ -2207,7 +2207,10 @@ static void xtest_pkcs11_test_1010(ADBG_Case_t *c)
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
-	struct mac_test const *test = &cktest_mac_cases[0];
+	struct mac_test test_sign = CKTEST_MAC_TEST(cktest_hmac_md5_key,
+						    &cktest_hmac_md5_mechanism,
+						    4, mac_data_md5_in1,
+						    mac_data_md5_out1, false);
 	uint8_t out[512] = { 0 };
 	CK_ULONG out_len = 512;
 
@@ -2295,12 +2298,12 @@ static void xtest_pkcs11_test_1010(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err;
 
-	rv = C_SignInit(session, test->mechanism, key_handle);
+	rv = C_SignInit(session, test_sign.mechanism, key_handle);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_Sign(session, (void *)test->in, test->in_len,
-		      (void *)out, &out_len);
+	rv = C_Sign(session, (void *)test_sign.in, test_sign.in_len,
+		    (void *)out, &out_len);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
