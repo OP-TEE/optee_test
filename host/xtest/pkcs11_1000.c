@@ -7406,6 +7406,7 @@ close_lib:
 ADBG_CASE_DEFINE(pkcs11, 1023, xtest_pkcs11_test_1023,
 		 "PKCS11: RSA OAEP key generation and crypto operations");
 
+#ifdef OPENSSL_FOUND
 static const char x509_example_root_ca[] =
 	"-----BEGIN CERTIFICATE-----\n"
 	"MIICDTCCAZOgAwIBAgIBATAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJGSTEVMBMG\n"
@@ -7421,10 +7422,12 @@ static const char x509_example_root_ca[] =
 	"APjyNm4f///vWUN3XFd+BRhS2YHR43c0K4oNVyLqigoMoSqu0zXt9Xm+Lsu5iqgJ\n"
 	"NQ==\n"
 	"-----END CERTIFICATE-----\n";
+#endif
 
 static void xtest_pkcs11_test_1024(ADBG_Case_t *c)
 {
 #ifndef OPENSSL_FOUND
+	(void)c;
 	Do_ADBG_Log("OpenSSL not available, skipping X.509 Certificate tests");
 #else
 	CK_RV rv = CKR_GENERAL_ERROR;
