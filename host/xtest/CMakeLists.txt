@@ -16,10 +16,7 @@ if(OPENSSL_FOUND)
 	set (OPENSSL_PRIVATE_LINK OpenSSL::Crypto)
 endif()
 
-find_package(Python COMPONENTS Interpreter Development)
-if(NOT Python_Interpreter_FOUND)
-	message(FATAL_ERROR "Python interpreter not found")
-endif()
+find_package(Python REQUIRED)
 
 include(GNUInstallDirs)
 
