@@ -6,35 +6,34 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <pta_attestation.h>
+#include <pta_invoke_tests.h>
+#include <pta_secstor_ta_mgmt.h>
 #include <pthread.h>
+#include <sdp_basic.h>
+#include <signed_hdr.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <ta_concurrent.h>
+#include <ta_create_fail_test.h>
+#include <ta_crypt.h>
+#include <ta_miss_test.h>
+#include <ta_os_test.h>
+#include <ta_rpc_test.h>
+#include <ta_sims_keepalive_test.h>
+#include <ta_sims_test.h>
+#include <ta_supp_plugin.h>
+#include <ta_tpm_log_test.h>
+#include <test_supp_plugin.h>
 #include <unistd.h>
-
-#include "xtest_test.h"
-#include "xtest_helpers.h"
-#include "xtest_uuid_helpers.h"
-#include <signed_hdr.h>
 #include <util.h>
 
-#include <pta_invoke_tests.h>
-#include <ta_crypt.h>
-#include <ta_os_test.h>
-#include <ta_create_fail_test.h>
-#include <ta_rpc_test.h>
-#include <ta_sims_test.h>
-#include <ta_miss_test.h>
-#include <ta_sims_keepalive_test.h>
-#include <ta_concurrent.h>
-#include <ta_tpm_log_test.h>
-#include <ta_supp_plugin.h>
-#include <sdp_basic.h>
-#include <pta_secstor_ta_mgmt.h>
-
-#include <test_supp_plugin.h>
+#include "xtest_helpers.h"
+#include "xtest_test.h"
+#include "xtest_uuid_helpers.h"
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -2504,3 +2503,93 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
+
+#ifdef CFG_ATTESTATION_PTA
+/*
+ * Verification of the output of the attestation PTA
+ * - Check that buf has the expected hash (if hash != NULL,
+ * otherwise this check is ignored)
+ * - Check that the signature is valid
+ * buf = [ TA hash | signature(hash(nonce | TA hash)) ]
+ */
+static void check_measurement(ADBG_Case_t *c, uint8_t *nonce, size_t nonce_size,
+			      uint8_t *hash, uint8_t *buf, size_t buf_size)
+{
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, 32, <=, buf_size);
+	if (hash)
+		ADBG_EXPECT_BUFFER(c, hash, 32, buf, 32);
+
+	// TODO: check signature
+}
+
+static void xtest_tee_test_1035(ADBG_Case_t *c)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_UUID att_uuid = PTA_ATTESTATION_UUID;
+	uint8_t nonce[4] = { };
+	uint8_t hash1[32] = { }; /* 32 bytes for SHA-256 */
+	uint8_t hash2[32] = { };
+	uint8_t measurement[32 + 3072 / 8] = { };
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	Do_ADBG_BeginSubCase(c, "TA attestation");
+
+	nonce[0] = 0x12;
+	nonce[1] = 0x34;
+	nonce[2] = 0x56;
+	nonce[3] = 0x78;
+
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE);
+	op.params[0].tmpref.buffer = (void *)&os_test_ta_uuid;
+	op.params[0].tmpref.size = sizeof(TEEC_UUID);
+	op.params[1].tmpref.buffer = nonce;
+	op.params[1].tmpref.size = sizeof(nonce);
+	op.params[2].tmpref.buffer = measurement;
+	op.params[2].tmpref.size = sizeof(measurement);
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(&session,
+					&att_uuid, NULL, &ret_orig));
+
+	/* Hash TA and check signature */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement,
+			  sizeof(measurement));
+	/* Save hash */
+	memcpy(hash1, measurement, 32);
+
+	/* Hash TA again */
+	memset(measurement, 0, sizeof(measurement));
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	/* New hash should be identical */
+	check_measurement(c, nonce, sizeof(nonce), hash1, measurement,
+			  sizeof(measurement));
+
+	/* Hash another TA */
+	op.params[0].tmpref.buffer = (void *)&crypt_user_ta_uuid;
+	memset(measurement, 0, sizeof(measurement));
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement,
+			  sizeof(measurement));
+	memcpy(hash2, measurement, 32);
+	/* Different binaries should have different hashes */
+	ADBG_EXPECT_COMPARE_SIGNED(c, memcmp(hash1, hash2, sizeof(hash1)), !=,
+				   0);
+
+	TEEC_CloseSession(&session);
+
+	Do_ADBG_EndSubCase(c, "TA attestation");
+}
+ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035,
+		 "TA remote attestation");
+#endif
