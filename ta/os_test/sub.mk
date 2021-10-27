@@ -20,3 +20,4 @@ cxxflags-remove-cxx_tests.cpp-y += -pg
 srcs-y += cxx_tests_c.c
 cflags-remove-cxx_tests_c.c-y += -pg
 endif
+srcs-$(CFG_ATTESTATION_PTA) += attestation.c

@@ -72,6 +72,10 @@ LOCAL_CFLAGS += -DCFG_PKCS11_TA
 LOCAL_SHARED_LIBRARIES += libckteec
 endif
 
+ifeq ($(CFG_ATTESTATION_PTA),y)
+LOCAL_CFLAGS += -DCFG_ATTESTATION_PTA
+endif
+
 define my-embed-file
 $(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'

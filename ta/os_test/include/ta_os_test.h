@@ -39,5 +39,6 @@
 #define TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL    27
 #define TA_OS_TEST_CMD_CXX_EXC_MAIN         28
 #define TA_OS_TEST_CMD_CXX_EXC_MIXED        29
+#define TA_OS_TEST_CMD_ATTESTATION          30
 
 #endif /*TA_OS_TEST_H */

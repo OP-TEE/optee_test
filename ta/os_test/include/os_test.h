@@ -37,5 +37,6 @@ TEE_Result ta_entry_cxx_ctor_shlib(void);
 TEE_Result ta_entry_cxx_ctor_shlib_dl(void);
 TEE_Result ta_entry_cxx_exc_main(void);
 TEE_Result ta_entry_cxx_exc_mixed(void);
+TEE_Result ta_entry_attestation(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*OS_TEST_H */

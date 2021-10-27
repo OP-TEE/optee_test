@@ -144,7 +144,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_CXX_EXC_MIXED:
 		return TEE_ERROR_NOT_SUPPORTED;
 #endif
-
+#if defined(CFG_ATTESTATION_PTA)
+	case TA_OS_TEST_CMD_ATTESTATION:
+		return ta_entry_attestation(nParamTypes, pParams);
+#endif
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

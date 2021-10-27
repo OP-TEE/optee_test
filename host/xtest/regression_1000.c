@@ -6,35 +6,34 @@
 
 #include <errno.h>
 #include <limits.h>
+#include <pta_attestation.h>
+#include <pta_invoke_tests.h>
+#include <pta_secstor_ta_mgmt.h>
 #include <pthread.h>
+#include <sdp_basic.h>
+#include <signed_hdr.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <ta_concurrent.h>
+#include <ta_create_fail_test.h>
+#include <ta_crypt.h>
+#include <ta_miss_test.h>
+#include <ta_os_test.h>
+#include <ta_rpc_test.h>
+#include <ta_sims_keepalive_test.h>
+#include <ta_sims_test.h>
+#include <ta_supp_plugin.h>
+#include <ta_tpm_log_test.h>
+#include <test_supp_plugin.h>
 #include <unistd.h>
-
-#include "xtest_test.h"
-#include "xtest_helpers.h"
-#include "xtest_uuid_helpers.h"
-#include <signed_hdr.h>
 #include <util.h>
 
-#include <pta_invoke_tests.h>
-#include <ta_crypt.h>
-#include <ta_os_test.h>
-#include <ta_create_fail_test.h>
-#include <ta_rpc_test.h>
-#include <ta_sims_test.h>
-#include <ta_miss_test.h>
-#include <ta_sims_keepalive_test.h>
-#include <ta_concurrent.h>
-#include <ta_tpm_log_test.h>
-#include <ta_supp_plugin.h>
-#include <sdp_basic.h>
-#include <pta_secstor_ta_mgmt.h>
-
-#include <test_supp_plugin.h>
+#include "xtest_helpers.h"
+#include "xtest_test.h"
+#include "xtest_uuid_helpers.h"
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -2504,3 +2503,107 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
+
+#ifdef CFG_ATTESTATION_PTA
+static void xtest_tee_test_attestation(ADBG_Case_t *c, uint32_t hash_method)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_UUID ta_uuid = os_test_ta_uuid;
+	uint8_t hash1[32] = { }; /* 32 bytes for SHA-256 */
+	uint8_t hash2[32] = { };
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	Do_ADBG_BeginSubCase(c, "Consecutive calls");
+
+	/* Open session to os_test TA */
+	res = xtest_teec_open_session(&session, &ta_uuid, NULL, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
+					 TEEC_NONE);
+	op.params[0].value.a = hash_method;
+	op.params[1].tmpref.buffer = hash1;
+	op.params[1].tmpref.size = sizeof(hash1);
+
+	/* Hash TA */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					TA_OS_TEST_CMD_ATTESTATION, &op,
+					&ret_orig));
+
+	op.params[1].tmpref.buffer = hash2;
+	op.params[1].tmpref.size = sizeof(hash2);
+
+	/* Hash TA again */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					TA_OS_TEST_CMD_ATTESTATION, &op,
+					&ret_orig));
+
+	/* Hashes should be identical */
+	ADBG_EXPECT_EQUAL(c, hash1, hash2, sizeof(hash1));
+
+	Do_ADBG_EndSubCase(c, "Consecutive calls");
+
+	/* Close TA session, will cause unload of TA */
+	TEEC_CloseSession(&session);
+
+	Do_ADBG_BeginSubCase(c, "TA reload");
+
+	/* Load TA again and open a new session */
+	res = xtest_teec_open_session(&session, &ta_uuid, NULL, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+	memset(hash2, 0, sizeof(hash2));
+
+	/* Hash TA one more time */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					TA_OS_TEST_CMD_ATTESTATION, &op,
+					&ret_orig));
+
+	/* Hash after reload should still be the same */
+	ADBG_EXPECT_EQUAL(c, hash1, hash2, sizeof(hash1));
+
+	Do_ADBG_EndSubCase(c, "TA reload");
+
+	Do_ADBG_BeginSubCase(c, "Add shared library");
+
+	/*
+	 * Invoke a TA command that causes some additional code to be mapped
+	 * (shared library)
+	 */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+						TA_OS_TEST_CMD_CALL_LIB_DL,
+						NULL, &ret_orig));
+
+	op.params[1].tmpref.buffer = hash1;
+	op.params[1].tmpref.size = sizeof(hash1);
+
+	/* Hash TA one last time */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					TA_OS_TEST_CMD_ATTESTATION, &op,
+					&ret_orig));
+
+	/* Different binaries mapped mean different hashes */
+	ADBG_EXPECT_COMPARE_SIGNED(c, memcmp(hash1, hash2, sizeof(hash1)), !=,
+				   0);
+
+	Do_ADBG_EndSubCase(c, "Add shared library");
+
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_1035(ADBG_Case_t *c)
+{
+	Do_ADBG_BeginSubCase(c, "Mode: PTA_ATTESTATION_HASH_METHOD_FULL");
+	xtest_tee_test_attestation(c, PTA_ATTESTATION_HASH_METHOD_FULL);
+	Do_ADBG_EndSubCase(c, "Mode: PTA_ATTESTATION_HASH_METHOD_FULL");
+
+	Do_ADBG_BeginSubCase(c, "Mode: PTA_ATTESTATION_HASH_METHOD_TAGS");
+	xtest_tee_test_attestation(c, PTA_ATTESTATION_HASH_METHOD_TAGS);
+	Do_ADBG_EndSubCase(c, "Mode: PTA_ATTESTATION_HASH_METHOD_TAGS");
+}
+ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035,
+		 "TA remote attestation");
+#endif
