@@ -663,6 +663,62 @@ static bool test_200x_udp_accept_cb(void *ptr, int fd, short *events)
 	return sendto(fd, buf, l, 0, sa, slen) != -1;
 }
 
+static bool test_2004_send_recv(ADBG_Case_t *c,
+				struct test_200x_io_state *srv_ios,
+				struct test_200x_io_state *local_ios,
+				TEEC_Session *session, struct socket_handle *sh,
+				size_t send_sz, size_t recv_sz)
+{
+	bool ret = false;
+	uint32_t ret_orig = 0;
+	uint8_t *buf = calloc(1, send_sz);
+	uint8_t *buf2 = calloc(1, send_sz);
+	size_t blen = 0;
+
+	/* If recv_sz < send_sz we're receiving a truncated datagram */
+
+	if (!ADBG_EXPECT_NOT_NULL(c, buf) || !ADBG_EXPECT_NOT_NULL(c, buf2) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, send_sz, >=, recv_sz))
+		goto out;
+
+	/* First we're sending the packet to the echo server */
+	Do_ADBG_BeginSubCase(c, "UDP Socket send");
+	blen = send_sz;
+	rand_stream_read(local_ios->write_rs, buf, blen);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_send(session, sh,
+			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+		goto out;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	Do_ADBG_EndSubCase(c, "UDP Socket send");
+
+	/* Then we're receiving the packet from the echo server */
+	Do_ADBG_BeginSubCase(c, "UDP Socket recv");
+	blen = 0;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(session, sh,
+			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+		goto out;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	blen = recv_sz;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(session, sh,
+			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+		goto out;
+	if (recv_sz < send_sz)
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, >=, recv_sz);
+	else
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	rand_stream_read(local_ios->read_rs, buf2, send_sz);
+	ADBG_EXPECT_BUFFER(c, buf2, recv_sz, buf, recv_sz);
+	ADBG_EXPECT_TRUE(c, !srv_ios->rfail);
+	Do_ADBG_EndSubCase(c, "UDP Socket recv");
+
+	ret = true;
+out:
+	free(buf);
+	free(buf2);
+
+	return ret;
+}
+
 static void xtest_tee_test_2004(ADBG_Case_t *c)
 {
 	struct sock_server ts = { };
@@ -676,7 +732,6 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 	uint32_t proto_error = 0;
 	struct socket_handle sh = { };
 	uint8_t buf[64] = { };
-	uint8_t buf2[64] = { };
 	size_t blen = 0;
 	uint16_t port = 0;
 	struct test_200x_io_state server_iostate = { };
@@ -713,25 +768,19 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 
 	Do_ADBG_EndSubCase(c, "UDP Socket open");
 
-	Do_ADBG_BeginSubCase(c, "UDP Socket send");
-	blen = sizeof(buf);
-	rand_stream_read(local_iostate.write_rs, buf, blen);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_send(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+	Do_ADBG_BeginSubCase(c, "Normal send and receive");
+	if (!ADBG_EXPECT_TRUE(c, test_2004_send_recv(c, &server_iostate,
+						     &local_iostate, &session,
+						     &sh, 64, 64)))
 		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	Do_ADBG_EndSubCase(c, "UDP Socket send");
+	Do_ADBG_EndSubCase(c, "Normal send and receive");
 
-	Do_ADBG_BeginSubCase(c, "UDP Socket recv");
-	blen = sizeof(buf);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+	Do_ADBG_BeginSubCase(c, "UDP Socket truncated recv");
+	if (!ADBG_EXPECT_TRUE(c, test_2004_send_recv(c, &server_iostate,
+						     &local_iostate, &session,
+						     &sh, 64, 32)))
 		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	rand_stream_read(local_iostate.read_rs, buf2, blen);
-	ADBG_EXPECT_BUFFER(c, buf2, blen, buf, blen);
-	ADBG_EXPECT_TRUE(c, !server_iostate.rfail);
-	Do_ADBG_EndSubCase(c, "UDP Socket recv");
+	Do_ADBG_EndSubCase(c, "UDP Socket truncated recv");
 
 	Do_ADBG_BeginSubCase(c, "UDP Socket get error");
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_get_error(&session, &sh,
@@ -812,25 +861,11 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 			TEE_UDP_CHANGEPORT, &port, &blen, &ret_orig)))
 		goto out_close_session;
 
-	Do_ADBG_BeginSubCase(c, "UDP Socket send");
-	blen = sizeof(buf);
-	rand_stream_read(local_iostate.write_rs, buf, blen);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_send(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
-		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	Do_ADBG_EndSubCase(c, "UDP Socket send");
 
-	Do_ADBG_BeginSubCase(c, "UDP Socket recv");
-	blen = sizeof(buf);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+	if (!ADBG_EXPECT_TRUE(c, test_2004_send_recv(c, &server_iostate,
+						     &local_iostate, &session,
+						     &sh, 64, 64)))
 		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	rand_stream_read(local_iostate.read_rs, buf2, blen);
-	ADBG_EXPECT_BUFFER(c, buf2, blen, buf, blen);
-	ADBG_EXPECT_TRUE(c, !server_iostate.rfail);
-	Do_ADBG_EndSubCase(c, "UDP Socket recv");
 	TEEC_CloseSession(&session);
 
 	Do_ADBG_EndSubCase(c, "UDP Socket change port");
@@ -859,25 +894,10 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 			TEE_UDP_CHANGEADDR, ts3.bind->host, &blen, &ret_orig)))
 		goto out_close_session;
 
-	Do_ADBG_BeginSubCase(c, "UDP Socket send");
-	blen = sizeof(buf);
-	rand_stream_read(local_iostate.write_rs, buf, blen);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_send(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
+	if (!ADBG_EXPECT_TRUE(c, test_2004_send_recv(c, &server_iostate,
+						     &local_iostate, &session,
+						     &sh, 64, 64)))
 		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	Do_ADBG_EndSubCase(c, "UDP Socket send");
-
-	Do_ADBG_BeginSubCase(c, "UDP Socket recv");
-	blen = sizeof(buf);
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(&session, &sh,
-			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
-		goto out_close_session;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, sizeof(buf));
-	rand_stream_read(local_iostate.read_rs, buf2, blen);
-	ADBG_EXPECT_BUFFER(c, buf2, blen, buf, blen);
-	ADBG_EXPECT_TRUE(c, !server_iostate.rfail);
-	Do_ADBG_EndSubCase(c, "UDP Socket recv");
 
 	Do_ADBG_EndSubCase(c, "UDP Socket change addr");
 
