@@ -41,5 +41,6 @@
 #define TA_OS_TEST_CMD_CXX_EXC_MIXED        29
 #define TA_OS_TEST_CMD_PAUTH_NOP            30
 #define TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC    31
+#define TA_OS_TEST_CMD_ATTESTATION          32
 
 #endif /*TA_OS_TEST_H */
