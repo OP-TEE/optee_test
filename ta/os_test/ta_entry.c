@@ -167,6 +167,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return TEE_ERROR_NOT_SUPPORTED;
 #endif
 
+	case TA_OS_TEST_CMD_ATTESTATION:
+		return ta_entry_attestation(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
