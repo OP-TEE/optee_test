@@ -6,35 +6,42 @@
 
 #include <errno.h>
 #include <limits.h>
+#ifdef OPENSSL_FOUND
+#include <openssl/bn.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+#include <openssl/rsa.h>
+#endif
+#include <pta_attestation.h>
+#include <pta_invoke_tests.h>
+#include <pta_secstor_ta_mgmt.h>
 #include <pthread.h>
+#include <sdp_basic.h>
+#include <signed_hdr.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <ta_concurrent.h>
+#include <ta_create_fail_test.h>
+#include <ta_crypt.h>
+#include <ta_miss_test.h>
+#include <ta_os_test.h>
+#include <ta_rpc_test.h>
+#include <ta_sims_keepalive_test.h>
+#include <ta_sims_test.h>
+#include <ta_supp_plugin.h>
+#include <ta_tpm_log_test.h>
+#include <test_supp_plugin.h>
 #include <unistd.h>
-
-#include "xtest_test.h"
-#include "xtest_helpers.h"
-#include "xtest_uuid_helpers.h"
-#include <signed_hdr.h>
+#include <utee_defines.h>
 #include <util.h>
 
-#include <pta_invoke_tests.h>
-#include <ta_crypt.h>
-#include <ta_os_test.h>
-#include <ta_create_fail_test.h>
-#include <ta_rpc_test.h>
-#include <ta_sims_test.h>
-#include <ta_miss_test.h>
-#include <ta_sims_keepalive_test.h>
-#include <ta_concurrent.h>
-#include <ta_tpm_log_test.h>
-#include <ta_supp_plugin.h>
-#include <sdp_basic.h>
-#include <pta_secstor_ta_mgmt.h>
-
-#include <test_supp_plugin.h>
+#include "xtest_helpers.h"
+#include "xtest_test.h"
+#include "xtest_uuid_helpers.h"
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -2504,3 +2511,197 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
+
+#ifdef CFG_ATTESTATION_PTA
+
+#define MAX_KEY_SIZE 4096
+
+#ifdef OPENSSL_FOUND
+static RSA *att_key;
+size_t att_key_size;  /* Actual key size (modulus size) in bytes */
+
+/*
+ * buf = [ TA hash (32 bytes SHA256) | Signature (att_key_size bytes) ]
+ * Signature = RSA_SSA_PKCS1_PSS_MGF1(SHA256([nonce | TA hash])
+ */
+static void check_signature(ADBG_Case_t *c, uint8_t *nonce, size_t nonce_size,
+			    uint8_t *buf)
+{
+	unsigned char digest[SHA256_DIGEST_LENGTH] = { };
+	unsigned char *ta_hash = buf;
+	unsigned char *sig = buf + SHA256_DIGEST_LENGTH;
+	int salt_len = 32; /* Hard-coded in the PTA */
+	uint8_t decr[MAX_KEY_SIZE / 8] = { };
+	SHA256_CTX ctx = { };
+
+	ADBG_EXPECT_NOT_NULL(c, att_key);
+	if (!att_key)
+		return;
+
+	SHA256_Init(&ctx);
+	SHA256_Update(&ctx, nonce, nonce_size);
+	SHA256_Update(&ctx, ta_hash, SHA256_DIGEST_LENGTH);
+	SHA256_Final(digest, &ctx);
+
+	ADBG_EXPECT_COMPARE_SIGNED(c, RSA_public_decrypt(att_key_size, sig,
+						decr, att_key,
+						RSA_NO_PADDING),
+				   >, 0);
+	ADBG_EXPECT_COMPARE_SIGNED(c, RSA_verify_PKCS1_PSS_mgf1(att_key, digest,
+						EVP_sha256(), EVP_sha256(),
+						decr, salt_len),
+				   >, 0);
+}
+
+static void free_att_key(void)
+{
+	RSA_free(att_key);
+	att_key = NULL;
+}
+
+static void set_att_key(ADBG_Case_t *c, uint8_t *e, size_t e_sz, uint8_t *n,
+			size_t n_sz)
+{
+	int st = 0;
+	BIGNUM *bn_e = NULL;
+	BIGNUM *bn_n = NULL;
+
+	att_key_size = n_sz;
+	att_key = RSA_new();
+	ADBG_EXPECT_NOT_NULL(c, att_key);
+
+	ADBG_EXPECT_NOT_NULL(c, bn_e = BN_bin2bn(e, e_sz, NULL));
+	ADBG_EXPECT_NOT_NULL(c, bn_n = BN_bin2bn(n, n_sz, NULL));
+
+	st = RSA_set0_key(att_key, bn_n, bn_e, BN_new());
+	ADBG_EXPECT_COMPARE_SIGNED(c, st, !=, 0);
+	if (!st)
+		free_att_key();
+}
+#else
+#define check_signature(...)
+#define set_att_key(...)
+#define free_att_key()
+#endif
+
+/*
+ * Verification of the output of the attestation PTA
+ * - (If hash != NULL) check buf contains the expected hash
+ * - (If OpenSSL is available) Check that the signature is valid
+ */
+static void check_measurement(ADBG_Case_t *c, uint8_t *nonce, size_t nonce_size,
+			      uint8_t *hash, uint8_t *buf)
+{
+	if (hash)
+		ADBG_EXPECT_BUFFER(c, hash, 32, buf, 32);
+
+	check_signature(c, nonce, nonce_size, buf);
+}
+
+static void get_att_public_key(ADBG_Case_t *c)
+{
+	uint8_t n[MAX_KEY_SIZE / 8] = { 0 };
+	uint8_t e[3] = { 0 };  /* We know e == 65537... */
+	size_t n_sz = sizeof(n);
+	size_t e_sz = sizeof(e);
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_UUID att_uuid = PTA_ATTESTATION_UUID;
+	TEEC_Result res = TEE_SUCCESS;
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = e;
+	op.params[0].tmpref.size = e_sz;
+	op.params[1].tmpref.buffer = n;
+	op.params[1].tmpref.size = n_sz;
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(&session,
+					&att_uuid, NULL, &ret_orig));
+	ADBG_EXPECT_TEEC_SUCCESS(c, res = TEEC_InvokeCommand(&session,
+						PTA_ATTESTATION_GET_PUBKEY, &op,
+						&ret_orig));
+	TEEC_CloseSession(&session);
+
+	if (!res) {
+		e_sz = op.params[0].tmpref.size;
+		n_sz = op.params[1].tmpref.size;
+		set_att_key(c, e, e_sz, n, n_sz);
+	}
+}
+
+static void xtest_tee_test_1035(ADBG_Case_t *c)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_UUID att_uuid = PTA_ATTESTATION_UUID;
+	uint8_t nonce[4] = { 0 };
+	uint8_t hash1[TEE_SHA256_HASH_SIZE] = { 0 };
+	uint8_t hash2[TEE_SHA256_HASH_SIZE] = { 0 };
+	uint8_t measurement[TEE_SHA256_HASH_SIZE + MAX_KEY_SIZE / 8] = { 0 };
+	TEEC_Session session = { 0 };
+	uint32_t ret_orig = 0;
+
+	Do_ADBG_BeginSubCase(c, "Get public key");
+	get_att_public_key(c);
+	Do_ADBG_EndSubCase(c, "Get public key");
+
+	Do_ADBG_BeginSubCase(c, "TA attestation");
+
+	nonce[0] = 0x12;
+	nonce[1] = 0x34;
+	nonce[2] = 0x56;
+	nonce[3] = 0x78;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE);
+	op.params[0].tmpref.buffer = (void *)&os_test_ta_uuid;
+	op.params[0].tmpref.size = sizeof(TEEC_UUID);
+	op.params[1].tmpref.buffer = nonce;
+	op.params[1].tmpref.size = sizeof(nonce);
+	op.params[2].tmpref.buffer = measurement;
+	op.params[2].tmpref.size = sizeof(measurement);
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, xtest_teec_open_session(&session,
+					&att_uuid, NULL, &ret_orig));
+
+	/* Hash TA and check signature */
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement);
+	/* Save hash */
+	memcpy(hash1, measurement, 32);
+
+	/* Hash TA again */
+	memset(measurement, 0, sizeof(measurement));
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	/* New hash should be identical */
+	check_measurement(c, nonce, sizeof(nonce), hash1, measurement);
+
+	/* Hash another TA */
+	op.params[0].tmpref.buffer = (void *)&crypt_user_ta_uuid;
+	memset(measurement, 0, sizeof(measurement));
+	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
+					PTA_ATTESTATION_HASH_TA, &op,
+					&ret_orig));
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement);
+	memcpy(hash2, measurement, 32);
+	/* Different binaries should have different hashes */
+	ADBG_EXPECT_COMPARE_SIGNED(c, memcmp(hash1, hash2, sizeof(hash1)), !=,
+				   0);
+
+	TEEC_CloseSession(&session);
+
+	free_att_key();
+
+	Do_ADBG_EndSubCase(c, "TA attestation");
+}
+ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035,
+		 "TA remote attestation");
+#endif

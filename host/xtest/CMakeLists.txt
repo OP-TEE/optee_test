@@ -109,6 +109,10 @@ if (CFG_PKCS11_TA)
 	list (APPEND SRC pkcs11_1000.c)
 endif()
 
+if (CFG_ATTESTATION_TA)
+	add_compile_options(-DCFG_ATTESTATION_PTA)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################
