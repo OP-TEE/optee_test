@@ -402,6 +402,7 @@ static int get_random_bytes(char *out, size_t len)
 		if (rc != RANDOM_BUFFER_SIZE) {
 			fprintf(stderr, "failed to read %d bytes from %s\n",
 				RANDOM_BUFFER_SIZE, rand_dev);
+			close(fd);
 			return -1;
 		}
 		close(fd);
