@@ -2505,7 +2505,7 @@ ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
 
 #ifdef CFG_ATTESTATION_PTA
-static void xtest_tee_test_1035(ADBG_Case_t *c)
+static void xtest_tee_test_attestation(ADBG_Case_t *c, uint32_t hash_mode)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_UUID ta_uuid = os_test_ta_uuid;
@@ -2531,6 +2531,7 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
 					 TEEC_NONE);
 	op.params[0].value.a = session.session_id;
+	op.params[0].value.b = hash_mode;
 	op.params[1].tmpref.buffer = hash1;
 	op.params[1].tmpref.size = sizeof(hash1);
 
@@ -2599,6 +2600,17 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 
 	TEEC_CloseSession(&session);
 	TEEC_CloseSession(&att_session);
+}
+
+static void xtest_tee_test_1035(ADBG_Case_t *c)
+{
+	Do_ADBG_BeginSubCase(c, "Mode: PTA_ATTESTATION_HASH_MODE_FULL");
+	xtest_tee_test_attestation(c, PTA_ATTESTATION_HASH_MODE_FULL);
+	Do_ADBG_EndSubCase(c, "Mode: PTA_ATTESTATION_HASH_MODE_FULL");
+
+	Do_ADBG_BeginSubCase(c, "Mode: PTA_ATTESTATION_HASH_MODE_TAGS");
+	xtest_tee_test_attestation(c, PTA_ATTESTATION_HASH_MODE_TAGS);
+	Do_ADBG_EndSubCase(c, "Mode: PTA_ATTESTATION_HASH_MODE_TAGS");
 }
 ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035,
 		 "TA remote attestation");
