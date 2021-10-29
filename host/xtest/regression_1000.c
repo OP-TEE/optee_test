@@ -2527,22 +2527,20 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 	res = xtest_teec_open_session(&session, &ta_uuid, NULL, &ret_orig);
 	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
-					 TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE);
-	op.params[0].tmpref.buffer = &ta_uuid;
-	op.params[0].tmpref.size = sizeof(ta_uuid);
-	op.params[1].value.a = session.session_id;
-	op.params[2].tmpref.buffer = hash1;
-	op.params[2].tmpref.size = sizeof(hash1);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
+					 TEEC_NONE);
+	op.params[0].value.a = session.session_id;
+	op.params[1].tmpref.buffer = hash1;
+	op.params[1].tmpref.size = sizeof(hash1);
 
 	/* Hash TA */
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&att_session,
 						       PTA_ATTESTATION_HASH_TA,
 						       &op, &ret_orig));
 
-	op.params[2].tmpref.buffer = hash2;
-	op.params[2].tmpref.size = sizeof(hash2);
+	op.params[1].tmpref.buffer = hash2;
+	op.params[1].tmpref.size = sizeof(hash2);
 
 	/* Hash TA again */
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&att_session,
@@ -2585,8 +2583,8 @@ static void xtest_tee_test_1035(ADBG_Case_t *c)
 						TA_OS_TEST_CMD_CALL_LIB_DL,
 						NULL, &ret_orig));
 
-	op.params[2].tmpref.buffer = hash1;
-	op.params[2].tmpref.size = sizeof(hash1);
+	op.params[1].tmpref.buffer = hash1;
+	op.params[1].tmpref.size = sizeof(hash1);
 
 	/* Hash TA one last time */
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&att_session,
