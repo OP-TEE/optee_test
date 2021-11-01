@@ -16,7 +16,7 @@ VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown
 TA_DEV_KIT_DIR ?= ../invalid_include_path
 
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
-include scripts/common.mk
+include $(LOCAL_PATH)/scripts/common.mk
 
 ################################################################################
 # Build xtest                                                                  #
