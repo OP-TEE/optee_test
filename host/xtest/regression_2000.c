@@ -789,6 +789,7 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
 				socket_ioctl(&session, &sh, 0x32 << 24,
 				buf, &blen, &ret_orig));
+	TEEC_CloseSession(&session);
 
 	Do_ADBG_EndSubCase(c, "UDP Socket ioctl");
 
@@ -830,6 +831,7 @@ static void xtest_tee_test_2004(ADBG_Case_t *c)
 	ADBG_EXPECT_BUFFER(c, buf2, blen, buf, blen);
 	ADBG_EXPECT_TRUE(c, !server_iostate.rfail);
 	Do_ADBG_EndSubCase(c, "UDP Socket recv");
+	TEEC_CloseSession(&session);
 
 	Do_ADBG_EndSubCase(c, "UDP Socket change port");
 
