@@ -2505,44 +2505,74 @@ ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
 
 #ifdef CFG_ATTESTATION_PTA
+/*
+ * Verification of the output of the attestation PTA
+ * - Check that buf has the expected hash (if hash != NULL,
+ * otherwise this check is ignored)
+ * - Check the signature is valid
+ * buf = [ TA hash | signature(hash(nonce | TA hash)) ]
+ */
+static void check_measurement(ADBG_Case_t *c, uint8_t *nonce, size_t nonce_size,
+			      uint8_t *hash, uint8_t *buf, size_t buf_size)
+{
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, 32, <=, buf_size);
+	if (hash) {
+		ADBG_EXPECT_BUFFER(c, hash, 32, buf, 32);
+	}
+	// TODO: check signature
+}
+
 static void xtest_tee_test_attestation(ADBG_Case_t *c, uint32_t hash_method)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_UUID ta_uuid = os_test_ta_uuid;
+	uint8_t nonce[4] = { };
 	uint8_t hash1[32] = { }; /* 32 bytes for SHA-256 */
 	uint8_t hash2[32] = { };
+	uint8_t measurement[32 + 3072 / 8] = { };
 	TEEC_Result res = TEEC_SUCCESS;
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 
 	Do_ADBG_BeginSubCase(c, "Consecutive calls");
 
+	nonce[0] = 0x12;
+	nonce[1] = 0x34;
+	nonce[2] = 0x56;
+	nonce[3] = 0x78;
+
 	/* Open session to os_test TA */
 	res = xtest_teec_open_session(&session, &ta_uuid, NULL, &ret_orig);
 	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
 					 TEEC_NONE);
 	op.params[0].value.a = hash_method;
-	op.params[1].tmpref.buffer = hash1;
-	op.params[1].tmpref.size = sizeof(hash1);
+	op.params[1].tmpref.buffer = nonce;
+	op.params[1].tmpref.size = sizeof(nonce);
+	op.params[2].tmpref.buffer = measurement;
+	op.params[2].tmpref.size = sizeof(measurement);
 
 	/* Hash TA */
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
 					TA_OS_TEST_CMD_ATTESTATION, &op,
 					&ret_orig));
 
-	op.params[1].tmpref.buffer = hash2;
-	op.params[1].tmpref.size = sizeof(hash2);
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement,
+			  sizeof(measurement));
+	memcpy(hash1, measurement, 32);
 
 	/* Hash TA again */
+	memset(measurement, 0, sizeof(measurement));
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
 					TA_OS_TEST_CMD_ATTESTATION, &op,
 					&ret_orig));
 
-	/* Hashes should be identical */
-	ADBG_EXPECT_EQUAL(c, hash1, hash2, sizeof(hash1));
+	/* New hash should be identical to hash1 */
+	check_measurement(c, nonce, sizeof(nonce), hash1, measurement,
+			  sizeof(measurement));
 
 	Do_ADBG_EndSubCase(c, "Consecutive calls");
 
@@ -2555,15 +2585,15 @@ static void xtest_tee_test_attestation(ADBG_Case_t *c, uint32_t hash_method)
 	res = xtest_teec_open_session(&session, &ta_uuid, NULL, &ret_orig);
 	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
-	memset(hash2, 0, sizeof(hash2));
-
 	/* Hash TA one more time */
+	memset(measurement, 0, sizeof(measurement));
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
 					TA_OS_TEST_CMD_ATTESTATION, &op,
 					&ret_orig));
 
 	/* Hash after reload should still be the same */
-	ADBG_EXPECT_EQUAL(c, hash1, hash2, sizeof(hash1));
+	check_measurement(c, nonce, sizeof(nonce), hash1, measurement,
+			  sizeof(measurement));
 
 	Do_ADBG_EndSubCase(c, "TA reload");
 
@@ -2577,13 +2607,15 @@ static void xtest_tee_test_attestation(ADBG_Case_t *c, uint32_t hash_method)
 						TA_OS_TEST_CMD_CALL_LIB_DL,
 						NULL, &ret_orig));
 
-	op.params[1].tmpref.buffer = hash1;
-	op.params[1].tmpref.size = sizeof(hash1);
-
 	/* Hash TA one last time */
+	memset(measurement, 0, sizeof(measurement));
 	ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(&session,
 					TA_OS_TEST_CMD_ATTESTATION, &op,
 					&ret_orig));
+
+	check_measurement(c, nonce, sizeof(nonce), NULL, measurement,
+			  sizeof(measurement));
+	memcpy(hash2, measurement, 32);
 
 	/* Different binaries mapped mean different hashes */
 	ADBG_EXPECT_COMPARE_SIGNED(c, memcmp(hash1, hash2, sizeof(hash1)), !=,
