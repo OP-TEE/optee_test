@@ -688,7 +688,8 @@ static bool test_2004_send_recv(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_send(session, sh,
 			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
 		goto out;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz))
+		goto out;
 	Do_ADBG_EndSubCase(c, "UDP Socket send");
 
 	/* Then we're receiving the packet from the echo server */
@@ -697,18 +698,30 @@ static bool test_2004_send_recv(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(session, sh,
 			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
 		goto out;
-	ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	/*
+	 * blen was set to 0 so socket_recv() cannot block, this means the
+	 * we have no guarantee that the sent UDP packet has reached its
+	 * destination yet. If it has it must match the send size, else it
+	 * must be 0.
+	 */
+	if (blen && !ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz))
+		goto out;
 	blen = recv_sz;
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, socket_recv(session, sh,
 			buf, &blen, TEE_TIMEOUT_INFINITE, &ret_orig)))
 		goto out;
-	if (recv_sz < send_sz)
-		ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, >=, recv_sz);
-	else
-		ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz);
+	if (recv_sz < send_sz) {
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, >=, recv_sz))
+			goto out;
+	} else {
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, blen, ==, send_sz))
+			goto out;
+	}
 	rand_stream_read(local_ios->read_rs, buf2, send_sz);
-	ADBG_EXPECT_BUFFER(c, buf2, recv_sz, buf, recv_sz);
-	ADBG_EXPECT_TRUE(c, !srv_ios->rfail);
+	if (!ADBG_EXPECT_BUFFER(c, buf2, recv_sz, buf, recv_sz))
+		goto out;
+	if (!ADBG_EXPECT_TRUE(c, !srv_ios->rfail))
+		goto out;
 	Do_ADBG_EndSubCase(c, "UDP Socket recv");
 
 	ret = true;
