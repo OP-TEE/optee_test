@@ -38,6 +38,10 @@ ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
 endif
 
+ifeq ($(CFG_TA_BTI),y)
+TA_DIRS += bti_test
+endif
+
 .PHONY: all
 all: ta
 

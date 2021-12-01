@@ -30,6 +30,7 @@
 #include <ta_sims_keepalive_test.h>
 #include <ta_concurrent.h>
 #include <ta_tpm_log_test.h>
+#include <ta_arm_bti.h>
 #include <ta_supp_plugin.h>
 #include <sdp_basic.h>
 #include <pta_secstor_ta_mgmt.h>
@@ -2504,3 +2505,137 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
+
+#if defined(CFG_TA_BTI)
+struct bti_test {
+	uint32_t cmd;
+	uint32_t func;
+};
+
+#define BTI_TEST(caller_func, bti_func) {	\
+		.cmd = caller_func,		\
+		.func = bti_func,	\
+	}
+
+static const struct bti_test bti_cases_success[] = {
+	BTI_TEST(TA_TEST_USING_BLR, TA_FUNC_BTI_C),
+	BTI_TEST(TA_TEST_USING_BLR, TA_FUNC_BTI_JC),
+	BTI_TEST(TA_TEST_USING_BR, TA_FUNC_BTI_J),
+	BTI_TEST(TA_TEST_USING_BR, TA_FUNC_BTI_JC),
+	BTI_TEST(TA_TEST_USING_BR_X16, TA_FUNC_BTI_C),
+	BTI_TEST(TA_TEST_USING_BR_X16, TA_FUNC_BTI_J),
+	BTI_TEST(TA_TEST_USING_BR_X16, TA_FUNC_BTI_JC),
+};
+
+static const struct bti_test bti_cases_panic[] = {
+	BTI_TEST(TA_TEST_USING_BLR, TA_FUNC_BTI_J),
+	BTI_TEST(TA_TEST_USING_BLR, TA_FUNC_BTI_NONE),
+	BTI_TEST(TA_TEST_USING_BR, TA_FUNC_BTI_C),
+	BTI_TEST(TA_TEST_USING_BR, TA_FUNC_BTI_NONE),
+	BTI_TEST(TA_TEST_USING_BR_X16, TA_FUNC_BTI_NONE),
+};
+
+static void get_cpu_feature(ADBG_Case_t *c, bool *bti)
+{
+	TEEC_Session session = {};
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	TEEC_Result res;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &bti_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = TEEC_InvokeCommand(&session, TA_FEAT_BTI_IMPLEMENTED, &op,
+				 &ret_orig);
+	if (!res) {
+		if(op.params[0].value.a)
+			*bti = true;
+		Do_ADBG_Log("FEAT_BTI is %simplemented", *bti ? "" : "NOT ");
+	}
+
+	TEEC_CloseSession(&session);
+}
+
+static void xtest_tee_test_1035(ADBG_Case_t *c)
+{
+	TEEC_Session session = {};
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	struct bti_test const *test = NULL;
+	uint32_t ret_orig = 0;
+	TEEC_Result res;
+	unsigned int n = 0;
+	bool cpu_feature_bti = false;
+
+	Do_ADBG_BeginSubCase(c, "BTI Implemented");
+	get_cpu_feature(c, &cpu_feature_bti);
+	Do_ADBG_EndSubCase(c, "BTI Implemented");
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &bti_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "BTI Pass Cases");
+	for (n = 0; n < ARRAY_SIZE(bti_cases_success); n++) {
+		test = &bti_cases_success[n];
+
+		op.params[0].value.a = test->func;
+
+		res = TEEC_InvokeCommand(&session, test->cmd, &op, &ret_orig);
+		if (res == TEEC_ERROR_NOT_IMPLEMENTED) {
+			Do_ADBG_Log("Binary doesn't support BTI - skip tests");
+			Do_ADBG_EndSubCase(c, "BTI Pass Cases");
+			TEEC_CloseSession(&session);
+			return;
+		}
+
+		Do_ADBG_BeginSubCase(c, "BTI Case %u", n);
+
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+		Do_ADBG_EndSubCase(c, "BTI Case %u", n);
+	}
+	Do_ADBG_EndSubCase(c, "BTI Pass Cases");
+
+	TEEC_CloseSession(&session);
+
+	Do_ADBG_BeginSubCase(c, "BTI Exception Generation");
+	for (n = 0; n < ARRAY_SIZE(bti_cases_panic); n++) {
+		test = &bti_cases_panic[n];
+		res = TEEC_SUCCESS;
+
+		if (cpu_feature_bti)
+			res = TEEC_ERROR_TARGET_DEAD;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &bti_test_ta_uuid,
+						NULL, &ret_orig)))
+			goto out;
+
+		Do_ADBG_BeginSubCase(c, "BTI Case %u", n);
+		op.params[0].value.a = test->func;
+
+		(void)ADBG_EXPECT_TEEC_RESULT(c, res,
+		       TEEC_InvokeCommand(&session, test->cmd, &op, &ret_orig));
+
+		if (cpu_feature_bti)
+			(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE,
+							    ret_orig);
+
+		Do_ADBG_EndSubCase(c, "BTI Case %u", n);
+
+		TEEC_CloseSession(&session);
+	}
+
+out:
+	Do_ADBG_EndSubCase(c, "BTI Exception Generation");
+}
+ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035, "Test BTI");
+#endif
