@@ -2480,6 +2480,9 @@ static TEEC_Result Invoke_Crypto_CipherInit(
 			saved_cipher_iv.size = iv_len;
 			saved_cipher_iv.buffer = malloc(iv_len);
 			memcpy(saved_cipher_iv.buffer, iv, iv_len);
+		} else {
+			saved_cipher_iv.size = 0;
+			saved_cipher_iv.buffer = NULL;
 		}
 	}
 
