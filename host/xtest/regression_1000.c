@@ -1276,6 +1276,7 @@ ADBG_CASE_DEFINE(regression, 1014, xtest_tee_test_1014,
 		"Test secure data path against SDP TAs and pTAs");
 #endif /*CFG_SECURE_DATA_PATH*/
 
+#ifdef CFG_REE_FS
 static void xtest_tee_test_1015(ADBG_Case_t *c)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
@@ -1298,6 +1299,7 @@ static void xtest_tee_test_1015(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1015, xtest_tee_test_1015,
 		"FS hash-tree corner cases");
+#endif /*CFG_REE_FS*/
 
 static void xtest_tee_test_1016(ADBG_Case_t *c)
 {
