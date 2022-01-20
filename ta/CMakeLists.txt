@@ -21,6 +21,7 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE storage_benchmark/include
 	INTERFACE tpm_log_test/include
 	INTERFACE bti_test/include
+	INTERFACE pauth_test/include
 	INTERFACE supp_plugin/include
 	INTERFACE large/include
 )

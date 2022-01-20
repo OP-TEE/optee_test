@@ -23,6 +23,7 @@
 #include <ta_supp_plugin.h>
 #include <ta_tpm_log_test.h>
 #include <ta_arm_bti.h>
+#include <ta_arm_pauth.h>
 #include <tee_api_defines.h>
 #include <tee_client_api.h>
 #include <__tee_isocket_defines.h>
@@ -202,3 +203,4 @@ const TEEC_UUID tpm_log_test_ta_uuid = TA_TPM_LOG_TEST_UUID;
 const TEEC_UUID supp_plugin_test_ta_uuid = TA_SUPP_PLUGIN_UUID;
 const TEEC_UUID large_ta_uuid = TA_LARGE_UUID;
 const TEEC_UUID bti_test_ta_uuid = TA_BTI_UUID;
+const TEEC_UUID pauth_test_ta_uuid = TA_PAUTH_UUID;
