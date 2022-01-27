@@ -30,6 +30,7 @@ TEE_Result test_nop(void)
 	if (!implemented)
 		return TEE_ERROR_NOT_IMPLEMENTED;
 
+	/* Check if PAC instruction generates the auhtentication code */
 	for (int i = 0; i < 10; i++) {
 		asm volatile("paciza %0 " : "+r" (ptr));
 		pac |= ptr & VA_MASK;

@@ -2643,10 +2643,9 @@ out:
 ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035, "Test BTI");
 #endif
 
-#if defined(CFG_TA_PAUTH)
 static void xtest_tee_test_1036(ADBG_Case_t *c)
 {
-	TEEC_Session session = {};
+	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig = 0;
 	TEEC_Result res = TEEC_SUCCESS;
@@ -2665,11 +2664,11 @@ static void xtest_tee_test_1036(ADBG_Case_t *c)
 	if (res == TEEC_ERROR_NOT_IMPLEMENTED) {
 		Do_ADBG_Log("Binary doesn't support PAUTH - skip tests");
 		Do_ADBG_EndSubCase(c, "PAUTH NOP test");
-		TEEC_CloseSession(&session);
-		return;
+		goto out;
 	}
 
-	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
 
 	Do_ADBG_EndSubCase(c, "PAUTH NOP test");
 
@@ -2685,7 +2684,7 @@ static void xtest_tee_test_1036(ADBG_Case_t *c)
 
 	Do_ADBG_EndSubCase(c, "PAUTH PAC corruption");
 
+out:
 	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 1036, xtest_tee_test_1036, "Test PAUTH (Pointer Authentication)");
-#endif
