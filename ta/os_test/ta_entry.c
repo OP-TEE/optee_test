@@ -47,6 +47,16 @@ void TA_CloseSessionEntryPoint(void *pSessionContext)
 	DMSG("TA_CloseSessionEntryPoint");
 }
 
+__weak TEE_Result ta_entry_pauth_test_nop(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+__weak TEE_Result ta_entry_pauth_corrupt_pac(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
 /* Called when a command is invoked */
 TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 				      uint32_t nCommandID, uint32_t nParamTypes,
@@ -142,6 +152,18 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL:
 	case TA_OS_TEST_CMD_CXX_EXC_MAIN:
 	case TA_OS_TEST_CMD_CXX_EXC_MIXED:
+		return TEE_ERROR_NOT_SUPPORTED;
+#endif
+
+#if defined(CFG_TA_PAUTH)
+	case TA_OS_TEST_CMD_PAUTH_NOP:
+		return ta_entry_pauth_test_nop();
+
+	case TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC:
+		return ta_entry_pauth_corrupt_pac();
+#else
+	case TA_OS_TEST_CMD_PAUTH_NOP:
+	case TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC:
 		return TEE_ERROR_NOT_SUPPORTED;
 #endif
 

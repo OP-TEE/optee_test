@@ -39,5 +39,7 @@
 #define TA_OS_TEST_CMD_CXX_CTOR_SHLIB_DL    27
 #define TA_OS_TEST_CMD_CXX_EXC_MAIN         28
 #define TA_OS_TEST_CMD_CXX_EXC_MIXED        29
+#define TA_OS_TEST_CMD_PAUTH_NOP            30
+#define TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC    31
 
 #endif /*TA_OS_TEST_H */

@@ -2641,3 +2641,49 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1035, xtest_tee_test_1035, "Test BTI");
 #endif
+
+static void xtest_tee_test_1036(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	TEEC_Result res = TEEC_SUCCESS;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "PAuth NOP test");
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_PAUTH_NOP, &op,
+				 &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support PAuth - skip tests");
+		goto out;
+	}
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, "PAuth NOP test");
+
+	Do_ADBG_BeginSubCase(c, "PAuth PAC corruption");
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+			   TEEC_InvokeCommand(&session,
+					      TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC,
+					      &op, &ret_orig));
+
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	Do_ADBG_EndSubCase(c, "PAuth PAC corruption");
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1036, xtest_tee_test_1036,
+		 "Test PAuth (Pointer Authentication)");
