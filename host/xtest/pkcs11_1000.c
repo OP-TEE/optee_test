@@ -7793,3 +7793,204 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1024, xtest_pkcs11_test_1024,
 		 "PKCS11: X509 Certificate operations");
+
+static void test_ecdh1_derive(ADBG_Case_t *c, CK_SESSION_HANDLE session,
+			      const char *curve_name, uint8_t *curve,
+			      size_t curve_size, uint32_t algo,
+			      size_t key_bytes)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_MECHANISM keypairgen_mechanism = {
+		CKM_EC_KEY_PAIR_GEN, NULL, 0
+	};
+	CK_MECHANISM derive_mechanism = {
+		CKM_ECDH1_DERIVE, NULL, 0
+	};
+	CK_BYTE id[] = { 123 };
+	CK_ATTRIBUTE pubkey_template[] = {
+		{ CKA_ENCRYPT, &(CK_BBOOL) { CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_WRAP, &(CK_BBOOL) { CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_EC_PARAMS, ecdsa_nist_p256, sizeof(ecdsa_nist_p256) }
+	};
+	CK_ATTRIBUTE privkey_template[] = {
+		{ CKA_TOKEN, &(CK_BBOOL) { CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_PRIVATE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SUBJECT, subject_common_name,
+			sizeof(subject_common_name) },
+		{ CKA_ID, id, sizeof(id) },
+		{ CKA_SENSITIVE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DECRYPT, &(CK_BBOOL) { CK_FALSE }, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_UNWRAP, &(CK_BBOOL) { CK_FALSE }, sizeof(CK_BBOOL) }
+	};
+	CK_ATTRIBUTE secret_template[] = {
+		{ CKA_EXTRACTABLE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE) { CKK_GENERIC_SECRET },
+			sizeof(CK_KEY_TYPE) },
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_SECRET_KEY },
+			sizeof(CK_OBJECT_CLASS) },
+		{ CKA_VALUE_LEN, &(CK_ULONG) { key_bytes }, sizeof(CK_ULONG) },
+	};
+	CK_ATTRIBUTE get_secret_template = { };
+	CK_OBJECT_HANDLE private_key[2] = { CK_INVALID_HANDLE };
+	CK_OBJECT_HANDLE public_key[2] = { CK_INVALID_HANDLE };
+	CK_OBJECT_HANDLE secret_key = CK_INVALID_HANDLE;
+	CK_ECDH1_DERIVE_PARAMS params = {
+		.kdf = 1,
+		.ulSharedDataLen = 0,
+		.pSharedData = NULL,
+		.ulPublicDataLen = 0,
+		.pPublicData = NULL,
+	};
+	CK_ATTRIBUTE ec_point = { CKA_EC_POINT, NULL, 0 };
+	CK_BYTE secret[2][128] = { { 0 } };
+	CK_BYTE key[2][128] = { { 0 } };
+	size_t j = 0;
+
+	Do_ADBG_BeginSubCase(c, "%s: Generate key pairs", curve_name);
+
+	pubkey_template[3].ulValueLen = curve_size;
+	pubkey_template[3].pValue = curve;
+
+	for (j = 0; j < ARRAY_SIZE(private_key); j++) {
+		rv = C_GenerateKeyPair(session, &keypairgen_mechanism,
+				       pubkey_template,
+				       ARRAY_SIZE(pubkey_template),
+				       privkey_template,
+				       ARRAY_SIZE(privkey_template),
+				       &public_key[j], &private_key[j]);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		id[0] = id[0] + 1;
+
+		rv = C_GetAttributeValue(session, public_key[j], &ec_point, 1);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		ec_point.pValue = calloc(1, ec_point.ulValueLen);
+		if (!ADBG_EXPECT_NOT_NULL(c, ec_point.pValue))
+			goto err_destr_obj;
+
+		rv = C_GetAttributeValue(session, public_key[j], &ec_point, 1);
+		if (!ADBG_EXPECT_CK_OK(c, rv)) {
+			free(ec_point.pValue);
+			goto err_destr_obj;
+		}
+		memcpy(&key[j][0], ec_point.pValue, ec_point.ulValueLen);
+		free(ec_point.pValue);
+	}
+
+	Do_ADBG_EndSubCase(c, NULL);
+	Do_ADBG_BeginSubCase(c, "%s: derive tests - CKM_ECDH1", curve_name);
+
+	for (j = 0; j < ARRAY_SIZE(private_key); j++) {
+		/* skip EC Point header */
+		params.ulPublicDataLen = ec_point.ulValueLen - 2;
+		params.pPublicData = calloc(1, params.ulPublicDataLen);
+		if (!ADBG_EXPECT_NOT_NULL(c, params.pPublicData))
+			goto err_destr_obj;
+		memcpy(params.pPublicData, &key[j][2], params.ulPublicDataLen);
+
+		derive_mechanism.ulParameterLen = sizeof(params);
+		derive_mechanism.mechanism = CKM_ECDH1_DERIVE;
+		derive_mechanism.pParameter = &params;
+
+		/* use one private key with the other public key */
+		rv = C_DeriveKey(session, &derive_mechanism,
+				 j == 0 ? private_key[1] : private_key[0],
+				 &secret_template[0],
+				 ARRAY_SIZE(secret_template), &secret_key);
+		free(params.pPublicData);
+
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		get_secret_template.type = CKA_VALUE;
+		get_secret_template.ulValueLen = 0;
+		get_secret_template.pValue = NULL;
+
+		rv = C_GetAttributeValue(session, secret_key,
+					 &get_secret_template, 1);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+			get_secret_template.ulValueLen,<=, sizeof(secret[j])))
+			goto err_destr_obj;
+
+		memset(&secret[j][0], 0, sizeof(secret[j]));
+		get_secret_template.pValue = &secret[j][0];
+
+		rv = C_GetAttributeValue(session, secret_key,
+					 &get_secret_template, 1);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+	}
+
+	/* secrets must match */
+	rv = memcmp(&secret[0][0], &secret[1][0], sizeof(secret[0]));
+	if (!ADBG_EXPECT_CK_OK(c, rv)) {
+		rv = CKR_FUNCTION_FAILED;
+		goto err_destr_obj;
+	}
+
+	Do_ADBG_EndSubCase(c, NULL);
+	Do_ADBG_BeginSubCase(c, "%s: Destroy keys", curve_name);
+
+err_destr_obj:
+	for (j = 0; j < ARRAY_SIZE(private_key); j++) {
+		if (private_key[j] != CK_INVALID_HANDLE)
+			C_DestroyObject(session, private_key[j]);
+
+		if (private_key[j] != CK_INVALID_HANDLE)
+			C_DestroyObject(session, public_key[j]);
+	}
+
+	Do_ADBG_EndSubCase(c, NULL);
+}
+
+static void xtest_pkcs11_test_1025(ADBG_Case_t *c)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = init_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = init_user_test_token(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	/* Login to Test Token */
+	rv = C_Login(session, CKU_USER,	test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	test_ecdh1_derive(c, session, "P-256", ecdsa_nist_p256,
+			  sizeof(ecdsa_nist_p256), TEE_ALG_ECDH_P256, 32);
+
+	test_ecdh1_derive(c, session, "P-384", ecdsa_nist_p384,
+			  sizeof(ecdsa_nist_p384), TEE_ALG_ECDH_P384, 48);
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1025, xtest_pkcs11_test_1025,
+		 "PKCS11: Elliptic Curve Derive operation");
