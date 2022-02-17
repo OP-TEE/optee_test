@@ -6297,8 +6297,10 @@ static struct {
 	const void *data;
 	CK_ULONG data_size;
 } rsa_pkcs_sign_tests[] = {
+#ifndef CFG_CRYPTO_SE05X
 	RSA_SIGN_TEST("CKM_MD5_RSA_PKCS", CKM_MD5_RSA_PKCS,
 		      digest_test_pattern),
+#endif
 	RSA_SIGN_TEST("CKM_SHA1_RSA_PKCS", CKM_SHA1_RSA_PKCS,
 		      digest_test_pattern),
 	RSA_SIGN_TEST("CKM_SHA224_RSA_PKCS", CKM_SHA224_RSA_PKCS,
@@ -7051,6 +7053,7 @@ static struct {
 	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA1/label", 1024, CKM_SHA_1,
 			    CKG_MGF1_SHA1, rsa_oaep_label,
 			    sizeof(rsa_oaep_label)),
+#ifndef CFG_CRYPTO_SE05X
 	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA224", 1024, CKM_SHA224,
 			    CKG_MGF1_SHA224, NULL, 0),
 	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA224/label", 1024, CKM_SHA224,
@@ -7071,6 +7074,7 @@ static struct {
 	RSA_OAEP_CRYPT_TEST("RSA-OAEP/SHA512/label", 2048, CKM_SHA512,
 			    CKG_MGF1_SHA512, rsa_oaep_label,
 			    sizeof(rsa_oaep_label)),
+#endif
 };
 
 static int test_rsa_oaep_operations(ADBG_Case_t *c,
