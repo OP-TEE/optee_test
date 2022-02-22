@@ -694,6 +694,25 @@ static void xtest_tee_test_6001_single(ADBG_Case_t *c, uint32_t storage_id)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
 		goto exit;
 
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_00, 0,
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
+			  sizeof(data_00), &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, NULL, 0,
+			  TEE_DATA_FLAG_ACCESS_WRITE |
+			  TEE_DATA_FLAG_ACCESS_WRITE_META, 0, data_00,
+			  sizeof(data_00), &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
 exit:
 	TEEC_CloseSession(&sess);
 }
@@ -738,6 +757,39 @@ static void xtest_tee_test_6002_single(ADBG_Case_t *c, uint32_t storage_id)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
 		goto exit;
 
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, file_01, 0,
+			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_00,
+			  sizeof(data_00), &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_01, 0,
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_create(&sess, NULL, 0,
+			  TEE_DATA_FLAG_ACCESS_WRITE, 0, data_00,
+			  sizeof(data_00), &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, NULL, 0,
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj)))
+		goto exit;
 exit:
 	TEEC_CloseSession(&sess);
 }
@@ -997,6 +1049,52 @@ static void xtest_tee_test_6008_single(ADBG_Case_t *c, uint32_t storage_id)
 		goto exit;
 
 	/* check buffer */
+	(void)ADBG_EXPECT_BUFFER(c, data_00, 10, out, count);
+
+	/* Object ID = (non-NULL, 0) */
+
+	memset(out, 0, sizeof(out));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_rename(&sess, obj, file_03, 0)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, file_03, 0,
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
+	(void)ADBG_EXPECT_BUFFER(c, data_00, 10, out, count);
+
+	/* Object ID = (NULL, 0) */
+
+	memset(out, 0, sizeof(out));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_rename(&sess, obj, file_03, sizeof(file_03))))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_rename(&sess, obj, NULL, 0)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		fs_open(&sess, NULL, 0,
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, &obj, storage_id)))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_read(&sess, obj, out, 10, &count)))
+		goto exit;
+
 	(void)ADBG_EXPECT_BUFFER(c, data_00, 10, out, count);
 
 	/* clean */
