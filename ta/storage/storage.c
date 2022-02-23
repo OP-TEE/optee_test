@@ -33,12 +33,14 @@ TEE_Result ta_storage_cmd_open(uint32_t command,
 
 	switch (command) {
 	case TA_STORAGE_CMD_OPEN:
-		object_id = TEE_Malloc(params[0].memref.size, 0);
-		if (!object_id)
-			return TEE_ERROR_OUT_OF_MEMORY;
+		if (params[0].memref.buffer) {
+			object_id = TEE_Malloc(params[0].memref.size, 0);
+			if (!object_id)
+				return TEE_ERROR_OUT_OF_MEMORY;
 
-		TEE_MemMove(object_id, params[0].memref.buffer,
-			    params[0].memref.size);
+			TEE_MemMove(object_id, params[0].memref.buffer,
+				    params[0].memref.size);
+		}
 		break;
 	case TA_STORAGE_CMD_OPEN_ID_IN_SHM:
 		object_id = params[0].memref.buffer;
@@ -75,12 +77,14 @@ TEE_Result ta_storage_cmd_create(uint32_t command,
 
 	switch (command) {
 	case TA_STORAGE_CMD_CREATE:
-		object_id = TEE_Malloc(params[0].memref.size, 0);
-		if (!object_id)
-			return TEE_ERROR_OUT_OF_MEMORY;
+		if (params[0].memref.buffer) {
+			object_id = TEE_Malloc(params[0].memref.size, 0);
+			if (!object_id)
+				return TEE_ERROR_OUT_OF_MEMORY;
 
-		TEE_MemMove(object_id, params[0].memref.buffer,
-			    params[0].memref.size);
+			TEE_MemMove(object_id, params[0].memref.buffer,
+				    params[0].memref.size);
+		}
 		break;
 	case TA_STORAGE_CMD_CREATE_ID_IN_SHM:
 		object_id = params[0].memref.buffer;
@@ -254,12 +258,14 @@ TEE_Result ta_storage_cmd_rename(uint32_t command, uint32_t param_types,
 
 	switch (command) {
 	case TA_STORAGE_CMD_RENAME:
-		object_id = TEE_Malloc(params[1].memref.size, 0);
-		if (!object_id)
-			return TEE_ERROR_OUT_OF_MEMORY;
+		if (params[0].memref.buffer) {
+			object_id = TEE_Malloc(params[1].memref.size, 0);
+			if (!object_id)
+				return TEE_ERROR_OUT_OF_MEMORY;
 
-		TEE_MemMove(object_id, params[1].memref.buffer,
-			    params[1].memref.size);
+			TEE_MemMove(object_id, params[1].memref.buffer,
+				    params[1].memref.size);
+		}
 		break;
 	case TA_STORAGE_CMD_RENAME_ID_IN_SHM:
 		object_id = params[1].memref.buffer;
