@@ -3600,6 +3600,8 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 	return true;
 }
 
+#define XTEST_NO_CURVE 0xFFFFFFFF /* implementation-defined as per GP spec */
+
 static void xtest_tee_test_4006(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
@@ -3843,12 +3845,12 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
 			case TEE_ALG_SM2_PKE:
-				curve = TEE_ECC_CURVE_SM2;
+				curve = XTEST_NO_CURVE;
 				pub_key_type = TEE_TYPE_SM2_PKE_PUBLIC_KEY;
 				priv_key_type = TEE_TYPE_SM2_PKE_KEYPAIR;
 				break;
 			case TEE_ALG_SM2_DSA_SM3:
-				curve = TEE_ECC_CURVE_SM2;
+				curve = XTEST_NO_CURVE;
 				pub_key_type = TEE_TYPE_SM2_DSA_PUBLIC_KEY;
 				priv_key_type = TEE_TYPE_SM2_DSA_KEYPAIR;
 				break;
@@ -3862,7 +3864,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			else
 				max_key_size = tv->params.ecc.private_len * 8;
 
-			xtest_add_attr_value(&num_key_attrs, key_attrs,
+			if (curve != XTEST_NO_CURVE)
+				xtest_add_attr_value(&num_key_attrs, key_attrs,
 					     TEE_ATTR_ECC_CURVE, curve, 0);
 			xtest_add_attr(&num_key_attrs, key_attrs,
 				       TEE_ATTR_ECC_PUBLIC_VALUE_X,
@@ -5246,9 +5249,6 @@ static void xtest_tee_test_4014(ADBG_Case_t *c)
 
 	param_count = 0;
 
-	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
-			     TEE_ECC_CURVE_SM2, 0);
-
 	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
 		       ARRAY(gmt_003_part5_b2_public_xA));
 
@@ -5276,9 +5276,6 @@ static void xtest_tee_test_4014(ADBG_Case_t *c)
 		goto out;
 
 	param_count = 0;
-
-	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
-			     TEE_ECC_CURVE_SM2, 0);
 
 	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
 		       ARRAY(gmt_003_part5_b2_eph_public_xA));
@@ -5401,9 +5398,6 @@ static void xtest_tee_test_4014(ADBG_Case_t *c)
 
 	param_count = 0;
 
-	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
-			     TEE_ECC_CURVE_SM2, 0);
-
 	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
 		       ARRAY(gmt_003_part5_b2_public_xB));
 
@@ -5426,9 +5420,6 @@ static void xtest_tee_test_4014(ADBG_Case_t *c)
 		goto out;
 
 	param_count = 0;
-
-	xtest_add_attr_value(&param_count, params, TEE_ATTR_ECC_CURVE,
-			     TEE_ECC_CURVE_SM2, 0);
 
 	xtest_add_attr(&param_count, params, TEE_ATTR_ECC_PUBLIC_VALUE_X,
 		       ARRAY(gmt_003_part5_b2_eph_public_xB));
