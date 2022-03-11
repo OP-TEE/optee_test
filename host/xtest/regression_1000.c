@@ -243,10 +243,24 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 		Do_ADBG_Log(" - 1001 -   skip test, pseudo TA not found");
 		return;
 	}
-	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Core self tests");
 
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
 		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
+
+	Do_ADBG_EndSubCase(c, "Core self tests");
+
+	Do_ADBG_BeginSubCase(c, "Core dt_driver self tests");
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
+		&session, PTA_INVOKE_TESTS_CMD_DT_DRIVER_TESTS, NULL,
+		&ret_orig));
+
+	Do_ADBG_EndSubCase(c, "Core dt_driver self tests");
+
 	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 1001, xtest_tee_test_1001, "Core self tests");
