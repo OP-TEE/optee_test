@@ -2738,6 +2738,31 @@ static void free_att_key(void)
 	att_key = NULL;
 }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d)
+{
+	if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL))
+		return 0;
+
+	if (n != NULL) {
+		BN_free(r->n);
+		r->n = n;
+	}
+
+	if (e != NULL) {
+		BN_free(r->e);
+		r->e = e;
+	}
+
+	if (d != NULL) {
+		BN_free(r->d);
+		r->d = d;
+	}
+
+	return 1;
+}
+#endif
+
 static void set_att_key(ADBG_Case_t *c, uint8_t *e, size_t e_sz, uint8_t *n,
 			size_t n_sz)
 {
