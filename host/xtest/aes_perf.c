@@ -29,10 +29,10 @@
 
 static int input_sdp_fd;
 static int output_sdp_fd;
-static int ion_heap = DEFAULT_ION_HEAP_TYPE;
 
-/*  re-use the allocate_ion_buffer() from sdp_basic.c */
-int allocate_ion_buffer(size_t size, int heap_id, int verbosity);
+static const char *heap_name = DEFAULT_HEAP_NAME;
+
+static int ion_heap = DEFAULT_HEAP_TYPE;
 #endif /* CFG_SECURE_DATA_PATH */
 
 /*
@@ -215,16 +215,19 @@ static void usage(const char *progname, int keysize, int mode, size_t size,
 	fprintf(stderr, "                   the test to mitigate the effects of cpufreq etc. [%u]\n", warmup);
 #ifdef CFG_SECURE_DATA_PATH
 	fprintf(stderr, "Secure data path specific options:\n");
-	fprintf(stderr, "  --sdp          Run the AES test in the scope fo a Secure Data Path test TA\n");
-	fprintf(stderr, "  --ion-heap ID  Set ION heap ID where to allocate secure buffers [%d]\n", ion_heap);
-	fprintf(stderr, "  -I...          AES input test buffer management:\n");
-	fprintf(stderr, "      -Id         allocate a non secure buffer (default)\n");
-	fprintf(stderr, "      -Ir         allocate a secure buffer, registered at each TA invocation\n");
-	fprintf(stderr, "      -IR         allocate a secure buffer, registered once in TEE\n");
-	fprintf(stderr, "  -O...          AES output test buffer management:\n");
-	fprintf(stderr, "      -Od         allocate a non secure buffer (default if \"--sdp\" is not set)\n");
-	fprintf(stderr, "      -Or         allocated a secure buffer, registered at each TA invocation\n");
-	fprintf(stderr, "      -OR         allocated a secure buffer, registered once in TEE (default if \"--sdp\")\n");
+	fprintf(stderr, "  --sdp            Run the AES test in the scope fo a Secure Data Path test TA\n");
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+	fprintf(stderr, "  --ion-heap ID  	Set ION heap ID where to allocate secure buffers [%d]\n", ion_heap);
+#endif
+	fprintf(stderr, "  --heap-name NAME	Set heap name where to allocate secure buffers [%s]\n", heap_name);
+	fprintf(stderr, "  -I...          	AES input test buffer management:\n");
+	fprintf(stderr, "      -Id         	allocate a non secure buffer (default)\n");
+	fprintf(stderr, "      -Ir         	allocate a secure buffer, registered at each TA invocation\n");
+	fprintf(stderr, "      -IR         	allocate a secure buffer, registered once in TEE\n");
+	fprintf(stderr, "  -O...          	AES output test buffer management:\n");
+	fprintf(stderr, "      -Od         	allocate a non secure buffer (default if \"--sdp\" is not set)\n");
+	fprintf(stderr, "      -Or         	allocate a secure buffer, registered at each TA invocation\n");
+	fprintf(stderr, "      -OR         	allocate a secure buffer, registered once in TEE (default if \"--sdp\")\n");
 #endif
 }
 
@@ -256,7 +259,7 @@ static void alloc_buffers(size_t sz, int in_place, int verbosity)
 		allocate_shm(&in_shm, sz);
 #ifdef CFG_SECURE_DATA_PATH
 	else {
-		input_sdp_fd = allocate_ion_buffer(sz, ion_heap, verbosity);
+		input_sdp_fd = allocate_buffer(sz, heap_name, ion_heap, verbosity);
 		if (input_buffer == BUFFER_SECURE_PREREGISTERED) {
 			register_shm(&in_shm, input_sdp_fd);
 			close(input_sdp_fd);
@@ -271,7 +274,7 @@ static void alloc_buffers(size_t sz, int in_place, int verbosity)
 		allocate_shm(&out_shm, sz);
 #ifdef CFG_SECURE_DATA_PATH
 	else {
-		output_sdp_fd = allocate_ion_buffer(sz, ion_heap, verbosity);
+		output_sdp_fd = allocate_buffer(sz, heap_name, ion_heap, verbosity);
 		if (output_buffer == BUFFER_SECURE_PREREGISTERED) {
 			register_shm(&out_shm, output_sdp_fd);
 			close(output_sdp_fd);
@@ -641,10 +644,15 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			input_buffer = BUFFER_SHM_ALLOCATED;
 		} else if (!strcmp(argv[i], "-Od")) {
 			output_buffer = BUFFER_SHM_ALLOCATED;
+		} else if (!strcmp(argv[i], "--heap-name")) {
+			NEXT_ARG(i);
+			heap_name = argv[i];
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 		} else if (!strcmp(argv[i], "--ion-heap")) {
 			NEXT_ARG(i);
 			ion_heap = atoi(argv[i]);
 #endif
+#endif // CFG_SECURE_DATA_PATH
 		} else if (!strcmp(argv[i], "-u")) {
 			NEXT_ARG(i);
 			unit = atoi(argv[i]);

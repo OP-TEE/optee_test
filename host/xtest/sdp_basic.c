@@ -21,8 +21,6 @@
 #include "xtest_helpers.h"
 #include "xtest_test.h"
 
-#include "include/uapi/linux/ion_old.h"
-
 /*
  * SDP basic test setup overview.
  *
@@ -58,6 +56,7 @@ struct tee_ctx {
 	TEEC_Session sess;
 };
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0))
 /*
  * Old ION API to allocate and export a buffer
  */
@@ -89,7 +88,7 @@ static int allocate_ion_buffer_old_api(size_t size, int heap_type_id, int ion)
 	return fd;
 }
 
-int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
+int allocate_ion_buffer(size_t size, const char *heap_name, int heap_type_id, int verbosity)
 {
 	struct ion_heap_query query_data = { };
 	struct ion_heap_data heap_data[32] = { };
@@ -109,7 +108,7 @@ int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
 	}
 
 	if (heap_type_id < 0)
-		heap_type_id = DEFAULT_ION_HEAP_TYPE;
+		heap_type_id = DEFAULT_HEAP_TYPE;
 
 	if (ioctl(ion, ION_IOC_HEAP_QUERY, &query_data) < 0) {
 		fprintf(stderr, "Error: failed to query the number of heaps\n");
@@ -124,7 +123,8 @@ int allocate_ion_buffer(size_t size, int heap_type_id, int verbosity)
 	}
 
 	for (idx = 0; idx < query_data.cnt; idx++)
-		if (heap_data[idx].type == (unsigned int)heap_type_id)
+		if ((heap_data[idx].type == (unsigned int)heap_type_id) &&
+		    (strcmp(heap_data[idx].name, heap_name) == 0))
 			break;
 	if (idx == query_data.cnt) {
 		fprintf(stderr, "Error: target heap type %d not found\n",
@@ -149,6 +149,41 @@ out:
 	close(ion);
 	return fd;
 }
+#else // LINUX_VERSION_CODE >= KERNEL_VERSION(5, 11, 0)
+int allocate_dma_buffer(size_t size, const char *heap_name, int verbosity)
+{
+	const char *default_dev = DEFAULT_HEAP_NAME;
+	char *mem_sec_dev = (char *)default_dev;
+	struct dma_heap_allocation_data data = { 0 };
+	int fd_mem_sec;
+	int fd = -1;
+
+	if (heap_name != NULL)
+		mem_sec_dev = (char *)heap_name;
+
+	fd_mem_sec = open(mem_sec_dev, O_RDWR | O_SYNC);
+	if (fd_mem_sec == -1) {
+		fprintf(stderr, "Error: failed to open %s\n", mem_sec_dev);
+		verbose("Seems no DMA buf heap is available.\n");
+		return -1;
+	}
+
+	data.len = size;
+	data.fd_flags = O_RDWR | O_CLOEXEC;
+	data.heap_flags = 0;
+
+	if (ioctl(fd_mem_sec, DMA_HEAP_IOCTL_ALLOC, &data) == -1) {
+		fprintf(stderr, "Error: DMA buf allocate API failed\n");
+		goto out;
+	}
+
+	fd = data.fd;
+
+out:
+	close(fd_mem_sec);
+	return fd;
+}
+#endif
 
 static void finalize_tee_ctx(struct tee_ctx *ctx)
 {
@@ -429,7 +464,7 @@ static int get_random_bytes(char *out, size_t len)
 
 
 int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
-		   int ion_heap, int rnd_offset, int verbosity)
+		   const char *heap_name, int ion_heap, int rnd_offset, int verbosity)
 {
 	struct tee_ctx *ctx = NULL;
 	unsigned char *test_buf = NULL;
@@ -457,10 +492,10 @@ int sdp_basic_test(enum test_target_ta ta, size_t size, size_t loop,
 		goto bail1;
 	}
 
-	fd = allocate_ion_buffer(sdp_size, ion_heap, verbosity);
+	fd = allocate_buffer(sdp_size, heap_name, ion_heap, verbosity);
 	if (fd < 0) {
-		verbose("Failed to allocate SDP buffer (%zu bytes) in ION heap %d: %d\n",
-				sdp_size, ion_heap, fd);
+		verbose("Failed to allocate SDP buffer (%zu bytes) in %s heap %d: %d\n",
+				sdp_size, heap_name, ion_heap, fd);
 		goto bail1;
 	}
 
@@ -572,7 +607,7 @@ error:
 	return 1;
 }
 
-int sdp_out_of_bounds_memref_test(size_t size, int ion_heap, int verbosity)
+int sdp_out_of_bounds_memref_test(size_t size, const char *heap_name, int ion_heap, int verbosity)
 {
 	struct tee_ctx ctx = { };
 	int err = 0;
@@ -584,10 +619,10 @@ int sdp_out_of_bounds_memref_test(size_t size, int ion_heap, int verbosity)
 	if (create_tee_ctx(&ctx, TEST_NS_TO_TA))
 		return -1;
 
-	fd = allocate_ion_buffer(size, ion_heap, verbosity);
+	fd = allocate_buffer(size, heap_name, ion_heap, verbosity);
 	if (fd < 0) {
-		verbose("SDP alloc failed (%zu bytes) in ION heap %d: %d\n",
-			size, ion_heap, fd);
+		verbose("SDP alloc failed (%zu bytes) in %s heap %d: %d\n",
+			size, heap_name, ion_heap, fd);
 		err = 1;
 		goto bail;
 	}
@@ -649,7 +684,7 @@ bail:
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-static void usage(const char *progname, size_t size, int loop, int ion_heap)
+static void usage(const char *progname, size_t size, int loop, const char *heap_name, int ion_heap)
 {
 	fprintf(stderr, "Usage: %s [OPTION]\n", progname);
 	fprintf(stderr,
@@ -659,12 +694,15 @@ static void usage(const char *progname, size_t size, int loop, int ion_heap)
 		"CA check dumped content.\n\n");
 
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, " -h|--help      Print this help and exit\n");
-	fprintf(stderr, " -v             Be verbose\n");
-	fprintf(stderr, " -s SIZE        SDP buffer byte size [%zu]\n", size);
-	fprintf(stderr, " -n LOOP        Test loop iterations [%u]\n", loop);
-	fprintf(stderr, " --ion-heap ID  Target ION heap ID [%d]\n", ion_heap);
-	fprintf(stderr, " --no-offset    No random offset [0 255] in buffer\n");
+	fprintf(stderr, " -h|--help         Print this help and exit\n");
+	fprintf(stderr, " -v                Be verbose\n");
+	fprintf(stderr, " -s SIZE           SDP buffer byte size [%zu]\n", size);
+	fprintf(stderr, " -n LOOP           Test loop iterations [%u]\n", loop);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+	fprintf(stderr, " --heap ID         Target heap ID [%d]\n", ion_heap);
+#endif
+	fprintf(stderr, " --heap-name NAME  Target heap name [%s]\n", heap_name);
+	fprintf(stderr, " --no-offset       No random offset [0 255] in buffer\n");
 }
 
 #define NEXT_ARG(i) \
@@ -688,7 +726,8 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 {
 	size_t test_size = 5000;
 	size_t test_loop = 1000;
-	int ion_heap = DEFAULT_ION_HEAP_TYPE;
+	int ion_heap = DEFAULT_HEAP_TYPE;
+	const char *heap_name = DEFAULT_HEAP_NAME;
 	int rnd_offset = 1;
 	int verbosity = 1;
 	int err = 0;
@@ -697,7 +736,7 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 	/* Parse command line */
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-			usage(argv[0], test_size, test_loop, ion_heap);
+			usage(argv[0], test_size, test_loop, heap_name, ion_heap);
 			return 0;
 		}
 	}
@@ -710,46 +749,51 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-n")) {
 			NEXT_ARG(i);
 			test_loop = atoi(argv[i]);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 		} else if (!strcmp(argv[i], "--ion-heap")) {
 			NEXT_ARG(i);
 			ion_heap = atoi(argv[i]);
+#endif
+		} else if (!strcmp(argv[i], "--heap-name")) {
+			NEXT_ARG(i);
+			heap_name = argv[i];
 		} else if (!strcmp(argv[i], "--no-offset")) {
 			rnd_offset = 0;
 		} else {
 			fprintf(stderr, "%s: invalid argument: %s\n",
 				argv[0], argv[i]);
-			usage(argv[0], test_size, test_loop, ion_heap);
+			usage(argv[0], test_size, test_loop, heap_name, ion_heap);
 			return 1;
 		}
 	}
 
 	verbose("\nSecure Data Path basic access: "
 		"NS invokes SDP TA\n");
-	err = sdp_basic_test(TEST_NS_TO_TA, test_size, test_loop, ion_heap,
+	err = sdp_basic_test(TEST_NS_TO_TA, test_size, test_loop, heap_name, ion_heap,
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 0, return 1);
 
 	verbose("\nSecure Data Path basic access: "
 		"SDP TA invokes SDP TA\n");
-	err = sdp_basic_test(TEST_TA_TO_TA, test_size, test_loop, ion_heap,
+	err = sdp_basic_test(TEST_TA_TO_TA, test_size, test_loop, heap_name, ion_heap,
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 0, return 1);
 
 	verbose("\nSecure Data Path basic access: "
 		"SDP TA invokes SDP pTA\n");
-	err = sdp_basic_test(TEST_TA_TO_PTA, test_size, test_loop, ion_heap,
+	err = sdp_basic_test(TEST_TA_TO_PTA, test_size, test_loop, heap_name, ion_heap,
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 0, return 1);
 
 	verbose("\nSecure Data Path basic access: "
 		"NS invokes SDP pTA (shall fail)\n");
-	err = sdp_basic_test(TEST_NS_TO_PTA, test_size, test_loop, ion_heap,
+	err = sdp_basic_test(TEST_NS_TO_PTA, test_size, test_loop, heap_name, ion_heap,
 			     rnd_offset, verbosity);
 	CHECK_RESULT(err, 1, return 1);
 
 	verbose("\nSecure Data Path basic access: "
 		"Invoke TA with out of bounds buffer references\n");
-	err = sdp_out_of_bounds_memref_test(test_size, ion_heap, verbosity);
+	err = sdp_out_of_bounds_memref_test(test_size, heap_name, ion_heap, verbosity);
 	CHECK_RESULT(err, 0, return 1);
 
 	return 0;
