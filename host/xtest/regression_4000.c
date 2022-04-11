@@ -4260,6 +4260,19 @@ static bool test_dsa_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 				      ARRAY_SIZE(attrs));
 }
 
+static bool test_x25519_key_pair(ADBG_Case_t *c, TEEC_Session *s,
+			      TEE_ObjectHandle key, uint32_t key_size)
+{
+	const struct key_attrs attrs[] = {
+		KEY_ATTR(TEE_ATTR_X25519_PRIVATE_VALUE, false),
+		KEY_ATTR(TEE_ATTR_X25519_PUBLIC_VALUE, false),
+	};
+
+	return test_keygen_attributes(c, s, key, key_size,
+				      (struct key_attrs *)&attrs,
+				      ARRAY_SIZE(attrs));
+}
+
 static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 				  uint32_t key_type, uint32_t check_keysize,
 				  uint32_t key_size,
@@ -4316,6 +4329,11 @@ static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 	case TEE_TYPE_DSA_KEYPAIR:
 		ret_val = ADBG_EXPECT_TRUE(c,
 				test_dsa_key_pair(c, s, key, key_size));
+		break;
+
+	case TEE_TYPE_X25519_KEYPAIR:
+		ret_val = ADBG_EXPECT_TRUE(c,
+				test_x25519_key_pair(c, s, key, key_size));
 		break;
 
 	default:
@@ -4697,6 +4715,31 @@ static void xtest_tee_test_4007_ecc(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 4007_ecc, xtest_tee_test_4007_ecc,
 		"Test TEE Internal API Generate ECC key");
+
+static void xtest_tee_test_4007_x25519(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Generate X25519 key");
+
+	if (!ADBG_EXPECT_TRUE(c,
+			generate_and_test_key(c, &session,
+					      TEE_TYPE_X25519_KEYPAIR, 0, 256,
+					      NULL, 0)))
+		return;
+
+	Do_ADBG_EndSubCase(c, "Generate X25519 key");
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4007_x25519, xtest_tee_test_4007_x25519,
+		"Test TEE Internal API Generate X25519 key");
 
 static void xtest_tee_test_4008(ADBG_Case_t *c)
 {
@@ -5519,4 +5562,202 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4014, xtest_tee_test_4014,
 		"Test SM2 KEP (key derivation)");
+
+static void xtest_tee_test_4015(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key_alice = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key_bob = TEE_HANDLE_NULL;
+	TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+	TEE_Attribute params[2] = { };
+	size_t param_count = 0;
+	uint8_t out[32] = { };
+	size_t out_size = 0;
+	char case_str[40] = "Alice side computes shared secret";
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "%s", case_str);
+
+	if (!ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_X25519,
+					    TEE_ECC_CURVE_25519)) {
+		Do_ADBG_Log("X25519 not supported: skip subcase");
+		goto out;
+	}
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_operation(c, &session, &op,
+				TEE_ALG_X25519, TEE_MODE_DERIVE, 256)))
+		goto out;
+
+	/* Allocate and initialize keypair of Alice */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, &session,
+				TEE_TYPE_X25519_KEYPAIR, 256, &key_alice)))
+		goto out;
+
+	param_count = 0;
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PUBLIC_VALUE,
+		       ARRAY(x25519_alice_public));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PRIVATE_VALUE,
+		       ARRAY(x25519_alice_private));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_populate_transient_object(c, &session,
+				key_alice, params, param_count)))
+		goto out;
+
+	/* Associate Alices's keys with operation */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_set_operation_key(c, &session, op,
+						       key_alice)))
+		goto out;
+
+	/* Keys have been set, free key objects */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_transient_object(c, &session,
+							   key_alice)))
+		goto out;
+
+	/* Allocate shared secret output object */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, &session,
+				TEE_TYPE_GENERIC_SECRET,
+				sizeof(x25519_shared_secret), &sv_handle)))
+		goto out;
+
+	/* Reset params */
+	param_count = 0;
+
+	/* Set Bob's public key for Alice side */
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PUBLIC_VALUE,
+		       ARRAY(x25519_bob_public));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_derive_key(c, &session, op, sv_handle,
+						params, param_count)))
+		goto out;
+
+	out_size = sizeof(out);
+	memset(out, 0, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_get_object_buffer_attribute(c, &session,
+				sv_handle, TEE_ATTR_SECRET_VALUE, out,
+				&out_size)))
+		goto out;
+
+	/* Check derived key */
+	if (!ADBG_EXPECT_BUFFER(c, x25519_shared_secret,
+				sizeof(x25519_shared_secret), out,
+				out_size))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_operation(c, &session, op)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_transient_object(c, &session,
+							   sv_handle)))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, "%s", case_str);
+
+	strncpy(case_str, "Bob side computes shared secret",
+		sizeof(case_str) - 1);
+
+	Do_ADBG_BeginSubCase(c, "%s", case_str);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_operation(c, &session, &op,
+				TEE_ALG_X25519, TEE_MODE_DERIVE, 256)))
+		goto out;
+
+	/* Allocate and initialize keypair of Bob */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, &session,
+				TEE_TYPE_X25519_KEYPAIR, 256, &key_bob)))
+		goto out;
+
+	/* Reset params */
+	param_count = 0;
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PUBLIC_VALUE,
+		       ARRAY(x25519_bob_public));
+
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PRIVATE_VALUE,
+		       ARRAY(x25519_bob_private));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_populate_transient_object(c, &session,
+				key_bob, params, param_count)))
+		goto out;
+
+	/* Associate Bob's keys with operation */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_set_operation_key(c, &session, op,
+						       key_bob)))
+		goto out;
+
+	/* Keys have been set, free key objects */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_transient_object(c, &session,
+							   key_bob)))
+		goto out;
+
+	/* Allocate shared secret output object */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_allocate_transient_object(c, &session,
+				TEE_TYPE_GENERIC_SECRET,
+				sizeof(x25519_shared_secret), &sv_handle)))
+		goto out;
+
+	/* Reset params */
+	param_count = 0;
+
+	/* Set Alice's public key for Bob side */
+	xtest_add_attr(&param_count, params, TEE_ATTR_X25519_PUBLIC_VALUE,
+		       ARRAY(x25519_alice_public));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_derive_key(c, &session, op, sv_handle,
+						params, param_count)))
+		goto out;
+
+	out_size = sizeof(out);
+	memset(out, 0, sizeof(out));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_get_object_buffer_attribute(c, &session,
+				sv_handle, TEE_ATTR_SECRET_VALUE, out,
+				&out_size)))
+		goto out;
+
+	/* Check derived key */
+	if (!ADBG_EXPECT_BUFFER(c, x25519_shared_secret,
+				sizeof(x25519_shared_secret), out,
+				out_size))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_operation(c, &session, op)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_free_transient_object(c, &session,
+							   sv_handle)))
+		goto out;
+
+out:
+	Do_ADBG_EndSubCase(c, "%s", case_str);
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4015, xtest_tee_test_4015,
+		"Test TEE Internal API Derive key X25519");
 #endif /*CFG_SYSTEM_PTA*/
