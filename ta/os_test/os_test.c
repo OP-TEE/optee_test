@@ -2,10 +2,12 @@
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
  * All rights reserved.
+ * Copyright (c) 2022, Linaro Limited.
  */
 #include <compiler.h>
 #include <dlfcn.h>
 #include <link.h>
+#include <memtag.h>
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
@@ -1460,3 +1462,71 @@ TEE_Result ta_entry_dl_phdr_dl(void)
 
 	return res;
 }
+
+TEE_Result ta_entry_memtag_use_after_free(void)
+{
+	uint32_t *p = NULL;
+
+	if (!memtag_is_enabled())
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	p = TEE_Malloc(sizeof(*p), TEE_MALLOC_FILL_ZERO);
+	*p = 43;
+	TEE_Free(p);
+	(*p) += 2;
+	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_memtag_invalid_tag(void)
+{
+	uint32_t *p = NULL;
+	uint32_t *p2 = NULL;
+
+	if (!memtag_is_enabled())
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	p = TEE_Malloc(sizeof(*p), TEE_MALLOC_FILL_ZERO);
+
+	if (!memtag_get_tag(p)) {
+		EMSG("missing tag in %p", (void *)p);
+		goto err;
+	}
+	*p = 32;
+
+	p2 = memtag_insert_tag(p, (memtag_get_tag(p) + 1) & 0xf);
+	*p2 = 42;
+	EMSG("Expected to crash when writing to %p which was allocated as %p",
+	     (void *)p2, (void *)p);
+err:
+	TEE_Free(p);
+	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_memtag_double_free(void)
+{
+	uint32_t *p = NULL;
+
+	if (!memtag_is_enabled())
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	p = TEE_Malloc(sizeof(*p), TEE_MALLOC_FILL_ZERO);
+	*p = 43;
+	TEE_Free(p);
+	TEE_Free(p);
+	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_memtag_buffer_overrun(void)
+{
+	uint64_t *p = NULL;
+
+	if (!memtag_is_enabled())
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	p = TEE_Malloc(sizeof(*p) * 2, TEE_MALLOC_FILL_ZERO);
+	p[2] += 44;
+	TEE_Free(p);
+	return TEE_ERROR_GENERIC;
+}
+
+
