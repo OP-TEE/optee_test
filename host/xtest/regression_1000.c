@@ -3090,3 +3090,106 @@ static void xtest_tee_test_1037(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1037, xtest_tee_test_1037,
 		 "Remote attestation");
+
+static void xtest_tee_test_1038(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	TEEC_Result res = TEEC_SUCCESS;
+
+	Do_ADBG_BeginSubCase(c, "MTE use after free");
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_MEMTAG_USE_AFTER_FREE,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support MTE - skip tests");
+		goto out;
+	}
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+	TEEC_CloseSession(&session);
+
+	Do_ADBG_EndSubCase(c, "MTE use after free");
+
+	Do_ADBG_BeginSubCase(c, "MTE invalid tag");
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_MEMTAG_INVALID_TAG,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support MTE - skip tests");
+		goto out;
+	}
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	Do_ADBG_EndSubCase(c, "MTE invalid tag");
+
+	Do_ADBG_BeginSubCase(c, "MTE double free");
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_MEMTAG_DOUBLE_FREE,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support MTE - skip tests");
+		goto out;
+	}
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	Do_ADBG_EndSubCase(c, "MTE double free");
+
+	Do_ADBG_BeginSubCase(c, "MTE buffer overrun");
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_MEMTAG_BUFFER_OVERRUN,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support MTE - skip tests");
+		goto out;
+	}
+
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+	Do_ADBG_EndSubCase(c, "MTE buffer overrun");
+
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1038, xtest_tee_test_1038,
+		 "Test MTE (Memory Tag Extension)");
