@@ -18,27 +18,25 @@
 #include <tee_api_types.h>
 #include <util.h>
 
-#define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)			     \
-static void test_name(ADBG_Case_t *c)					     \
-{									     \
-	size_t i;							     \
-									     \
-	for (i = 0; i < ARRAY_SIZE(storage_ids); i++) {			     \
-		Do_ADBG_BeginSubCase(c, "Storage id: %08x", storage_ids[i]); \
-		test_name##_single(c, storage_ids[i]);			     \
-		Do_ADBG_EndSubCase(c, "Storage id: %08x", storage_ids[i]);   \
-	}								     \
+#define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)		 \
+static void test_name(ADBG_Case_t *c)				 \
+{								 \
+	size_t i = 0;						 \
+								 \
+	if (init_storage_info()) {				 \
+		Do_ADBG_Log("init_storage_info() failed");	 \
+		return;						 \
+	}							 \
+	for (i = 0; i < ARRAY_SIZE(storage_info); i++) {	 \
+		uint32_t id = storage_info[i].id;		 \
+								 \
+		if (!storage_info[i].available)			 \
+			continue;				 \
+		Do_ADBG_BeginSubCase(c, "Storage id: %08x", id); \
+		test_name##_single(c, id);			 \
+		Do_ADBG_EndSubCase(c, "Storage id: %08x", id);   \
+	}							 \
 }
-
-static uint32_t storage_ids[] = {
-	TEE_STORAGE_PRIVATE,
-#ifdef CFG_REE_FS
-	TEE_STORAGE_PRIVATE_REE,
-#endif
-#ifdef CFG_RPMB_FS
-	TEE_STORAGE_PRIVATE_RPMB,
-#endif
-};
 
 static uint8_t file_00[] = {
 	0x00, 0x6E, 0x04, 0x57, 0x08, 0xFB, 0x71, 0x96,
@@ -76,27 +74,6 @@ static uint8_t data_01[] = {
 	0x01, 0xC3, 0xEF, 0x8A, 0xB2, 0x34, 0x53, 0xE6,
 	0x01, 0x74, 0x9C, 0xD6, 0x36, 0xE7, 0xA8, 0x01
 };
-
-static uint32_t fs_id_for_tee_storage_private(void)
-{
-#if defined(CFG_REE_FS)
-	return TEE_STORAGE_PRIVATE_REE;
-#elif defined(CFG_RPMB_FS)
-	return TEE_STORAGE_PRIVATE_RPMB;
-#endif
-}
-
-static uint32_t real_id_for(uint32_t id)
-{
-	if (id == TEE_STORAGE_PRIVATE)
-		return fs_id_for_tee_storage_private();
-	return id;
-}
-
-static bool storage_is(uint32_t id1, uint32_t id2)
-{
-	return (real_id_for(id1) == real_id_for(id2));
-}
 
 static TEEC_Result fs_open(TEEC_Session *sess, void *id, uint32_t id_size,
 			   uint32_t flags, uint32_t *obj, uint32_t storage_id)
@@ -443,6 +420,119 @@ static TEEC_Result fs_get_obj_info(TEEC_Session *sess, uint32_t obj,
 	op.params[1].tmpref.size = info_size;
 
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_GET_OBJ_INFO, &op, &org);
+}
+
+/* Record availability of all secure storage types at runtime */
+struct storage_info {
+	uint32_t id;
+	bool available;
+};
+
+static struct storage_info storage_info[] = {
+	{ .id = TEE_STORAGE_PRIVATE },
+	{ .id = TEE_STORAGE_PRIVATE_REE },
+	{ .id = TEE_STORAGE_PRIVATE_RPMB },
+};
+
+static TEEC_Result check_storage_available(uint32_t id, bool *avail)
+{
+	TEE_Result res = TEEC_SUCCESS;
+	TEEC_Session sess = { };
+	uint32_t obj = 0;
+	uint32_t orig = 0;
+	char name[] = "xtest_storage_test";
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (res != TEEC_SUCCESS)
+		return res;
+
+	res = fs_create(&sess, name, sizeof(name), TEE_DATA_FLAG_ACCESS_WRITE |
+			TEE_DATA_FLAG_ACCESS_READ |
+			TEE_DATA_FLAG_ACCESS_WRITE_META, 0, NULL, 0, &obj, id);
+	switch (res) {
+	case TEEC_SUCCESS:
+		*avail = true;
+		fs_unlink(&sess, obj);
+		break;
+	case TEE_ERROR_ITEM_NOT_FOUND:
+	case TEE_ERROR_STORAGE_NOT_AVAILABLE:
+	case TEE_ERROR_STORAGE_NOT_AVAILABLE_2:
+		*avail = false;
+		res = TEEC_SUCCESS;
+		break;
+	default:
+		res = TEE_ERROR_GENERIC;
+		break;
+	}
+
+
+	TEEC_CloseSession(&sess);
+
+	return res;
+}
+
+static TEE_Result init_storage_info(void)
+{
+	TEE_Result res = TEE_SUCCESS;
+	static bool done = false;
+	size_t i = 0;
+
+	if (done)
+		return TEE_SUCCESS;
+
+	for (i = 0; i < ARRAY_SIZE(storage_info); i++) {
+		res = check_storage_available(storage_info[i].id,
+					      &storage_info[i].available);
+		if (res)
+			return res;
+	}
+	done = true;
+	return TEE_SUCCESS;
+}
+
+static bool is_storage_available(uint32_t id)
+{
+	size_t i = 0;
+
+	if (init_storage_info())
+		return false;
+
+	for (i = 0; i < ARRAY_SIZE(storage_info); i++) {
+		if (id == storage_info[i].id)
+			return storage_info[i].available;
+	}
+	return false;
+}
+
+#ifndef TEE_STORAGE_ILLEGAL_VALUE
+/* GP TEE Internal Core API >= 1.2 table 5-2 */
+#define TEE_STORAGE_ILLEGAL_VALUE 0x7FFFFFFF
+#endif
+
+static uint32_t fs_id_for_tee_storage_private(void)
+{
+	/*
+	 * Assumes that REE FS is preferred over RPMB FS at compile time in
+	 * optee_os
+	 */
+	if (is_storage_available(TEE_STORAGE_PRIVATE_REE))
+		return TEE_STORAGE_PRIVATE_REE;
+	if (is_storage_available(TEE_STORAGE_PRIVATE_RPMB))
+		return TEE_STORAGE_PRIVATE_RPMB;
+
+	return TEE_STORAGE_ILLEGAL_VALUE;
+}
+
+static uint32_t real_id_for(uint32_t id)
+{
+	if (id == TEE_STORAGE_PRIVATE)
+		return fs_id_for_tee_storage_private();
+	return id;
+}
+
+static bool storage_is(uint32_t id1, uint32_t id2)
+{
+	return (real_id_for(id1) == real_id_for(id2));
 }
 
 /* trunc */
