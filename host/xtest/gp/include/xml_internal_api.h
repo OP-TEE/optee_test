@@ -108,8 +108,8 @@ static TEEC_Context *CONTEXT02 = context + 1;
 static uint32_t BIG_SIZE = 1024;
 
 static char *NO_DATA;
-static uint32_t enumerator1;
-static uint32_t *ENUMERATOR1 = &enumerator1;
+static uint64_t enumerator1;
+static uint64_t *ENUMERATOR1 = &enumerator1;
 
 #define ANY_OWNER_NOT_SET		0
 #define ANY_OWNER_SET			TEE_MEMORY_ACCESS_ANY_OWNER
@@ -236,6 +236,16 @@ UUID_TTA_testingInternalAPI_TrustedCoreFramework_PanicAtCreation = {
 	0x534D4152, 0x5443, 0x534C,
 	{ 0x54, 0x43, 0x52, 0x50, 0x41, 0x4E, 0x49, 0x43 }
 };
+
+static uint64_t value_to_u64(TEEC_Value *val)
+{
+	return ((uint64_t)val->b << 32) | val->a;
+}
+
+static TEEC_Value u64_to_value(uint64_t u)
+{
+	return (TEEC_Value){ .a = u , .b = u >> 32 };
+}
 
 static void __maybe_unused *cancellation_thread(void *arg)
 {
@@ -510,7 +520,7 @@ static TEEC_Result Invoke_MemMove(ADBG_Case_t *c, TEEC_Session *sess,
 static TEEC_Result Invoke_AllocatePropertyEnumerator(ADBG_Case_t *c,
 						     TEEC_Session *sess,
 						     uint32_t cmdId,
-						     uint32_t *enumerator)
+						     uint64_t *enumerator)
 {
 	TEEC_Result res = TEE_ERROR_NOT_SUPPORTED;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -524,7 +534,7 @@ static TEEC_Result Invoke_AllocatePropertyEnumerator(ADBG_Case_t *c,
 	if (res != TEEC_SUCCESS)
 		goto exit;
 
-	*enumerator = op.params[0].value.a;
+	*enumerator = value_to_u64(&op.params[0].value);
 exit:
 	return res;
 }
@@ -532,23 +542,25 @@ exit:
 static TEEC_Result Invoke_StartPropertyEnumerator(ADBG_Case_t *c,
 						  TEEC_Session *sess,
 						  uint32_t cmdId,
-						  uint32_t *enumerator,
+						  uint64_t *enumerator,
 						  TEE_PropSetHandle propSet)
 {
-	return Invoke_Simple_Function_v2(c, sess, cmdId, *enumerator, 0,
+	return Invoke_Simple_Function_v2(c, sess, cmdId, *enumerator,
+					 *enumerator >> 32,
 					 (unsigned long)propSet, 0);
 }
 
 static TEEC_Result Invoke_ResetPropertyEnumerator(ADBG_Case_t *c,
 						  TEEC_Session *sess,
 						  uint32_t cmdId,
-						  uint32_t *enumerator)
+						  uint64_t *enumerator)
 {
-	return Invoke_Simple_Function_v1(c, sess, cmdId, *enumerator, 0);
+	return Invoke_Simple_Function_v1(c, sess, cmdId, *enumerator,
+					 *enumerator >> 32);
 }
 
 static TEEC_Result Invoke_GetPropertyName(ADBG_Case_t *c, TEEC_Session *sess,
-					  uint32_t cmdId, uint32_t *enumerator,
+					  uint32_t cmdId, uint64_t *enumerator,
 					  char *propertyName,
 					  uint32_t kindBuffer)
 {
@@ -565,7 +577,7 @@ static TEEC_Result Invoke_GetPropertyName(ADBG_Case_t *c, TEEC_Session *sess,
 				       TEEC_MEM_OUTPUT, mem01_exit)
 	}
 
-	op.params[0].value.a = *enumerator;
+	op.params[0].value = u64_to_value(*enumerator);
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, SHARE_MEM01,
 					      SHARE_MEM01->size)
 

@@ -1,0 +1,110 @@
+From 6d47284d5e9704cfa0ef0e4e9b997595288856c9 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Wed, 4 May 2022 12:39:59 +0200
+Subject: [PATCH] Pass upper 32 bits of TEE_PropSetHandle in value.b
+
+With MTE enabled 64-bit pointer usually use the upper 32 bits too while
+the GP tests assumes that 32 bits are enough. Fix this by passing the
+upper 32 bits in value.b
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ .../TTA_TCF/TTA_TCF/code_files/TTA_TCF.c      | 33 +++++++++++++++----
+ 1 file changed, 27 insertions(+), 6 deletions(-)
+
+diff --git a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+index 0c7c743b34f9..30ba37788662 100644
+--- a/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
++++ b/TTAs_Internal_API_1_1_1/TTA_TCF/TTA_TCF/code_files/TTA_TCF.c
+@@ -154,6 +154,24 @@ void TA_EXPORT TA_CloseSessionEntryPoint(
+ 	TEE_Free(pSessionContext);
+ }
+ 
++static TEE_Param ptr_to_param(void *ptr)
++{
++	uint64_t u = (unsigned long)ptr;
++	TEE_Param param;
++
++	param.value.a = u;
++	param.value.b = u >> 32;
++
++	return param;
++}
++
++static void *param_to_ptr(TEE_Param *param)
++{
++	unsigned long u = ((uint64_t)param->value.b << 32) | param->value.a;
++
++	return (void *)u;
++}
++
+ bool isPropertySet (TEE_PropSetHandle propsetOrEnumerator)
+ {
+ 	if((propsetOrEnumerator == TEE_PROPSET_CURRENT_TA)||
+@@ -772,6 +790,7 @@ TEE_Result CmdTEEAllocatePropertyEnumerator(
+ {
+ 	/** VARIABLES **/
+ 	TEE_Result cmdResult;
++	TEE_PropSetHandle h;
+ 
+ 	S_VAR_NOT_USED(pSessionContext);
+ 
+@@ -782,7 +801,8 @@ TEE_Result CmdTEEAllocatePropertyEnumerator(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	cmdResult = TEE_AllocatePropertyEnumerator((TEE_PropSetHandle*) &pParams[0].value.a);
++	cmdResult = TEE_AllocatePropertyEnumerator(&h);
++	pParams[0] = ptr_to_param(h);
+ 
+ 	return cmdResult;
+ }
+@@ -804,7 +824,8 @@ TEE_Result CmdTEEStartPropertyEnumerator(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	TEE_StartPropertyEnumerator((TEE_PropSetHandle) pParams[0].value.a, (TEE_PropSetHandle) pParams[1].value.a);
++	TEE_StartPropertyEnumerator(param_to_ptr(pParams),
++				    param_to_ptr(pParams + 1));
+ 
+ 	return TEE_SUCCESS;
+ }
+@@ -825,7 +846,7 @@ TEE_Result CmdTEEGetNextPropertyEnumerator_notStarted(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	return TEE_GetNextProperty((TEE_PropSetHandle) pParams[0].value.a);
++	return TEE_GetNextProperty(param_to_ptr(pParams));
+ }
+ 
+ TEE_Result CmdTEEResetPropertyEnumerator(
+@@ -844,7 +865,7 @@ TEE_Result CmdTEEResetPropertyEnumerator(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	TEE_ResetPropertyEnumerator((TEE_PropSetHandle) pParams[0].value.a);
++	TEE_ResetPropertyEnumerator(param_to_ptr(pParams));
+ 	return TEE_SUCCESS;
+ }
+ 
+@@ -864,7 +885,7 @@ TEE_Result CmdTEEFreePropertyEnumerator(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	TEE_FreePropertyEnumerator((TEE_PropSetHandle) pParams[0].value.a);
++	TEE_FreePropertyEnumerator(param_to_ptr(pParams));
+ 
+ 	return TEE_SUCCESS;
+ }
+@@ -887,7 +908,7 @@ TEE_Result CmdTEEGetPropertyName(
+ 		return TRUSTED_APP_ERROR_BAD_PARAMETERS;
+ 	}
+ 
+-	cmdResult = TEE_GetPropertyName((TEE_PropSetHandle) pParams[0].value.a, pParams[1].memref.buffer, &pParams[1].memref.size);
++	cmdResult = TEE_GetPropertyName(param_to_ptr(pParams), pParams[1].memref.buffer, &pParams[1].memref.size);
+ 
+ 	return cmdResult;
+ }
+-- 
+2.31.1
+
