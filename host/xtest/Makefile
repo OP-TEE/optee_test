@@ -215,6 +215,7 @@ define embed-file
 cleanfiles += $(out-dir)/xtest/$(1).h
 
 $(out-dir)/xtest/$(1).h: $(2)
+	$(q)mkdir -p $(out-dir)/xtest/
 	@echo '  GEN     $$@'
 	$(q)$(PYTHON3) ../../scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
