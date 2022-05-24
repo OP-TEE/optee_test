@@ -75,10 +75,10 @@ checkpatch-staging:
 install:
 	$(echo) '  INSTALL ${DESTDIR}/lib/optee_armtz'
 	$(q)mkdir -p ${DESTDIR}/lib/optee_armtz
-	$(q)find $(out-dir) -name \*.ta -exec cp -a {} ${DESTDIR}/lib/optee_armtz \;
+	$(q)find $(out-dir) -name \*.ta -exec cp {} ${DESTDIR}/lib/optee_armtz \;
 	$(echo) '  INSTALL ${DESTDIR}/bin'
 	$(q)mkdir -p ${DESTDIR}/bin
-	$(q)cp -a $(out-dir)/xtest/xtest ${DESTDIR}/bin
+	$(q)cp $(out-dir)/xtest/xtest ${DESTDIR}/bin
 	$(echo) '  INSTALL ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)'
 	$(q)mkdir -p ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
 	$(q)cp $(out-dir)/supp_plugin/*.plugin ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
