@@ -3091,6 +3091,7 @@ static void xtest_tee_test_1037(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1037, xtest_tee_test_1037,
 		 "Remote attestation");
 
+#if defined(CFG_MEMTAG)
 static void xtest_tee_test_1038(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
@@ -3193,3 +3194,4 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1038, xtest_tee_test_1038,
 		 "Test MTE (Memory Tag Extension)");
+#endif

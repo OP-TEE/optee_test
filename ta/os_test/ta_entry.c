@@ -166,6 +166,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_PAUTH_CORRUPT_PAC:
 		return TEE_ERROR_NOT_SUPPORTED;
 #endif
+#if defined(CFG_MEMTAG)
 	case TA_OS_TEST_CMD_MEMTAG_USE_AFTER_FREE:
 		return ta_entry_memtag_use_after_free();
 	case TA_OS_TEST_CMD_MEMTAG_INVALID_TAG:
@@ -174,6 +175,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_entry_memtag_double_free();
 	case TA_OS_TEST_CMD_MEMTAG_BUFFER_OVERRUN:
 		return ta_entry_memtag_buffer_overrun();
+#endif
 
 	case TA_OS_TEST_CMD_ATTESTATION:
 		return ta_entry_attestation(nParamTypes, pParams);

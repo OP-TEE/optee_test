@@ -7,7 +7,9 @@
 #include <compiler.h>
 #include <dlfcn.h>
 #include <link.h>
+#if defined(CFG_MEMTAG)
 #include <memtag.h>
+#endif
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
@@ -1463,6 +1465,7 @@ TEE_Result ta_entry_dl_phdr_dl(void)
 	return res;
 }
 
+#if defined(CFG_MEMTAG)
 TEE_Result ta_entry_memtag_use_after_free(void)
 {
 	uint32_t *p = NULL;
@@ -1528,5 +1531,5 @@ TEE_Result ta_entry_memtag_buffer_overrun(void)
 	TEE_Free(p);
 	return TEE_ERROR_GENERIC;
 }
-
+#endif
 

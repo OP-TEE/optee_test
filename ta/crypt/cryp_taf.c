@@ -7,7 +7,9 @@
 
 #include <assert.h>
 #include <cryp_taf.h>
+#if defined(CFG_MEMTAG)
 #include <memtag.h>
+#endif
 #include <tee_internal_api.h>
 #include <trace.h>
 #include <user_ta_header.h>
