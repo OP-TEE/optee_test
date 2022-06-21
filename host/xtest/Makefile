@@ -105,6 +105,10 @@ ifeq ($(CFG_CRYPTO_SE05X),y)
 CFLAGS += -DCFG_CRYPTO_SE05X
 endif
 
+ifeq ($(CFG_CRYPTO_VERSAL),y)
+CFLAGS += -DCFG_CRYPTO_VERSAL
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
