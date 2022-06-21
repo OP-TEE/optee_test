@@ -2426,7 +2426,7 @@ static const struct xtest_ae_case ae_cases[] = {
 	XTEST_AE_CASE_AES_CCM(vect1, 3, 2),
 	XTEST_AE_CASE_AES_CCM(vect2, 7, 13),
 	XTEST_AE_CASE_AES_CCM(vect3, 5, 21),
-
+#ifndef CFG_CRYPTO_VERSAL
 	XTEST_AE_CASE_AES_GCM(vect1, 0, 0, NULL_ARRAY, NULL_ARRAY, NULL_ARRAY),
 	XTEST_AE_CASE_AES_GCM(vect2, 0, 9, NULL_ARRAY, ARRAY, ARRAY),
 	XTEST_AE_CASE_AES_GCM(vect3, 0, 9, NULL_ARRAY, ARRAY, ARRAY),
@@ -2446,6 +2446,7 @@ static const struct xtest_ae_case ae_cases[] = {
 	XTEST_AE_CASE_AES_GCM(vect16, 5, 9, ARRAY, ARRAY, ARRAY),
 	XTEST_AE_CASE_AES_GCM(vect17, 5, 9, ARRAY, ARRAY, ARRAY),
 	XTEST_AE_CASE_AES_GCM(vect18, 5, 9, ARRAY, ARRAY, ARRAY),
+#endif
 #ifdef CFG_GCM_NIST_VECTORS
 #include "gcmDecrypt128.h"
 #include "gcmDecrypt192.h"
