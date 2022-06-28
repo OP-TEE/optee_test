@@ -4726,6 +4726,12 @@ static void xtest_tee_test_4007_x25519(ADBG_Case_t *c)
 						NULL, &ret_orig)))
 		return;
 
+	if (!ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_X25519,
+					    TEE_ECC_CURVE_25519)) {
+		Do_ADBG_Log("X25519 not supported: skip subcase");
+		goto out;
+	}
+
 	Do_ADBG_BeginSubCase(c, "Generate X25519 key");
 
 	if (!ADBG_EXPECT_TRUE(c,
@@ -4735,7 +4741,7 @@ static void xtest_tee_test_4007_x25519(ADBG_Case_t *c)
 		return;
 
 	Do_ADBG_EndSubCase(c, "Generate X25519 key");
-
+out:
 	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 4007_x25519, xtest_tee_test_4007_x25519,
