@@ -49,6 +49,7 @@ ta:
 .PHONY: test_plugin
 test_plugin:
 	$(q)$(MAKE) -C host/supp_plugin CROSS_COMPILE="$(CROSS_COMPILE_HOST)" \
+			     --no-builtin-variables \
 			     O=$(out-dir)
 
 .PHONY: clean
