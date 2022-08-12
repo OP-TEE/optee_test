@@ -2722,6 +2722,15 @@ struct xtest_ac_case {
 			const uint8_t *public_y;
 			size_t public_y_len;
 		} ecc;
+		struct {
+			const uint8_t *private;
+			size_t private_len;
+			const uint8_t *public;
+			size_t public_len;
+			const uint8_t flag;
+			const uint8_t *context;
+			size_t context_len;
+		} eddsa;
 	} params;
 
 	const uint8_t *ptx;
@@ -2778,6 +2787,27 @@ struct xtest_ac_case {
 
 #define XTEST_AC_ECC_CASE(level, algo, mode, vect) \
 	XTEST_AC_CASE(level, algo, mode, vect, XTEST_AC_ECDSA_UNION(vect))
+
+#define XTEST_AC_EDDSA_UNION(vect, flag) \
+	{ .eddsa = { \
+		  ARRAY(vect ## _private), \
+		  ARRAY(vect ## _public), \
+		  flag, \
+	  } }
+
+#define XTEST_AC_EDDSA_CTX_UNION(vect, flag) \
+	{ .eddsa = { \
+		  ARRAY(vect ## _private), \
+		  ARRAY(vect ## _public), \
+		  flag, \
+		  ARRAY(vect ## _context), \
+	  } }
+
+#define XTEST_AC_EDDSA_CASE(level, algo, mode, vect, flag) \
+	XTEST_AC_CASE(level, algo, mode, vect, XTEST_AC_EDDSA_UNION(vect, flag))
+
+#define XTEST_AC_EDDSA_CTX_CASE(level, algo, mode, vect, flag) \
+	XTEST_AC_CASE(level, algo, mode, vect, XTEST_AC_EDDSA_CTX_UNION(vect, flag))
 
 static const struct xtest_ac_case xtest_ac_cases[] = {
 	/* RSA test without crt parameters */
@@ -3555,6 +3585,24 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 			  gmt_003_part5_a2),
 };
 
+static const struct xtest_ac_case xtest_ac_eddsa_cases[] = {
+
+	XTEST_AC_EDDSA_CASE(0, TEE_ALG_ED25519, TEE_MODE_SIGN,
+			    ed25519_rfc_8032_7_1, 0),
+	XTEST_AC_EDDSA_CASE(0, TEE_ALG_ED25519, TEE_MODE_VERIFY,
+			    ed25519_rfc_8032_7_1, 0),
+
+	XTEST_AC_EDDSA_CTX_CASE(0, TEE_ALG_ED25519, TEE_MODE_SIGN,
+				ed25519ctx_rfc_8032_7_2, 0),
+	XTEST_AC_EDDSA_CTX_CASE(0, TEE_ALG_ED25519, TEE_MODE_VERIFY,
+				ed25519ctx_rfc_8032_7_2, 0),
+
+	XTEST_AC_EDDSA_CASE(0, TEE_ALG_ED25519, TEE_MODE_SIGN,
+			    ed25519ph_rfc_8032_7_3, 1),
+	XTEST_AC_EDDSA_CASE(0, TEE_ALG_ED25519, TEE_MODE_VERIFY,
+			    ed25519ph_rfc_8032_7_3, 1),
+};
+
 static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 		       uint32_t max_key_size, uint32_t key_type,
 		       TEE_Attribute *attrs, size_t num_attrs,
@@ -4273,6 +4321,19 @@ static bool test_x25519_key_pair(ADBG_Case_t *c, TEEC_Session *s,
 				      ARRAY_SIZE(attrs));
 }
 
+static bool test_ed25519_key_pair(ADBG_Case_t *c, TEEC_Session *s,
+				  TEE_ObjectHandle key, uint32_t key_size)
+{
+	const struct key_attrs attrs[] = {
+		KEY_ATTR(TEE_ATTR_ED25519_PRIVATE_VALUE, false),
+		KEY_ATTR(TEE_ATTR_ED25519_PUBLIC_VALUE, false),
+	};
+
+	return test_keygen_attributes(c, s, key, key_size,
+				      (struct key_attrs *)&attrs,
+				      ARRAY_SIZE(attrs));
+}
+
 static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 				  uint32_t key_type, uint32_t check_keysize,
 				  uint32_t key_size,
@@ -4334,6 +4395,11 @@ static bool generate_and_test_key(ADBG_Case_t *c, TEEC_Session *s,
 	case TEE_TYPE_X25519_KEYPAIR:
 		ret_val = ADBG_EXPECT_TRUE(c,
 				test_x25519_key_pair(c, s, key, key_size));
+		break;
+
+	case TEE_TYPE_ED25519_KEYPAIR:
+		ret_val = ADBG_EXPECT_TRUE(c,
+				test_ed25519_key_pair(c, s, key, key_size));
 		break;
 
 	default:
@@ -4746,6 +4812,36 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4007_x25519, xtest_tee_test_4007_x25519,
 		"Test TEE Internal API Generate X25519 key");
+
+
+static void xtest_tee_test_4007_ed25519(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	if (!ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_ED25519,
+					    TEE_ECC_CURVE_25519)) {
+		Do_ADBG_Log("ED25519 not supported: skip subcase");
+		goto out;
+	}
+
+	Do_ADBG_BeginSubCase(c, "Generate Ed25519 key");
+
+	ADBG_EXPECT_TRUE(c, generate_and_test_key(c, &session,
+						  TEE_TYPE_ED25519_KEYPAIR,
+						  0, 256, NULL, 0));
+
+	Do_ADBG_EndSubCase(c, "Generate Ed25519 key");
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4007_ed25519, xtest_tee_test_4007_ed25519,
+		"Test TEE Internal API Generate ed25519 key");
 
 static void xtest_tee_test_4008(ADBG_Case_t *c)
 {
@@ -5766,4 +5862,127 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4015, xtest_tee_test_4015,
 		"Test TEE Internal API Derive key X25519");
+
+static void xtest_tee_test_4016_ed25519(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+	TEE_Attribute key_attrs[2] = { };
+	size_t num_key_attrs = 0;
+	TEE_Attribute attrs[2] = { };
+	size_t num_attrs = 0;
+	uint8_t out[64] = { };
+	size_t out_size = sizeof(out);
+	size_t n = 0;
+	uint32_t ret_orig = 0;
+	size_t max_key_size = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	if (!ta_crypt_cmd_is_algo_supported(c, &session, TEE_ALG_ED25519,
+					    TEE_ECC_CURVE_25519)) {
+		Do_ADBG_Log("ED25519 not supported: skip subcase");
+		goto out;
+	}
+
+	for (n = 0; n < ARRAY_SIZE(xtest_ac_eddsa_cases); n++) {
+		const struct xtest_ac_case *tv = xtest_ac_eddsa_cases + n;
+
+		if (tv->algo != TEE_ALG_ED25519)
+			continue;
+
+		num_attrs = 0;
+		num_key_attrs = 0;
+		max_key_size = tv->params.eddsa.private_len * 8;
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_allocate_operation(c, &session, &op,
+					TEE_ALG_ED25519, tv->mode, max_key_size)))
+			goto out;
+
+		xtest_add_attr(&num_key_attrs, key_attrs,
+			       TEE_ATTR_ED25519_PUBLIC_VALUE,
+			       tv->params.eddsa.public,
+			       tv->params.eddsa.public_len);
+
+		if (tv->params.eddsa.flag == 1)
+			xtest_add_attr(&num_attrs, attrs,
+				       TEE_ATTR_EDDSA_PREHASH, NULL, 0);
+
+		if (tv->params.eddsa.context_len > 0)
+			xtest_add_attr(&num_attrs, attrs, TEE_ATTR_EDDSA_CTX,
+				       tv->params.eddsa.context,
+				       tv->params.eddsa.context_len);
+
+		switch (tv->mode) {
+		case TEE_MODE_SIGN:
+			xtest_add_attr(&num_key_attrs, key_attrs,
+				       TEE_ATTR_ED25519_PRIVATE_VALUE,
+				       tv->params.eddsa.private,
+				       tv->params.eddsa.private_len);
+
+			if (!ADBG_EXPECT_TRUE(c,
+					create_key(c, &session, max_key_size,
+						   TEE_TYPE_ED25519_KEYPAIR,
+						   key_attrs, num_key_attrs,
+						   &key_handle)))
+				goto out;
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+					ta_crypt_cmd_set_operation_key(c,
+						 &session, op, key_handle)))
+				goto out;
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+					ta_crypt_cmd_asymmetric_sign(c,
+						&session, op,
+						attrs, num_attrs, tv->ptx,
+						tv->ptx_len, out, &out_size)))
+				goto out;
+
+			ADBG_EXPECT_BUFFER(c, tv->ctx, tv->ctx_len, out, out_size);
+
+			break;
+
+		case TEE_MODE_VERIFY:
+			if (!ADBG_EXPECT_TRUE(c,
+					create_key(c, &session, max_key_size,
+						   TEE_TYPE_ED25519_PUBLIC_KEY,
+						   key_attrs, num_key_attrs,
+						   &key_handle)))
+				goto out;
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+					ta_crypt_cmd_set_operation_key(c,
+						   &session, op, key_handle)))
+				goto out;
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_asymmetric_verify(c, &session, op,
+							       attrs, num_attrs,
+							       tv->ptx,
+							       tv->ptx_len,
+							       tv->ctx,
+							       tv->ctx_len)))
+				goto out;
+			break;
+
+		default:
+			break;
+		}
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+				ta_crypt_cmd_free_operation(c, &session, op)))
+			goto out;
+	}
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4016_ed25519, xtest_tee_test_4016_ed25519,
+		 "Test TEE Internal API ED25519 sign/verify");
+
 #endif /*CFG_SYSTEM_PTA*/
