@@ -2817,6 +2817,9 @@ err:
 static void check_measurement(ADBG_Case_t *c, uint8_t *nonce, size_t nonce_size,
 			      uint8_t *hash, uint8_t *buf)
 {
+	(void)nonce;
+	(void)nonce_size;
+
 	if (hash)
 		ADBG_EXPECT_BUFFER(c, hash, 32, buf, 32);
 
