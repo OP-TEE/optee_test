@@ -33,6 +33,8 @@ enum test_target_ta {
 int allocate_dma_buffer(size_t size, const char *heap_name, int verbosity);
 static inline int allocate_buffer(size_t size, const char *heap_name, int heap_id, int verbosity)
 {
+	(void)heap_id;
+
 	return allocate_dma_buffer(size, heap_name, verbosity);
 }
 #else
