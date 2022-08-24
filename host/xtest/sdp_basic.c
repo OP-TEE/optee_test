@@ -700,6 +700,8 @@ static void usage(const char *progname, size_t size, int loop, const char *heap_
 	fprintf(stderr, " -n LOOP           Test loop iterations [%u]\n", loop);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 	fprintf(stderr, " --heap ID         Target heap ID [%d]\n", ion_heap);
+#else
+	(void)ion_heap;
 #endif
 	fprintf(stderr, " --heap-name NAME  Target heap name [%s]\n", heap_name);
 	fprintf(stderr, " --no-offset       No random offset [0 255] in buffer\n");
