@@ -23,4 +23,6 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE bti_test/include
 	INTERFACE supp_plugin/include
 	INTERFACE large/include
+	INTERFACE subkey1/include
+	INTERFACE subkey2/include
 )
