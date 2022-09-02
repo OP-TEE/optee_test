@@ -137,6 +137,8 @@ CFLAGS += -I../../ta/tpm_log_test/include
 CFLAGS += -I../../ta/large/include
 CFLAGS += -I../../ta/supp_plugin/include
 CFLAGS += -I../../ta/bti_test/include
+CFLAGS += -I../../ta/subkey1/include
+CFLAGS += -I../../ta/subkey2/include
 
 TA_DIR ?= /lib/optee_armtz
 CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
