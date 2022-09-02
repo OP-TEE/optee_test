@@ -3193,3 +3193,28 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1038, xtest_tee_test_1038,
 		 "Test MTE (Memory Tag Extension)");
+
+static void xtest_tee_test_1039(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	Do_ADBG_BeginSubCase(c, "Load TA with two levels of subkeys");
+	if (ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &subkey1_ta_uuid,
+						NULL, &ret_orig)))
+		TEEC_CloseSession(&session);
+	Do_ADBG_EndSubCase(c, "Load TA with two levels of subkeys");
+
+	Do_ADBG_BeginSubCase(c, "Load TA with identity subkey");
+	if (ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &subkey2_ta_uuid,
+						NULL, &ret_orig)))
+		TEEC_CloseSession(&session);
+	Do_ADBG_EndSubCase(c, "Load TA with identity subkey");
+
+}
+
+
+ADBG_CASE_DEFINE(regression, 1039, xtest_tee_test_1039,
+		 "Test subkey verification");
