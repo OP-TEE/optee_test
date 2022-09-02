@@ -1,0 +1,73 @@
+Subkey
+======
+
+A TA or a subkey can be signed with a subkey instead of the root key.  Here
+we're trying to describe the relationship between the different subkeys and
+keys used for the subkey test TAs.
+
+We start with a two level subkey hierachy to be able to test more when the
+subkey chain consist of more than a single subkey signed with the root key.
+
+The relationship of the different subkeys and TAs are as follows:
+root_key
+|-- identity_subkey2
+|   `-- subkey2_ta
+`-- top_level_subkey
+    `-- mid_level_subkey
+        `-- subkey1_ta
+
+The keys themselves where generated using:
+
+openssl genrsa -out top_level_subkey.pem
+openssl genrsa -out mid_level_subkey.pem
+openssl genrsa -out identity_subkey2.pem
+
+The top level subkey is signed with the root key using (where the UUID is
+generated):
+
+../../optee_os/scripts/sign_encrypt.py sign-subkey \
+	--uuid f04fa996-148a-453c-b037-1dcfbad120a6 \
+	--key ../../optee_os/keys/default_ta.pem --in top_level_subkey.pem \
+	--out top_level_subkey.bin --max-depth 4 --name-size 64 \
+	--subkey-version 1
+
+The mid level subkey has to have a UUID in the namespace of the top level
+level subkey. The UUID is determined as
+UUIDv5_SHA512(f04fa996-148a-453c-b037-1dcfbad120a6, "mid_level_subkey") =
+1a5948c5-1aa0-518c-86f4-be6f6a057b16
+where UUIDv5_SHA512() denotes the UUIDv5 scheme with SHA512 used instead of
+SHA1 and truncated to 20 bytes
+
+The sign script can do this with:
+
+../../optee_os/scripts/sign_encrypt.py subkey-uuid --in top_level_subkey.bin  \
+	--name mid_level_subkey
+Subkey UUID: f04fa996-148a-453c-b037-1dcfbad120a6
+Next subkey UUID: 1a5948c5-1aa0-518c-86f4-be6f6a057b16
+
+The mid level subkey is signed using:
+
+../../optee_os/scripts/sign_encrypt.py sign-subkey \
+	--uuid 1a5948c5-1aa0-518c-86f4-be6f6a057b16 \
+	--key top_level_subkey.pem --subkey top_level_subkey.bin \
+	--name-size 64 --subkey-version 1 \
+	--name mid_level_subkey \
+	--in mid_level_subkey.pem --out mid_level_subkey.bin
+
+The UUID of subkey1 TA is calculated using:
+
+../../optee_os/scripts/sign_encrypt.py subkey-uuid --in mid_level_subkey.bin  \
+	--name subkey1_ta
+Subkey UUID: f04fa996-148a-453c-b037-1dcfbad120a6
+Subkey UUID: 1a5948c5-1aa0-518c-86f4-be6f6a057b16
+Next subkey UUID: 5c206987-16a3-59cc-ab0f-64b9cfc9e758
+
+Subkey1 TA is signed as part of the build process.
+
+The identity_subkey2 subkey is signed using (where the UUID is generated):
+
+../../optee_os/scripts/sign_encrypt.py sign-subkey \
+	--uuid a720ccbb-51da-417d-b82e-e5445d474a7a \
+	--key ../../optee_os/keys/default_ta.pem --in identity_subkey2.pem \
+	--out identity_subkey2.bin --max-depth 0 --name-size 0 \
+	--subkey-version 1
