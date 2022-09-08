@@ -157,52 +157,6 @@ ADBG_ENUM_TABLE_DECLARE(Boolean);
 				     Val1, Val2, (Val1)Compar( \
 					     Val2), #Val1, #Compar, #Val2)
 
-#define ADBG_REQUIRE(Case_p, Recovery, Expected, Got) {\
-	if (!ADBG_EXPECT(Case_p, Expected, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_ENUM(Case_p, Recovery, Expected, Got, EnumTable_p) {\
-	if (!ADBG_EXPECT_ENUM(Case_p, Expected, Got, EnumTable_p)) \
-		Recovery }
-
-#define ADBG_REQUIRE_BOOLEAN(Case_p, Recovery, Expected, Got) {\
-	if (!ADBG_EXPECT_BOOLEAN(Case_p, Expected, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_TRUE(Case_p, Recovery, Got) {\
-	if (!ADBG_EXPECT_TRUE(Case_p, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_EQUAL(Case_p, Recovery, Buf1_p, Buf2_p, Length) {\
-	if (!ADBG_EXPECT_EQUAL(Case_p, Buf1_p, Buf2_p, Length)) \
-		Recovery }
-
-#define ADBG_REQUIRE_BUFFER(Case_p, Recovery, ExpBuf_p, ExpBufLen, GotBuf_p, \
-			    GotBufLen) {\
-	if (!ADBG_EXPECT_BUFFER(Case_p, ExpBuf_p, ExpBufLen, GotBuf_p, \
-				GotBufLen)) \
-		Recovery }
-
-#define ADBG_REQUIRE_POINTER(Case_p, Recovery, Expected, Got) {\
-	if (!ADBG_EXPECT_POINTER(Case_p, Expected, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_NOT_NULL(Case_p, Recovery, Got) {\
-	if (!ADBG_EXPECT_NOT_NULL(Case_p, Got)) \
-		Recovery }
-
-#define ADBG_REQUIRE_COMPARE_SIGNED(Case_p, Recovery, Val1, Compar, Val2) {\
-	if (!ADBG_EXPECT_COMPARE_SIGNED(Case_p, Val1, Compar, Val2)) \
-		Recovery }
-
-#define ADBG_REQUIRE_COMPARE_UNSIGNED(Case_p, Recovery, Val1, Compar, Val2) {\
-	if (!ADBG_EXPECT_COMPARE_UNSIGNED(Case_p, Val1, Compar, Val2)) \
-		Recovery }
-
-#define ADBG_REQUIRE_COMPARE_POINTER(Case_p, Recovery, Val1, Compar, Val2) {\
-	if (!ADBG_EXPECT_COMPARE_POINTER(Case_p, Val1, Compar, Val2)) \
-		Recovery }
-
 bool Do_ADBG_Expect(ADBG_Case_t *const Case_p, const char *const FileName_p,
 		    const int LineNumber, const int Expected, const int Got,
 		    const char *const GotVarName_p,
