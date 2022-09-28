@@ -7797,3 +7797,222 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1024, xtest_pkcs11_test_1024,
 		 "PKCS11: X509 Certificate operations");
+
+#define CKTEST_EDDSA_CTX_TEST(_ec_params, _vect, _flag) { \
+	.ec_params = _ec_params, \
+	.ec_params_len = ARRAY_SIZE(_ec_params), \
+	.message = _vect ##_ptx, \
+	.message_len = ARRAY_SIZE(_vect ##_ptx), \
+	.private = _vect ##_private, \
+	.private_len = ARRAY_SIZE(_vect ##_private), \
+	.public = _vect ##_public, \
+	.public_len = ARRAY_SIZE(_vect ##_public), \
+	.ph_flag = _flag, \
+	.context = _vect ## _context, \
+	.context_len = ARRAY_SIZE(_vect ##_context), \
+	}
+
+#define CKTEST_EDDSA_TEST(_ec_params, _vect, _flag) { \
+	.ec_params = _ec_params, \
+	.ec_params_len = ARRAY_SIZE(_ec_params), \
+	.message = _vect ##_ptx, \
+	.message_len = ARRAY_SIZE(_vect ##_ptx), \
+	.private = _vect ##_private, \
+	.private_len = ARRAY_SIZE(_vect ##_private), \
+	.public = _vect ##_public, \
+	.public_len = ARRAY_SIZE(_vect ##_public), \
+	.ph_flag = _flag, \
+	}
+
+#define CKTEST_EDDSA_KEY_GEN_TEST(_ec_params, _msg, _context, _flag) { \
+	.ec_params = _ec_params, \
+	.ec_params_len = ARRAY_SIZE(_ec_params), \
+	.message = (const uint8_t *)_msg, \
+	.message_len = strlen(_msg), \
+	.context = (const uint8_t *)_context, \
+	.context_len = strlen(_context), \
+	} \
+
+struct eddsa_test {
+	CK_BYTE *ec_params;
+	size_t ec_params_len;
+	const uint8_t *message;
+	size_t message_len;
+	const uint8_t *private;
+	size_t private_len;
+	const uint8_t *public;
+	size_t public_len;
+	const bool ph_flag;
+	const uint8_t *context;
+	size_t context_len;
+};
+
+static CK_BYTE ed25519_params[] = {
+	0x06, 0x09, 0x2b, 0x06, 0x01, 0x04, 0x01, 0xda,
+	0x47, 0x0f, 0x01,
+};
+
+static struct eddsa_test eddsa_sign_tests[] = {
+	CKTEST_EDDSA_KEY_GEN_TEST(ed25519_params,
+				  "Ed25519 test message", "", 0),
+	CKTEST_EDDSA_KEY_GEN_TEST(ed25519_params,
+				  "Ed25519ctx test message",
+				  "Ed25519 context", 0),
+	CKTEST_EDDSA_KEY_GEN_TEST(ed25519_params,
+				  "Ed25519ph test message", "", 1),
+	CKTEST_EDDSA_TEST(ed25519_params, ed25519_rfc_8032_7_1, 0),
+	CKTEST_EDDSA_CTX_TEST(ed25519_params, ed25519ctx_rfc_8032_7_2, 0),
+	CKTEST_EDDSA_TEST(ed25519_params, ed25519ph_rfc_8032_7_3, 1),
+};
+
+static void xtest_pkcs11_test_1025(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+	size_t i = 0;
+	struct eddsa_test *test = NULL;
+	char sign[64] = { };
+	CK_EDDSA_PARAMS eddsa_params = { };
+	CK_ULONG sign_len = ARRAY_SIZE(sign);
+
+	CK_MECHANISM gen_mechanism = {
+		.mechanism = CKM_EC_EDWARDS_KEY_PAIR_GEN,
+		.pParameter = NULL,
+		.ulParameterLen = 0,
+	};
+
+	CK_MECHANISM sign_mechanism = {
+		CKM_EDDSA,
+		&eddsa_params,
+		sizeof(eddsa_params),
+	};
+
+	CK_ATTRIBUTE public_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_PUBLIC_KEY },
+			sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_EC_EDWARDS },
+			sizeof(CK_KEY_TYPE) },
+		{ CKA_TOKEN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_VERIFY, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_EC_PARAMS, NULL, 0 },
+		{ CKA_EC_POINT, NULL, 0 },
+	};
+
+	CK_ATTRIBUTE private_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_PRIVATE_KEY },
+			sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE){ CKK_EC_EDWARDS },
+			sizeof(CK_KEY_TYPE) },
+		{ CKA_TOKEN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SIGN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_DERIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_VALUE, NULL, 0 },
+		{ CKA_EC_POINT, NULL, 0 },
+	};
+
+	rv = init_lib_and_find_token_slot(&slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot,
+			   CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_close_lib;
+
+	for (i = 0; i < ARRAY_SIZE(eddsa_sign_tests); i++) {
+		test = &eddsa_sign_tests[i];
+
+		eddsa_params.phFlag = test->ph_flag;
+		eddsa_params.pContextData = (uint8_t *)test->context;
+		eddsa_params.ulContextDataLen = test->context_len;
+
+		assert(public_key_template[4].type == CKA_EC_PARAMS);
+		public_key_template[4].pValue = test->ec_params;
+		public_key_template[4].ulValueLen = test->ec_params_len;
+
+		if (test->private) {
+			assert(public_key_template[5].type == CKA_EC_POINT);
+			public_key_template[5].pValue =
+				(CK_VOID_PTR)test->public;
+			public_key_template[5].ulValueLen = test->public_len;
+
+			assert(private_key_template[6].type == CKA_VALUE);
+			private_key_template[6].pValue =
+				(CK_VOID_PTR)test->private;
+			private_key_template[6].ulValueLen = test->private_len;
+
+			assert(private_key_template[7].type == CKA_EC_POINT);
+			private_key_template[7].pValue =
+				(CK_VOID_PTR)test->public;
+			private_key_template[7].ulValueLen = test->public_len;
+
+			rv = C_CreateObject(session, public_key_template,
+					    ARRAY_SIZE(public_key_template),
+					    &public_key);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_close_sess;
+
+			rv = C_CreateObject(session, private_key_template,
+					    ARRAY_SIZE(private_key_template),
+					    &private_key);
+			if (!ADBG_EXPECT_CK_OK(c, rv)) {
+				C_DestroyObject(session, public_key);
+				goto err_close_sess;
+			}
+
+		} else {
+			rv = C_GenerateKeyPair(session, &gen_mechanism,
+					       public_key_template,
+					       ARRAY_SIZE(public_key_template),
+					       private_key_template,
+					       ARRAY_SIZE(private_key_template),
+					       &public_key, &private_key);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_close_sess;
+		}
+
+		rv = C_SignInit(session, &sign_mechanism, private_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destroy_keys;
+
+		rv = C_Sign(session, (CK_BYTE_PTR)test->message,
+			    test->message_len,
+			    (CK_BYTE_PTR)sign, &sign_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destroy_keys;
+
+		rv = C_VerifyInit(session, &sign_mechanism, public_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destroy_keys;
+
+		rv = C_Verify(session, (CK_BYTE_PTR)test->message,
+			      test->message_len,
+			      (CK_BYTE_PTR)sign, sign_len);
+
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, private_key));
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
+
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_close_sess;
+	}
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+	ADBG_EXPECT_CK_OK(c, close_lib());
+	return;
+
+err_destroy_keys:
+	C_DestroyObject(session, private_key);
+	C_DestroyObject(session, public_key);
+err_close_sess:
+	C_CloseSession(session);
+err_close_lib:
+	close_lib();
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1025, xtest_pkcs11_test_1025,
+		 "PKCS11: EDDSA key generation and signing");
