@@ -82,6 +82,26 @@ out:
 	return res;
 }
 
+#define UUID_STR_LEN	37
+
+char *xtest_uuid_to_allocated_str(const TEEC_UUID *uuid)
+{
+	char *s = NULL;
+
+	s = malloc(UUID_STR_LEN);
+	if (!s)
+		return NULL;
+
+	sprintf(s, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x", uuid->timeLow,
+		uuid->timeMid, uuid->timeHiAndVersion, uuid->clockSeqAndNode[0],
+		uuid->clockSeqAndNode[1], uuid->clockSeqAndNode[2],
+		uuid->clockSeqAndNode[3], uuid->clockSeqAndNode[4],
+		uuid->clockSeqAndNode[5], uuid->clockSeqAndNode[6],
+		uuid->clockSeqAndNode[7]);
+
+	return s;
+}
+
 #ifdef OPENSSL_FOUND
 TEEC_Result xtest_uuid_v5(TEEC_UUID *uuid, const TEEC_UUID *ns,
 			  const void *name, size_t size)

@@ -22,8 +22,17 @@
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
+#include "xtest_uuid_helpers.h"
 
 #include <regression_4000_data.h>
+
+/*
+ * auth_type enumerates the types of user authentication
+ *
+ * PIN_AUTH  Pin authentication.
+ * ACL_AUTH  ACL authentication.
+ */
+enum auth_type { PIN_AUTH, ACL_AUTH };
 
 /*
  * Some PKCS#11 object resources used in the tests
@@ -127,7 +136,7 @@ static CK_RV close_lib(void)
 	return C_Finalize(0);
 }
 
-static CK_RV init_lib_and_find_token_slot(CK_SLOT_ID *slot)
+static CK_RV init_lib_and_find_token_slot(CK_SLOT_ID *slot, enum auth_type at)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_SLOT_ID_PTR slots = NULL;
@@ -156,8 +165,16 @@ static CK_RV init_lib_and_find_token_slot(CK_SLOT_ID *slot)
 	if (rv)
 		goto bail;
 
-	/* Use the last slot */
-	*slot = slots[count - 1];
+	if (at == PIN_AUTH) {
+		/* Use the last slot */
+		*slot = slots[count - 1];
+	} else { /* ACL_AUTH */
+		/* Use the second to last slot */
+		if (count >= 2)
+			*slot = slots[count - 2];
+		else
+			rv = CKR_GENERAL_ERROR;
+	}
 
 bail:
 	free(slots);
@@ -441,7 +458,7 @@ static void xtest_pkcs11_test_1002(ADBG_Case_t *c)
 	CK_SESSION_INFO session_info = { };
 	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -572,14 +589,14 @@ static CK_UTF8CHAR test_token_user_pin[] = {
 };
 static CK_UTF8CHAR test_token_label[] = "PKCS11 TA test token";
 
-static CK_RV init_test_token(CK_SLOT_ID slot)
+static CK_RV init_test_token_pin_auth(CK_SLOT_ID slot)
 {
 	return C_InitToken(slot, test_token_so_pin, sizeof(test_token_so_pin),
 			   test_token_label);
 }
 
 /* Login as user, eventually reset user PIN if needed */
-static CK_RV init_user_test_token(CK_SLOT_ID slot)
+static CK_RV init_user_test_token_pin_auth(CK_SLOT_ID slot)
 {
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
@@ -602,7 +619,7 @@ static CK_RV init_user_test_token(CK_SLOT_ID slot)
 	if (rv) {
 		C_CloseSession(session);
 
-		rv = init_test_token(slot);
+		rv = init_test_token_pin_auth(slot);
 		if (rv)
 			return rv;
 
@@ -668,7 +685,7 @@ static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 		goto out;
 	}
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
@@ -690,7 +707,7 @@ static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 		goto out;
 	}
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
@@ -716,7 +733,108 @@ out:
 	return rv;
 }
 
-static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
+static CK_UTF8CHAR test_acl_auth_token_label[] = "PKCS11 TA test token for ACL based authentication";
+
+static CK_RV init_test_token_acl_auth(CK_SLOT_ID slot)
+{
+	return C_InitToken(slot, NULL, 0, test_acl_auth_token_label);
+}
+
+#define TEE_UUID_NS_NAME_SIZE  128
+#define ACL_PIN_LEN  43
+
+/*
+ * TEE client UUID name space identifier
+ * Client UUIDs are derived from this UUID (which is defined in the Linux
+ * kernel) using the UUIDv5 scheme.
+ */
+static const char *client_uuid_linux_ns = "58ac9ca0-2086-4683-a1b8-ec4bc08e01b6";
+
+static CK_RV init_user_test_token_acl_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	TEEC_Result result = TEEC_ERROR_GENERIC;
+	TEEC_UUID expected_client_uuid = { 0 };
+	TEEC_UUID uuid_ns = { 0 };
+	char uuid_name[TEE_UUID_NS_NAME_SIZE] = { 0 };
+	char test_token_acl_auth_pin[ACL_PIN_LEN] = { 0 };
+	char *client_id_s = NULL;
+	int str_len = 0;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (rv)
+		return rv;
+
+	rv = C_Login(session, CKU_USER, NULL, 0);
+	if (rv == CKR_OK) {
+		C_Logout(session);
+		C_CloseSession(session);
+		return CKR_OK;
+	}
+
+	rv = C_Login(session, CKU_SO, NULL, 0);
+	if (rv) {
+		C_CloseSession(session);
+
+		rv = init_test_token_acl_auth(slot);
+		if (rv)
+			return rv;
+
+		rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+		if (rv)
+			return rv;
+
+		rv = C_Login(session, CKU_SO, NULL, 0);
+		if (rv) {
+			C_CloseSession(session);
+			return rv;
+		}
+	}
+
+	rv = CKR_GENERAL_ERROR;
+
+	result = xtest_uuid_from_str(&uuid_ns, client_uuid_linux_ns);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		goto out;
+
+	str_len = snprintf(uuid_name, sizeof(uuid_name), "gid=%x", getegid());
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, >=, 0))
+		goto out;
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, <, (int)sizeof(uuid_name)))
+		goto out;
+
+	result = xtest_uuid_v5(&expected_client_uuid, &uuid_ns, uuid_name,
+			       strlen(uuid_name));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, result))
+		goto out;
+
+	client_id_s = xtest_uuid_to_allocated_str(&expected_client_uuid);
+	if (!ADBG_EXPECT_NOT_NULL(c, client_id_s)) {
+		rv = CKR_HOST_MEMORY;
+		goto out;
+	}
+
+	str_len = snprintf(test_token_acl_auth_pin, sizeof(test_token_acl_auth_pin), "group:%s", client_id_s);
+	free(client_id_s);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, >=, 0))
+		goto out;
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, <, (int)sizeof(test_token_acl_auth_pin)))
+		goto out;
+
+	rv = C_InitPIN(session, (CK_UTF8CHAR_PTR)test_token_acl_auth_pin,
+		       (CK_ULONG)strlen(test_token_acl_auth_pin));
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out:
+	C_Logout(session);
+	C_CloseSession(session);
+
+	return rv;
+}
+
+static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot, enum auth_type at)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_TOKEN_INFO token_info = { };
@@ -724,7 +842,11 @@ static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 
 	Do_ADBG_BeginSubCase(c, "C_InitToken() on uninitialized token");
 
-	rv = init_test_token(slot);
+	if (at == PIN_AUTH)
+		rv = init_test_token_pin_auth(slot);
+	else /* ACL_AUTH */
+		rv = init_test_token_acl_auth(slot);
+
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
@@ -741,7 +863,10 @@ static CK_RV test_uninitialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 		goto out;
 	}
 
-	rv = init_user_test_token(slot);
+	if (at == PIN_AUTH)
+		rv = init_user_test_token_pin_auth(slot);
+	else /* ACL_AUTH */
+		rv = init_user_test_token_acl_auth(c, slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
@@ -766,13 +891,13 @@ out:
 	return rv;
 }
 
-static CK_RV test_login_logout(ADBG_Case_t *c, CK_SLOT_ID slot)
+static CK_RV test_login_logout_pin_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
 {
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
 	CK_RV rv = CKR_GENERAL_ERROR;
 
-	Do_ADBG_BeginSubCase(c, "Test C_Login()/C_Logout()");
+	Do_ADBG_BeginSubCase(c, "Test C_Login()/C_Logout() with PIN based authentication");
 
 	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -843,7 +968,7 @@ static CK_RV test_login_logout(ADBG_Case_t *c, CK_SLOT_ID slot)
 	ADBG_EXPECT_CK_OK(c, rv);
 
 out:
-	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout()");
+	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout() with PIN based authorization");
 	return rv;
 }
 
@@ -931,7 +1056,7 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Logout))
 		goto out;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -944,7 +1069,7 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 		goto out;
 
 	if (!(token_info.flags & CKF_TOKEN_INITIALIZED)) {
-		rv = test_uninitialized_token(c, slot);
+		rv = test_uninitialized_token(c, slot, PIN_AUTH);
 		if (rv != CKR_OK)
 			goto out;
 	}
@@ -953,7 +1078,7 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	if (rv != CKR_OK)
 		goto out;
 
-	rv = test_login_logout(c, slot);
+	rv = test_login_logout_pin_auth(c, slot);
 	if (rv != CKR_OK)
 		goto out;
 
@@ -976,7 +1101,7 @@ out:
 }
 
 ADBG_CASE_DEFINE(pkcs11, 1003, xtest_pkcs11_test_1003,
-		 "PKCS11: Login to PKCS#11 token");
+		 "PKCS11: Login to PKCS#11 token with PIN based authentication");
 
 static CK_ATTRIBUTE cktest_token_object[] = {
 	{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
@@ -1007,7 +1132,7 @@ static void test_create_destroy_single_object(ADBG_Case_t *c, bool persistent)
 	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1050,7 +1175,7 @@ static void test_create_destroy_session_objects(ADBG_Case_t *c)
 	for (n = 0; n < ARRAY_SIZE(obj_hdl); n++)
 		obj_hdl[n] = CK_INVALID_HANDLE;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1100,7 +1225,7 @@ static void test_create_objects_in_session(ADBG_Case_t *c, bool readwrite)
 	CK_OBJECT_HANDLE session_obj_hld = CK_INVALID_HANDLE;
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1347,7 +1472,7 @@ static void xtest_pkcs11_test_1005(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
 	size_t n = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1411,7 +1536,7 @@ static void xtest_pkcs11_test_1006(ADBG_Case_t *c)
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1520,7 +1645,7 @@ static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
 	for (n = 0; n < ARRAY_SIZE(sessions); n++)
 		sessions[n] = CK_INVALID_HANDLE;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1775,7 +1900,7 @@ static void xtest_pkcs11_test_1008(ADBG_Case_t *c)
 	struct mac_test const *test = NULL;
 	size_t n = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -1950,7 +2075,7 @@ static void xtest_pkcs11_test_1009(ADBG_Case_t *c)
 	struct mac_test const *test = NULL;
 	size_t n = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -2214,7 +2339,7 @@ static void xtest_pkcs11_test_1010(ADBG_Case_t *c)
 	uint8_t out[512] = { 0 };
 	CK_ULONG out_len = 512;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -2410,7 +2535,7 @@ static void destroy_persistent_objects(ADBG_Case_t *c, CK_SLOT_ID slot)
 		{ CKA_TOKEN, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 	};
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -2486,15 +2611,15 @@ static void xtest_pkcs11_test_1011(ADBG_Case_t *c)
 	for (n = 0; n < ARRAY_SIZE(obj_found); n++)
 		obj_found[n] = CK_INVALID_HANDLE;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -2903,15 +3028,15 @@ static void xtest_pkcs11_test_1012(ADBG_Case_t *c)
 		{ CKA_ALLOWED_MECHANISMS, &g_mecha_list, sizeof(g_mecha_list) },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -3141,15 +3266,15 @@ static void xtest_pkcs11_test_1013(ADBG_Case_t *c)
 	const char *label = "Dummy Objects";
 	bool ro_logged_in = false;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -3459,15 +3584,15 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_TRUSTED, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -3655,15 +3780,15 @@ static void xtest_pkcs11_test_1015(ADBG_Case_t *c)
 		{ CKA_COPYABLE, &(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -3947,15 +4072,15 @@ static void xtest_pkcs11_test_1016(ADBG_Case_t *c)
 	uint8_t buffer[64] = { 0 };
 	size_t i = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -4156,15 +4281,15 @@ static void xtest_pkcs11_test_1017(ADBG_Case_t *c)
 		{ CKA_DERIVE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -4650,15 +4775,15 @@ static void xtest_pkcs11_test_1018(ADBG_Case_t *c)
 #endif
 	size_t i = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -5601,15 +5726,15 @@ static void xtest_pkcs11_test_1019(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	int ret = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -5798,15 +5923,15 @@ static void xtest_pkcs11_test_1020(ADBG_Case_t *c)
 	uint8_t buf[WRAPPED_TEST_KEY_SIZE] = { 0 };
 	CK_ULONG size = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -6598,15 +6723,15 @@ static void xtest_pkcs11_test_1021(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	int ret = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -6981,15 +7106,15 @@ static void xtest_pkcs11_test_1022(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	int ret = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -7366,15 +7491,15 @@ static void xtest_pkcs11_test_1023(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	int ret = 0;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -7540,15 +7665,15 @@ static void xtest_pkcs11_test_1024(ADBG_Case_t *c)
 	};
 	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
@@ -7914,7 +8039,7 @@ static void xtest_pkcs11_test_1025(ADBG_Case_t *c)
 		{ CKA_EC_POINT, NULL, 0 },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
@@ -8467,3 +8592,117 @@ close_lib:
 
 ADBG_CASE_DEFINE(pkcs11, 1026, xtest_pkcs11_test_1026,
 		 "PKCS11: RSA AES Key Wrap/Unwrap tests");
+
+static CK_RV test_login_logout_acl_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	Do_ADBG_BeginSubCase(c, "Test C_Login()/C_Logout() with ACL based authentication");
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Logout: should fail as we did not log in yet */
+	rv = C_Logout(session);
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_NOT_LOGGED_IN, rv);
+
+	/* Login/re-log/logout user */
+	rv = C_Login(session, CKU_USER, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_close;
+
+	rv = C_Login(session, CKU_USER, NULL, 0);
+	ADBG_EXPECT_CK_RESULT(c, CKR_USER_ALREADY_LOGGED_IN, rv);
+
+	rv = C_Logout(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out_close:
+	C_CloseSession(session);
+out:
+	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout() with ACL based authentication");
+	return rv;
+}
+
+#define GID_STR_LEN  13
+
+static void xtest_pkcs11_test_1027(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
+	CK_SLOT_ID slot = 0;
+	CK_TOKEN_INFO token_info = { 0 };
+	char gid_str[GID_STR_LEN] = { 0 };
+	int str_len = 0;
+
+	rv = C_GetFunctionList(&ckfunc_list);
+	if (!ADBG_EXPECT_CK_OK(c, rv) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitToken) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_InitPIN) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Login) ||
+	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Logout)) {
+		Do_ADBG_Log(" - 1027 -   skip test, ckfunc_list not found");
+		return;
+	}
+
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "user", 1)))
+		return;
+
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Abort test if token is about to lock */
+	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags & CKF_SO_PIN_FINAL_TRY)))
+		goto out;
+
+	if (!(token_info.flags & CKF_TOKEN_INITIALIZED)) {
+		rv = test_uninitialized_token(c, slot, ACL_AUTH);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+	}
+
+	/*
+	 * The current connection is closed and a new CKU_USER connection will be opened.
+	 */
+	rv = close_lib();
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "group", 1)))
+		goto out_unsetenv;
+
+	str_len = snprintf(gid_str, sizeof(gid_str), "%x", getegid());
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, >=, 0))
+		goto out_unsetenv;
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, <, (int)sizeof(gid_str)))
+		goto out_unsetenv;
+
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_GID", gid_str, 1)))
+		goto out_unsetenv;
+
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+
+	rv = test_login_logout_acl_auth(c, slot);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out:
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+out_unsetenv:
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_TYPE"));
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_GID"));
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1027, xtest_pkcs11_test_1027,
+		 "PKCS11: Login to PKCS#11 token with ACL based authentication");
