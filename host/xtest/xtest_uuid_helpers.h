@@ -17,6 +17,13 @@
  */
 TEEC_Result xtest_uuid_from_str(TEEC_UUID *uuid, const char *s);
 
+/*
+ * Convert a TEEC_UUID @uuid into an allocated UUID string @return
+ * Expected format for @return is: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ * 'x' being any hexadecimal digit (0-9a-fA-F)
+ */
+char *xtest_uuid_to_allocated_str(const TEEC_UUID *uuid);
+
 #ifdef OPENSSL_FOUND
 /*
  * Form UUIDv5 from given name space and name.
