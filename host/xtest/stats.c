@@ -27,6 +27,7 @@
 #define STATS_CMD_PAGER_STATS	0
 #define STATS_CMD_ALLOC_STATS	1
 #define STATS_CMD_MEMLEAK_STATS	2
+#define STATS_CMD_TA_STATS	3
 
 #define TEE_ALLOCATOR_DESC_LENGTH 32
 struct malloc_stats {
@@ -37,6 +38,13 @@ struct malloc_stats {
 	uint32_t num_alloc_fail;	  /* Number of failed alloc requests */
 	uint32_t biggest_alloc_fail;	  /* Size of biggest failed alloc */
 	uint32_t biggest_alloc_fail_used; /* Alloc bytes when above occurred */
+};
+
+struct ta_dump_stats {
+	TEEC_UUID uuid;
+	uint32_t panicked;	/* True if TA has panicked */
+	uint32_t sess_count;	/* Number of opened session */
+	struct malloc_stats heap;
 };
 
 static const char *stats_progname = "xtest --stats";
@@ -50,6 +58,7 @@ static int usage(void)
 	fprintf(stderr, " --pager        Print pager statistics\n");
 	fprintf(stderr, " --alloc        Print allocation statistics\n");
 	fprintf(stderr, " --memleak      Dump memory leak data on secure console\n");
+	fprintf(stderr, " --ta           Print loaded TAs context\n");
 
 	return EXIT_FAILURE;
 }
@@ -209,6 +218,102 @@ static int stat_memleak(int argc, char *argv[])
 	return close_sess(&ctx, &sess);
 }
 
+static int stat_loaded_ta(int argc, char *argv[])
+{
+	TEEC_Context ctx = { };
+	TEEC_Session sess = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t eo = 0;
+	TEEC_Operation op = { };
+	void *buff = NULL;
+	struct ta_dump_stats *stats = NULL;
+	size_t stats_size_bytes = 0;
+	size_t n = 0;
+	uint32_t retry_count = 10;
+
+	UNUSED(argv);
+	if (argc != 1)
+		return usage();
+
+	open_sess(&ctx, &sess);
+retry:
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&sess, STATS_CMD_TA_STATS, &op, &eo);
+	if (res != TEEC_ERROR_SHORT_BUFFER)
+		errx(EXIT_FAILURE,
+		     "TEEC_InvokeCommand: res %#"PRIx32" err_orig %#"PRIx32,
+		     res, eo);
+
+	stats_size_bytes = op.params[0].tmpref.size;
+	if (stats_size_bytes == 0) {
+		printf("No loaded TA found");
+		goto out;
+	}
+
+	if (stats_size_bytes % sizeof(*stats))
+		errx(EXIT_FAILURE,
+		     "STATS_CMD_TA_STATS: %zu not a multiple of %zu",
+		     stats_size_bytes, sizeof(*stats));
+
+	/* Always allocate two more in case TA loaded after size querying */
+	stats_size_bytes += 2 * sizeof(*stats);
+
+	stats = realloc(buff, stats_size_bytes);
+	if (!stats)
+		errx(EXIT_FAILURE, "realloc(%zu) failed", stats_size_bytes);
+	buff = stats;
+
+	op.params[0].tmpref.buffer = stats;
+	op.params[0].tmpref.size = stats_size_bytes;
+	res = TEEC_InvokeCommand(&sess, STATS_CMD_TA_STATS, &op, &eo);
+	if (res == TEEC_ERROR_SHORT_BUFFER && retry_count > 0) {
+		retry_count--;
+		goto retry;
+	}
+
+	if (res)
+		errx(EXIT_FAILURE,
+		     "TEEC_InvokeCommand: res %#"PRIx32" err_orig %#"PRIx32,
+		     res, eo);
+
+	for (n = 0; n < op.params[0].tmpref.size / sizeof(*stats); n++) {
+		if (n)
+			printf("\n");
+		printf("ta(%08x-%04x-%04x-%02x%02x%02x%02x%02x%02x%02x%02x)\n",
+			stats[n].uuid.timeLow, stats[n].uuid.timeMid,
+			stats[n].uuid.timeHiAndVersion,
+			stats[n].uuid.clockSeqAndNode[0],
+			stats[n].uuid.clockSeqAndNode[1],
+			stats[n].uuid.clockSeqAndNode[2],
+			stats[n].uuid.clockSeqAndNode[3],
+			stats[n].uuid.clockSeqAndNode[4],
+			stats[n].uuid.clockSeqAndNode[5],
+			stats[n].uuid.clockSeqAndNode[6],
+			stats[n].uuid.clockSeqAndNode[7]);
+		printf("\tpanicked(%"PRId32") -- True if TA has panicked\n",
+			stats[n].panicked);
+		printf("\tsession number(%"PRId32")\n", stats[n].sess_count);
+		printf("\tHeap Status:\n");
+		printf("\t\tBytes allocated:                       %"PRId32"\n",
+		       stats[n].heap.allocated);
+		printf("\t\tMax bytes allocated:                   %"PRId32"\n",
+		       stats[n].heap.max_allocated);
+		printf("\t\tSize of pool:                          %"PRId32"\n",
+		       stats[n].heap.size);
+		printf("\t\tNumber of failed allocations:          %"PRId32"\n",
+		       stats[n].heap.num_alloc_fail);
+		printf("\t\tSize of larges allocation failure:     %"PRId32"\n",
+		       stats[n].heap.biggest_alloc_fail);
+		printf("\t\tTotal bytes allocated at that failure: %"PRId32"\n",
+		       stats[n].heap.biggest_alloc_fail_used);
+	}
+
+out:
+	free(buff);
+	return close_sess(&ctx, &sess);
+}
+
 int stats_runner_cmd_parser(int argc, char *argv[])
 {
 	if (argc > 1) {
@@ -218,6 +323,8 @@ int stats_runner_cmd_parser(int argc, char *argv[])
 			return stat_alloc(argc - 1, argv + 1);
 		if (!strcmp(argv[1], "--memleak"))
 			return stat_memleak(argc - 1, argv + 1);
+		if (!strcmp(argv[1], "--ta"))
+			return stat_loaded_ta(argc - 1, argv + 1);
 	}
 
 	return usage();
