@@ -6,4 +6,6 @@ set (CMAKE_SHARED_LIBRARY_PREFIX "")
 add_library(${PROJECT_NAME} SHARED test_supp_plugin.c)
 target_include_directories(${PROJECT_NAME} PRIVATE ./include)
 
+target_link_libraries (${PROJECT_NAME} PRIVATE teec)
+
 install (TARGETS ${PROJECT_NAME} DESTINATION ${CFG_TEE_PLUGIN_LOAD_PATH})
