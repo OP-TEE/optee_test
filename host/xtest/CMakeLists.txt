@@ -55,7 +55,7 @@ set (SRC
 	regression_6000.c
 	regression_8000.c
 	regression_8100.c
-	sha_perf.c
+	hash_perf.c
 	stats.c
 	xtest_helpers.c
 	xtest_main.c

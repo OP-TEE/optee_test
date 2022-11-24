@@ -4,18 +4,18 @@
  * All rights reserved.
  */
 
-#ifndef TA_SHA_PERF_H
-#define TA_SHA_PERF_H
+#ifndef TA_HASH_PERF_H
+#define TA_HASH_PERF_H
 
-#define TA_SHA_PERF_UUID { 0x614789f2, 0x39c0, 0x4ebf, \
+#define TA_HASH_PERF_UUID { 0x614789f2, 0x39c0, 0x4ebf, \
 	{ 0xb2, 0x35, 0x92, 0xb3, 0x2a, 0xc1, 0x07, 0xed } }
 
 /*
  * Commands implemented by the TA
  */
 
-#define TA_SHA_PERF_CMD_PREPARE_OP	0
-#define TA_SHA_PERF_CMD_PROCESS		1
+#define TA_HASH_PERF_CMD_PREPARE_OP	0
+#define TA_HASH_PERF_CMD_PROCESS	1
 
 /*
  * Supported algorithms
@@ -26,5 +26,6 @@
 #define TA_SHA_SHA256	2
 #define TA_SHA_SHA384	3
 #define TA_SHA_SHA512	4
+#define TA_SM3		5
 
-#endif /* TA_SHA_PERF_H */
+#endif /* TA_HASH_PERF_H */

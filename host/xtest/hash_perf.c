@@ -52,7 +52,7 @@ static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 static void open_ta(void)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
-	TEEC_UUID uuid = TA_SHA_PERF_UUID;
+	TEEC_UUID uuid = TA_HASH_PERF_UUID;
 	uint32_t err_origin = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
@@ -118,6 +118,8 @@ static const char *algo_str(uint32_t algo)
 		return "SHA384";
 	case TA_SHA_SHA512:
 		return "SHA512";
+	case TA_SM3:
+		return "SM3";
 	default:
 		return "???";
 	}
@@ -136,6 +138,8 @@ static int hash_size(uint32_t algo)
 		return 48;
 	case TA_SHA_SHA512:
 		return 64;
+	case TA_SM3:
+		return 32;
 	default:
 		return 0;
 	}
@@ -143,7 +147,6 @@ static int hash_size(uint32_t algo)
 
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
-
 
 static void alloc_shm(size_t sz, uint32_t algo, int offset)
 {
@@ -213,7 +216,7 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return ns;
 }
 
-static uint64_t run_test_once(void *in, size_t size,  int random_in,
+static uint64_t run_test_once(void *in, size_t size, int random_in,
 			      TEEC_Operation *op)
 {
 	struct timespec t0 = { };
@@ -225,7 +228,7 @@ static uint64_t run_test_once(void *in, size_t size,  int random_in,
 		read_random(in, size);
 
 	get_current_time(&t0);
-	res = TEEC_InvokeCommand(&sess, TA_SHA_PERF_CMD_PROCESS, op,
+	res = TEEC_InvokeCommand(&sess, TA_HASH_PERF_CMD_PROCESS, op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 	get_current_time(&t1);
@@ -242,7 +245,7 @@ static void prepare_op(int algo)
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = algo;
-	res = TEEC_InvokeCommand(&sess, TA_SHA_PERF_CMD_PREPARE_OP, &op,
+	res = TEEC_InvokeCommand(&sess, TA_HASH_PERF_CMD_PREPARE_OP, &op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 }
@@ -283,7 +286,7 @@ static double mb_per_sec(size_t size, double usec)
  * warmup - Start with a-second busy loop
  * verbosity - Verbosity level
  * */
-extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
+extern void hash_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity)
 {
@@ -294,7 +297,7 @@ extern void sha_perf_run_test(int algo, size_t size, unsigned int n,
 	struct timespec ts = { };
 	double sd = 0;
 
-	vverbose("sha-perf\n");
+	vverbose("hash-perf\n");
 	if (clock_getres(CLOCK_MONOTONIC, &ts) < 0) {
 		perror("clock_getres");
 		return;
@@ -357,10 +360,10 @@ static void usage(const char *progname,
 	fprintf(stderr, "Usage: %s [-h]\n", progname);
 	fprintf(stderr, "Usage: %s [-a ALGO] [-l LOOP] [-n LOOP] [-r] [-s SIZE]", progname);
 	fprintf(stderr, " [-v [-v]] [-w SEC]\n");
-	fprintf(stderr, "SHA performance testing tool for OP-TEE\n");
+	fprintf(stderr, "Hash performance testing tool for OP-TEE\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -a ALGO          Algorithm (SHA1, SHA224, SHA256, SHA384, SHA512) [%s]\n", algo_str(algo));
+	fprintf(stderr, "  -a ALGO          Algorithm (SHA1, SHA224, SHA256, SHA384, SHA512, SM3) [%s]\n", algo_str(algo));
 	fprintf(stderr, "  -h|--help Print this help and exit\n");
 	fprintf(stderr, "  -l LOOP          Inner loop iterations (TA calls TEE_DigestDoFinal() <x> times) [%u]\n", l);
 	fprintf(stderr, "  -n LOOP          Outer test loop iterations [%u]\n", n);
@@ -381,9 +384,7 @@ static void usage(const char *progname,
 		} \
 	} while (0);
 
-
-
-extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
+extern int hash_perf_runner_cmd_parser(int argc, char *argv[])
 {
 	int i = 0;
 	/* Command line params */
@@ -421,6 +422,8 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 				algo = TA_SHA_SHA384;
 			else if (!strcasecmp(argv[i], "SHA512"))
 				algo = TA_SHA_SHA512;
+			else if (!strcasecmp(argv[i], "SM3"))
+				algo = TA_SM3;
 			else {
 				fprintf(stderr, "%s, invalid algorithm\n",
 					argv[0]);
@@ -453,7 +456,7 @@ extern int sha_perf_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
-	sha_perf_run_test(algo, size, n, l, random_in, offset, warmup, verbosity);
+	hash_perf_run_test(algo, size, n, l, random_in, offset, warmup, verbosity);
 
 	return 0;
 }

@@ -33,7 +33,7 @@ static void xtest_tee_benchmark_2001(ADBG_Case_t *c)
 	size_t size = 1024;	/* Buffer size */
 	int offset = 0;          /* Buffer offset wrt. alloc'ed address */
 
-	sha_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
+	hash_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
 				CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, offset,
 				CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 
@@ -47,7 +47,7 @@ static void xtest_tee_benchmark_2002(ADBG_Case_t *c)
 	size_t size = 4096;	/* Buffer size */
 	int offset = 0;          /* Buffer offset wrt. alloc'ed address */
 
-	sha_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
+	hash_perf_run_test(algo, size, CRYPTO_DEF_COUNT,
 				CRYPTO_DEF_LOOPS, CRYPTO_USE_RANDOM, offset,
 				CRYPTO_DEF_WARMUP, CRYPTO_DEF_VERBOSITY);
 

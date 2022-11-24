@@ -8,9 +8,7 @@
 #define XTEST_CRYPTO_COMMON_H
 
 #include "ta_aes_perf.h"
-#include "ta_sha_perf.h"
-
-
+#include "ta_hash_perf.h"
 
 
 #define AES_PERF_INPLACE 0
@@ -44,8 +42,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size,
 		       size_t unit, unsigned int n, unsigned int l,
 		       int random_in, int in_place, int warmup, int verbosity);
 
-int sha_perf_runner_cmd_parser(int argc, char *argv[]);
-void sha_perf_run_test(int algo, size_t size, unsigned int n,
+int hash_perf_runner_cmd_parser(int argc, char *argv[]);
+void hash_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity);
 
