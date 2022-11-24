@@ -98,7 +98,8 @@ void usage(char *program)
 	printf("\t                   run. A substring match is performed. May be\n");
 	printf("\t                   specified several times.\n");
 	printf("applets:\n");
-	printf("\t--sha-perf [opts]  SHA performance testing tool (-h for usage)\n");
+	printf("\t--sha-perf [opts]  Deprecated, same as --hash-perf\n");
+	printf("\t--hash-perf [opts] Hash performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 	printf("\t--install-ta [directory or list of TAs]\n");
@@ -153,7 +154,9 @@ int main(int argc, char *argv[])
 	init_ossl();
 
 	if (argc > 1 && !strcmp(argv[1], "--sha-perf"))
-		return sha_perf_runner_cmd_parser(argc-1, &argv[1]);
+		return hash_perf_runner_cmd_parser(argc-1, &argv[1]);
+	else if (argc > 1 && !strcmp(argv[1], "--hash-perf"))
+		return hash_perf_runner_cmd_parser(argc-1, &argv[1]);
 	else if (argc > 1 && !strcmp(argv[1], "--aes-perf"))
 		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
 #ifdef CFG_SECSTOR_TA_MGMT_PTA

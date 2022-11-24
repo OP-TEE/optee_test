@@ -13,7 +13,7 @@ target_include_directories(${PROJECT_NAME}
 	INTERFACE os_test/include
 	INTERFACE rpc_test/include
 	INTERFACE sdp_basic/include
-	INTERFACE sha_perf/include
+	INTERFACE hash_perf/include
 	INTERFACE sims/include
 	INTERFACE miss/include
 	INTERFACE sims_keepalive/include

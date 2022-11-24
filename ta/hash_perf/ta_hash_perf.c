@@ -9,17 +9,17 @@
 #include <string.h>
 #include <trace.h>
 
-#include "ta_sha_perf.h"
-#include "ta_sha_perf_priv.h"
+#include "ta_hash_perf.h"
+#include "ta_hash_perf_priv.h"
 
-#define CHECK(res, name, action) do {			\
-		if ((res) != TEE_SUCCESS) {		\
-			DMSG(name ": 0x%08x", (res));	\
-			action				\
-		}					\
+#define CHECK(res, name, action) do {			 \
+		if ((res) != TEE_SUCCESS) {		 \
+			DMSG(name ": %#08"PRIx32, (res));\
+			action				 \
+		}					 \
 	} while(0)
 
-static TEE_OperationHandle digest_op = NULL;
+static TEE_OperationHandle digest_op;
 
 TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 {
@@ -49,6 +49,7 @@ TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 		res = TEE_DigestDoFinal(digest_op, in, insz, out, &outsz);
 		CHECK(res, "TEE_DigestDoFinal", return res;);
 	}
+
 	return TEE_SUCCESS;
 }
 
@@ -80,6 +81,9 @@ TEE_Result cmd_prepare_op(uint32_t param_types, TEE_Param params[4])
 	case TA_SHA_SHA512:
 		algo = TEE_ALG_SHA512;
 		break;
+	case TA_SM3:
+		algo = TEE_ALG_SM3;
+		break;
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
@@ -93,9 +97,8 @@ TEE_Result cmd_prepare_op(uint32_t param_types, TEE_Param params[4])
 	return TEE_SUCCESS;
 }
 
-
 void cmd_clean_res(void)
 {
 	if (digest_op)
-		TEE_FreeOperation(digest_op);	
+		TEE_FreeOperation(digest_op);
 }

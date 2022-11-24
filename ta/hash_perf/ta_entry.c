@@ -6,8 +6,8 @@
 
 #include <tee_ta_api.h>
 
-#include "ta_sha_perf.h"
-#include "ta_sha_perf_priv.h"
+#include "ta_hash_perf.h"
+#include "ta_hash_perf_priv.h"
 
 /*
  * Trusted Application Entry Points
@@ -39,7 +39,7 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
 void TA_CloseSessionEntryPoint(void *pSessionContext)
 {
 	(void)pSessionContext;
-	
+
 	cmd_clean_res();
 }
 
@@ -51,10 +51,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	(void)pSessionContext;
 
 	switch (nCommandID) {
-	case TA_SHA_PERF_CMD_PREPARE_OP:
+	case TA_HASH_PERF_CMD_PREPARE_OP:
 		return cmd_prepare_op(nParamTypes, pParams);
 
-	case TA_SHA_PERF_CMD_PROCESS:
+	case TA_HASH_PERF_CMD_PROCESS:
 		return cmd_process(nParamTypes, pParams);
 
 	default:
