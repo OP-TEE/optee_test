@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ta_crypt.h>
+#include <tee_api_defines.h>
 #include <tee_api_types.h>
+#include <tee_api_compat.h>
 #include <adbg.h>
 
 #ifdef OPENSSL_FOUND

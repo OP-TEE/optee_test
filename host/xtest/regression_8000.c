@@ -5,8 +5,10 @@
 #include "xtest_test.h"
 #include "xtest_helpers.h"
 
-#include <tee_api_types.h>
+#include <tee_api_defines.h>
 #include <tee_api_defines_extensions.h>
+#include <tee_api_types.h>
+#include <tee_api_compat.h>
 #include <utee_defines.h>
 #include <string.h>
 #include <enc_fs_key_manager_test.h>

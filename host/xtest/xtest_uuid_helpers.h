@@ -6,7 +6,9 @@
 #ifndef XTEST_UUID_HELPERS_H
 #define XTEST_UUID_HELPERS_H
 
+#include <tee_api_defines.h>
 #include <tee_api_types.h>
+#include <tee_api_compat.h>
 
 /*
  * Convert a UUID string @s into a TEEC_UUID @uuid

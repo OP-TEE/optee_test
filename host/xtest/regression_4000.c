@@ -15,6 +15,7 @@
 
 #include <tee_api_types.h>
 #include <tee_api_defines_extensions.h>
+#include <tee_api_compat.h>
 #include <ta_crypt.h>
 #include <utee_defines.h>
 #include <util.h>

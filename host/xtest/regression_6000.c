@@ -16,6 +16,7 @@
 #include <tee_api_defines.h>
 #include <tee_api_defines_extensions.h>
 #include <tee_api_types.h>
+#include <tee_api_compat.h>
 #include <util.h>
 
 #define DEFINE_TEST_MULTIPLE_STORAGE_IDS(test_name)		 \
