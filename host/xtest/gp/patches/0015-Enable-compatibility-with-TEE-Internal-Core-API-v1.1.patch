@@ -1,0 +1,27 @@
+From 4e495cff6016583a9af14a62a16c2f7988fd9c68 Mon Sep 17 00:00:00 2001
+From: Jens Wiklander <jens.wiklander@linaro.org>
+Date: Wed, 30 Nov 2022 09:00:30 +0100
+Subject: [PATCH] Enable compatibility with TEE Internal Core API v1.1
+
+The test suite is testing TEE Internal Core API v1.1 so make sure that
+the API provided is compatible by setting
+CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y.
+
+Signed-off-by: Jens Wiklander <jens.wiklander@linaro.org>
+---
+ TTAs_Internal_API_1_1_1/ta_common.mk | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/TTAs_Internal_API_1_1_1/ta_common.mk b/TTAs_Internal_API_1_1_1/ta_common.mk
+index b8ce142bcf0a..0f8cc7d01314 100644
+--- a/TTAs_Internal_API_1_1_1/ta_common.mk
++++ b/TTAs_Internal_API_1_1_1/ta_common.mk
+@@ -1,3 +1,5 @@
++# These TAs are made for TEE Internal Core API version 1.1
++CFG_TA_OPTEE_CORE_API_COMPAT_1_1=y
+ # Note that it is important that that $(BINARY) is set before we include
+ # ta_dev_kit.mk. In the optee_test this is done in the individual TA Makefiles.
+ include $(TA_DEV_KIT_DIR)/mk/ta_dev_kit.mk
+-- 
+2.31.1
+

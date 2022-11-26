@@ -8,7 +8,9 @@
 
 #include <adbg.h>
 #include <pthread.h>
+#include <tee_api_defines.h>
 #include <tee_api_types.h>
+#include <tee_api_compat.h>
 #include <tee_client_api.h>
 
 extern unsigned int level;
