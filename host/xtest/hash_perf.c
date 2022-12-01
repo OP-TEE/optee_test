@@ -120,6 +120,18 @@ static const char *algo_str(uint32_t algo)
 		return "SHA512";
 	case TA_SM3:
 		return "SM3";
+	case TA_HMAC_SHA1:
+		return "HMAC_SHA1";
+	case TA_HMAC_SHA224:
+		return "HMAC_SHA224";
+	case TA_HMAC_SHA256:
+		return "HMAC_SHA256";
+	case TA_HMAC_SHA384:
+		return "HMAC_SHA384";
+	case TA_HMAC_SHA512:
+		return "HMAC_SHA512";
+	case TA_HMAC_SM3:
+		return "HMAC_SM3";
 	default:
 		return "???";
 	}
@@ -129,16 +141,22 @@ static int hash_size(uint32_t algo)
 {
 	switch (algo) {
 	case TA_SHA_SHA1:
+	case TA_HMAC_SHA1:
 		return 20;
 	case TA_SHA_SHA224:
+	case TA_HMAC_SHA224:
 		return 28;
 	case TA_SHA_SHA256:
+	case TA_HMAC_SHA256:
 		return 32;
 	case TA_SHA_SHA384:
+	case TA_HMAC_SHA384:
 		return 48;
 	case TA_SHA_SHA512:
+	case TA_HMAC_SHA512:
 		return 64;
 	case TA_SM3:
+	case TA_HMAC_SM3:
 		return 32;
 	default:
 		return 0;
@@ -363,7 +381,9 @@ static void usage(const char *progname,
 	fprintf(stderr, "Hash performance testing tool for OP-TEE\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
-	fprintf(stderr, "  -a ALGO          Algorithm (SHA1, SHA224, SHA256, SHA384, SHA512, SM3) [%s]\n", algo_str(algo));
+	fprintf(stderr, "  -a ALGO          Algorithm (SHA1, SHA224, SHA256, SHA384, SHA512, SM3,"
+			"			       HMAC_SHA1, HMAC_SHA224, HMAC_SHA256,"
+			"			       HMAC_SHA384, HMAC_SHA512, HMAC_SM3) [%s]\n", algo_str(algo));
 	fprintf(stderr, "  -h|--help Print this help and exit\n");
 	fprintf(stderr, "  -l LOOP          Inner loop iterations (TA calls TEE_DigestDoFinal() <x> times) [%u]\n", l);
 	fprintf(stderr, "  -n LOOP          Outer test loop iterations [%u]\n", n);
@@ -424,6 +444,18 @@ extern int hash_perf_runner_cmd_parser(int argc, char *argv[])
 				algo = TA_SHA_SHA512;
 			else if (!strcasecmp(argv[i], "SM3"))
 				algo = TA_SM3;
+			else if (!strcasecmp(argv[i], "HMAC_SHA1"))
+				algo = TA_HMAC_SHA1;
+			else if (!strcasecmp(argv[i], "HMAC_SHA224"))
+				algo = TA_HMAC_SHA224;
+			else if (!strcasecmp(argv[i], "HMAC_SHA256"))
+				algo = TA_HMAC_SHA256;
+			else if (!strcasecmp(argv[i], "HMAC_SHA384"))
+				algo = TA_HMAC_SHA384;
+			else if (!strcasecmp(argv[i], "HMAC_SHA512"))
+				algo = TA_HMAC_SHA512;
+			else if (!strcasecmp(argv[i], "HMAC_SM3"))
+				algo = TA_HMAC_SM3;
 			else {
 				fprintf(stderr, "%s, invalid algorithm\n",
 					argv[0]);
