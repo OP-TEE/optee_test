@@ -27,5 +27,11 @@
 #define TA_SHA_SHA384	3
 #define TA_SHA_SHA512	4
 #define TA_SM3		5
+#define TA_HMAC_SHA1	6
+#define TA_HMAC_SHA224	7
+#define TA_HMAC_SHA256	8
+#define TA_HMAC_SHA384	9
+#define TA_HMAC_SHA512	10
+#define TA_HMAC_SM3	11
 
 #endif /* TA_HASH_PERF_H */
