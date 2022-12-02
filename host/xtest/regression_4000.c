@@ -3658,7 +3658,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	TEE_ObjectHandle priv_key_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle pub_key_handle = TEE_HANDLE_NULL;
 	TEE_Attribute key_attrs[8] = { };
-	TEE_Attribute algo_params[1] = { };
+	TEE_Attribute algo_params[2] = { };
 	size_t num_algo_params = 0;
 	uint8_t out[512] = { };
 	size_t out_size = 0;
@@ -3969,11 +3969,23 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				goto out;
 			pub_key_handle = TEE_HANDLE_NULL;
 
+			num_algo_params = 0;
+			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1) {
+				algo_params[0].attributeID =
+					TEE_ATTR_RSA_OAEP_MGF_HASH;
+				algo_params[0].content.ref.length =
+					sizeof(uint32_t);
+				algo_params[0].content.ref.buffer =
+					&(uint32_t){TEE_ALG_SHA1};
+				num_algo_params = 1;
+			}
+
+
 			out_enc_size = sizeof(out_enc);
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_asymmetric_encrypt(c, &session, op,
-					NULL, 0, tv->ptx, tv->ptx_len, out_enc,
-					&out_enc_size)))
+					algo_params, num_algo_params, tv->ptx,
+					tv->ptx_len, out_enc, &out_enc_size)))
 				goto out;
 
 			/*
