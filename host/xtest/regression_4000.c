@@ -5911,8 +5911,8 @@ static void xtest_tee_test_4016_ed25519(ADBG_Case_t *c)
 			       tv->params.eddsa.public_len);
 
 		if (tv->params.eddsa.flag == 1)
-			xtest_add_attr(&num_attrs, attrs,
-				       TEE_ATTR_EDDSA_PREHASH, NULL, 0);
+			xtest_add_attr_value(&num_attrs, attrs,
+					     TEE_ATTR_EDDSA_PREHASH, 1, 0);
 
 		if (tv->params.eddsa.context_len > 0)
 			xtest_add_attr(&num_attrs, attrs, TEE_ATTR_EDDSA_CTX,
