@@ -5261,9 +5261,9 @@ out:
 ADBG_CASE_DEFINE(regression, 4011, xtest_tee_test_4011,
 		"Test TEE Internal API Bleichenbacher attack (negative)");
 
-#ifdef CFG_SYSTEM_PTA
 static void xtest_tee_test_4012(ADBG_Case_t *c)
 {
+	TEEC_Result res = TEEC_SUCCESS;
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -5291,11 +5291,15 @@ static void xtest_tee_test_4012(ADBG_Case_t *c)
 					&ret_orig)))
 		return;
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-				       TEEC_InvokeCommand(&session,
-					TA_CRYPT_CMD_SEED_RNG_POOL,
-					&op,
-					&ret_orig));
+       res = TEEC_InvokeCommand(&session, TA_CRYPT_CMD_SEED_RNG_POOL,
+				&op, &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND &&
+	    ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, ret_orig,
+					  TEEC_ORIGIN_TRUSTED_APP))
+		Do_ADBG_Log("System PTA not available, skipping test 4012");
+	else
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
 	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
@@ -5303,6 +5307,7 @@ ADBG_CASE_DEFINE(regression, 4012, xtest_tee_test_4012,
 
 static void xtest_tee_test_4013(ADBG_Case_t *c)
 {
+	TEEC_Result res = TEEC_SUCCESS;
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
@@ -5318,11 +5323,15 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 						NULL, &ret_orig)))
 		return;
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
-			TEEC_InvokeCommand(&session,
-					  TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY,
-					  &op,
-					  &ret_orig));
+	res = TEEC_InvokeCommand(&session, TA_CRYPT_CMD_DERIVE_TA_UNIQUE_KEY,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND &&
+	    ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, ret_orig,
+					  TEEC_ORIGIN_TRUSTED_APP)) {
+		Do_ADBG_Log("System PTA not available, skipping test 4013");
+		goto out;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	/* Negative test using non-secure memory */
 	memset(&op, 0, sizeof(op));
@@ -5342,6 +5351,7 @@ static void xtest_tee_test_4013(ADBG_Case_t *c)
 					   &op,
 					   &ret_orig));
 
+out:
 	TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 4013, xtest_tee_test_4013,
@@ -5985,5 +5995,3 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4016, xtest_tee_test_4016_ed25519,
 		 "Test TEE Internal API ED25519 sign/verify");
-
-#endif /*CFG_SYSTEM_PTA*/
