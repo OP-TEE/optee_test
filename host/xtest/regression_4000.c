@@ -5982,7 +5982,7 @@ static void xtest_tee_test_4016_ed25519(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
-ADBG_CASE_DEFINE(regression, 4016_ed25519, xtest_tee_test_4016_ed25519,
+ADBG_CASE_DEFINE(regression, 4016, xtest_tee_test_4016_ed25519,
 		 "Test TEE Internal API ED25519 sign/verify");
 
 #endif /*CFG_SYSTEM_PTA*/
