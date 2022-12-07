@@ -234,6 +234,19 @@ TEE_Result ta_entry_digest_do_final(uint32_t param_type, TEE_Param params[4])
 			params[2].memref.buffer, &params[2].memref.size);
 }
 
+TEE_Result ta_entry_digest_extract(uint32_t param_type, TEE_Param params[4])
+{
+	TEE_OperationHandle op = op_handle_lookup(params[0].value.a);
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+					  TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					  TEE_PARAM_TYPE_NONE,
+					  TEE_PARAM_TYPE_NONE));
+
+	return TEE_DigestExtract(op, params[1].memref.buffer,
+				 &params[1].memref.size);
+}
+
 TEE_Result ta_entry_cipher_init(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_OperationHandle op = op_handle_lookup(params[0].value.a);

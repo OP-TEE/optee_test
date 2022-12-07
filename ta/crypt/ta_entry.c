@@ -118,6 +118,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_CRYPT_CMD_DIGEST_DO_FINAL:
 		return ta_entry_digest_do_final(nParamTypes, pParams);
 
+	case TA_CRYPT_CMD_DIGEST_EXTRACT:
+		return ta_entry_digest_extract(nParamTypes, pParams);
+
 	case TA_CRYPT_CMD_CIPHER_INIT:
 		return ta_entry_cipher_init(nParamTypes, pParams);
 
