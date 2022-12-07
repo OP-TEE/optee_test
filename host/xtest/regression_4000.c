@@ -137,6 +137,37 @@ static TEEC_Result ta_crypt_cmd_digest_do_final(ADBG_Case_t *c, TEEC_Session *s,
 	return res;
 }
 
+static TEEC_Result ta_crypt_cmd_digest_extract(ADBG_Case_t *c, TEEC_Session *s,
+						TEE_OperationHandle oph,
+						void *hash, size_t *hash_len)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)oph <= UINT32_MAX);
+	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
+
+	op.params[1].tmpref.buffer = (void *)hash;
+	op.params[1].tmpref.size = *hash_len;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_DIGEST_EXTRACT, &op,
+				 &ret_orig);
+
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+	}
+
+	if (res == TEEC_SUCCESS)
+		*hash_len = op.params[1].tmpref.size;
+
+	return res;
+}
 static TEE_Result ta_crypt_cmd_set_operation_key2(ADBG_Case_t *c,
 						  TEEC_Session *s,
 						  TEE_OperationHandle oph,
@@ -1158,6 +1189,48 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 
 		(void)ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
 					 hash_cases[n].out_len, out, out_size);
+
+		/*
+		 * Test that TEE_DigestExtract() and TEE_DigestDoFinal()
+		 * work together.
+		 */
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_digest_update(c, &session, op1,
+						   hash_cases[n].in,
+						   hash_cases[n].in_len)))
+			goto out;
+
+		out_size = hash_cases[n].in_incr;
+		memset(out, 0, sizeof(out));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_digest_extract(c, &session, op1,
+						    out, &out_size)))
+			goto out;
+		ADBG_EXPECT_BUFFER(c, hash_cases[n].out,
+				   hash_cases[n].in_incr, out, out_size);
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_copy_operation(c, &session, op2, op1)))
+			goto out;
+
+		out_size = hash_cases[n].out_len - hash_cases[n].in_incr;
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_digest_do_final(c, &session, op1,
+						     NULL, 0, out, &out_size)))
+			goto out;
+		ADBG_EXPECT_BUFFER(c, hash_cases[n].out + hash_cases[n].in_incr,
+				   hash_cases[n].out_len -
+					hash_cases[n].in_incr, out, out_size);
+
+		out_size = hash_cases[n].out_len - hash_cases[n].in_incr;
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			ta_crypt_cmd_digest_extract(c, &session, op2,
+						    out, &out_size)))
+			goto out;
+		ADBG_EXPECT_BUFFER(c, hash_cases[n].out + hash_cases[n].in_incr,
+				   hash_cases[n].out_len -
+					hash_cases[n].in_incr, out, out_size);
 
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_free_operation(c, &session, op1)))
