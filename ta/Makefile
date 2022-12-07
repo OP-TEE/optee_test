@@ -32,7 +32,9 @@ TA_DIRS := create_fail_test \
 	   aes_perf \
 	   socket \
 	   supp_plugin \
-	   large
+	   large \
+	   subkey1 \
+	   subkey2
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic
