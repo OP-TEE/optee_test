@@ -32,6 +32,8 @@ TEE_Result ta_entry_digest_update(uint32_t param_type, TEE_Param params[4]);
 
 TEE_Result ta_entry_digest_do_final(uint32_t param_type, TEE_Param params[4]);
 
+TEE_Result ta_entry_digest_extract(uint32_t param_type, TEE_Param params[4]);
+
 TEE_Result ta_entry_cipher_init(uint32_t param_type, TEE_Param params[4]);
 
 TEE_Result ta_entry_cipher_update(uint32_t param_type, TEE_Param params[4]);

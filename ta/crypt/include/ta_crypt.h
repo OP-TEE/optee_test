@@ -614,4 +614,12 @@
  * out	params[1].value.a:	TEE_IsAlgorithmSupported() return status
  */
 #define TA_CRYPT_CMD_IS_ALGO_SUPPORTED		79
+
+/*
+ * TEE_Result TEE_DigestExtract(TEE_OperationHandle operation,
+ *                              void *hash, size_t *hashLen);
+ * in       params[0].value.a = operation
+ * out      params[1].memref = hash
+ */
+#define TA_CRYPT_CMD_DIGEST_EXTRACT    80
 #endif /*TA_CRYPT_H */
