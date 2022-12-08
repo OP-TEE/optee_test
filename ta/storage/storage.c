@@ -467,6 +467,27 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 		goto cleanup2;
 	}
 
+	TEE_CloseAndDeletePersistentObject1(persistent_key);
+
+	/* Transform the transient object into a persistent object */
+	result = TEE_CreatePersistentObject(params[0].value.a,
+					    &objectID, sizeof(objectID),
+					    flags, transient_key, NULL, 0,
+					    NULL);
+	if (result != TEE_SUCCESS) {
+		EMSG("Failed to create a persistent key: 0x%x", result);
+		goto cleanup2;
+	}
+	persistent_key = transient_key;
+	transient_key = TEE_HANDLE_NULL;
+
+	TEE_GetObjectInfo1(persistent_key, &keyInfo2);
+	result = check_obj(&keyInfo, &keyInfo2);
+	if (result != TEE_SUCCESS) {
+		EMSG("keyInfo and keyInfo2 are different");
+		goto cleanup2;
+	}
+
 	TEE_CloseObject(persistent_key);
 
 	result = TEE_OpenPersistentObject(params[0].value.a,
