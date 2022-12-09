@@ -68,7 +68,7 @@ static TEE_Result pass_values(uint32_t param_types,
 static TEE_Result write_array(uint32_t param_types,
 			      TEE_Param params[TEE_NUM_PARAMS])
 {
-	uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+	uint32_t exp_pt = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 					  TEE_PARAM_TYPE_VALUE_OUTPUT,
 					  TEE_PARAM_TYPE_NONE,
 					  TEE_PARAM_TYPE_NONE);
