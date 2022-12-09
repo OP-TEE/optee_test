@@ -2434,7 +2434,7 @@ static void xtest_tee_test_1033(ADBG_Case_t *c)
 
 		op.params[0].tmpref.buffer = to_plugin;
 		op.params[0].tmpref.size = sizeof(to_plugin);
-		op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INOUT,
 						 TEEC_VALUE_OUTPUT,
 						 TEEC_NONE, TEEC_NONE);
 
