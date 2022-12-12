@@ -89,16 +89,16 @@ TEE_Result cmd_process(uint32_t param_types,
 	int unit = 0;
 	void *in = NULL;
 	void *out = NULL;
-	uint32_t insz = 0;
-	uint32_t outsz = 0;
+	size_t insz = 0;
+	size_t outsz = 0;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,
 						   TEE_PARAM_TYPE_MEMREF_INOUT,
 						   TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE);
 	bool secure_in = false;
 	bool secure_out = false;
-	TEE_Result (*do_update)(TEE_OperationHandle, const void *, uint32_t,
-				void *, uint32_t *) = NULL;
+	TEE_Result (*do_update)(TEE_OperationHandle, const void *, size_t,
+				void *, size_t *) = NULL;
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;

@@ -43,8 +43,8 @@ TEE_Result cmd_process(uint32_t param_types, TEE_Param params[4])
 	int n = 0;
 	void *in = NULL;
 	void *out = NULL;
-	uint32_t insz = 0;
-	uint32_t outsz = 0;
+	size_t insz = 0;
+	size_t outsz = 0;
 	uint32_t offset = 0;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 						   TEE_PARAM_TYPE_MEMREF_OUTPUT,

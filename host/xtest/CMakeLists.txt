@@ -16,8 +16,6 @@ if(OPENSSL_FOUND)
 	set (OPENSSL_PRIVATE_LINK OpenSSL::Crypto)
 endif()
 
-add_compile_options(-D__OPTEE_CORE_API_COMPAT_1_1=1)
-
 find_package(Python REQUIRED)
 
 include(GNUInstallDirs)
