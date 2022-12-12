@@ -167,12 +167,14 @@ static TEE_Result ta_entry_send(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_recv(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_Result res = TEE_SUCCESS;
 	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_MEMREF_OUTPUT,
 				TEE_PARAM_TYPE_VALUE_INPUT,
 				TEE_PARAM_TYPE_NONE);
+	uint32_t sz = 0;
 
 	if (param_types != req_param_types) {
 		EMSG("got param_types 0x%x, expected 0x%x",
@@ -184,8 +186,11 @@ static TEE_Result ta_entry_recv(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_BAD_PARAMETERS;
 
 	h = params[0].memref.buffer;
-	return h->socket->recv(h->ctx, params[1].memref.buffer,
-			       &params[1].memref.size, params[2].value.a);
+	sz = params[1].memref.size;
+	res = h->socket->recv(h->ctx, params[1].memref.buffer, &sz,
+			      params[2].value.a);
+	params[1].memref.size = sz;
+	return res;
 }
 
 static TEE_Result ta_entry_error(uint32_t param_types, TEE_Param params[4])
@@ -213,12 +218,14 @@ static TEE_Result ta_entry_error(uint32_t param_types, TEE_Param params[4])
 
 static TEE_Result ta_entry_ioctl(uint32_t param_types, TEE_Param params[4])
 {
+	TEE_Result res = TEE_SUCCESS;
 	struct sock_handle *h = NULL;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 				TEE_PARAM_TYPE_MEMREF_INOUT,
 				TEE_PARAM_TYPE_VALUE_INPUT,
 				TEE_PARAM_TYPE_NONE);
+	uint32_t sz = 0;
 
 	if (param_types != req_param_types) {
 		EMSG("got param_types 0x%x, expected 0x%x",
@@ -230,9 +237,11 @@ static TEE_Result ta_entry_ioctl(uint32_t param_types, TEE_Param params[4])
 		return TEE_ERROR_BAD_PARAMETERS;
 
 	h = params[0].memref.buffer;
-	return h->socket->ioctl(h->ctx, params[2].value.a,
-				params[1].memref.buffer,
-				&params[1].memref.size);
+	sz = params[1].memref.size;
+	res = h->socket->ioctl(h->ctx, params[2].value.a,
+			       params[1].memref.buffer, &sz);
+	params[1].memref.size = sz;
+	return res;
 }
 
 

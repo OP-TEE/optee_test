@@ -83,7 +83,7 @@ static TEE_Result ta_entry_sha256(uint32_t param_types, TEE_Param params[4])
 	TEE_Result res = TEE_ERROR_GENERIC;
 	TEE_OperationHandle op = TEE_HANDLE_NULL;
 	void *out = NULL;
-	uint32_t out_len = 0;
+	size_t out_len = 0;
 	size_t num_rounds = 0;
 	uint32_t req_param_types =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INOUT,

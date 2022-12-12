@@ -149,7 +149,7 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 	TEE_Time stop_time = { };
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
-	uint32_t read_bytes = 0;
+	size_t read_bytes = 0;
 
 	TEE_GetSystemTime(&start_time);
 
@@ -192,7 +192,7 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 	TEE_Time stop_time = { };
 	size_t remain_bytes = data_size;
 	TEE_Result res = TEE_SUCCESS;
-	uint32_t read_bytes = 0;
+	size_t read_bytes = 0;
 
 	TEE_GetSystemTime(&start_time);
 
@@ -215,7 +215,7 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 		}
 
 		if (read_bytes != write_size) {
-			EMSG("Partial data read, bytes=%u", read_bytes);
+			EMSG("Partial data read, bytes=%zu", read_bytes);
 			res = TEE_ERROR_CORRUPT_OBJECT;
 			goto exit;
 		}
@@ -267,7 +267,7 @@ static TEE_Result verify_file_data(TEE_ObjectHandle object, size_t data_size,
 
 	tmp_data_size = data_size;
 	while (tmp_data_size > 0) {
-		uint32_t read_bytes = 0;
+		size_t read_bytes = 0;
 
 		res = TEE_ReadObjectData(object, chunk_buf, chunk_size,
 				&read_bytes);

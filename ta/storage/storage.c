@@ -166,6 +166,7 @@ TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
 	TEE_Result res = TEE_SUCCESS;
+	size_t sz = 0;
 	void *b0 = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
@@ -177,8 +178,9 @@ TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4])
 	if (!b0)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
-	res = TEE_ReadObjectData(o, b0, params[0].memref.size,
-				 &params[1].value.b);
+	sz = params[1].value.b;
+	res = TEE_ReadObjectData(o, b0, params[0].memref.size, &sz);
+	params[1].value.b = sz;
 	if (!res)
 		TEE_MemMove(params[0].memref.buffer, b0, params[0].memref.size);
 	TEE_Free(b0);
@@ -397,8 +399,8 @@ out:
 static TEE_Result check_obj(TEE_ObjectInfo *o1, TEE_ObjectInfo *o2)
 {
 	if ((o1->objectType != o2->objectType) ||
-	    (o1->keySize != o2->keySize) ||
-	    (o1->maxKeySize != o2->maxKeySize) ||
+	    (o1->objectSize != o2->objectSize) ||
+	    (o1->maxObjectSize != o2->maxObjectSize) ||
 	    (o1->objectUsage != o2->objectUsage))
 		return TEE_ERROR_GENERIC;
 	return TEE_SUCCESS;

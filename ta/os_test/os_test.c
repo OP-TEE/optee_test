@@ -74,7 +74,7 @@ static TEE_Result get_binblock_property(TEE_PropSetHandle h,
 					char *nbuf __unused, char **bbuf, size_t *bblen)
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
-	uint32_t block_len = 0;
+	size_t block_len = 0;
 
 	*bbuf = NULL;
 	*bblen = 0;
@@ -117,10 +117,10 @@ while (true) {
 	char nbuf_small[256] = { };
 	char vbuf[256] = { };
 	char vbuf2[256] = { };
-	uint32_t nblen = sizeof(nbuf);
-	uint32_t nblen_small = 0;
-	uint32_t vblen = sizeof(vbuf);
-	uint32_t vblen2 = sizeof(vbuf2);
+	size_t nblen = sizeof(nbuf);
+	size_t nblen_small = 0;
+	size_t vblen = sizeof(vbuf);
+	size_t vblen2 = sizeof(vbuf2);
 	char *bbuf = NULL;
 	size_t bblen = 0;
 
@@ -131,7 +131,8 @@ while (true) {
 		return res;
 	}
 	if (nblen != strlen(nbuf) + 1) {
-		EMSG("Name has wrong size: %u vs %zu", nblen, strlen(nbuf) + 1);
+		EMSG("Name has wrong size: %zu vs %zu",
+		     nblen, strlen(nbuf) + 1);
 		return TEE_ERROR_GENERIC;
 	}
 
