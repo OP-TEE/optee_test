@@ -448,6 +448,27 @@ static TEEC_Result cmd_compute_gcd(ADBG_Case_t *c, TEEC_Session *s,
 				TA_CRYPT_ARITH_INVALID_HANDLE, hgcd);
 }
 
+static TEEC_Result cmd_expmod(ADBG_Case_t *c, TEEC_Session *s,
+			      uint32_t hop1, uint32_t hop2, uint32_t hn,
+			      uint32_t hctx, uint32_t hres)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	op.params[0].value.a = hop1;
+	op.params[0].value.b = hop2;
+	op.params[1].value.a = hn;
+	op.params[1].value.b = hctx;
+	op.params[2].value.a = hres;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
+					 TEEC_VALUE_INPUT, TEEC_NONE);
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_ARITH_EXPMOD, &op, &ret_orig);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP, ret_orig);
+
+	return res;
+}
+
 static int digit_value(char ch)
 {
 	if ((ch >= '0') && (ch <= '9'))
@@ -2637,3 +2658,99 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4116, test_4116,
 		"Test TEE Internal API Arithmetical API - Get/Set Bit");
+
+static void test_4117(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
+	uint32_t hb = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t he = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t hm = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t hr = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t hr2 = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t hc = TA_CRYPT_ARITH_INVALID_HANDLE;
+	static const struct {
+		const char *base;
+		const char *exp;
+		const char *mod;
+		const char *result;
+	} data[] = {
+		{ .base = "4", .exp = "D" /* 13 */,
+		  .mod = "1F1" /* 497 */, .result = "1BD" /* 445 */ },
+		{ .base =   "109fe45714866e56fdd4ad9b6b686df27224afb7868cf4f0"
+			    "cbb794526932853cbf0beea61594166654d13cd9fe0d9da5"
+			    "94a97ee20230f12fb5434de73fb4f8102725a01622b31b1e"
+			    "a42e3a265019039ac1df31869bd97930d792fb72cdaa971d"
+			    "8a8015af",
+		  .exp =    "33ae3764fd06a00cdc3cba5c45dc79a9edb4e67e4d057cc7"
+			    "4139d531c25190d111775fc4a0f4439b8b1930bbd766e7b4"
+			    "6f170601f316c8a18ff8d5cb5ca5581f168345d101edb462"
+			    "b7d93b7c520ccb8fb276b447a63d869203cc11f67a1122dc"
+			    "4da034218de85e39",
+		  .mod =    "11a9351d2d32ccd568e75bf8b4ebbb2a36be691b55832eda"
+			    "c662ff79803df8af525fba453068be16ac3920bcc1b468f8"
+			    "f7fe786e0fa4ecbabcad31e5e3b05def802eb8600deaf11e"
+			    "f452487db878df20a80606e4bb6a163b83895d034cc8b53d"
+			    "bcd005be42ffdd2ce99bed06089a0b79d",
+		  .result = "37880b547b41bda303bddda307eefe24b4aedf076c9b814b"
+			    "903aaf328a10825c7e259a20afc6b70b487bb21a6d32d0ee"
+			    "98a0b9f42ff812c901e2f79237fe3e00856992dd69d93ebc"
+			    "0664c75863829621751b0ac35a8ae8a0965841607d3099b8"
+			    "e0ed24442749ba09acbcb165598dcd40"
+		},
+	};
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+				      NULL, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &hb)) ||
+	    !ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &he)) ||
+	    !ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &hm)) ||
+	    !ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &hr)) ||
+	    !ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &hr2)))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(data); n++) {
+		res = convert_from_string(c, &session, data[n].base, hb);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = convert_from_string(c, &session, data[n].exp, he);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = convert_from_string(c, &session, data[n].mod, hm);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = convert_from_string(c, &session, data[n].result, hr2);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = cmd_new_fmm_ctx(c, &session, 1024, hm, &hc);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = cmd_expmod(c, &session, hb, he, hm, hc, hr);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = compare_handle(c, &session, hr, hr2, 0);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = cmd_free_handle(c, &session, hc);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+	}
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, cmd_free_handle(c, &session, hb));
+	ADBG_EXPECT_TEEC_SUCCESS(c, cmd_free_handle(c, &session, he));
+	ADBG_EXPECT_TEEC_SUCCESS(c, cmd_free_handle(c, &session, hm));
+	ADBG_EXPECT_TEEC_SUCCESS(c, cmd_free_handle(c, &session, hr));
+	ADBG_EXPECT_TEEC_SUCCESS(c, cmd_free_handle(c, &session, hr2));
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4117, test_4117,
+		"Test TEE Internal API Arithmetical API - ExpMod");
