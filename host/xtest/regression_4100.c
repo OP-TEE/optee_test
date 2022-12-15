@@ -154,6 +154,24 @@ static TEEC_Result cmd_get_bit(ADBG_Case_t *c, TEEC_Session *s,
 	return res;
 }
 
+static TEEC_Result cmd_set_bit(ADBG_Case_t *c, TEEC_Session *s,
+				uint32_t handle, uint32_t bit_num, uint32_t v)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	op.params[0].value.a = handle;
+	op.params[0].value.b = bit_num;
+	op.params[1].value.a = v;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_ARITH_SET_BIT, &op, &ret_orig);
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP, ret_orig);
+
+	return res;
+}
+
 static TEEC_Result cmd_get_bit_count(ADBG_Case_t *c, TEEC_Session *s,
 				uint32_t handle, uint32_t *v)
 {
@@ -2557,3 +2575,52 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4115, test_4115,
 		"Test TEE Internal API Arithmetical API - Abs");
+
+
+static void test_4116(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	uint32_t val = 0;
+	size_t n = 0;
+	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
+	static const uint32_t bit_idx[] = { 1, 4, 9, 113, 1013, 1023 };
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+				      NULL, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &h)))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(bit_idx); n++) {
+		res = cmd_get_bit(c, &session, h, bit_idx[n], &val);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_SIGNED(c, val, ==, 0))
+			goto out;
+
+		res = cmd_set_bit(c, &session, h, bit_idx[n], 1);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = cmd_get_bit(c, &session, h, bit_idx[n], &val);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_SIGNED(c, val, ==, 1))
+			goto out;
+
+		res = cmd_set_bit(c, &session, h, bit_idx[n], 0);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = cmd_get_bit(c, &session, h, bit_idx[n], &val);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_SIGNED(c, val, ==, 0))
+			goto out;
+	}
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4116, test_4116,
+		"Test TEE Internal API Arithmetical API - Get/Set Bit");
