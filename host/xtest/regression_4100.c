@@ -234,6 +234,12 @@ static TEEC_Result cmd_neg(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 	return cmd_unary_cmd(c, s, TA_CRYPT_CMD_ARITH_NEG, hop, hres);
 }
 
+static TEEC_Result cmd_abs(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
+			   uint32_t hres)
+{
+	return cmd_unary_cmd(c, s, TA_CRYPT_CMD_ARITH_ABS, hop, hres);
+}
+
 static TEEC_Result cmd_add(ADBG_Case_t *c, TEEC_Session *s,
 			   uint32_t hop1, uint32_t hop2, uint32_t hres)
 {
@@ -2500,3 +2506,54 @@ static void test_4114(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 4114, test_4114,
 		"Test TEE Internal API Arithmetical API - GCD");
+
+static void test_4115(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	int32_t cres = 0;
+	size_t n = 0;
+	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
+	static const char *data[] = {
+		"1", "-1", "123", "-123",
+		"123456789123456789", "-123456789123456789",
+	};
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+				      NULL, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &h)))
+		goto out;
+
+	for (n = 0; n < ARRAY_SIZE(data); n++) {
+		res = convert_from_string(c, &session, data[n], h);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = cmd_cmp_s32(c, &session, h, 0, &cres);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		if (n % 2) {
+			if (!ADBG_EXPECT_COMPARE_SIGNED(c, cres, <, 0))
+				goto out;
+		} else {
+			if (!ADBG_EXPECT_COMPARE_SIGNED(c, cres, >, 0))
+				goto out;
+		}
+
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_abs(c, &session, h, h)))
+			goto out;
+
+		res = cmd_cmp_s32(c, &session, h, 0, &cres);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_SIGNED(c, cres, >, 0))
+			goto out;
+	}
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 4115, test_4115,
+		"Test TEE Internal API Arithmetical API - Abs");
