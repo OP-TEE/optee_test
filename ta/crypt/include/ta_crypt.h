@@ -622,4 +622,33 @@
  * out      params[1].memref = hash
  */
 #define TA_CRYPT_CMD_DIGEST_EXTRACT    80
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_ABS			81
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle result
+ * in	params[1].value.a:	Bit value
+ */
+#define TA_CRYPT_CMD_ARITH_SET_BIT		82
+
+/*
+ * in	params[0].value.a:	handle a
+ * in	params[0].value.b:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_ASSIGN		83
+
+/*
+ * in	params[0].value.a:	handle op1
+ * in	params[0].value.b:	handle op2
+ * in	params[1].value.a:	handle n
+ * in	params[1].value.b:	handle FMM context
+ * in	params[2].value.a:	handle result
+ */
+#define TA_CRYPT_CMD_ARITH_EXPMOD		84
+
 #endif /*TA_CRYPT_H */

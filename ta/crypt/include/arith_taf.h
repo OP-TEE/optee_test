@@ -26,6 +26,12 @@ TEE_Result ta_entry_arith_get_bit(uint32_t param_type,
 				  TEE_Param params[TEE_NUM_PARAMS]);
 TEE_Result ta_entry_arith_get_bit_count(uint32_t param_type,
 					TEE_Param params[TEE_NUM_PARAMS]);
+TEE_Result ta_entry_arith_set_bit(uint32_t param_type,
+				  TEE_Param params[TEE_NUM_PARAMS]);
+TEE_Result ta_entry_arith_assign(uint32_t param_type,
+				 TEE_Param params[TEE_NUM_PARAMS]);
+TEE_Result ta_entry_arith_abs(uint32_t param_type,
+			      TEE_Param params[TEE_NUM_PARAMS]);
 TEE_Result ta_entry_arith_shift_right(uint32_t param_type,
 				      TEE_Param params[TEE_NUM_PARAMS]);
 TEE_Result ta_entry_arith_cmp(uint32_t param_type,
@@ -55,6 +61,8 @@ TEE_Result ta_entry_arith_mulmod(uint32_t param_type,
 TEE_Result ta_entry_arith_sqrmod(uint32_t param_type,
 				 TEE_Param params[TEE_NUM_PARAMS]);
 TEE_Result ta_entry_arith_invmod(uint32_t param_type,
+				 TEE_Param params[TEE_NUM_PARAMS]);
+TEE_Result ta_entry_arith_expmod(uint32_t param_type,
 				 TEE_Param params[TEE_NUM_PARAMS]);
 TEE_Result ta_entry_arith_is_rel_prime(uint32_t param_type,
 				       TEE_Param params[TEE_NUM_PARAMS]);

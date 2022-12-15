@@ -237,8 +237,14 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_entry_arith_get_value_s32(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_GET_BIT:
 		return ta_entry_arith_get_bit(nParamTypes, pParams);
+	case TA_CRYPT_CMD_ARITH_SET_BIT:
+		return ta_entry_arith_set_bit(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_GET_BIT_COUNT:
 		return ta_entry_arith_get_bit_count(nParamTypes, pParams);
+	case TA_CRYPT_CMD_ARITH_ABS:
+		return ta_entry_arith_abs(nParamTypes, pParams);
+	case TA_CRYPT_CMD_ARITH_ASSIGN:
+		return ta_entry_arith_assign(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_SHIFT_RIGHT:
 		return ta_entry_arith_shift_right(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_CMP:
@@ -269,6 +275,8 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return ta_entry_arith_sqrmod(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_INVMOD:
 		return ta_entry_arith_invmod(nParamTypes, pParams);
+	case TA_CRYPT_CMD_ARITH_EXPMOD:
+		return ta_entry_arith_expmod(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_IS_RELATIVE_PRIME:
 		return ta_entry_arith_is_rel_prime(nParamTypes, pParams);
 	case TA_CRYPT_CMD_ARITH_COMPUTE_EGCD:

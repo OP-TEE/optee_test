@@ -256,6 +256,19 @@ TEE_Result ta_entry_arith_get_bit_count(uint32_t param_types,
 	return TEE_SUCCESS;
 }
 
+TEE_Result ta_entry_arith_set_bit(uint32_t param_types,
+				  TEE_Param params[TEE_NUM_PARAMS])
+{
+	CHECK_PT(VALUE_INPUT, VALUE_INPUT, NONE, NONE);
+
+	TEE_BigInt *big_int = lookup_handle(HT_BIGINT, params[0].value.a);
+
+	if (!big_int)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	return TEE_BigIntSetBit(big_int, params[0].value.b, params[1].value.a);
+}
+
 TEE_Result ta_entry_arith_shift_right(uint32_t param_types,
 				      TEE_Param params[TEE_NUM_PARAMS])
 {
@@ -363,6 +376,22 @@ static TEE_Result unary_func(uint32_t param_types,
 	return TEE_SUCCESS;
 }
 
+static TEE_Result unary_func_res(uint32_t param_types,
+				TEE_Param params[TEE_NUM_PARAMS],
+				TEE_Result (*func)(TEE_BigInt *dest,
+						   const TEE_BigInt *op))
+{
+	CHECK_PT(VALUE_INPUT, NONE, NONE, NONE);
+
+	TEE_BigInt *op = lookup_handle(HT_BIGINT, params[0].value.a);
+	TEE_BigInt *dest = lookup_handle(HT_BIGINT, params[0].value.b);
+
+	if (!op || !dest)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	return func(dest, op);
+}
+
 TEE_Result ta_entry_arith_add(uint32_t param_types,
 			      TEE_Param params[TEE_NUM_PARAMS])
 {
@@ -385,6 +414,18 @@ TEE_Result ta_entry_arith_neg(uint32_t param_types,
 			      TEE_Param params[TEE_NUM_PARAMS])
 {
 	return unary_func(param_types, params, TEE_BigIntNeg);
+}
+
+TEE_Result ta_entry_arith_assign(uint32_t param_types,
+				 TEE_Param params[TEE_NUM_PARAMS])
+{
+	return unary_func_res(param_types, params, TEE_BigIntAssign);
+}
+
+TEE_Result ta_entry_arith_abs(uint32_t param_types,
+			      TEE_Param params[TEE_NUM_PARAMS])
+{
+	return unary_func_res(param_types, params, TEE_BigIntAbs);
 }
 
 TEE_Result ta_entry_arith_sqr(uint32_t param_types,
@@ -445,6 +486,23 @@ TEE_Result ta_entry_arith_invmod(uint32_t param_types,
 				 TEE_Param params[TEE_NUM_PARAMS])
 {
 	return binary_func(param_types, params, TEE_BigIntInvMod);
+}
+
+TEE_Result ta_entry_arith_expmod(uint32_t param_types,
+				 TEE_Param params[TEE_NUM_PARAMS])
+{
+	CHECK_PT(VALUE_INPUT, VALUE_INPUT, VALUE_INPUT, NONE);
+
+	TEE_BigInt *op1 = lookup_handle(HT_BIGINT, params[0].value.a);
+	TEE_BigInt *op2 = lookup_handle(HT_BIGINT, params[0].value.b);
+	TEE_BigInt *n = lookup_handle(HT_BIGINT, params[1].value.a);
+	TEE_BigIntFMMContext *ctx = lookup_handle(HT_FMMCTX, params[1].value.b);
+	TEE_BigInt *dest = lookup_handle(HT_BIGINT, params[2].value.a);
+
+	if (!op1 || !op2 || !n || !dest)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	return TEE_BigIntExpMod(dest, op1, op2, n, ctx);
 }
 
 TEE_Result ta_entry_arith_is_rel_prime(uint32_t param_types,
