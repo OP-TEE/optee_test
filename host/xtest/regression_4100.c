@@ -258,6 +258,12 @@ static TEEC_Result cmd_abs(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
 	return cmd_unary_cmd(c, s, TA_CRYPT_CMD_ARITH_ABS, hop, hres);
 }
 
+static TEEC_Result cmd_assign(ADBG_Case_t *c, TEEC_Session *s, uint32_t hop,
+			      uint32_t hres)
+{
+	return cmd_unary_cmd(c, s, TA_CRYPT_CMD_ARITH_ASSIGN, hop, hres);
+}
+
 static TEEC_Result cmd_add(ADBG_Case_t *c, TEEC_Session *s,
 			   uint32_t hop1, uint32_t hop2, uint32_t hres)
 {
@@ -1089,6 +1095,13 @@ static bool do_addsub(ADBG_Case_t *c, TEEC_Session *s, const char *str_s,
 		goto out;
 	/* check hb == hr */
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, compare_handle(c, s, hb, hr, 0)))
+		goto out;
+
+	/* Test assignment, ha = hb */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_assign(c, s, hb, ha)))
+		goto out;
+	/* check ha == hb */
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, compare_handle(c, s, ha, hb, 0)))
 		goto out;
 
 	res = true;
