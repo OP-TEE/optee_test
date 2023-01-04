@@ -8,6 +8,9 @@ $(error invalid output directory (O=$(O)))
 endif
 endif
 
+bindir ?= /bin
+libdir ?= /lib
+
 -include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 -include $(OPTEE_CLIENT_EXPORT)/include/optee_client_config.mk
 
@@ -74,12 +77,12 @@ checkpatch-staging:
 	@./scripts/checkpatch.sh --cached
 
 install:
-	$(echo) '  INSTALL ${DESTDIR}/lib/optee_armtz'
-	$(q)mkdir -p ${DESTDIR}/lib/optee_armtz
-	$(q)find $(out-dir) -name \*.ta -exec cp {} ${DESTDIR}/lib/optee_armtz \;
-	$(echo) '  INSTALL ${DESTDIR}/bin'
-	$(q)mkdir -p ${DESTDIR}/bin
-	$(q)cp $(out-dir)/xtest/xtest ${DESTDIR}/bin
+	$(echo) '  INSTALL ${DESTDIR}${libdir}/optee_armtz'
+	$(q)mkdir -p ${DESTDIR}${libdir}/optee_armtz
+	$(q)find $(out-dir) -name \*.ta -exec cp {} ${DESTDIR}${libdir}/optee_armtz \;
+	$(echo) '  INSTALL ${DESTDIR}${bindir}'
+	$(q)mkdir -p ${DESTDIR}${bindir}
+	$(q)cp $(out-dir)/xtest/xtest ${DESTDIR}${bindir}
 	$(echo) '  INSTALL ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)'
 	$(q)mkdir -p ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
 	$(q)cp $(out-dir)/supp_plugin/*.plugin ${DESTDIR}/$(CFG_TEE_PLUGIN_LOAD_PATH)
