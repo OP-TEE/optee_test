@@ -980,6 +980,8 @@ static void undef_instr(void)
 	__asm__(".word 0x0");
 #elif defined(ARM32)
 	__asm__(".word 0xe7ffffff");
+#elif defined(RV64) || defined(RV32)
+	__asm__(".word 0x0");
 #else
 #error "Unsupported architecture"
 #endif
@@ -1528,5 +1530,3 @@ TEE_Result ta_entry_memtag_buffer_overrun(void)
 	TEE_Free(p);
 	return TEE_ERROR_GENERIC;
 }
-
-
