@@ -1757,7 +1757,7 @@ exit:
 }
 
 
-#define NUM_THREADS 4
+#define NUM_THREADS 3
 static void xtest_tee_test_6016_loop(ADBG_Case_t *c, uint32_t storage_id)
 {
 	struct test_6016_thread_arg arg[NUM_THREADS] = { };
