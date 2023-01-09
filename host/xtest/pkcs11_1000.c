@@ -8246,7 +8246,7 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	assert(t->target_type == CKK_RSA || t->target_type == CKK_AES);
 
 	Do_ADBG_BeginSubCase(c,
-			"Test RSA AES wrap/unwrap of %lu %s key with %lu RSA",
+			"Test RSA AES wrap/unwrap of %lu %s key with %zu RSA",
 			target_bits, (t->target_type == CKK_AES) ? "AES" : "RSA",
 			t->key.modulus_len * 8);
 
