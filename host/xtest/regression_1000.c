@@ -3272,3 +3272,37 @@ static void xtest_tee_test_1039(ADBG_Case_t *c)
 
 ADBG_CASE_DEFINE(regression, 1039, xtest_tee_test_1039,
 		 "Test subkey verification");
+
+static void xtest_tee_test_1040(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		/* Pseudo TA is optional: warn and nicely exit */
+		Do_ADBG_Log(" - 1040 -   skip test, pseudo TA not found");
+		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_ITR_NOTIF_TESTS,
+				 NULL, &ret_orig);
+	if (res != TEEC_SUCCESS) {
+		ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+					      ret_orig);
+		if (res == TEEC_ERROR_NOT_SUPPORTED) {
+			/* Embedding tests is optional: warn and nicely exit */
+			Do_ADBG_Log(" - 1040 -   skip test, not implemented");
+			goto out;
+		}
+		/* Error */
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	}
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1040, xtest_tee_test_1040,
+		"Test interrupt notification to normal world");
