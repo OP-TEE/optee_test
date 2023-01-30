@@ -3228,27 +3228,27 @@ static void xtest_tee_test_1040(ADBG_Case_t *c)
 	TEEC_Session session = { };
 	uint32_t ret_orig = 0;
 
-	/* Pseudo TA is optional: warn and nicely exit if not found */
 	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
 				      &ret_orig);
 	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		/* Pseudo TA is optional: warn and nicely exit */
 		Do_ADBG_Log(" - 1040 -   skip test, pseudo TA not found");
 		return;
 	}
 	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
-	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_IT_NOTIF_TESTS,
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_ITR_NOTIF_TESTS,
 				 NULL, &ret_orig);
 	if (res != TEEC_SUCCESS) {
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
+		ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+					      ret_orig);
 		if (res == TEEC_ERROR_NOT_SUPPORTED) {
-			Do_ADBG_Log(" - 1040 -   skip test, feature not "
-				    "implemented");
+			/* Embedding tests is optional: warn and nicely exit */
+			Do_ADBG_Log(" - 1040 -   skip test, not implemented");
 			goto out;
 		}
 		/* Error */
-		(void)ADBG_EXPECT_TEEC_SUCCESS(c, res);
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
 	}
 out:
 	TEEC_CloseSession(&session);
