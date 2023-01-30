@@ -2566,7 +2566,8 @@ static void test_4115(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	int32_t cres = 0;
 	size_t n = 0;
-	uint32_t h = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t h1 = TA_CRYPT_ARITH_INVALID_HANDLE;
+	uint32_t h2 = TA_CRYPT_ARITH_INVALID_HANDLE;
 	static const char *data[] = {
 		"1", "-1", "123", "-123",
 		"123456789123456789", "-123456789123456789",
@@ -2577,15 +2578,23 @@ static void test_4115(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return;
 
-	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &h)))
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &h1)) ||
+	    !ADBG_EXPECT_TEEC_SUCCESS(c, cmd_new_var(c, &session, 1024, &h2)))
 		goto out;
 
 	for (n = 0; n < ARRAY_SIZE(data); n++) {
-		res = convert_from_string(c, &session, data[n], h);
+		const char *d = data[n];
+
+		res = convert_from_string(c, &session, d, h1);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		if (*d == '-')
+			d++;
+		res = convert_from_string(c, &session, d, h2);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 			goto out;
 
-		res = cmd_cmp_s32(c, &session, h, 0, &cres);
+		res = cmd_cmp_s32(c, &session, h1, 0, &cres);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 			goto out;
 		if (n % 2) {
@@ -2596,12 +2605,17 @@ static void test_4115(ADBG_Case_t *c)
 				goto out;
 		}
 
-		if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_abs(c, &session, h, h)))
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, cmd_abs(c, &session, h1, h1)))
 			goto out;
 
-		res = cmd_cmp_s32(c, &session, h, 0, &cres);
+		res = cmd_cmp_s32(c, &session, h1, 0, &cres);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
 		    !ADBG_EXPECT_COMPARE_SIGNED(c, cres, >, 0))
+			goto out;
+
+		res = cmd_cmp(c, &session, h1, h2, &cres);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_SIGNED(c, cres, ==, 0))
 			goto out;
 	}
 out:
