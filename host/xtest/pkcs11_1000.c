@@ -8343,6 +8343,7 @@ out:
 	return rv;
 }
 
+#ifndef CFG_CRYPTO_SE05X
 static void xtest_pkcs11_test_1026(ADBG_Case_t *c)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
@@ -8467,3 +8468,4 @@ close_lib:
 
 ADBG_CASE_DEFINE(pkcs11, 1026, xtest_pkcs11_test_1026,
 		 "PKCS11: RSA AES Key Wrap/Unwrap tests");
+#endif
