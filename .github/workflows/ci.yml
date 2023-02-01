@@ -1,0 +1,34 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read # to fetch code (actions/checkout)
+jobs:
+  QEMUv8_check:
+    name: make check (QEMUv8)
+    runs-on: ubuntu-latest
+    container: jforissier/optee_os_ci:qemuv8_check2
+    steps:
+      - name: Restore build cache
+        uses: actions/cache@v3
+        with:
+          path: /github/home/.cache/ccache
+          key: qemuv8_check-cache-${{ github.sha }}
+          restore-keys: |
+            qemuv8_check-cache-
+      - name: Checkout
+        uses: actions/checkout@v3
+      - shell: bash
+        run: |
+          # make check task
+          set -e -v
+          export LC_ALL=C
+          export BR2_CCACHE_DIR=/github/home/.cache/ccache
+          WD=$(pwd)
+          cd ..
+          TOP=$(pwd)/optee_repo_qemu_v8
+          /root/get_optee_qemuv8.sh ${TOP}
+          mv ${TOP}/optee_test ${TOP}/optee_test_old
+          ln -s ${WD} ${TOP}/optee_test
+          cd ${TOP}/build
+
+          make -j$(nproc) check
