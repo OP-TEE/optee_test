@@ -23,6 +23,8 @@ jobs:
           set -e -v
           export LC_ALL=C
           export BR2_CCACHE_DIR=/github/home/.cache/ccache
+          export CFG_PKCS11_TA=y
+          export CFG_USER_TA_TARGET_pkcs11=ta_arm64
           WD=$(pwd)
           cd ..
           TOP=$(pwd)/optee_repo_qemu_v8
