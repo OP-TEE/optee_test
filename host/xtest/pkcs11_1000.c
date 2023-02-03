@@ -8530,7 +8530,7 @@ static void xtest_pkcs11_test_1026(ADBG_Case_t *c)
 		  sizeof(ac_rsassa_vect2_prime2) },
 	};
 
-	rv = init_lib_and_find_token_slot(&slot);
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
