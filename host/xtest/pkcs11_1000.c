@@ -8534,11 +8534,11 @@ static void xtest_pkcs11_test_1026(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 
-	rv = init_test_token(slot);
+	rv = init_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = init_user_test_token(slot);
+	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
