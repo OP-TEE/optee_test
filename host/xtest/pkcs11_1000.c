@@ -1054,7 +1054,7 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_SetPIN) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Login) ||
 	    !ADBG_EXPECT_NOT_NULL(c, ckfunc_list->C_Logout))
-		goto out;
+		return;
 
 	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
