@@ -17,7 +17,9 @@
 #include <pta_invoke_tests.h>
 #include <pta_secstor_ta_mgmt.h>
 #include <pthread.h>
+#ifdef CFG_SECURE_DATA_PATH
 #include <sdp_basic.h>
+#endif
 #include <signed_hdr.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1266,30 +1268,30 @@ static void xtest_tee_test_1014(ADBG_Case_t *c)
 
 	test = TEST_NS_TO_TA;
 	Do_ADBG_BeginSubCase(c, "SDP: NonSecure client invokes a SDP TA");
-	ret = sdp_basic_test(test, size, loop, heap_name, DEFAULT_HEAP_TYPE, rnd_offset, 0);
+	ret = sdp_basic_test(test, size, loop, heap_name, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NonSecure client invokes a SDP TA");
 
 	test = TEST_TA_TO_TA;
 	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a SDP TA");
-	ret = sdp_basic_test(test, size, loop, heap_name, DEFAULT_HEAP_TYPE, rnd_offset, 0);
+	ret = sdp_basic_test(test, size, loop, heap_name, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a SDP TA");
 
 	test = TEST_TA_TO_PTA;
 	Do_ADBG_BeginSubCase(c, "SDP: SDP TA invokes a test pTA (invoke_tests.pta)");
-	ret = sdp_basic_test(test, size, loop, heap_name, DEFAULT_HEAP_TYPE, rnd_offset, 0);
+	ret = sdp_basic_test(test, size, loop, heap_name, rnd_offset, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, "SDP: SDP TA invokes a test pTA (invoke_tests.pta)");
 
 	test = TEST_NS_TO_PTA;
 	Do_ADBG_BeginSubCase(c, "SDP: NSec CA invokes a test pTA (invoke_tests.pta) (should fail)");
-	ret = sdp_basic_test(test, size, loop, heap_name, DEFAULT_HEAP_TYPE, rnd_offset, 0);
+	ret = sdp_basic_test(test, size, loop, heap_name, rnd_offset, 0);
 	ADBG_EXPECT(c, 1, ret);
 	Do_ADBG_EndSubCase(c, "SDP: NSec CA invokes a test pTA (invoke_tests.pta) (should fail)");
 
 	Do_ADBG_BeginSubCase(c, "SDP: Invoke TA with out of bounds SDP memref");
-	ret = sdp_out_of_bounds_memref_test(size, heap_name, DEFAULT_HEAP_TYPE, 0);
+	ret = sdp_out_of_bounds_memref_test(size, heap_name, 0);
 	ADBG_EXPECT(c, 0, ret);
 	Do_ADBG_EndSubCase(c, NULL);
 }
