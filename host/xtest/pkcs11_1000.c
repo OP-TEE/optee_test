@@ -3528,7 +3528,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 	CK_BBOOL g_decrypt = CK_FALSE;
 	CK_BBOOL g_wrap = CK_FALSE;
 	CK_BBOOL g_unwrap = CK_FALSE;
-	uint32_t g_len = 0;
+	CK_ULONG g_len = 0;
 	CK_ATTRIBUTE get_template[] = {
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)g_label, sizeof(g_label) },
 		{ CKA_ID, (CK_BYTE_PTR)g_id, sizeof(g_id) },
@@ -3539,7 +3539,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
 		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
 		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
-		{ CKA_VALUE_LEN, &g_len, sizeof(CK_ULONG) },
+		{ CKA_VALUE_LEN, &g_len, sizeof(g_len) },
 	};
 	CK_ATTRIBUTE set_template[] = {
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)new_label, strlen(new_label) },
