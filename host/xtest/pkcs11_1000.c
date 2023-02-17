@@ -3539,7 +3539,7 @@ static void xtest_pkcs11_test_1014(ADBG_Case_t *c)
 		{ CKA_DECRYPT, &g_decrypt, sizeof(CK_BBOOL) },
 		{ CKA_WRAP, &g_wrap, sizeof(CK_BBOOL) },
 		{ CKA_UNWRAP, &g_unwrap, sizeof(CK_BBOOL) },
-		{ CKA_VALUE_LEN, &g_len, sizeof(CK_ULONG) },
+		{ CKA_VALUE_LEN, &g_len, sizeof(g_len) },
 	};
 	CK_ATTRIBUTE set_template[] = {
 		{ CKA_LABEL, (CK_UTF8CHAR_PTR)new_label, strlen(new_label) },
