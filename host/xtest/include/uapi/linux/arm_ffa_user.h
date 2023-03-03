@@ -33,7 +33,7 @@ struct ffa_ioctl_ep_desc {
  * @dst_id:	[in] 16-bit ID of destination endpoint.
  */
 struct ffa_ioctl_msg_args {
-	__u32 args[5];
+	__u64 args[5];
 	__u16 dst_id;
 };
 #define FFA_IOC_MSG_SEND	_IOWR(FFA_IOC_MAGIC, FFA_IOC_BASE + 1, \
