@@ -19,6 +19,14 @@
 #include "test_float_subj.h"
 #include "os_test_lib.h"
 
+#define STATS_UUID \
+	{ 0xd96a5b40, 0xe2c7, 0xb1af, \
+		{ 0x87, 0x94, 0x10, 0x02, 0xa5, 0xd5, 0xc6, 0x1b } }
+
+#define STATS_CMD_PAGER_STATS		0
+
+#define PAGER_PAGE_COUNT_THRESHOLD	((128 * 1024) / 4096)
+
 enum p_type {
 	P_TYPE_BOOL,
 	P_TYPE_INT,
@@ -735,8 +743,42 @@ static void free_wrapper(void *ptr __unused)
 {
 }
 
+static bool optee_pager_with_small_pool(void)
+{
+	uint32_t ptypes = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT,
+					  TEE_PARAM_TYPE_VALUE_OUTPUT,
+					  TEE_PARAM_TYPE_VALUE_OUTPUT,
+					  TEE_PARAM_TYPE_NONE);
+	static const TEE_UUID uuid = STATS_UUID;
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_Param params[4] = { };
+	uint32_t eo = 0;
+	bool rc = false;
+
+	res = TEE_OpenTASession(&uuid, TEE_TIMEOUT_INFINITE, 0, NULL, &sess,
+				&eo);
+	if (res)
+		return false;
+
+	res = TEE_InvokeTACommand(sess, 0, STATS_CMD_PAGER_STATS,
+				  ptypes, params, &eo);
+	if (res == TEE_SUCCESS &&
+	    params[0].value.b && params[0].value.b <= PAGER_PAGE_COUNT_THRESHOLD)
+		rc = true;
+
+	TEE_CloseTASession(sess);
+
+	return rc;
+}
+
 static TEE_Result test_bget(void)
 {
+	if (optee_pager_with_small_pool()) {
+		IMSG("Skip testing bget due to pager pool constraints");
+		return TEE_SUCCESS;
+	}
+
 	DMSG("Testing bget");
 	if (bget_main_test(malloc_wrapper, free_wrapper)) {
 		EMSG("bget_main_test failed");
