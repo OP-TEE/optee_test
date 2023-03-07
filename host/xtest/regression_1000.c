@@ -50,6 +50,14 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
+#define STATS_UUID \
+	{ 0xd96a5b40, 0xe2c7, 0xb1af, \
+		{ 0x87, 0x94, 0x10, 0x02, 0xa5, 0xd5, 0xc6, 0x1b } }
+
+#define STATS_CMD_PAGER_STATS		0
+
+#define PAGER_PAGE_COUNT_THRESHOLD	((128 * 1024) / 4096)
+
 struct xtest_crypto_session {
 	ADBG_Case_t *c;
 	TEEC_Session *session;
@@ -57,6 +65,43 @@ struct xtest_crypto_session {
 	uint32_t cmd_id_aes256ecb_encrypt;
 	uint32_t cmd_id_aes256ecb_decrypt;
 };
+
+static bool optee_pager_with_small_pool(void)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_UUID uuid = STATS_UUID;
+	TEEC_Context ctx = { };
+	TEEC_Session sess = { };
+	TEEC_Operation op = { };
+	uint32_t eo = 0;
+	bool rc = false;
+
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (res)
+		return false;
+
+	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL,
+			       NULL, &eo);
+	if (res)
+		goto out_ctx;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_VALUE_OUTPUT,
+					 TEEC_VALUE_OUTPUT, TEEC_NONE);
+	res = TEEC_InvokeCommand(&sess, STATS_CMD_PAGER_STATS, &op, &eo);
+	if (res)
+		goto out_sess;
+
+	if (op.params[0].value.b &&
+	    op.params[0].value.b <= PAGER_PAGE_COUNT_THRESHOLD)
+		rc = true;
+
+out_sess:
+	TEEC_CloseSession(&sess);
+out_ctx:
+	TEEC_FinalizeContext(&ctx);
+
+	return rc;
+}
 
 static void xtest_crypto_test(struct xtest_crypto_session *cs)
 {
@@ -1124,6 +1169,10 @@ static void xtest_tee_test_1013_single(ADBG_Case_t *c, double *mean_concurrency,
 	uint8_t out[32] = { };
 	pthread_t thr[NUM_THREADS] = { };
 	bool skip = false;
+
+	/* Decrease number of loops when pager has a small page pool */
+	if (level == 0 && optee_pager_with_small_pool())
+		repeat = 250;
 
 	Do_ADBG_BeginSubCase(c, "Busy loop repeat %zu", repeat * 10);
 	*mean_concurrency = 0;
