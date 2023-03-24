@@ -583,10 +583,9 @@ ADBG_CASE_DEFINE(pkcs11, 1002, xtest_pkcs11_test_1002,
  * Helpers for tests where we must log into the token.
  * These define the genuine PINs and label to be used with the test token.
  */
-static CK_UTF8CHAR test_token_so_pin[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 , 9, 10, };
-static CK_UTF8CHAR test_token_user_pin[] = {
-	1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-};
+static CK_UTF8CHAR test_token_so_pin[] = { '1', '2', '3', '4', '5', '6', '7',
+					   '8' };
+static CK_UTF8CHAR test_token_user_pin[] = { '1', '2', '3', '4', '5' };
 static CK_UTF8CHAR test_token_label[] = "PKCS11 TA test token";
 
 static CK_RV init_test_token_pin_auth(CK_SLOT_ID slot)
@@ -649,9 +648,9 @@ static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_TOKEN_INFO token_info = { };
 	/* Same content as test_token_so_pin[] but 1 more byte */
-	CK_UTF8CHAR pin1[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, };
+	CK_UTF8CHAR pin1[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	/* Same content as test_token_so_pin[] but 1 different byte */
-	CK_UTF8CHAR pin2[] = { 0, 1, 2, 3, 4, 5, 6, 6, 8, 9, 10, };
+	CK_UTF8CHAR pin2[] = { '1', '2', '3', '4', '5', '5', '7', '8' };
 	CK_FLAGS flags = 0;
 
 	Do_ADBG_BeginSubCase(c, "C_InitToken() on initialized token");
@@ -977,7 +976,7 @@ static CK_RV test_set_pin(ADBG_Case_t *c, CK_SLOT_ID slot,
 {
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
-	CK_UTF8CHAR some_pin[] = { 7, 6, 5, 4, 3, 2, 1, 2, 3, 4, 5, 6, 7 };
+	CK_UTF8CHAR some_pin[] = { '1', '2', '3', '3', '2', '1' };
 	CK_UTF8CHAR_PTR old_pin = NULL;
 	CK_USER_TYPE ut = user_type;
 	size_t old_pin_sz = 0;
