@@ -967,7 +967,7 @@ static CK_RV test_login_logout_pin_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
 	ADBG_EXPECT_CK_OK(c, rv);
 
 out:
-	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout() with PIN based authorization");
+	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout() with PIN based authentication");
 	return rv;
 }
 
