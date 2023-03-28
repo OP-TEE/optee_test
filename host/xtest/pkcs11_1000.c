@@ -585,13 +585,56 @@ ADBG_CASE_DEFINE(pkcs11, 1002, xtest_pkcs11_test_1002,
  */
 static CK_UTF8CHAR test_token_so_pin[] = { '1', '2', '3', '4', '5', '6', '7',
 					   '8' };
+static CK_UTF8CHAR deprecated_so_pin[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 static CK_UTF8CHAR test_token_user_pin[] = { '1', '2', '3', '4', '5' };
 static CK_UTF8CHAR test_token_label[] = "PKCS11 TA test token";
 
+/*
+ * Compatibility function for systems that would have run the PKCS#11 tests
+ * with the deprecated SO PIN (the one that was modified in commit "pkcs11:
+ * remove NULbyte from SO PIN and use ASCII characters").
+ * The goal is to transparently upgrade the SO PIN to the new one if possible
+ * and avoid failing any tests.
+ */
+static CK_RV change_deprecated_so_pin(CK_SLOT_ID slot)
+{
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (rv != CKR_OK)
+		return rv;
+
+	rv = C_Login(session, CKU_SO, deprecated_so_pin,
+		     sizeof(deprecated_so_pin));
+	if (rv != CKR_OK)
+		goto out;
+
+	rv = C_SetPIN(session, deprecated_so_pin, sizeof(deprecated_so_pin),
+		      test_token_so_pin, sizeof(test_token_so_pin));
+	Do_ADBG_Log("Note: SO PIN for slot %lu updated successfully", slot);
+
+	C_Logout(session);
+out:
+	C_CloseSession(session);
+	return rv;
+}
+
 static CK_RV init_test_token_pin_auth(CK_SLOT_ID slot)
 {
-	return C_InitToken(slot, test_token_so_pin, sizeof(test_token_so_pin),
-			   test_token_label);
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	rv = C_InitToken(slot, test_token_so_pin, sizeof(test_token_so_pin),
+			 test_token_label);
+	if (rv == CKR_PIN_INCORRECT) {
+		rv = change_deprecated_so_pin(slot);
+		if (rv != CKR_OK)
+			return rv;
+		rv = C_InitToken(slot, test_token_so_pin,
+				 sizeof(test_token_so_pin), test_token_label);
+	}
+	return rv;
 }
 
 /* Login as user, eventually reset user PIN if needed */
