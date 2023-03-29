@@ -636,6 +636,7 @@ TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 					    TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
+	struct ta_storage_obj_info oi = { };
 	TEE_ObjectInfo info = { };
 	TEE_ObjectHandle o = VAL2HANDLE(params[0].value.a);
 
@@ -644,12 +645,19 @@ TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	if (params[1].memref.size < sizeof(info))
+	if (params[1].memref.size < sizeof(oi))
 		return TEE_ERROR_SHORT_BUFFER;
 	res = TEE_GetObjectInfo1(o, &info);
 	if (!res) {
-		params[1].memref.size = sizeof(info);
-		TEE_MemMove(params[1].memref.buffer, &info, sizeof(info));
+		params[1].memref.size = sizeof(oi);
+		oi.object_type = info.objectType;
+		oi.object_size = info.objectSize;
+		oi.max_object_size = info.maxObjectSize;
+		oi.object_usage = info.objectUsage;
+		oi.data_size = info.dataSize;
+		oi.data_position = info.dataPosition;
+		oi.handle_flags = info.handleFlags;
+		TEE_MemMove(params[1].memref.buffer, &oi, sizeof(oi));
 	}
 
 	return res;
