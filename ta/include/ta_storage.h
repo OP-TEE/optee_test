@@ -12,6 +12,16 @@
 #define TA_STORAGE2_UUID { 0x731e279e, 0xaafb, 0x4575, \
 	{ 0xa7, 0x71, 0x38, 0xca, 0xa6, 0xf0, 0xcc, 0xa6 } }
 
+struct ta_storage_obj_info {
+	uint32_t object_type;
+	uint32_t object_size;
+	uint32_t max_object_size;
+	uint32_t object_usage;
+	uint32_t data_size;
+	uint32_t data_position;
+	uint32_t handle_flags;
+};
+
 #define TA_STORAGE_CMD_OPEN			0
 #define TA_STORAGE_CMD_CLOSE			1
 #define TA_STORAGE_CMD_READ			2

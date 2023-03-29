@@ -407,9 +407,11 @@ static TEEC_Result fs_reset_obj(TEEC_Session *sess, uint32_t obj)
 }
 
 static TEEC_Result fs_get_obj_info(TEEC_Session *sess, uint32_t obj,
-				void *obj_info, size_t info_size)
+				   TEE_ObjectInfo *obj_info)
 {
+	TEEC_Result res = TEEC_SUCCESS;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	struct ta_storage_obj_info oi = { };
 	uint32_t org = 0;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
@@ -417,10 +419,21 @@ static TEEC_Result fs_get_obj_info(TEEC_Session *sess, uint32_t obj,
 					TEEC_NONE, TEEC_NONE);
 
 	op.params[0].value.a = obj;
-	op.params[1].tmpref.buffer = obj_info;
-	op.params[1].tmpref.size = info_size;
+	op.params[1].tmpref.buffer = &oi;
+	op.params[1].tmpref.size = sizeof(oi);
 
-	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_GET_OBJ_INFO, &op, &org);
+	res = TEEC_InvokeCommand(sess, TA_STORAGE_CMD_GET_OBJ_INFO, &op, &org);
+	if (!res) {
+		obj_info->objectType = oi.object_type;
+		obj_info->objectSize = oi.object_size;
+		obj_info->maxObjectSize = oi.max_object_size;
+		obj_info->objectUsage = oi.object_usage;
+		obj_info->dataSize = oi.data_size;
+		obj_info->dataPosition = oi.data_position;
+		obj_info->handleFlags = oi.handle_flags;
+	}
+
+	return res;
 }
 
 /* Record availability of all secure storage types at runtime */
@@ -1826,8 +1839,7 @@ static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_get_obj_info(&sess, obj, &obj_info1,
-				sizeof(TEE_ObjectInfo))))
+		fs_get_obj_info(&sess, obj, &obj_info1)))
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj)))
@@ -1839,8 +1851,7 @@ static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_get_obj_info(&sess, obj, &obj_info2,
-				sizeof(TEE_ObjectInfo))))
+		fs_get_obj_info(&sess, obj, &obj_info2)))
 		goto exit;
 
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
@@ -1899,8 +1910,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 	}
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_get_obj_info(&sess, obj, &obj_info1,
-				sizeof(TEE_ObjectInfo))))
+		fs_get_obj_info(&sess, obj, &obj_info1)))
 		goto exit;
 
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
@@ -1917,8 +1927,7 @@ static void xtest_tee_test_6018_single(ADBG_Case_t *c, uint32_t storage_id)
 		goto exit;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-		fs_get_obj_info(&sess, obj, &obj_info2,
-				sizeof(TEE_ObjectInfo))))
+		fs_get_obj_info(&sess, obj, &obj_info2)))
 		goto exit;
 
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
