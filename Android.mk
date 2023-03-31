@@ -53,6 +53,7 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_8000.c \
 	regression_8100.c \
 	hash_perf.c \
+	install_ta.c \
 	stats.c \
 	symm_cipher_perf.c \
 	xtest_helpers.c \
@@ -62,10 +63,6 @@ srcs +=	adbg/src/adbg_case.c \
 
 ifeq ($(CFG_SECURE_PARTITION)-$(CFG_SPMC_TESTS),y-y)
 srcs += ffa_spmc_1000.c
-endif
-
-ifeq ($(CFG_SECSTOR_TA_MGMT_PTA),y)
-srcs += install_ta.c
 endif
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)

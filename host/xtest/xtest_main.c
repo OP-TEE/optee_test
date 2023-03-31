@@ -104,10 +104,8 @@ void usage(char *program)
 	printf("\t--hash-perf [opts] Hash performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
 	printf("\t--asym-perf [opts]  Asym performance testing tool (-h for usage)\n");
-#ifdef CFG_SECSTOR_TA_MGMT_PTA
 	printf("\t--install-ta [directory or list of TAs]\n");
 	printf("\t                   Install TAs\n");
-#endif
 #ifdef CFG_SECURE_DATA_PATH
 	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
@@ -172,10 +170,8 @@ int main(int argc, char *argv[])
 		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
 	else if (argc > 1 && !strcmp(argv[1], "--asym-perf"))
 		return asym_perf_runner_cmd_parser(argc-1, &argv[1]);
-#ifdef CFG_SECSTOR_TA_MGMT_PTA
 	else if (argc > 1 && !strcmp(argv[1], "--install-ta"))
 		return install_ta_runner_cmd_parser(argc - 1, argv + 1);
-#endif
 #ifdef CFG_SECURE_DATA_PATH
 	else if (argc > 1 && !strcmp(argv[1], "--sdp-basic"))
 		return sdp_basic_runner_cmd_parser(argc-1, &argv[1]);
