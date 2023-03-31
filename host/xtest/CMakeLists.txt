@@ -57,6 +57,7 @@ set (SRC
 	regression_8000.c
 	regression_8100.c
 	hash_perf.c
+	install_ta.c
 	stats.c
 	symm_cipher_perf.c
 	xtest_helpers.c
@@ -99,10 +100,6 @@ if (CFG_GP_SOCKETS)
 		sock_server.c
 		rand_stream.c
 	)
-endif()
-
-if (CFG_SECSTOR_TA_MGMT_PTA)
-	list (APPEND SRC install_ta.c)
 endif()
 
 if (CFG_SECURE_DATA_PATH)

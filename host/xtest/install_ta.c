@@ -126,6 +126,8 @@ int install_ta_runner_cmd_parser(int argc, char *argv[])
 
 	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL,
 			       NULL, &err_origin);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND && err_origin == TEEC_ORIGIN_TEE)
+		errx(1, "TA install is not supported by OP-TEE");
 	if (res)
 		errx(1, "TEEC_OpenSession: res %#" PRIx32 " err_orig %#" PRIx32,
 			res, err_origin);
