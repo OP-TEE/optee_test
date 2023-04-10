@@ -8720,7 +8720,7 @@ static void xtest_pkcs11_test_1027(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "group", 1)))
 		goto out_unsetenv;
 
-	str_len = snprintf(gid_str, sizeof(gid_str), "%x", getegid());
+	str_len = snprintf(gid_str, sizeof(gid_str), "%d", getegid());
 	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, >=, 0))
 		goto out_unsetenv;
 	if (!ADBG_EXPECT_COMPARE_SIGNED(c, str_len, <, (int)sizeof(gid_str)))
