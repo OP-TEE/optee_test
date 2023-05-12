@@ -26,8 +26,8 @@
 /* include here shandalone tests */
 #include "crypto_common.h"
 #include "install_ta.h"
+#include "pkcs11_1000.h"
 #include "stats.h"
-
 
 ADBG_SUITE_DEFINE(benchmark);
 #ifdef WITH_GP_TESTS
@@ -109,6 +109,9 @@ void usage(char *program)
 #ifdef CFG_SECURE_DATA_PATH
 	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
+#ifdef CFG_PKCS11_TA
+	printf("\t--pkcs11-1028-destroy-token-object  Used internally by pkcs11_1028\n");
+#endif
 	printf("\t--stats [opts]     Various statistics ('-h' for usage)\n");
 	printf("\n");
 	printf("Examples:\n");
@@ -170,6 +173,10 @@ int main(int argc, char *argv[])
 #ifdef CFG_SECURE_DATA_PATH
 	else if (argc > 1 && !strcmp(argv[1], "--sdp-basic"))
 		return sdp_basic_runner_cmd_parser(argc-1, &argv[1]);
+#endif
+#ifdef CFG_PKCS11_TA
+	else if (argc == 2 && !strcmp(argv[1], "--pkcs11-1028-destroy-token-object"))
+		return xtest_pkcs11_1028_destroy_token_object();
 #endif
 	else if (argc > 1 && !strcmp(argv[1], "--stats"))
 		return stats_runner_cmd_parser(argc - 1, &argv[1]);
