@@ -209,7 +209,6 @@ static void xtest_pkcs11_test_1000(ADBG_Case_t *c)
 	rv = C_Finalize(NULL);
 	ADBG_EXPECT_CK_RESULT(c, CKR_CRYPTOKI_NOT_INITIALIZED, rv);
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1000, xtest_pkcs11_test_1000,
 		 "Initialize and close Cryptoki library");
 
@@ -445,7 +444,6 @@ out:
 	rv = C_Finalize(NULL);
 	ADBG_EXPECT_CK_OK(c, rv);
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1001, xtest_pkcs11_test_1001,
 		 "PKCS11: List PKCS#11 slots and get information from");
 
@@ -575,7 +573,6 @@ bail:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1002, xtest_pkcs11_test_1002,
 		 "PKCS11: Open and close PKCS#11 sessions");
 
@@ -1141,7 +1138,6 @@ out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1003, xtest_pkcs11_test_1003,
 		 "PKCS11: Login to PKCS#11 token with PIN based authentication");
 
@@ -1335,10 +1331,8 @@ static void xtest_pkcs11_test_1004(ADBG_Case_t *c)
 	test_create_objects_in_session(c, true /*readwrite*/);
 	Do_ADBG_EndSubCase(c, "Create objects in a read/write session");
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1004, xtest_pkcs11_test_1004,
 		 "PKCS11: create/destroy PKCS#11 simple objects");
-
 
 static const CK_MECHANISM_TYPE allowed_only_aes_ecb[] = {
 	CKM_AES_ECB,
@@ -1566,8 +1560,6 @@ out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
 }
-
-
 ADBG_CASE_DEFINE(pkcs11, 1005, xtest_pkcs11_test_1005,
 		"PKCS11: Check ciphering with valid and invalid keys #1");
 
@@ -8179,7 +8171,6 @@ err_close_sess:
 err_close_lib:
 	close_lib();
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1025, xtest_pkcs11_test_1025,
 		 "PKCS11: EDDSA key generation and signing");
 
@@ -8630,7 +8621,6 @@ close_session:
 close_lib:
 	ADBG_EXPECT_CK_OK(c, close_lib());
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1026, xtest_pkcs11_test_1026,
 		 "PKCS11: RSA AES Key Wrap/Unwrap tests");
 
@@ -8744,6 +8734,5 @@ out_unsetenv:
 	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_TYPE"));
 	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_GID"));
 }
-
 ADBG_CASE_DEFINE(pkcs11, 1027, xtest_pkcs11_test_1027,
 		 "PKCS11: Login to PKCS#11 token with ACL based authentication");
