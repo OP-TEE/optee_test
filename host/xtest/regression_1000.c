@@ -3124,6 +3124,8 @@ static void xtest_tee_test_1037(ADBG_Case_t *c)
 		return;
 	}
 
+	TEEC_CloseSession(&session);
+
 	Do_ADBG_BeginSubCase(c, "Get public key");
 	get_att_public_key(c);
 	Do_ADBG_EndSubCase(c, "Get public key");
