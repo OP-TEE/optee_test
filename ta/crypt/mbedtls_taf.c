@@ -55,7 +55,6 @@ ta_entry_mbedtls_self_tests(uint32_t param_type,
 	DO_MBEDTLS_SELF_TEST(base64);
 	DO_MBEDTLS_SELF_TEST(mpi);
 	DO_MBEDTLS_SELF_TEST(rsa);
-	DO_MBEDTLS_SELF_TEST(x509);
 
 	return TEE_SUCCESS;
 #else
@@ -187,7 +186,8 @@ static TEE_Result parse_issuer_key(mbedtls_pk_context *pk)
 		return TEE_ERROR_OUT_OF_MEMORY;
 
 	memcpy(buf, mid_key, mid_key_size);
-	ret = mbedtls_pk_parse_key(pk, buf, mid_key_size + 1, NULL, 0);
+	ret = mbedtls_pk_parse_key(pk, buf, mid_key_size + 1,
+				   NULL, 0, NULL, NULL);
 	TEE_Free(buf);
 	if (ret) {
 		EMSG("mbedtls_pk_parse_key: failed: %#x", ret);
@@ -275,7 +275,7 @@ TEE_Result ta_entry_mbedtls_sign_cert(uint32_t param_type,
 		goto out;
 	}
 
-	mbedtls_x509write_crt_set_md_alg(&crt, csr.sig_md);
+	mbedtls_x509write_crt_set_md_alg(&crt, csr.MBEDTLS_PRIVATE(sig_md));
 	mbedtls_x509write_crt_set_subject_key(&crt, &csr.pk);
 	mbedtls_x509write_crt_set_issuer_key(&crt, &issuer_key);
 
