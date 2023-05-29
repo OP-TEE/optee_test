@@ -8,7 +8,9 @@
 #include "ta_storage.h"
 
 #include <tee_api.h>
+#include <tee_api_defines_extensions.h>
 #include <trace.h>
+#include <user_ta_header_defines.h>
 
 #define ASSERT_PARAM_TYPE(pt) \
 do { \
@@ -660,5 +662,79 @@ TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 		TEE_MemMove(params[1].memref.buffer, &oi, sizeof(oi));
 	}
 
+	return res;
+}
+
+static TEE_Result clear_storage(uint32_t storage_id)
+{
+	TEE_ObjectEnumHandle oe = TEE_HANDLE_NULL;
+	TEE_Result enum_res = TEE_ERROR_GENERIC;
+	TEE_ObjectHandle o = TEE_HANDLE_NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	TEE_UUID uuid = TA_UUID;
+	TEE_ObjectInfo oi = { };
+	size_t obj_id_sz = 0;
+	void *obj_id = NULL;
+	size_t i = 0;
+
+	IMSG("Clearing TA storage (UUID: %pUl, storage ID: 0x%x)",
+	     (void *)&uuid, storage_id);
+	res = TEE_AllocatePersistentObjectEnumerator(&oe);
+	if (res)
+		return res;
+	res = TEE_StartPersistentObjectEnumerator(oe, storage_id);
+	if (res == TEE_ERROR_ITEM_NOT_FOUND) {
+		IMSG("No object found");
+		res = TEE_SUCCESS;
+		goto out;
+	}
+	if (res)
+		goto out;
+	obj_id = TEE_Malloc(TEE_OBJECT_ID_MAX_LEN, 0);
+	if (!obj_id) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
+
+	while (true) {
+		enum_res = TEE_GetNextPersistentObject(oe, &oi, obj_id,
+						       &obj_id_sz);
+		if (enum_res == TEE_ERROR_ITEM_NOT_FOUND)
+			break;
+		if (enum_res) {
+			res = enum_res;
+			break;
+		}
+		IMSG("Deleting persistent object #%zu", i);
+		res = TEE_OpenPersistentObject(storage_id, obj_id, obj_id_sz,
+					       TEE_DATA_FLAG_ACCESS_WRITE_META,
+					       &o);
+		if (res)
+			break;
+		TEE_CloseAndDeletePersistentObject1(o);
+		i++;
+	}
+
+out:
+	TEE_FreePersistentObjectEnumerator(oe);
+	TEE_Free(obj_id);
+	return res;
+}
+
+TEE_Result ta_storage_cmd_clear_storage(uint32_t param_types,
+					TEE_Param params[4])
+{
+	uint32_t id[] = { TEE_STORAGE_PRIVATE_REE, TEE_STORAGE_PRIVATE_RPMB };
+	TEE_Result res = TEE_ERROR_GENERIC;
+	size_t i = 0;
+
+	(void)param_types;
+	(void)params;
+
+	for (i = 0; i < sizeof(id) / sizeof(id[0]); i++) {
+		res = clear_storage(id[i]);
+		if (res)
+			break;
+	}
 	return res;
 }

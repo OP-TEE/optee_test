@@ -24,10 +24,10 @@
 #include "xtest_helpers.h"
 
 /* include here shandalone tests */
+#include "clear_storage.h"
 #include "crypto_common.h"
 #include "install_ta.h"
 #include "stats.h"
-
 
 ADBG_SUITE_DEFINE(benchmark);
 #ifdef WITH_GP_TESTS
@@ -109,6 +109,8 @@ void usage(char *program)
 	printf("\t--sdp-basic [opts] Basic Secure Data Path test setup ('-h' for usage)\n");
 #endif
 	printf("\t--stats [opts]     Various statistics ('-h' for usage)\n");
+	printf("\t--clear-storage    Delete any persistent objects that may have been\n");
+	printf("\t                   left over by a previous run of this application\n");
 	printf("\n");
 	printf("Examples:\n");
 	printf("\txtest -t regression 4001 4003\n");
@@ -169,6 +171,8 @@ int main(int argc, char *argv[])
 #endif
 	else if (argc > 1 && !strcmp(argv[1], "--stats"))
 		return stats_runner_cmd_parser(argc - 1, &argv[1]);
+	else if (argc == 2 && !strcmp(argv[1], "--clear-storage"))
+		return clear_storage();
 
 	while ((opt = getopt(argc, argv, "d:l:t:h")) != -1) {
 		switch (opt) {

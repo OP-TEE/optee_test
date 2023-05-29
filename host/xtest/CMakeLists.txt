@@ -48,6 +48,7 @@ set (SRC
 	aes_perf.c
 	benchmark_1000.c
 	benchmark_2000.c
+	clear_storage.c
 	regression_1000.c
 	regression_4000.c
 	regression_4100.c

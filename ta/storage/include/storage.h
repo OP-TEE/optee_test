@@ -39,5 +39,7 @@ TEE_Result ta_storage_cmd_free_obj(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_reset_obj(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_get_obj_info(uint32_t param_types,
 					    TEE_Param params[4]);
+TEE_Result ta_storage_cmd_clear_storage(uint32_t param_types,
+					TEE_Param params[4]);
 
 #endif /*STORAGE_H */
