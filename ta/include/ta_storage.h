@@ -4,6 +4,8 @@
  * All rights reserved.
  */
 
+#include <stdint.h>
+
 #ifndef __TA_STORAGE_H
 #define __TA_STORAGE_H
 
