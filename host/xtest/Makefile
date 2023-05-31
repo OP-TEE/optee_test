@@ -40,17 +40,7 @@ endef
 WITH_OPENSSL ?= y
 ifeq ($(WITH_OPENSSL),y)
 CFLAGS += -DOPENSSL_FOUND=1 -DOPENSSL_API_COMPAT=10100
-ifneq ($(OPTEE_OPENSSL_EXPORT),)
 LDFLAGS += -lcrypto
-CFLAGS += -I$(OPTEE_OPENSSL_EXPORT)
-else #OPTEE_OPENSSL_EXPORT
-CFLAGS += -I../openssl/include
-ifeq ($(call cc-bits, $(call cc-arch, $(CC))),32)
-LDFLAGS += ../openssl/lib/arm/libcrypto.a -ldl
-else
-LDFLAGS += ../openssl/lib/aarch64/libcrypto.a -ldl
-endif
-endif #OPTEE_OPENSSL_EXPORT
 endif #require OpenSSL
 
 srcs := regression_1000.c
