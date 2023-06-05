@@ -671,7 +671,7 @@ static TEE_Result clear_storage(uint32_t storage_id)
 	TEE_Result enum_res = TEE_ERROR_GENERIC;
 	TEE_ObjectHandle o = TEE_HANDLE_NULL;
 	TEE_Result res = TEE_ERROR_GENERIC;
-	TEE_UUID uuid = TA_UUID;
+	TEE_UUID __maybe_unused uuid = TA_UUID;
 	TEE_ObjectInfo oi = { };
 	size_t obj_id_sz = 0;
 	void *obj_id = NULL;
