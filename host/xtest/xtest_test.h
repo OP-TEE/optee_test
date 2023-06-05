@@ -142,5 +142,6 @@ extern const TEEC_UUID bti_test_ta_uuid;
 extern const TEEC_UUID subkey1_ta_uuid;
 extern const TEEC_UUID subkey2_ta_uuid;
 extern char *xtest_tee_name;
+extern char *xtest_progname;
 
 #endif /*XTEST_TEST_H*/
