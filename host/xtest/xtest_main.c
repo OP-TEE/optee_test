@@ -41,6 +41,7 @@ ADBG_SUITE_DEFINE(ffa_spmc);
 #endif
 ADBG_SUITE_DEFINE(regression);
 
+char *xtest_progname;
 char *xtest_tee_name = NULL;
 unsigned int level = 0;
 static const char glevel[] = "0";
@@ -154,6 +155,9 @@ int main(int argc, char *argv[])
 		warn("signal(SIGPIPE, SIG_IGN)");
 
 	init_ossl();
+
+	/* Reference xtest command name for global use */
+	xtest_progname = argv[0];
 
 	if (argc > 1 && !strcmp(argv[1], "--sha-perf"))
 		return hash_perf_runner_cmd_parser(argc-1, &argv[1]);
