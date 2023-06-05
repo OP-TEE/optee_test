@@ -23,6 +23,7 @@
 
 #include "crypto_common.h"
 #include "xtest_helpers.h"
+#include "xtest_test.h"
 
 #ifdef CFG_SECURE_DATA_PATH
 #include "sdp_basic.h"
@@ -182,11 +183,12 @@ static const char *mode_str(uint32_t mode)
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-static void usage(const char *progname, int keysize, int mode, size_t size,
-		  size_t unit, int warmup, unsigned int l, unsigned int n)
+static void usage(const char *applet_optname, int keysize, int mode,
+		  size_t size, size_t unit, int warmup, unsigned int l,
+		  unsigned int n)
 {
-	fprintf(stderr, "Usage: %s [-h]\n", progname);
-	fprintf(stderr, "Usage: %s [-d] [-i] [-k SIZE]", progname);
+	fprintf(stderr, "Usage: %s %s [-h]\n", xtest_progname, applet_optname);
+	fprintf(stderr, "Usage: %s %s [-d] [-i] [-k SIZE]", xtest_progname, applet_optname);
 	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r|--no-inited] [-s SIZE]");
 	fprintf(stderr, " [-v [-v]] [-w SEC]");
 #ifdef CFG_SECURE_DATA_PATH
@@ -531,8 +533,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 #define NEXT_ARG(i) \
 	do { \
 		if (++i == argc) { \
-			fprintf(stderr, "%s: %s: missing argument\n", \
-				argv[0], argv[i - 1]); \
+			fprintf(stderr, "%s %s: %s: missing argument\n", \
+				xtest_progname, argv[0], argv[i - 1]); \
 			return 1; \
 		} \
 	} while (0);
@@ -577,8 +579,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			keysize = atoi(argv[i]);
 			if (keysize != AES_128 && keysize != AES_192 &&
 				keysize != AES_256) {
-				fprintf(stderr, "%s: invalid key size\n",
-					argv[0]);
+				fprintf(stderr, "%s %s: invalid key size\n",
+					xtest_progname, argv[0]);
 				USAGE();
 				return 1;
 			}
@@ -598,8 +600,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			else if (!strcasecmp(argv[i], "GCM"))
 				mode = TA_AES_GCM;
 			else {
-				fprintf(stderr, "%s, invalid mode\n",
-					argv[0]);
+				fprintf(stderr, "%s %s, invalid mode\n",
+					xtest_progname, argv[0]);
 				USAGE();
 				return 1;
 			}
@@ -653,8 +655,8 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 			NEXT_ARG(i);
 			warmup = atoi(argv[i]);
 		} else {
-			fprintf(stderr, "%s: invalid argument: %s\n",
-				argv[0], argv[i]);
+			fprintf(stderr, "%s %s: invalid argument: %s\n",
+				xtest_progname, argv[0], argv[i]);
 			USAGE();
 			return 1;
 		}

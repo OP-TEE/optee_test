@@ -47,11 +47,9 @@ struct ta_dump_stats {
 	struct malloc_stats heap;
 };
 
-static const char *stats_progname = "xtest --stats";
-
 static int usage(void)
 {
-	fprintf(stderr, "Usage: %s [OPTION]\n", stats_progname);
+	fprintf(stderr, "Usage: %s --stats [OPTION]\n", xtest_progname);
 	fprintf(stderr, "Displays statistics from OP-TEE\n");
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, " -h|--help      Print this help and exit\n");
