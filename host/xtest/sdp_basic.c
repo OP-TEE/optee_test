@@ -590,9 +590,10 @@ bail:
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-static void usage(const char *progname, size_t size, int loop, const char *heap_name)
+static void usage(const char *applet_optname, size_t size, int loop,
+		  const char *heap_name)
 {
-	fprintf(stderr, "Usage: %s [OPTION]\n", progname);
+	fprintf(stderr, "Usage: %s %s [OPTION]\n", xtest_progname, applet_optname);
 	fprintf(stderr,
 		"Testing basic accesses to secure buffer (SDP) on OP-TEE.\n"
 		"Allocates a secure buffer and invoke a TA to access it.\n"
@@ -611,8 +612,8 @@ static void usage(const char *progname, size_t size, int loop, const char *heap_
 #define NEXT_ARG(i) \
 	do { \
 		if (++i == argc) { \
-			fprintf(stderr, "%s: %s: missing argument\n", \
-				argv[0], argv[i-1]); \
+			fprintf(stderr, "%s %s: %s: missing argument\n", \
+				xtest_progname, argv[0], argv[i-1]); \
 			return 1; \
 		} \
 	} while (0);
@@ -657,8 +658,8 @@ int sdp_basic_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "--no-offset")) {
 			rnd_offset = 0;
 		} else {
-			fprintf(stderr, "%s: invalid argument: %s\n",
-				argv[0], argv[i]);
+			fprintf(stderr, "%s %s: invalid argument: %s\n",
+				xtest_progname, argv[0], argv[i]);
 			usage(argv[0], test_size, test_loop, heap_name);
 			return 1;
 		}

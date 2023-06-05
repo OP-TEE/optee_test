@@ -20,6 +20,7 @@
 
 #include "crypto_common.h"
 #include "xtest_helpers.h"
+#include "xtest_test.h"
 
 /*
  * TEE client stuff
@@ -371,12 +372,13 @@ extern void hash_perf_run_test(int algo, size_t size, unsigned int n,
 	free_shm();
 }
 
-static void usage(const char *progname,
+static void usage(const char *applet_optname,
 				/* Default params */
 				int algo, size_t size, int warmup, int l, int n)
 {
-	fprintf(stderr, "Usage: %s [-h]\n", progname);
-	fprintf(stderr, "Usage: %s [-a ALGO] [-l LOOP] [-n LOOP] [-r] [-s SIZE]", progname);
+	fprintf(stderr, "Usage: %s %s [-h]\n", xtest_progname, applet_optname);
+	fprintf(stderr, "Usage: %s %s [-a ALGO] [-l LOOP] [-n LOOP] [-r] [-s SIZE]",
+		xtest_progname, applet_optname);
 	fprintf(stderr, " [-v [-v]] [-w SEC]\n");
 	fprintf(stderr, "Hash performance testing tool for OP-TEE\n");
 	fprintf(stderr, "\n");
@@ -398,8 +400,8 @@ static void usage(const char *progname,
 #define NEXT_ARG(i) \
 	do { \
 		if (++i == argc) { \
-			fprintf(stderr, "%s: %s: missing argument\n", \
-				argv[0], argv[i - 1]); \
+			fprintf(stderr, "%s %s: %s: missing argument\n", \
+				xtest_progname, argv[0], argv[i - 1]); \
 			return 1; \
 		} \
 	} while (0);
@@ -457,8 +459,8 @@ extern int hash_perf_runner_cmd_parser(int argc, char *argv[])
 			else if (!strcasecmp(argv[i], "HMAC_SM3"))
 				algo = TA_HMAC_SM3;
 			else {
-				fprintf(stderr, "%s, invalid algorithm\n",
-					argv[0]);
+				fprintf(stderr, "%s %s, invalid algorithm\n",
+					xtest_progname, argv[0]);
 				usage(argv[0], algo, size, warmup, l, n);
 				return 1;
 			}
@@ -481,8 +483,8 @@ extern int hash_perf_runner_cmd_parser(int argc, char *argv[])
 			NEXT_ARG(i);
 			warmup = atoi(argv[i]);
 		} else {
-			fprintf(stderr, "%s: invalid argument: %s\n",
-				argv[0], argv[i]);
+			fprintf(stderr, "%s %s: invalid argument: %s\n",
+				xtest_progname, argv[0], argv[i]);
 			usage(argv[0], algo, size, warmup, l, n);
 			return 1;
 		}
