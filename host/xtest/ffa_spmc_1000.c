@@ -3,7 +3,6 @@
  * Copyright (c) 2022-2023, Arm Limited and Contributors. All rights reserved.
  */
 #include <fcntl.h>
-#include <ffa.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
