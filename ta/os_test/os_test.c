@@ -115,256 +115,255 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 				   TEE_PropSetHandle prop_set,
 				   struct p_attr *p_attrs, size_t num_p_attrs)
 {
-TEE_Result res = TEE_ERROR_GENERIC;
-size_t n = 0;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	size_t n = 0;
 
-TEE_StartPropertyEnumerator(h, prop_set);
+	TEE_StartPropertyEnumerator(h, prop_set);
 
-while (true) {
-	char nbuf[256] = { };
-	char nbuf_small[256] = { };
-	char vbuf[256] = { };
-	char vbuf2[256] = { };
-	size_t nblen = sizeof(nbuf);
-	size_t nblen_small = 0;
-	size_t vblen = sizeof(vbuf);
-	size_t vblen2 = sizeof(vbuf2);
-	char *bbuf = NULL;
-	size_t bblen = 0;
+	while (true) {
+		char nbuf[256] = { };
+		char nbuf_small[256] = { };
+		char vbuf[256] = { };
+		char vbuf2[256] = { };
+		size_t nblen = sizeof(nbuf);
+		size_t nblen_small = 0;
+		size_t vblen = sizeof(vbuf);
+		size_t vblen2 = sizeof(vbuf2);
+		char *bbuf = NULL;
+		size_t bblen = 0;
 
-	res = TEE_GetPropertyName(h, nbuf, &nblen);
-	if (res != TEE_SUCCESS) {
-		EMSG("TEE_GetPropertyName returned 0x%x\n",
-		     (unsigned int)res);
-		return res;
-	}
-	if (nblen != strlen(nbuf) + 1) {
-		EMSG("Name has wrong size: %zu vs %zu",
-		     nblen, strlen(nbuf) + 1);
-		return TEE_ERROR_GENERIC;
-	}
+		res = TEE_GetPropertyName(h, nbuf, &nblen);
+		if (res != TEE_SUCCESS) {
+			EMSG("TEE_GetPropertyName returned 0x%x\n",
+			     (unsigned int)res);
+			return res;
+		}
+		if (nblen != strlen(nbuf) + 1) {
+			EMSG("Name has wrong size: %zu vs %zu",
+			     nblen, strlen(nbuf) + 1);
+			return TEE_ERROR_GENERIC;
+		}
 
+		/* Get the property name with a very small buffer */
+		nblen_small = 2;
+		res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+					  nblen_small, nblen);
+		if (res != TEE_SUCCESS)
+			return res;
 
-	/* Get the property name with a very small buffer */
-	nblen_small = 2;
-	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
-				  nblen_small, nblen);
-	if (res != TEE_SUCCESS)
-		return res;
+		/* Get the property name with almost the correct buffer */
+		nblen_small = nblen - 1;
+		res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
+					  nblen_small, nblen);
+		if (res != TEE_SUCCESS)
+			return res;
 
-	/* Get the property name with almost the correct buffer */
-	nblen_small = nblen - 1;
-	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
-				  nblen_small, nblen);
-	if (res != TEE_SUCCESS)
-		return res;
+		/* Get the property name with the exact buffer length */
+		nblen_small = nblen;
+		res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+					  nblen_small, nblen);
+		if (res != TEE_SUCCESS)
+			return res;
 
-	/* Get the property name with the exact buffer length */
-	nblen_small = nblen;
-	res = TEE_GetPropertyName(h, nbuf_small, &nblen_small);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
-				  nblen_small, nblen);
-	if (res != TEE_SUCCESS)
-		return res;
+		/* Get the property value */
+		res = TEE_GetPropertyAsString(h, NULL, vbuf, &vblen);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+					  vblen, strlen(vbuf) + 1);
+		if (res != TEE_SUCCESS)
+			return res;
 
-	/* Get the property value */
-	res = TEE_GetPropertyAsString(h, NULL, vbuf, &vblen);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
-				  vblen, strlen(vbuf) + 1);
-	if (res != TEE_SUCCESS)
-		return res;
-
-	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
-				  vblen2, strlen(vbuf2) + 1);
-	if (res != TEE_SUCCESS)
-		return res;
-
-	if (strcmp(vbuf, vbuf2) != 0) {
-		EMSG("String of \"%s\" differs\n", nbuf);
-		return TEE_ERROR_GENERIC;
-	}
-
-	/* Get the property with a very small buffer */
-	if (vblen > 1) {
-		vblen2 = 1;
 		res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-		res = check_returned_prop(__LINE__, nbuf, res,
-					  TEE_ERROR_SHORT_BUFFER,
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS,
+					  vblen2, strlen(vbuf2) + 1);
+		if (res != TEE_SUCCESS)
+			return res;
+
+		if (strcmp(vbuf, vbuf2) != 0) {
+			EMSG("String of \"%s\" differs\n", nbuf);
+			return TEE_ERROR_GENERIC;
+		}
+
+		/* Get the property with a very small buffer */
+		if (vblen > 1) {
+			vblen2 = 1;
+			res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+			res = check_returned_prop(__LINE__, nbuf, res,
+						  TEE_ERROR_SHORT_BUFFER,
+						  vblen2, vblen);
+			if (res != TEE_SUCCESS)
+				return res;
+		}
+
+		/* Get the property with almost the correct buffer */
+		vblen2 = vblen - 1;
+		res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
 					  vblen2, vblen);
 		if (res != TEE_SUCCESS)
 			return res;
-	}
 
-	/* Get the property with almost the correct buffer */
-	vblen2 = vblen - 1;
-	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_ERROR_SHORT_BUFFER,
-				  vblen2, vblen);
-	if (res != TEE_SUCCESS)
-		return res;
+		/* Get the property name with the exact buffer length */
+		vblen2 = vblen;
+		res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
+		res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS, vblen2, vblen);
+		if (res != TEE_SUCCESS)
+			return res;
 
-	/* Get the property name with the exact buffer length */
-	vblen2 = vblen;
-	res = TEE_GetPropertyAsString(prop_set, nbuf, vbuf2, &vblen2);
-	res = check_returned_prop(__LINE__, nbuf, res, TEE_SUCCESS, vblen2, vblen);
-	if (res != TEE_SUCCESS)
-		return res;
-
-	/* check specific myprop.hello property, which is larger than 80 */
-	if (!strcmp("myprop.hello", nbuf) &&
-	    vblen2 != 1 + strlen("hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong")) {
-		EMSG("TEE_GetPropertyAsString(\"%s\") is truncated - returned \"%s\"\n",
-		     nbuf, vbuf);
-		return TEE_ERROR_GENERIC;
-	}
-
-	DMSG("Found \"%s\" value \"%s\"\n", nbuf, vbuf);
-
-	for (n = 0; n < num_p_attrs; n++) {
-		if (strcmp(nbuf, p_attrs[n].str) != 0)
-			continue;
-
-		if (p_attrs[n].retrieved) {
-			EMSG("Value \"%s\" already retrieved\n",
-			     p_attrs[n].str);
+		/* check specific myprop.hello property, which is larger than 80 */
+		if (!strcmp("myprop.hello", nbuf) &&
+		    vblen2 != 1 + strlen("hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong")) {
+			EMSG("TEE_GetPropertyAsString(\"%s\") is truncated - returned \"%s\"\n",
+			     nbuf, vbuf);
 			return TEE_ERROR_GENERIC;
 		}
-		p_attrs[n].retrieved = true;
 
-		switch (p_attrs[n].type) {
-		case P_TYPE_BOOL:
-			{
-				bool v = false;
+		DMSG("Found \"%s\" value \"%s\"\n", nbuf, vbuf);
 
-				res =
-				    TEE_GetPropertyAsBool(h, NULL, &v);
-				if (res != TEE_SUCCESS) {
-					EMSG(
-					"TEE_GetPropertyAsBool(\"%s\") returned 0x%x\n",
-					nbuf, (unsigned int)res);
-					return res;
-				}
+		for (n = 0; n < num_p_attrs; n++) {
+			if (strcmp(nbuf, p_attrs[n].str) != 0)
+				continue;
+
+			if (p_attrs[n].retrieved) {
+				EMSG("Value \"%s\" already retrieved\n",
+				     p_attrs[n].str);
+				return TEE_ERROR_GENERIC;
 			}
-			break;
+			p_attrs[n].retrieved = true;
 
-		case P_TYPE_INT:
-			{
-				uint32_t v = 0;
+			switch (p_attrs[n].type) {
+			case P_TYPE_BOOL:
+				{
+					bool v = false;
 
-				res = TEE_GetPropertyAsU32(h, NULL, &v);
-				if (res != TEE_SUCCESS) {
-					EMSG(
-					"TEE_GetPropertyAsU32(\"%s\") returned 0x%x\n",
-					nbuf, (unsigned int)res);
-					return res;
+					res =
+					    TEE_GetPropertyAsBool(h, NULL, &v);
+					if (res != TEE_SUCCESS) {
+						EMSG(
+						"TEE_GetPropertyAsBool(\"%s\") returned 0x%x\n",
+						nbuf, (unsigned int)res);
+						return res;
+					}
 				}
-			}
-			break;
+				break;
 
-		case P_TYPE_UUID:
-			{
-				TEE_UUID v = { };
+			case P_TYPE_INT:
+				{
+					uint32_t v = 0;
 
-				res =
-				    TEE_GetPropertyAsUUID(h, NULL, &v);
-				if (res != TEE_SUCCESS) {
-					EMSG(
-					"TEE_GetPropertyAsUUID(\"%s\") returned 0x%x\n",
-					nbuf, (unsigned int)res);
-					return res;
+					res = TEE_GetPropertyAsU32(h, NULL, &v);
+					if (res != TEE_SUCCESS) {
+						EMSG(
+						"TEE_GetPropertyAsU32(\"%s\") returned 0x%x\n",
+						nbuf, (unsigned int)res);
+						return res;
+					}
 				}
-			}
-			break;
+				break;
 
-		case P_TYPE_IDENTITY:
-			{
-				TEE_Identity v = { };
+			case P_TYPE_UUID:
+				{
+					TEE_UUID v = { };
 
-				res =
-				    TEE_GetPropertyAsIdentity(h, NULL,
-							      &v);
-				if (res != TEE_SUCCESS) {
-					EMSG(
-					"TEE_GetPropertyAsIdentity(\"%s\") returned 0x%x\n",
-					nbuf, (unsigned int)res);
-					return res;
+					res =
+					    TEE_GetPropertyAsUUID(h, NULL, &v);
+					if (res != TEE_SUCCESS) {
+						EMSG(
+						"TEE_GetPropertyAsUUID(\"%s\") returned 0x%x\n",
+						nbuf, (unsigned int)res);
+						return res;
+					}
 				}
-			}
-			break;
+				break;
 
-		case P_TYPE_STRING:
-			/* Already read as string */
-			break;
+			case P_TYPE_IDENTITY:
+				{
+					TEE_Identity v = { };
 
-		case P_TYPE_BINARY_BLOCK:
-			res = get_binblock_property(h, nbuf, &bbuf, &bblen);
-			if (res)
-				return res;
-
-			if (!strcmp("myprop.binaryblock", nbuf)) {
-				const char exp_bin_value[] = "Hello world!";
-
-				if (bblen != strlen(exp_bin_value) ||
-				    TEE_MemCompare(exp_bin_value, bbuf,
-						   bblen)) {
-					EMSG("Binary buffer of \"%s\" differs from \"%s\"",
-					     nbuf, exp_bin_value);
-					EMSG("Got \"%s\"", bbuf);
-					return TEE_ERROR_GENERIC;
+					res =
+					    TEE_GetPropertyAsIdentity(h, NULL,
+								      &v);
+					if (res != TEE_SUCCESS) {
+						EMSG(
+						"TEE_GetPropertyAsIdentity(\"%s\") returned 0x%x\n",
+						nbuf, (unsigned int)res);
+						return res;
+					}
 				}
-			} else if (!strcmp("myprop.binaryblock.1byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(1, bbuf, bblen);
+				break;
+
+			case P_TYPE_STRING:
+				/* Already read as string */
+				break;
+
+			case P_TYPE_BINARY_BLOCK:
+				res = get_binblock_property(h, nbuf, &bbuf, &bblen);
 				if (res)
 					return res;
-			} else if (!strcmp("myprop.binaryblock.2byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(2, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.3byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(3, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.4byte-ones",
-					   nbuf)) {
-				res = check_binprop_ones(4, bbuf, bblen);
-				if (res)
-					return res;
-			} else if (!strcmp("myprop.binaryblock.empty1", nbuf) ||
-				   !strcmp("myprop.binaryblock.empty2", nbuf) ||
-				   !strcmp("myprop.binaryblock.empty3", nbuf)) {
-				if (bblen) {
-					EMSG("Property \"%s\": %zu byte(s)",
-					     nbuf, bblen);
-					return TEE_ERROR_GENERIC;
+
+				if (!strcmp("myprop.binaryblock", nbuf)) {
+					const char exp_bin_value[] = "Hello world!";
+
+					if (bblen != strlen(exp_bin_value) ||
+					    TEE_MemCompare(exp_bin_value, bbuf,
+							   bblen)) {
+						EMSG("Binary buffer of \"%s\" differs from \"%s\"",
+						     nbuf, exp_bin_value);
+						EMSG("Got \"%s\"", bbuf);
+						return TEE_ERROR_GENERIC;
+					}
+				} else if (!strcmp("myprop.binaryblock.1byte-ones",
+						   nbuf)) {
+					res = check_binprop_ones(1, bbuf, bblen);
+					if (res)
+						return res;
+				} else if (!strcmp("myprop.binaryblock.2byte-ones",
+						   nbuf)) {
+					res = check_binprop_ones(2, bbuf, bblen);
+					if (res)
+						return res;
+				} else if (!strcmp("myprop.binaryblock.3byte-ones",
+						   nbuf)) {
+					res = check_binprop_ones(3, bbuf, bblen);
+					if (res)
+						return res;
+				} else if (!strcmp("myprop.binaryblock.4byte-ones",
+						   nbuf)) {
+					res = check_binprop_ones(4, bbuf, bblen);
+					if (res)
+						return res;
+				} else if (!strcmp("myprop.binaryblock.empty1", nbuf) ||
+					   !strcmp("myprop.binaryblock.empty2", nbuf) ||
+					   !strcmp("myprop.binaryblock.empty3", nbuf)) {
+					if (bblen) {
+						EMSG("Property \"%s\": %zu byte(s)",
+						     nbuf, bblen);
+						return TEE_ERROR_GENERIC;
+					}
+				} else {
+					EMSG("Unexpected property \"%s\"", nbuf);
+					TEE_Panic(0);
 				}
-			} else {
-				EMSG("Unexpected property \"%s\"", nbuf);
-				TEE_Panic(0);
+
+				TEE_Free(bbuf);
+				break;
+
+			default:
+				EMSG("Unknown type (%d) for \"%s\"\n",
+				     p_attrs[n].type, p_attrs[n].str);
+				return TEE_ERROR_GENERIC;
 			}
+		}
 
-			TEE_Free(bbuf);
-			break;
-
-		default:
-			EMSG("Unknown type (%d) for \"%s\"\n",
-			     p_attrs[n].type, p_attrs[n].str);
-			return TEE_ERROR_GENERIC;
+		res = TEE_GetNextProperty(h);
+		if (res != TEE_SUCCESS) {
+			if (res == TEE_ERROR_ITEM_NOT_FOUND)
+				return TEE_SUCCESS;
+			return res;
 		}
 	}
-
-	res = TEE_GetNextProperty(h);
-	if (res != TEE_SUCCESS) {
-		if (res == TEE_ERROR_ITEM_NOT_FOUND)
-			return TEE_SUCCESS;
-		return res;
-	}
-}
 }
 
 static TEE_Result test_malloc(void)
