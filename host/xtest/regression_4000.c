@@ -3832,6 +3832,7 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 	uint32_t pub_key_type = 0;
 	uint32_t priv_key_type = 0;
 	uint32_t hash_algo = 0;
+	uint32_t sha1_algo_id = TEE_ALG_SHA1;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
@@ -4132,9 +4133,9 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				algo_params[0].attributeID =
 					TEE_ATTR_RSA_OAEP_MGF_HASH;
 				algo_params[0].content.ref.length =
-					sizeof(uint32_t);
+					sizeof(sha1_algo_id);
 				algo_params[0].content.ref.buffer =
-					&(uint32_t){TEE_ALG_SHA1};
+					&sha1_algo_id;
 				num_algo_params = 1;
 			}
 
