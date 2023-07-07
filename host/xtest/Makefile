@@ -100,6 +100,10 @@ ifeq ($(CFG_CRYPTO_SE05X),y)
 CFLAGS += -DCFG_CRYPTO_SE05X
 endif
 
+ifeq ($(CFG_CMAC_NIST_VECTORS),y)
+CFLAGS += -DCFG_CMAC_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include

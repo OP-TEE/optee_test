@@ -1378,6 +1378,10 @@ static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CASE(TEE_ALG_HMAC_SM3, TEE_TYPE_HMAC_SM3,
 		       mac_data_sm3_d32_key,
 		       13, mac_data_sm3_d32_in, mac_data_sm3_d32_out),
+#ifdef CFG_CMAC_NIST_VECTORS
+#include <nist/CMACGenAES192.h>
+#include <nist/CMACVerAES128.h>
+#endif
 };
 
 static void xtest_tee_test_4002(ADBG_Case_t *c)

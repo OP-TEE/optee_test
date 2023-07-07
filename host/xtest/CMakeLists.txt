@@ -117,6 +117,9 @@ if (CFG_CRYPTO_SE05X)
 	add_compile_options(-DCFG_CRYPTO_SE05X)
 endif()
 
+if (CFG_CMAC_NIST_VECTORS)
+	add_compile_options(-DCFG_CMAC_NIST_VECTORS)
+endif()
 ################################################################################
 # Built binary
 ################################################################################
