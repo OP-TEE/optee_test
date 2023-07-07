@@ -100,6 +100,10 @@ ifeq ($(CFG_CRYPTO_SE05X),y)
 CFLAGS += -DCFG_CRYPTO_SE05X
 endif
 
+ifeq ($(CFG_CMAC_NIST_VECTORS),y)
+CFLAGS += -DCFG_CMAC_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
@@ -206,6 +210,37 @@ $(foreach v, $(GCM_NIST_VECTORS_DECRYPT), $(eval $(call \
 	create-nist-gcm-vectors,$v,decrypt)))
 $(foreach v, $(GCM_NIST_VECTORS_ENCRYPT), $(eval $(call \
 	create-nist-gcm-vectors,$v,encrypt)))
+endif
+
+ifeq ($(CFG_CMAC_NIST_VECTORS),y)
+CMAC_NIST_VECTORS_GENERATE = CMACGenAES128 CMACGenAES192 CMACGenAES256
+CMAC_NIST_VECTORS_VERIFY = CMACVerAES128 CMACVerAES192 CMACVerAES256
+
+cleanfiles += $(out-dir)/cmactestvectors.zip
+$(out-dir)/cmactestvectors.zip:
+	@echo '  DL      $@'
+	$(q)curl https://csrc.nist.gov/csrc/media/projects/cryptographic-algorithm-validation-program/documents/mac/cmactestvectors.zip -o $@
+
+define create-nist-cmac-vectors
+cleanfiles += $(out-dir)/xtest/$(1).h $(out-dir)/$(1).rsp
+
+$(out-dir)/$(1).rsp: $(out-dir)/cmactestvectors.zip
+	@echo '  UNZIP   $$@'
+	$(q)unzip -o $$< $$(notdir $$@) -d $$(dir $$@)
+	$(q)touch $$@
+
+$(out-dir)/xtest/$(1).h: $(out-dir)/$(1).rsp
+	@echo '  GEN     $$@'
+	$(q)$(PYTHON3) ../../scripts/rsp_to_cmac_test.py --inf $$< --outf $$@ --mode=$(2) \
+		$(if $(filter y,$(CFG_CMAC_NIST_VECTORS_LIMITED)),--limited)
+
+$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1).h
+endef
+
+$(foreach v, $(CMAC_NIST_VECTORS_GENERATE), $(eval $(call \
+	create-nist-cmac-vectors,$v,generate)))
+$(foreach v, $(CMAC_NIST_VECTORS_VERIFY), $(eval $(call \
+	create-nist-cmac-vectors,$v,verify)))
 endif
 
 define embed-file

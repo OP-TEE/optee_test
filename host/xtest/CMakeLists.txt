@@ -19,6 +19,23 @@ endif()
 find_package(Python REQUIRED)
 
 include(GNUInstallDirs)
+include(ExternalProject)
+
+macro(DOWNLOAD_FILE url filename hash)
+
+	ExternalProject_Add(
+		download_${hash}
+		URL_HASH SHA256=${hash}
+		DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
+		DOWNLOAD_COMMAND wget ${url}
+		UPDATE_COMMAND ""
+		PATCH_COMMAND ""
+		CONFIGURE_COMMAND ""
+		BUILD_COMMAND ""
+		INSTALL_COMMAND unzip -o ${CMAKE_CURRENT_BINARY_DIR}/${filename} -d ${CMAKE_CURRENT_BINARY_DIR}
+	)
+
+endmacro(DOWNLOAD_FILE)
 
 macro(EMBED_8100FILE prefix infile)
 	add_custom_command(
@@ -117,6 +134,39 @@ if (CFG_CRYPTO_SE05X)
 	add_compile_options(-DCFG_CRYPTO_SE05X)
 endif()
 
+if (CFG_CMAC_NIST_VECTORS)
+	add_compile_options(-DCFG_CMAC_NIST_VECTORS)
+
+	macro(CREATE_NIST_CMAC_VECTORS infile mode)
+		if (CFG_CMAC_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_cmac_test.py --inf ${infile}.rsp
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --mode=${mode} ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_cmac_test.py ${infile}.rsp
+			DEPENDS download_bdda4edade394c9a2ae74d9cd0921caa120c911a5e735e37abf39d0d5f062be1
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_CMAC_VECTORS)
+
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/csrc/media/projects/cryptographic-algorithm-validation-program/documents/mac/cmactestvectors.zip
+		cmactestvectors.zip
+		bdda4edade394c9a2ae74d9cd0921caa120c911a5e735e37abf39d0d5f062be1
+	)
+
+	CREATE_NIST_CMAC_VECTORS(CMACGenAES128 generate)
+	CREATE_NIST_CMAC_VECTORS(CMACGenAES192 generate)
+	CREATE_NIST_CMAC_VECTORS(CMACGenAES256 generate)
+	CREATE_NIST_CMAC_VECTORS(CMACVerAES128 verify)
+	CREATE_NIST_CMAC_VECTORS(CMACVerAES192 verify)
+	CREATE_NIST_CMAC_VECTORS(CMACVerAES256 verify)
+endif()
 ################################################################################
 # Built binary
 ################################################################################
