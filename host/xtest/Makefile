@@ -104,6 +104,10 @@ ifeq ($(CFG_CMAC_NIST_VECTORS),y)
 CFLAGS += -DCFG_CMAC_NIST_VECTORS
 endif
 
+ifeq ($(CFG_XTS_NIST_VECTORS),y)
+CFLAGS += -DCFG_XTS_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
@@ -241,6 +245,36 @@ $(foreach v, $(CMAC_NIST_VECTORS_GENERATE), $(eval $(call \
 	create-nist-cmac-vectors,$v,generate)))
 $(foreach v, $(CMAC_NIST_VECTORS_VERIFY), $(eval $(call \
 	create-nist-cmac-vectors,$v,verify)))
+endif
+
+ifeq ($(CFG_XTS_NIST_VECTORS),y)
+XTS_NIST_VECTORS = XTSGenAES128 XTSGenAES256
+
+cleanfiles += $(out-dir)/XTSTestVectors.zip
+$(out-dir)/XTSTestVectors.zip:
+	@echo '  DL      $@'
+	$(q)curl https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/aes/XTSTestVectors.zip -o $@
+
+define create-nist-xts-vectors
+cleanfiles += $(out-dir)/xtest/$(1).h $(out-dir)/$(1).rsp
+
+$(out-dir)/$(1).rsp: $(out-dir)/XTSTestVectors.zip
+	@echo '  UNZIP   $$@'
+	$(q)unzip -p $$< "format tweak value input - 128 hex str/$$(notdir $$@)" >$$@
+	$(q)touch $$@
+
+$(out-dir)/xtest/$(1).h: $(out-dir)/$(1).rsp
+	@echo '  GEN     $$@'
+	$(q)$(PYTHON3) ../../scripts/rsp_to_xts_test.py --inf $$< --outf $$@ --mode=encrypt \
+		$(if $(filter y,$(CFG_XTS_NIST_VECTORS_LIMITED)),--limited)
+	$(q)$(PYTHON3) ../../scripts/rsp_to_xts_test.py --inf $$< --outf $$@ --mode=decrypt \
+		$(if $(filter y,$(CFG_XTS_NIST_VECTORS_LIMITED)),--limited)
+
+$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1).h
+endef
+
+$(foreach v, $(XTS_NIST_VECTORS), $(eval $(call \
+	create-nist-xts-vectors,$v)))
 endif
 
 define embed-file

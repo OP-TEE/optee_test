@@ -167,6 +167,41 @@ if (CFG_CMAC_NIST_VECTORS)
 	CREATE_NIST_CMAC_VECTORS(CMACVerAES192 verify)
 	CREATE_NIST_CMAC_VECTORS(CMACVerAES256 verify)
 endif()
+
+if (CFG_XTS_NIST_VECTORS)
+	add_compile_options(-DCFG_XTS_NIST_VECTORS)
+
+	macro(CREATE_NIST_XTS_VECTORS infile)
+		if (CFG_XTS_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_xts_test.py
+		--inf "format\ tweak\ value\ input\ -\ 128\ hex\ str/${infile}.rsp"
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --mode=encrypt ${limited}
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_xts_test.py
+		--inf "format\ tweak\ value\ input\ -\ 128\ hex\ str/${infile}.rsp"
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --mode=decrypt ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_xts_test.py
+			DEPENDS "format\ tweak\ value\ input\ -\ 128\ hex\ str/${infile}.rsp"
+			DEPENDS download_67bb04b018182f65530596786e7783f817d2e56509bf3b1f066609b8e3e29c36
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_XTS_VECTORS)
+
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/aes/XTSTestVectors.zip
+		XTSTestVectors.zip
+		67bb04b018182f65530596786e7783f817d2e56509bf3b1f066609b8e3e29c36
+	)
+
+	CREATE_NIST_XTS_VECTORS(XTSGenAES128)
+	CREATE_NIST_XTS_VECTORS(XTSGenAES256)
+endif()
 ################################################################################
 # Built binary
 ################################################################################

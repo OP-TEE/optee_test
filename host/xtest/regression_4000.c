@@ -2309,6 +2309,11 @@ static const struct xtest_ciph_case ciph_cases[] = {
 			ciph_data_sm4_ctr_a252_key, ciph_data_sm4_ctr_a252_iv,
 			11, ciph_data_sm4_ctr_a252_in,
 			ciph_data_sm4_ctr_a252_out),
+
+#ifdef CFG_XTS_NIST_VECTORS
+#include "XTSGenAES128.h"
+#include "XTSGenAES256.h"
+#endif
 };
 
 static void xtest_tee_test_4003(ADBG_Case_t *c)
