@@ -120,6 +120,10 @@ endif()
 if (CFG_CMAC_NIST_VECTORS)
 	add_compile_options(-DCFG_CMAC_NIST_VECTORS)
 endif()
+
+if (CFG_XTS_NIST_VECTORS)
+	add_compile_options(-DCFG_XTS_NIST_VECTORS)
+endif()
 ################################################################################
 # Built binary
 ################################################################################
