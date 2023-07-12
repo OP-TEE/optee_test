@@ -202,6 +202,47 @@ if (CFG_XTS_NIST_VECTORS)
 	CREATE_NIST_XTS_VECTORS(XTSGenAES128)
 	CREATE_NIST_XTS_VECTORS(XTSGenAES256)
 endif()
+
+if (CFG_CCM_NIST_VECTORS)
+	add_compile_options(-DCFG_CCM_NIST_VECTORS)
+
+	macro(CREATE_NIST_CCM_VECTORS infile)
+		if (CFG_CCM_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_ccm_test.py --inf ${infile}.rsp
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --mode=encrypt ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_ccm_test.py ${infile}.rsp
+			DEPENDS download_0e3c96761bd8f1a0b4dfe666146c32f7d367a49968375ff091b8da9ecaa673aa
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_CCM_VECTORS)
+
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/mac/ccmtestvectors.zip
+		ccmtestvectors.zip
+		0e3c96761bd8f1a0b4dfe666146c32f7d367a49968375ff091b8da9ecaa673aa
+	)
+
+	CREATE_NIST_CCM_VECTORS(VTT128)
+	CREATE_NIST_CCM_VECTORS(VTT192)
+	CREATE_NIST_CCM_VECTORS(VTT256)
+	CREATE_NIST_CCM_VECTORS(VPT128)
+	CREATE_NIST_CCM_VECTORS(VPT192)
+	CREATE_NIST_CCM_VECTORS(VPT256)
+	CREATE_NIST_CCM_VECTORS(VNT128)
+	CREATE_NIST_CCM_VECTORS(VNT192)
+	CREATE_NIST_CCM_VECTORS(VNT256)
+	CREATE_NIST_CCM_VECTORS(VADT128)
+	CREATE_NIST_CCM_VECTORS(VADT192)
+	CREATE_NIST_CCM_VECTORS(VADT256)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################

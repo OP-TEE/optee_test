@@ -2628,6 +2628,20 @@ static const struct xtest_ae_case ae_cases[] = {
 #include "gcmEncryptExtIV192.h"
 #include "gcmEncryptExtIV256.h"
 #endif
+#ifdef CFG_CCM_NIST_VECTORS
+#include "VTT128.h"
+#include "VTT192.h"
+#include "VTT256.h"
+#include "VPT128.h"
+#include "VPT192.h"
+#include "VPT256.h"
+#include "VNT128.h"
+#include "VNT192.h"
+#include "VNT256.h"
+#include "VADT128.h"
+#include "VADT192.h"
+#include "VADT256.h"
+#endif
 };
 
 static void xtest_tee_test_4005(ADBG_Case_t *c)

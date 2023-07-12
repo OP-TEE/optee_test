@@ -108,6 +108,10 @@ ifeq ($(CFG_XTS_NIST_VECTORS),y)
 CFLAGS += -DCFG_XTS_NIST_VECTORS
 endif
 
+ifeq ($(CFG_CCM_NIST_VECTORS),y)
+CFLAGS += -DCFG_CCM_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
@@ -275,6 +279,35 @@ endef
 
 $(foreach v, $(XTS_NIST_VECTORS), $(eval $(call \
 	create-nist-xts-vectors,$v)))
+endif
+
+ifeq ($(CFG_CCM_NIST_VECTORS),y)
+CCM_NIST_VECTORS = VTT128 VTT192 VTT256 VPT128 VPT192 VPT256 VNT128 VNT192 VNT256 VADT128 VADT192 VADT256
+
+cleanfiles += $(out-dir)/ccmtestvectors.zip
+$(out-dir)/ccmtestvectors.zip:
+	@echo '  DL      $@'
+	$(q)curl https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/mac/ccmtestvectors.zip -o $@
+
+define create-nist-ccm-vectors
+cleanfiles += $(out-dir)/xtest/$(1).h $(out-dir)/$(1).rsp
+
+$(out-dir)/$(1).rsp: $(out-dir)/ccmtestvectors.zip
+	@echo '  UNZIP   $$@'
+	$(q)unzip -o $$< $$(notdir $$@) -d $$(dir $$@)
+	$(q)touch $$@
+
+
+$(out-dir)/xtest/$(1).h: $(out-dir)/$(1).rsp
+	@echo '  GEN     $$@'
+	$(q)$(PYTHON3) ../../scripts/rsp_to_ccm_test.py --inf $$< --outf $$@ --mode=encrypt \
+		$(if $(filter y,$(CFG_CCM_NIST_VECTORS_LIMITED)),--limited)
+
+$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1).h
+endef
+
+$(foreach v, $(CCM_NIST_VECTORS), $(eval $(call \
+	create-nist-ccm-vectors,$v)))
 endif
 
 define embed-file
