@@ -2572,10 +2572,11 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 				      &ret_orig);
 	if (res == TEEC_ERROR_OUT_OF_MEMORY) {
 		Do_ADBG_Log("TEEC_ERROR_OUT_OF_MEMORY - ignored");
-	} else {
-		ADBG_EXPECT_TEEC_SUCCESS(c, res);
-		TEEC_CloseSession(&session);
+		return;
 	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	if (!res)
+		TEEC_CloseSession(&session);
 }
 ADBG_CASE_DEFINE(regression, 1034, xtest_tee_test_1034,
 		 "Test loading a large TA");
