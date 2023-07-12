@@ -2570,6 +2570,11 @@ static void xtest_tee_test_1034(ADBG_Case_t *c)
 
 	res = xtest_teec_open_session(&session, &large_ta_uuid, NULL,
 				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log("  skip test, large TA not found");
+		return;
+	}
+
 	if (res == TEEC_ERROR_OUT_OF_MEMORY) {
 		Do_ADBG_Log("TEEC_ERROR_OUT_OF_MEMORY - ignored");
 	} else {
