@@ -3,7 +3,7 @@
 modes = {'encrypt': 0, 'decrypt': 1}
 
 limited = False
-
+nb_tc = 0
 
 def to_compound_str(val):
     assert len(val) % 2 == 0, "Only even sized values supported"
@@ -20,15 +20,20 @@ def to_compound_str(val):
 
 
 def generate_case(outf, myvars, mode):
+    global nb_tc
+
     if 'PT' not in myvars:
         myvars['PT'] = ''
     if 'FAIL' in myvars:
         return
-    if limited and myvars['Count'] != '0':
-        return
     # Skip cases not supported by GP
     if len(myvars['Tag']) / 2 < 96 / 8:
         return
+
+    if limited and nb_tc != 0:
+        return
+
+    nb_tc = nb_tc + 1
 
     outf.write('{ TEE_ALG_AES_GCM, ' + mode + ', TEE_TYPE_AES,\n')
     outf.write('/* Key */ ' + to_compound_str(myvars['Key']) + '\n')

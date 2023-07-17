@@ -134,6 +134,40 @@ if (CFG_CRYPTO_SE05X)
 	add_compile_options(-DCFG_CRYPTO_SE05X)
 endif()
 
+if (CFG_GCM_NIST_VECTORS)
+	add_compile_options(-DCFG_GCM_NIST_VECTORS)
+
+	macro(CREATE_NIST_GCM_VECTORS infile mode)
+		if (CFG_GCM_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_gcm_test.py --inf ${infile}.rsp
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --mode=${mode} ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_gcm_test.py ${infile}.rsp
+			DEPENDS download_f9fc479e134cde2980b3bb7cddbcb567b2cd96fd753835243ed067699f26a023
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_GCM_VECTORS)
+
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/csrc/media/projects/cryptographic-algorithm-validation-program/documents/mac/gcmtestvectors.zip
+		gcmtestvectors.zip
+		f9fc479e134cde2980b3bb7cddbcb567b2cd96fd753835243ed067699f26a023
+	)
+
+	CREATE_NIST_GCM_VECTORS(gcmDecrypt128 decrypt)
+	CREATE_NIST_GCM_VECTORS(gcmDecrypt192 decrypt)
+	CREATE_NIST_GCM_VECTORS(gcmDecrypt256 decrypt)
+	CREATE_NIST_GCM_VECTORS(gcmEncryptExtIV128 encrypt)
+	CREATE_NIST_GCM_VECTORS(gcmEncryptExtIV192 encrypt)
+	CREATE_NIST_GCM_VECTORS(gcmEncryptExtIV256 encrypt)
+endif()
+
 if (CFG_CMAC_NIST_VECTORS)
 	add_compile_options(-DCFG_CMAC_NIST_VECTORS)
 
