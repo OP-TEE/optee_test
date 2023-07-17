@@ -100,6 +100,10 @@ ifeq ($(CFG_CRYPTO_SE05X),y)
 CFLAGS += -DCFG_CRYPTO_SE05X
 endif
 
+ifeq ($(CFG_GCM_NIST_VECTORS),y)
+CFLAGS += -DCFG_GCM_NIST_VECTORS
+endif
+
 ifeq ($(CFG_CMAC_NIST_VECTORS),y)
 CFLAGS += -DCFG_CMAC_NIST_VECTORS
 endif
@@ -186,39 +190,6 @@ define rm-build-dirs
 	$(q)$(RMDIR) $(out-dir)/xtest 2> /dev/null; true
 	$(q)$(RMDIR) $(out-dir) 2> /dev/null; true
 endef
-
-ifeq ($(CFG_GCM_NIST_VECTORS),y)
-GCM_NIST_VECTORS_DECRYPT = gcmDecrypt128 gcmDecrypt192 gcmDecrypt256
-GCM_NIST_VECTORS_ENCRYPT = gcmEncryptExtIV128 gcmEncryptExtIV192 \
-			   gcmEncryptExtIV256
-
-cleanfiles += $(out-dir)/gcmtestvectors.zip
-$(out-dir)/gcmtestvectors.zip:
-	@echo '  DL      $@'
-	$(q)curl https://csrc.nist.gov/csrc/media/projects/cryptographic-algorithm-validation-program/documents/mac/gcmtestvectors.zip -o $@
-
-define create-nist-gcm-vectors
-cleanfiles += $(out-dir)/xtest/$(1).h $(out-dir)/$(1).rsp
-
-$(out-dir)/$(1).rsp: $(out-dir)/gcmtestvectors.zip
-	@echo '  UNZIP   $$@'
-	$(q)unzip -o $$< $$(notdir $$@) -d $$(dir $$@)
-	$(q)touch $$@
-
-
-$(out-dir)/xtest/$(1).h: $(out-dir)/$(1).rsp
-	@echo '  GEN     $$@'
-	$(q)$(PYTHON3) ../../scripts/rsp_to_gcm_test.py --inf $$< --outf $$@ --mode=$(2) \
-		$(if $(filter y,$(CFG_GCM_NIST_VECTORS_LIMITED)),--limited)
-
-$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1).h
-endef
-
-$(foreach v, $(GCM_NIST_VECTORS_DECRYPT), $(eval $(call \
-	create-nist-gcm-vectors,$v,decrypt)))
-$(foreach v, $(GCM_NIST_VECTORS_ENCRYPT), $(eval $(call \
-	create-nist-gcm-vectors,$v,encrypt)))
-endif
 
 define embed-file
 cleanfiles += $(out-dir)/xtest/$(1).h

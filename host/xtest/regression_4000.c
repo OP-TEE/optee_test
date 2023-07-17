@@ -2617,12 +2617,12 @@ static const struct xtest_ae_case ae_cases[] = {
 	XTEST_AE_CASE_AES_GCM(vect17, 5, 9, ARRAY, ARRAY, ARRAY),
 	XTEST_AE_CASE_AES_GCM(vect18, 5, 9, ARRAY, ARRAY, ARRAY),
 #ifdef CFG_GCM_NIST_VECTORS
-#include "gcmDecrypt128.h"
-#include "gcmDecrypt192.h"
-#include "gcmDecrypt256.h"
-#include "gcmEncryptExtIV128.h"
-#include "gcmEncryptExtIV192.h"
-#include "gcmEncryptExtIV256.h"
+#include <nist/gcmDecrypt128.h>
+#include <nist/gcmDecrypt192.h>
+#include <nist/gcmDecrypt256.h>
+#include <nist/gcmEncryptExtIV128.h>
+#include <nist/gcmEncryptExtIV192.h>
+#include <nist/gcmEncryptExtIV256.h>
 #endif
 #ifdef CFG_CCM_NIST_VECTORS
 #include <nist/VTT128.h>
