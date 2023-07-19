@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
  * Copyright (c) 2021, SumUp Services GmbH
+ * Copyright 2023 NXP
  */
 
 #include <stdio.h>
@@ -1356,6 +1357,7 @@ static const struct xtest_mac_case mac_cases[] = {
 	XTEST_MAC_CMAC_CASE(vect11, 9),
 	XTEST_MAC_CMAC_CASE(vect12, 9),
 	XTEST_MAC_CMAC_CASE(vect12, 16),
+	XTEST_MAC_CMAC_CASE(vect13, 1),
 
 	{ TEE_ALG_DES3_CMAC, TEE_TYPE_DES3, mac_des3_cmac_vect1_key,
 	  ARRAY_SIZE(mac_des3_cmac_vect1_key), 0, NULL, 0, mac_des3_cmac_vect1_out,
