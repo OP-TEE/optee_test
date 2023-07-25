@@ -12,7 +12,7 @@ endif()
 
 find_package(OpenSSL)
 if(OPENSSL_FOUND)
-	add_compile_options(-DOPENSSL_FOUND=1)
+	add_compile_options(-DOPENSSL_FOUND=1 -DOPENSSL_API_COMPAT=10100)
 	set (OPENSSL_PRIVATE_LINK OpenSSL::Crypto)
 endif()
 
