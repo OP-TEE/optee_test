@@ -30,6 +30,7 @@ TA_DIRS := create_fail_test \
 	   storage_benchmark \
 	   hash_perf \
 	   aes_perf \
+	   asym_cipher_perf \
 	   socket \
 	   supp_plugin \
 	   large \

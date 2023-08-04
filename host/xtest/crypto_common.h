@@ -9,6 +9,7 @@
 
 #include "ta_aes_perf.h"
 #include "ta_hash_perf.h"
+#include "ta_asym_cipher_perf.h"
 
 
 #define AES_PERF_INPLACE 0
@@ -46,6 +47,7 @@ int hash_perf_runner_cmd_parser(int argc, char *argv[]);
 void hash_perf_run_test(int algo, size_t size, unsigned int n,
 				unsigned int l, int random_in, int offset,
 				int warmup, int verbosity);
+int asym_cipher_perf_runner_cmd_parser(int argc, char *argv[]);
 
 #ifdef CFG_SECURE_DATA_PATH
 int sdp_basic_runner_cmd_parser(int argc, char *argv[]);

@@ -68,6 +68,7 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_8000.c \
 	regression_8100.c \
 	hash_perf.c \
+	asym_cipher_perf.c \
 	stats.c \
 	xtest_helpers.c \
 	xtest_main.c \
@@ -121,6 +122,7 @@ CFLAGS += -I../../ta/storage_benchmark/include
 CFLAGS += -I../../ta/concurrent/include
 CFLAGS += -I../../ta/concurrent_large/include
 CFLAGS += -I../../ta/hash_perf/include
+CFLAGS += -I../../ta/asym_cipher_perf/include
 CFLAGS += -I../../ta/aes_perf/include
 CFLAGS += -I../../ta/socket/include
 CFLAGS += -I../../ta/sdp_basic/include
