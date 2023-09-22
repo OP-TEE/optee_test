@@ -28,6 +28,7 @@
 #define STATS_CMD_ALLOC_STATS	1
 #define STATS_CMD_MEMLEAK_STATS	2
 #define STATS_CMD_TA_STATS	3
+#define STATS_CMD_GET_TIME	4
 
 #define TEE_ALLOCATOR_DESC_LENGTH 32
 struct malloc_stats {
@@ -312,6 +313,36 @@ out:
 	return close_sess(&ctx, &sess);
 }
 
+static int stat_system_time(int argc, char *argv[])
+{
+	TEEC_Context ctx = { };
+	TEEC_Session sess = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t eo = 0;
+	TEEC_Operation op = { };
+
+	UNUSED(argv);
+	if (argc != 1)
+		return usage();
+
+	open_sess(&ctx, &sess);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT,
+					 TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&sess, STATS_CMD_GET_TIME, &op, &eo);
+	if (res != TEEC_SUCCESS)
+		errx(EXIT_FAILURE,
+		     "TEEC_InvokeCommand: res %#"PRIx32" err_orig %#"PRIx32,
+		     res, eo);
+
+	printf("REE time: %"PRId32" seconds, %"PRId32" milliseconds\n",
+			op.params[0].value.a, op.params[0].value.b);
+	printf("TEE time: %"PRId32" seconds, %"PRId32" milliseconds\n",
+			op.params[1].value.a, op.params[1].value.b);
+
+	return close_sess(&ctx, &sess);
+}
+
 int stats_runner_cmd_parser(int argc, char *argv[])
 {
 	if (argc > 1) {
@@ -323,6 +354,8 @@ int stats_runner_cmd_parser(int argc, char *argv[])
 			return stat_memleak(argc - 1, argv + 1);
 		if (!strcmp(argv[1], "--ta"))
 			return stat_loaded_ta(argc - 1, argv + 1);
+		if (!strcmp(argv[1], "--time"))
+			return stat_system_time(argc - 1, argv + 1);
 	}
 
 	return usage();
