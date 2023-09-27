@@ -1106,6 +1106,14 @@ static const struct xtest_hash_case hash_cases[] = {
 #include <nist/SHA384ShortMsg.h>
 #include <nist/SHA512LongMsg.h>
 #include <nist/SHA512ShortMsg.h>
+#include <nist/SHA3_224LongMsg.h>
+#include <nist/SHA3_224ShortMsg.h>
+#include <nist/SHA3_256LongMsg.h>
+#include <nist/SHA3_256ShortMsg.h>
+#include <nist/SHA3_384LongMsg.h>
+#include <nist/SHA3_384ShortMsg.h>
+#include <nist/SHA3_512LongMsg.h>
+#include <nist/SHA3_512ShortMsg.h>
 #endif
 };
 
