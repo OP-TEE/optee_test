@@ -298,10 +298,33 @@ if (CFG_HASH_NIST_VECTORS)
 			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
 	endmacro(CREATE_NIST_SHA_VECTORS)
 
+	macro(CREATE_NIST_SHA3_VECTORS infile algo)
+		if (CFG_HASH_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_sha_test.py
+		--inf ${infile}.rsp
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --algo=${algo} ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_sha_test.py ${infile}.rsp
+			DEPENDS download_cd07701af2e47f5cc889d642528b4bf11f8b6eb55797c7307a96828ed8d8fc8c
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_SHA3_VECTORS)
+
 	DOWNLOAD_FILE(
 		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
 		shabytetestvectors.zip
 		929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8
+	)
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/sha-3bytetestvectors.zip
+		sha-3bytetestvectors.zip
+		cd07701af2e47f5cc889d642528b4bf11f8b6eb55797c7307a96828ed8d8fc8c
 	)
 
 	CREATE_NIST_SHA_VECTORS(SHA1LongMsg SHA1)
@@ -314,6 +337,14 @@ if (CFG_HASH_NIST_VECTORS)
 	CREATE_NIST_SHA_VECTORS(SHA384ShortMsg SHA384)
 	CREATE_NIST_SHA_VECTORS(SHA512LongMsg SHA512)
 	CREATE_NIST_SHA_VECTORS(SHA512ShortMsg SHA512)
+	CREATE_NIST_SHA3_VECTORS(SHA3_224LongMsg SHA3_224)
+	CREATE_NIST_SHA3_VECTORS(SHA3_224ShortMsg SHA3_224)
+	CREATE_NIST_SHA3_VECTORS(SHA3_256LongMsg SHA3_256)
+	CREATE_NIST_SHA3_VECTORS(SHA3_256ShortMsg SHA3_256)
+	CREATE_NIST_SHA3_VECTORS(SHA3_384LongMsg SHA3_384)
+	CREATE_NIST_SHA3_VECTORS(SHA3_384ShortMsg SHA3_384)
+	CREATE_NIST_SHA3_VECTORS(SHA3_512LongMsg SHA3_512)
+	CREATE_NIST_SHA3_VECTORS(SHA3_512ShortMsg SHA3_512)
 endif()
 
 ################################################################################

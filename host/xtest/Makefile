@@ -320,11 +320,16 @@ endif
 
 ifeq ($(CFG_HASH_NIST_VECTORS),y)
 SHA_NIST_VECTORS = SHA1 SHA224 SHA256 SHA384 SHA512
+SHA3_NIST_VECTORS = SHA3_224 SHA3_256 SHA3_384 SHA3_512
 
 cleanfiles += $(out-dir)/shabytetestvectors.zip
+cleanfiles += $(out-dir)/sha-3bytetestvectors.zip
 $(out-dir)/shabytetestvectors.zip:
 	@echo '  DL      $@'
 	$(q)curl https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip -o $@
+$(out-dir)/sha-3bytetestvectors.zip:
+	@echo '  DL      $@'
+	$(q)curl https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/sha-3bytetestvectors.zip -o $@
 
 define create-nist-sha-vectors
 cleanfiles += $(out-dir)/xtest/$(1)$(2).h $(out-dir)/$(1)$(2).rsp
@@ -341,10 +346,29 @@ $(out-dir)/xtest/$(1)$(2).h: $(out-dir)/$(1)$(2).rsp
 $(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1)$(2).h
 endef
 
+define create-nist-sha-3-vectors
+cleanfiles += $(out-dir)/xtest/$(1)$(2).h $(out-dir)/$(1)$(2).rsp
+
+$(out-dir)/$(1)$(2).rsp: $(out-dir)/sha-3bytetestvectors.zip
+	@echo '  UNZIP   $$@'
+	$(q)unzip -o $$< $$(notdir $$@) -d $$(dir $$@)
+	$(q)touch $$@
+
+$(out-dir)/xtest/$(1)$(2).h: $(out-dir)/$(1)$(2).rsp
+	@echo '  GEN     $$@'
+	$(q)$(PYTHON3) ../../scripts/rsp_to_sha_test.py --inf $$< --outf $$@ --algo=$(1)
+
+$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1)$(2).h
+endef
+
 $(foreach v, $(SHA_NIST_VECTORS), $(eval $(call \
 	create-nist-sha-vectors,$v,LongMsg)))
 $(foreach v, $(SHA_NIST_VECTORS), $(eval $(call \
 	create-nist-sha-vectors,$v,ShortMsg)))
+$(foreach v, $(SHA3_NIST_VECTORS), $(eval $(call \
+	create-nist-sha-3-vectors,$v,LongMsg)))
+$(foreach v, $(SHA3_NIST_VECTORS), $(eval $(call \
+	create-nist-sha-3-vectors,$v,ShortMsg)))
 endif
 
 
