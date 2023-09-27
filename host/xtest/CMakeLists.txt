@@ -277,6 +277,45 @@ if (CFG_CCM_NIST_VECTORS)
 	CREATE_NIST_CCM_VECTORS(VADT256)
 endif()
 
+if (CFG_HASH_NIST_VECTORS)
+	add_compile_options(-DCFG_HASH_NIST_VECTORS)
+
+	macro(CREATE_NIST_SHA_VECTORS infile algo)
+		if (CFG_HASH_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_sha_test.py
+		--inf "shabytetestvectors/${infile}.rsp"
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h --algo=${algo} ${limited}
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_sha_test.py "shabytetestvectors/${infile}.rsp"
+			DEPENDS download_929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_SHA_VECTORS)
+
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
+		shabytetestvectors.zip
+		929ef80b7b3418aca026643f6f248815913b60e01741a44bba9e118067f4c9b8
+	)
+
+	CREATE_NIST_SHA_VECTORS(SHA1LongMsg SHA1)
+	CREATE_NIST_SHA_VECTORS(SHA1ShortMsg SHA1)
+	CREATE_NIST_SHA_VECTORS(SHA224LongMsg SHA224)
+	CREATE_NIST_SHA_VECTORS(SHA224ShortMsg SHA224)
+	CREATE_NIST_SHA_VECTORS(SHA256LongMsg SHA256)
+	CREATE_NIST_SHA_VECTORS(SHA256ShortMsg SHA256)
+	CREATE_NIST_SHA_VECTORS(SHA384LongMsg SHA384)
+	CREATE_NIST_SHA_VECTORS(SHA384ShortMsg SHA384)
+	CREATE_NIST_SHA_VECTORS(SHA512LongMsg SHA512)
+	CREATE_NIST_SHA_VECTORS(SHA512ShortMsg SHA512)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################

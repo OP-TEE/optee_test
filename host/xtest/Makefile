@@ -116,6 +116,10 @@ ifeq ($(CFG_CCM_NIST_VECTORS),y)
 CFLAGS += -DCFG_CCM_NIST_VECTORS
 endif
 
+ifeq ($(CFG_HASH_NIST_VECTORS),y)
+CFLAGS += -DCFG_HASH_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include
@@ -313,6 +317,36 @@ endef
 $(foreach v, $(CCM_NIST_VECTORS), $(eval $(call \
 	create-nist-ccm-vectors,$v)))
 endif
+
+ifeq ($(CFG_HASH_NIST_VECTORS),y)
+SHA_NIST_VECTORS = SHA1 SHA224 SHA256 SHA384 SHA512
+
+cleanfiles += $(out-dir)/shabytetestvectors.zip
+$(out-dir)/shabytetestvectors.zip:
+	@echo '  DL      $@'
+	$(q)curl https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip -o $@
+
+define create-nist-sha-vectors
+cleanfiles += $(out-dir)/xtest/$(1)$(2).h $(out-dir)/$(1)$(2).rsp
+
+$(out-dir)/$(1)$(2).rsp: $(out-dir)/shabytetestvectors.zip
+	@echo '  UNZIP   $$@'
+	$(q)unzip -p $$< "shabytetestvectors/$$(notdir $$@)" >$$@
+	$(q)touch $$@
+
+$(out-dir)/xtest/$(1)$(2).h: $(out-dir)/$(1)$(2).rsp
+	@echo '  GEN     $$@'
+	$(q)$(PYTHON3) ../../scripts/rsp_to_sha_test.py --inf $$< --outf $$@ --algo=$(1)
+
+$(CURDIR)/regression_4000.c: $(out-dir)/xtest/$(1)$(2).h
+endef
+
+$(foreach v, $(SHA_NIST_VECTORS), $(eval $(call \
+	create-nist-sha-vectors,$v,LongMsg)))
+$(foreach v, $(SHA_NIST_VECTORS), $(eval $(call \
+	create-nist-sha-vectors,$v,ShortMsg)))
+endif
+
 
 define embed-file
 cleanfiles += $(out-dir)/xtest/$(1).h
