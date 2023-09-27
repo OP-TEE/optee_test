@@ -133,6 +133,10 @@ if (CFG_CCM_NIST_VECTORS)
 	add_compile_options(-DCFG_CCM_NIST_VECTORS)
 endif()
 
+if (CFG_HASH_NIST_VECTORS)
+	add_compile_options(-DCFG_HASH_NIST_VECTORS)
+endif()
+
 ################################################################################
 # Built binary
 ################################################################################

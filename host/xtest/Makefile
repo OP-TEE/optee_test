@@ -116,6 +116,10 @@ ifeq ($(CFG_CCM_NIST_VECTORS),y)
 CFLAGS += -DCFG_CCM_NIST_VECTORS
 endif
 
+ifeq ($(CFG_HASH_NIST_VECTORS),y)
+CFLAGS += -DCFG_HASH_NIST_VECTORS
+endif
+
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
 CFLAGS += -I../supp_plugin/include

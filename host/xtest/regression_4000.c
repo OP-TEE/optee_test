@@ -1095,6 +1095,18 @@ static const struct xtest_hash_case hash_cases[] = {
 			hash_data_sm3_a1_out),
 	XTEST_HASH_CASE(TEE_ALG_SM3, 19, hash_data_sm3_a2_in,
 			hash_data_sm3_a2_out),
+#ifdef CFG_HASH_NIST_VECTORS
+#include <nist/SHA1LongMsg.h>
+#include <nist/SHA1ShortMsg.h>
+#include <nist/SHA224LongMsg.h>
+#include <nist/SHA224ShortMsg.h>
+#include <nist/SHA256LongMsg.h>
+#include <nist/SHA256ShortMsg.h>
+#include <nist/SHA384LongMsg.h>
+#include <nist/SHA384ShortMsg.h>
+#include <nist/SHA512LongMsg.h>
+#include <nist/SHA512ShortMsg.h>
+#endif
 };
 
 static void xtest_tee_test_4001(ADBG_Case_t *c)
