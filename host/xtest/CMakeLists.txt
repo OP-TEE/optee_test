@@ -316,6 +316,24 @@ if (CFG_HASH_NIST_VECTORS)
 			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
 	endmacro(CREATE_NIST_SHA3_VECTORS)
 
+	macro(CREATE_NIST_HMAC_VECTORS infile)
+		if (CFG_HASH_NIST_VECTORS_LIMITED)
+			set(limited "--limited")
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${infile}.h
+			COMMAND ${Python_EXECUTABLE} ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_hmac_test.py ${limited}
+		--inf ${infile}.rsp
+		--outf ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h
+			DEPENDS ${OPTEE_TEST_ROOT_DIR}/scripts/rsp_to_hmac_test.py ${infile}.rsp
+			DEPENDS download_418c3837d38f249d6668146bd0090db24dd3c02d2e6797e3de33860a387ae4bd
+		)
+
+		set_property(SOURCE regression_4000.c APPEND PROPERTY OBJECT_DEPENDS
+			     ${CMAKE_CURRENT_BINARY_DIR}/${infile}.h)
+	endmacro(CREATE_NIST_HMAC_VECTORS)
+
 	DOWNLOAD_FILE(
 		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/shs/shabytetestvectors.zip
 		shabytetestvectors.zip
@@ -325,6 +343,11 @@ if (CFG_HASH_NIST_VECTORS)
 		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/sha3/sha-3bytetestvectors.zip
 		sha-3bytetestvectors.zip
 		cd07701af2e47f5cc889d642528b4bf11f8b6eb55797c7307a96828ed8d8fc8c
+	)
+	DOWNLOAD_FILE(
+		https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/mac/hmactestvectors.zip
+		hmactestvectors.zip
+		418c3837d38f249d6668146bd0090db24dd3c02d2e6797e3de33860a387ae4bd
 	)
 
 	CREATE_NIST_SHA_VECTORS(SHA1LongMsg SHA1)
@@ -345,6 +368,7 @@ if (CFG_HASH_NIST_VECTORS)
 	CREATE_NIST_SHA3_VECTORS(SHA3_384ShortMsg SHA3_384)
 	CREATE_NIST_SHA3_VECTORS(SHA3_512LongMsg SHA3_512)
 	CREATE_NIST_SHA3_VECTORS(SHA3_512ShortMsg SHA3_512)
+	CREATE_NIST_HMAC_VECTORS(HMAC)
 endif()
 
 ################################################################################

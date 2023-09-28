@@ -1406,6 +1406,9 @@ static const struct xtest_mac_case mac_cases[] = {
 #include "CMACVerAES192.h"
 #include "CMACVerAES256.h"
 #endif
+#ifdef CFG_HASH_NIST_VECTORS
+#include "HMAC.h"
+#endif
 };
 
 static void xtest_tee_test_4002(ADBG_Case_t *c)
