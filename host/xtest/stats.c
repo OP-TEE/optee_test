@@ -58,6 +58,7 @@ static int usage(void)
 	fprintf(stderr, " --alloc        Print allocation statistics\n");
 	fprintf(stderr, " --memleak      Dump memory leak data on secure console\n");
 	fprintf(stderr, " --ta           Print loaded TAs context\n");
+	fprintf(stderr, " --time         Print REE and TEE time\n");
 
 	return EXIT_FAILURE;
 }
