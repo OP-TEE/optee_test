@@ -684,6 +684,7 @@ static CK_RV init_user_test_token_pin_auth(CK_SLOT_ID slot)
 	return rv;
 }
 
+#ifdef OPENSSL_FOUND
 static CK_RV test_already_initialized_token(ADBG_Case_t *c, CK_SLOT_ID slot)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
@@ -1079,9 +1080,11 @@ out:
 
 	return rv;
 }
+#endif /*OPENSSL_FOUND*/
 
 static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 {
+#ifdef OPENSSL_FOUND
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
 	CK_SLOT_ID slot = 0;
@@ -1138,6 +1141,11 @@ static void xtest_pkcs11_test_1003(ADBG_Case_t *c)
 out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
+#else /*!OPENSSL_FOUND*/
+	UNUSED(c);
+	/* xtest_uuid_v5() depends on OpenSSL */
+	Do_ADBG_Log("OpenSSL not available, skipping test 1003");
+#endif /*OPENSSL_FOUND*/
 }
 ADBG_CASE_DEFINE(pkcs11, 1003, xtest_pkcs11_test_1003,
 		 "PKCS11: Login to PKCS#11 token with PIN based authentication");
@@ -8625,6 +8633,7 @@ close_lib:
 ADBG_CASE_DEFINE(pkcs11, 1026, xtest_pkcs11_test_1026,
 		 "PKCS11: RSA AES Key Wrap/Unwrap tests");
 
+#ifdef OPENSSL_FOUND
 static CK_RV test_login_logout_acl_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
 {
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
@@ -8658,11 +8667,13 @@ out:
 	Do_ADBG_EndSubCase(c, "Test C_Login()/C_Logout() with ACL based authentication");
 	return rv;
 }
+#endif /*OPENSSL_FOUND*/
 
 #define GID_STR_LEN  13
 
 static void xtest_pkcs11_test_1027(ADBG_Case_t *c)
 {
+#ifdef OPENSSL_FOUND
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_FUNCTION_LIST_PTR ckfunc_list = NULL;
 	CK_SLOT_ID slot = 0;
@@ -8734,6 +8745,11 @@ out:
 out_unsetenv:
 	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_TYPE"));
 	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_GID"));
+#else /*!OPENSSL_FOUND*/
+	UNUSED(c);
+	/* xtest_uuid_v5() depends on OpenSSL */
+	Do_ADBG_Log("OpenSSL not available, skipping test 1027");
+#endif /*OPENSSL_FOUND*/
 }
 ADBG_CASE_DEFINE(pkcs11, 1027, xtest_pkcs11_test_1027,
 		 "PKCS11: Login to PKCS#11 token with ACL based authentication");
