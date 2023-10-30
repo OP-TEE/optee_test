@@ -53,7 +53,7 @@ static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 static void open_ta(void)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
-	TEEC_UUID uuid = TA_HASH_PERF_UUID;
+	TEEC_UUID uuid = TA_CRYPTO_PERF_UUID;
 	uint32_t err_origin = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
@@ -247,7 +247,7 @@ static uint64_t run_test_once(void *in, size_t size, int random_in,
 		read_random(in, size);
 
 	get_current_time(&t0);
-	res = TEEC_InvokeCommand(&sess, TA_HASH_PERF_CMD_PROCESS, op,
+	res = TEEC_InvokeCommand(&sess, TA_CRYPTO_PERF_CMD_HASH_PROCESS, op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 	get_current_time(&t1);
@@ -264,7 +264,7 @@ static void prepare_op(int algo)
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = algo;
-	res = TEEC_InvokeCommand(&sess, TA_HASH_PERF_CMD_PREPARE_OP, &op,
+	res = TEEC_InvokeCommand(&sess, TA_CRYPTO_PERF_CMD_HASH_PREPARE_OP, &op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
 }
