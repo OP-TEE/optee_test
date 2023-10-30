@@ -2209,7 +2209,7 @@ static void xtest_pkcs11_test_1009(ADBG_Case_t *c)
 		}
 
 		/*
-		 * Test 4 verification 
+		 * Test 4 verification
 		 * Error - Signature Length Range with C_VerifyFinal
 		 */
 		if (test->in != NULL) {
