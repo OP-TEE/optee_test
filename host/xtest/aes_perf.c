@@ -15,7 +15,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <ta_aes_perf.h>
+#include <ta_crypto_perf.h>
 #include <tee_client_api.h>
 #include <tee_client_api_extensions.h>
 #include <time.h>
@@ -109,7 +109,7 @@ static void check_res(TEEC_Result res, const char *errmsg, uint32_t *orig)
 static void open_ta(void)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
-	TEEC_UUID uuid = TA_AES_PERF_UUID;
+	TEEC_UUID uuid = TA_CRYPTO_PERF_UUID;
 	uint32_t err_origin = 0;
 
 	res = TEEC_InitializeContext(NULL, &ctx);
@@ -354,7 +354,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_origin = 0;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
-	uint32_t cmd = TA_AES_PERF_CMD_PREPARE_KEY;
+	uint32_t cmd = TA_CRYPTO_PERF_CMD_CIPHER_PREPARE_KEY;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
 					 TEEC_NONE, TEEC_NONE);
@@ -432,8 +432,8 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	int n0 = n;
 	double sd = 0;
-	uint32_t cmd = is_sdp_test ? TA_AES_PERF_CMD_PROCESS_SDP :
-				     TA_AES_PERF_CMD_PROCESS;
+	uint32_t cmd = is_sdp_test ? TA_CRYPTO_PERF_CMD_CIPHER_PROCESS_SDP :
+				     TA_CRYPTO_PERF_CMD_CIPHER_PROCESS;
 
 	if (input_buffer == BUFFER_UNSPECIFIED)
 		input_buffer = BUFFER_SHM_ALLOCATED;

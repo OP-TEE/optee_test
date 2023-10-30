@@ -7,9 +7,7 @@
 #ifndef XTEST_CRYPTO_COMMON_H
 #define XTEST_CRYPTO_COMMON_H
 
-#include "ta_aes_perf.h"
-#include "ta_hash_perf.h"
-
+#include "ta_crypto_perf.h"
 
 #define AES_PERF_INPLACE 0
 

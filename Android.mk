@@ -108,8 +108,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/ta/storage_benchmark/include \
 		$(LOCAL_PATH)/ta/concurrent/include \
 		$(LOCAL_PATH)/ta/concurrent_large/include \
-		$(LOCAL_PATH)/ta/hash_perf/include \
-		$(LOCAL_PATH)/ta/aes_perf/include \
+		$(LOCAL_PATH)/ta/crypto_perf/include \
 		$(LOCAL_PATH)/ta/socket/include \
 		$(LOCAL_PATH)/ta/sdp_basic/include \
 		$(LOCAL_PATH)/ta/tpm_log_test/include \
