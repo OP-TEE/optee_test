@@ -28,8 +28,7 @@ TA_DIRS := create_fail_test \
 	   concurrent \
 	   concurrent_large \
 	   storage_benchmark \
-	   hash_perf \
-	   aes_perf \
+	   crypto_perf \
 	   socket \
 	   supp_plugin \
 	   large \

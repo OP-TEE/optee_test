@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: BSD-2-Clause
 /*
  * Copyright (c) 2015, Linaro Limited
- * All rights reserved.
+
  */
 
 #include <tee_ta_api.h>
+#include <trace.h>
 
-#include "ta_hash_perf.h"
-#include "ta_hash_perf_priv.h"
+#include "ta_crypto_perf.h"
+#include "ta_crypto_perf_priv.h"
 
 /*
  * Trusted Application Entry Points
@@ -51,11 +52,22 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	(void)pSessionContext;
 
 	switch (nCommandID) {
-	case TA_HASH_PERF_CMD_PREPARE_OP:
-		return cmd_prepare_op(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_CIPHER_PREPARE_KEY:
+		return cmd_cipher_prepare_key(nParamTypes, pParams);
 
-	case TA_HASH_PERF_CMD_PROCESS:
-		return cmd_process(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_CIPHER_PROCESS:
+		return cmd_cipher_process(nParamTypes, pParams, false);
+	case TA_CRYPTO_PERF_CMD_CIPHER_PROCESS_SDP:
+#ifdef CFG_SECURE_DATA_PATH
+		return cmd_cipher_process(nParamTypes, pParams, true);
+#else
+		EMSG("Invalid SDP commands: TA was built without SDP support");
+		return TEE_ERROR_NOT_SUPPORTED;
+#endif
+	case TA_CRYPTO_PERF_CMD_HASH_PREPARE_OP:
+		return cmd_hash_prepare_op(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_HASH_PROCESS:
+		return cmd_hash_process(nParamTypes, pParams);
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
