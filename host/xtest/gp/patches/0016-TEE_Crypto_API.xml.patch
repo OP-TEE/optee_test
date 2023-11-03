@@ -1,0 +1,134 @@
+From e1e4ae13b9c5fb9928c94e05f0fa5c17769fd5bd Mon Sep 17 00:00:00 2001
+From: Jerome Forissier <jerome.forissier@linaro.org>
+Date: Fri, 3 Nov 2023 10:41:57 +0100
+Subject: [PATCH] TEE_Crypto_API.xml
+
+Disabling cases:
+
+- Invoke_Crypto_AllocateOperation_TEE_ALG_MD5_size_not_appropriate (3b-4d-15)
+- Invoke_Crypto_AllocateOperation_TEE_ALG_SHA1_size_not_appropriate (3b-86-3d)
+- Invoke_Crypto_AllocateOperation_TEE_ALG_SHA224_size_not_appropriate (3b-91-91)
+- Invoke_Crypto_AllocateOperation_TEE_ALG_SHA256_size_not_appropriate (3b-c6-3c)
+- Invoke_Crypto_AllocateOperation_TEE_ALG_SHA384_size_not_appropriate (3b-b0-94)
+- Invoke_Crypto_AllocateOperation_TEE_ALG_SHA512_size_not_appropriate (3b-f6-b8)
+
+These tests assume that TEE_AllocateOperation() must reject non-zero
+values for maxKeySize when the algorithm is MD5 or SHA (since the
+parameter is not applicable). But The GlobalPlatform TEE Internal Core
+API v1.1.2 has clarified the requirement, see:
+
+ 6.2.1 TEE_AllocateOperation
+
+ [...] The parameter maxKeySize MUST be a valid value as defined in Table
+ 5-9 for the algorithm, for algorithms referenced in Table 5-9. For all
+ other algorithms, the maxKeySize parameter may have any value.
+
+Link: https://github.com/OP-TEE/optee_os/pull/6416
+Signed-off-by: Jerome Forissier <jerome.forissier@linaro.org>
+---
+ packages/Crypto/xmlstable/TEE_Crypto_API.xml | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/packages/Crypto/xmlstable/TEE_Crypto_API.xml b/packages/Crypto/xmlstable/TEE_Crypto_API.xml
+index b824637..b1cd7b0 100644
+--- a/packages/Crypto/xmlstable/TEE_Crypto_API.xml
++++ b/packages/Crypto/xmlstable/TEE_Crypto_API.xml
+@@ -149178,6 +149178,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_MD5_size_not_appropriate (3b-4d-15)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -149367,6 +149368,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1_mode_not_allowed (3b-8b-3e)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -156360,6 +156362,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA1_size_not_appropriate (3b-86-3d)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -156549,6 +156552,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA224_mode_not_allowed (3b-91-90)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -156738,6 +156742,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA224_size_not_appropriate (3b-91-91)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -156927,6 +156932,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA256_mode_not_allowed (3b-c6-3b)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -157116,6 +157122,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA256_size_not_appropriate (3b-c6-3c)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -157305,6 +157312,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA384_mode_not_allowed (3b-b0-93)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -157494,6 +157502,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA384_size_not_appropriate (3b-b0-94)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -157683,6 +157692,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA512_mode_not_allowed (3b-f6-b7)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -157872,6 +157882,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++<!-- AllocateOperation
+         <scenario name="Invoke_Crypto_AllocateOperation_TEE_ALG_SHA512_size_not_appropriate (3b-f6-b8)" destructive="no">
+             <req name="ALLOCATE_OPERATION_ERROR_NOT_SUPPORTED">
+                 <description><![CDATA[If the mode is not compatible with the algorithm or key size or if the algorithm is not one of the listed algorithms or if maxKeySize is not appropriate for the algorithm.]]></description>
+@@ -158061,6 +158072,7 @@
+                 </call>
+             </postamble>
+         </scenario>
++-->
+     </initial-state>
+     <initial-state name="TEE_Internal_API_Crypto_FreeOperation">
+         <scenario name="Invoke_Crypto_FreeAllKeysAndOperations_Success (30-74-50)" destructive="no">
+-- 
+2.34.1
+
