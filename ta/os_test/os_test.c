@@ -635,10 +635,9 @@ static TEE_Result test_time(void)
 	printf("TA time %u.%03u\n", (unsigned int)t.seconds,
 	       (unsigned int)t.millis);
 
-	if (t.seconds > sys_t.seconds) {
-		EMSG("Unexpected wrapped time %u.%03u (sys_t %u.%03u)\n",
-		     (unsigned int)t.seconds, (unsigned int)t.millis,
-		     (unsigned int)sys_t.seconds, (unsigned int)sys_t.millis);
+	if (t.seconds > 1) {
+		EMSG("Unexpected wrapped time %u.%03u\n",
+		     (unsigned int)t.seconds, (unsigned int)t.millis);
 		return TEE_ERROR_BAD_STATE;
 	}
 
