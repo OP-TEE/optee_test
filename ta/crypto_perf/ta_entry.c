@@ -69,6 +69,18 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return cmd_hash_prepare_op(nParamTypes, pParams);
 	case TA_CRYPTO_PERF_CMD_HASH_PROCESS:
 		return cmd_hash_process(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PROCESS_GEN_KEYPAIR:
+		return cmd_asym_process_keypair(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PROCESS:
+		return cmd_asym_process_rsa_ecc(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PREPARE_KEYPAIR:
+		return cmd_asym_prepare_keypair(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PREPARE_HASH:
+		return cmd_asym_prepare_hash(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PREPARE_OBJ:
+		return cmd_asym_prepare_obj(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_CIPHER_PREPARE_ENC_SIGN:
+		return cmd_asym_prepare_enc_sign(nParamTypes, pParams);
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;

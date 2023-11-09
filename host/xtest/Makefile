@@ -58,6 +58,7 @@ srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c \
 	aes_perf.c \
+	asym_cipher_perf.c \
 	benchmark_1000.c \
 	benchmark_2000.c \
 	clear_storage.c \

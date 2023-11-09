@@ -103,6 +103,7 @@ void usage(char *program)
 	printf("\t--sha-perf [opts]  Deprecated, same as --hash-perf\n");
 	printf("\t--hash-perf [opts] Hash performance testing tool (-h for usage)\n");
 	printf("\t--aes-perf [opts]  AES performance testing tool (-h for usage)\n");
+	printf("\t--asym-cipher-perf [opts]  Aysmmetric cipher performance testing tool (-h for usage)\n");
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 	printf("\t--install-ta [directory or list of TAs]\n");
 	printf("\t                   Install TAs\n");
@@ -169,6 +170,8 @@ int main(int argc, char *argv[])
 		return hash_perf_runner_cmd_parser(argc-1, &argv[1]);
 	else if (argc > 1 && !strcmp(argv[1], "--aes-perf"))
 		return aes_perf_runner_cmd_parser(argc-1, &argv[1]);
+	else if (argc > 1 && !strcmp(argv[1], "--asym-cipher-perf"))
+		return asym_cipher_perf_runner_cmd_parser(argc-1, &argv[1]);
 #ifdef CFG_SECSTOR_TA_MGMT_PTA
 	else if (argc > 1 && !strcmp(argv[1], "--install-ta"))
 		return install_ta_runner_cmd_parser(argc - 1, argv + 1);
