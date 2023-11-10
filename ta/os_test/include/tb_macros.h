@@ -54,15 +54,4 @@
  */
 #define DEL_BIGINT(name) TEE_Free(name)
 
-/*
- * TB_PRINT_BIGINT prints the mpanum in base 16.
- */
-#define TB_PRINT_BIGINT(n)                                                     \
-do {                                                                           \
-	char *str;                                                             \
-	str = TEE_BigIntConvertToString(NULL, TEE_STRING_MODE_HEX_UC, 0, (n)); \
-	printf("%s\n", str);                                                   \
-	TEE_Free(str);                                                         \
-} while (0)
-
 #endif
