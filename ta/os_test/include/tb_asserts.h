@@ -74,18 +74,6 @@ do {                                                            \
 } while (0)
 
 /*
- * TB_ASSERT_HEX_VALUE checks that a prints to the string v in hex.
- */
-#define TB_ASSERT_HEX_PRINT_VALUE(a, v)                \
-do {                                                   \
-	char *_str_;                                   \
-	_str_ = TEE_BigIntConvertToString(NULL,        \
-		TEE_STRING_MODE_HEX_UC, (a));          \
-	TB_ASSERT_STR_EQ(_str_, (v));                  \
-	TEE_Free(_str_);                               \
-} while (0)
-
-/*
  * TB_ASSERT_POINTER_NULL(p) checks that p is null
  */
 #define TB_ASSERT_POINTER_NULL(p)                                  \
