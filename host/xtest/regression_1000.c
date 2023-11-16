@@ -1377,6 +1377,7 @@ static void xtest_tee_test_1016(ADBG_Case_t *c)
 	TEEC_Session session = { };
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig = 0;
+	int dummy = 0;
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
@@ -1389,6 +1390,24 @@ static void xtest_tee_test_1016(ADBG_Case_t *c)
 	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
 		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TA2TA_MEMREF, &op,
 				   &ret_orig));
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INOUT,
+					 TEEC_MEMREF_TEMP_OUTPUT,
+					 TEEC_NONE);
+
+	op.params[0].tmpref.buffer = &dummy;
+	op.params[0].tmpref.size = 0;
+
+	op.params[1].tmpref.buffer = &dummy;
+	op.params[1].tmpref.size = 0;
+
+	op.params[2].tmpref.buffer = &dummy;
+	op.params[2].tmpref.size = 0;
+
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_TA2TA_MEMREF_SIZE0,
+				   &op, &ret_orig));
 
 	TEEC_CloseSession(&session);
 }

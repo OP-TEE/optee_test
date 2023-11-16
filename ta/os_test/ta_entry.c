@@ -92,6 +92,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_TA2TA_MEMREF:
 		return ta_entry_ta2ta_memref(nParamTypes, pParams);
 
+	case TA_OS_TEST_CMD_TA2TA_MEMREF_SIZE0:
+		return ta_entry_ta2ta_memref_size0(nParamTypes, pParams);
+
 	case TA_OS_TEST_CMD_TA2TA_MEMREF_MIX:
 		return ta_entry_ta2ta_memref_mix(nParamTypes, pParams);
 
