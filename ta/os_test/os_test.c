@@ -1173,6 +1173,7 @@ cleanup_return:
 	TEE_CloseTASession(sess);
 	return res;
 }
+#undef TA2TA_BUF_SIZE
 
 TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 {
