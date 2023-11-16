@@ -535,7 +535,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_OpenTASession failed\n");
-		goto cleanup_return;
+		return res;
 	}
 
 	l_pts = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -547,12 +547,9 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
 				  TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
-	if (res != TEE_SUCCESS) {
+	if (res != TEE_SUCCESS)
 		EMSG("TEE_InvokeTACommand failed\n");
-		goto cleanup_return;
-	}
 
-cleanup_return:
 	TEE_CloseTASession(sess);
 	return res;
 }
@@ -944,7 +941,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_OpenTASession failed\n");
-		goto cleanup_return;
+		goto cleanup_free;
 	}
 
 	l_pts = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
@@ -959,18 +956,19 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 				  &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_InvokeTACommand failed\n");
-		goto cleanup_return;
+		goto cleanup_close_session;
 	}
 
 	if (TEE_MemCompare(sha256_out, out, sizeof(sha256_out)) != 0) {
 		EMSG("out parameter failed\n");
 		res = TEE_ERROR_GENERIC;
-		goto cleanup_return;
+		goto cleanup_close_session;
 	}
 
-cleanup_return:
-	TEE_Free(in);
+cleanup_close_session:
 	TEE_CloseTASession(sess);
+cleanup_free:
+	TEE_Free(in);
 	return res;
 }
 
@@ -1106,7 +1104,7 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
 		EMSG("TEE_OpenTASession failed");
-		goto cleanup_return;
+		return res;
 	}
 
 	l_pts = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
