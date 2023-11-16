@@ -1171,6 +1171,48 @@ cleanup_return:
 }
 #undef TA2TA_BUF_SIZE
 
+TEE_Result ta_entry_ta2ta_memref_size0(uint32_t param_types, TEE_Param params[4])
+{
+	static const TEE_UUID test_uuid = TA_OS_TEST_UUID;
+	TEE_TASessionHandle sess = TEE_HANDLE_NULL;
+	uint32_t ret_orig = 0;
+	TEE_Result res = TEE_ERROR_GENERIC;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+					   TEE_PARAM_TYPE_MEMREF_INOUT,
+					   TEE_PARAM_TYPE_MEMREF_OUTPUT,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	/*
+	 * This test expects all memory references to be non-NULL but
+	 * all sizes to be zero.
+	 */
+	if (!params[0].memref.buffer || params[0].memref.size ||
+	    !params[1].memref.buffer || params[1].memref.size ||
+	    !params[2].memref.buffer || params[2].memref.size)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
+				&sess, &ret_orig);
+	if (res != TEE_SUCCESS) {
+		EMSG("TEE_OpenTASession failed");
+		return res;
+	}
+
+	/*
+	 * TA basically does nothing. The actual test just consists
+	 * into validating that passing non-NULL memref of size zero
+	 * does not panic.
+	 */
+	res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
+				  TA_OS_TEST_CMD_TA2TA_MEMREF_MIX,
+				  param_types, params, &ret_orig);
+
+	TEE_CloseTASession(sess);
+	return res;
+}
+
 TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 {
 	uint8_t *in = NULL;
