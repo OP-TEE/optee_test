@@ -534,7 +534,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("test_mem_access_right: TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed\n");
 		goto cleanup_return;
 	}
 
@@ -548,7 +548,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 				  TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("test_mem_access_right: TEE_InvokeTACommand failed\n");
+		EMSG("TEE_InvokeTACommand failed\n");
 		goto cleanup_return;
 	}
 
@@ -884,15 +884,14 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 					   TEE_PARAM_TYPE_NONE,
 					   TEE_PARAM_TYPE_NONE,
 					   TEE_PARAM_TYPE_NONE)) {
-		EMSG("ta_entry_client_with_timeout: bad parameters\n");
+		EMSG("bad parameters\n");
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
 	res = TEE_OpenTASession(&os_test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG(
-		"ta_entry_client_with_timeout: TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed\n");
 		return res;
 	}
 
@@ -902,9 +901,8 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 				&ret_orig);
 
 	if (ret_orig != TEE_ORIGIN_TRUSTED_APP || res != TEE_ERROR_CANCEL) {
-		EMSG("ta_entry_client_with_timeout: TEE_InvokeTACommand: "
-		     "res 0x%x ret_orig 0x%x\n", (unsigned int)res,
-		     (unsigned int)ret_orig);
+		EMSG("TEE_InvokeTACommand: res 0x%x ret_orig 0x%x\n",
+		     (unsigned int)res, (unsigned int)ret_orig);
 		res = TEE_ERROR_GENERIC;
 	} else
 		res = TEE_SUCCESS;
@@ -945,7 +943,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	res = TEE_OpenTASession(&crypt_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("ta_entry_client: TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed\n");
 		goto cleanup_return;
 	}
 
@@ -960,12 +958,12 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 				  TA_CRYPT_CMD_SHA256, l_pts, l_params,
 				  &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("ta_entry_client: TEE_InvokeTACommand failed\n");
+		EMSG("TEE_InvokeTACommand failed\n");
 		goto cleanup_return;
 	}
 
 	if (TEE_MemCompare(sha256_out, out, sizeof(sha256_out)) != 0) {
-		EMSG("ta_entry_client: out parameter failed\n");
+		EMSG("out parameter failed\n");
 		res = TEE_ERROR_GENERIC;
 		goto cleanup_return;
 	}
