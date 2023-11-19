@@ -476,7 +476,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0, 0))
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	/* test access rights on memref parameter */
 	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
@@ -983,7 +983,7 @@ TEE_Result ta_entry_params_access_rights(uint32_t param_types, TEE_Param params[
 	if (param_types !=
 	    TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 			    TEE_PARAM_TYPE_MEMREF_INPUT, 0, 0))
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	res = TEE_CheckMemoryAccessRights(TEE_MEMORY_ACCESS_READ |
 					  TEE_MEMORY_ACCESS_ANY_OWNER,
@@ -1038,7 +1038,7 @@ TEE_Result ta_entry_bad_mem_access(uint32_t param_types, TEE_Param params[4])
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT, 0, 0, 0) &&
 	    param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
 					   TEE_PARAM_TYPE_MEMREF_INOUT, 0, 0))
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	switch (params[0].value.a) {
 	case 1:
@@ -1102,7 +1102,7 @@ TEE_Result ta_entry_ta2ta_memref(uint32_t param_types, TEE_Param params[4])
 	(void)params;
 
 	if (param_types != TEE_PARAM_TYPES(0, 0, 0, 0))
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
@@ -1186,12 +1186,12 @@ TEE_Result ta_entry_ta2ta_memref_mix(uint32_t param_types, TEE_Param params[4])
 	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
 					   TEE_PARAM_TYPE_MEMREF_INOUT,
 					   TEE_PARAM_TYPE_MEMREF_OUTPUT, 0))
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	bufsize = params[0].memref.size;
 	if (params[1].memref.size != bufsize ||
 	    params[2].memref.size != bufsize)
-		return TEE_ERROR_GENERIC;
+		return TEE_ERROR_BAD_PARAMETERS;
 
 	in = params[0].memref.buffer;
 	inout = params[1].memref.buffer;
