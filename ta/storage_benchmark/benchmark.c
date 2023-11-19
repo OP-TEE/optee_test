@@ -76,8 +76,7 @@ static TEE_Result prepare_test_file(size_t data_size, uint8_t *chunk_buf,
 			TEE_DATA_FLAG_OVERWRITE,
 			NULL, NULL, 0, &object);
 	if (res != TEE_SUCCESS) {
-		EMSG("Failed to create persistent object, res=0x%08x",
-				res);
+		EMSG("Failed to create persistent object, res=%#"PRIx32, res);
 		goto exit;
 	}
 
@@ -90,7 +89,7 @@ static TEE_Result prepare_test_file(size_t data_size, uint8_t *chunk_buf,
 			write_size = chunk_size;
 		res = TEE_WriteObjectData(object, chunk_buf, write_size);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to write data, res=0x%08x", res);
+			EMSG("Failed to write data, res=%#"PRIx32, res);
 			goto exit_close_object;
 		}
 		remain_bytes -= write_size;
@@ -122,7 +121,7 @@ static TEE_Result test_write(TEE_ObjectHandle object, size_t data_size,
 			write_size = chunk_size;
 		res = TEE_WriteObjectData(object, chunk_buf, write_size);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to write data, res=0x%08x", res);
+			EMSG("Failed to write data, res=%#"PRIx32, res);
 			goto exit;
 		}
 		remain_bytes -= write_size;
@@ -132,10 +131,9 @@ static TEE_Result test_write(TEE_ObjectHandle object, size_t data_size,
 
 	*spent_time_in_ms = get_delta_time_in_ms(start_time, stop_time);
 
-	IMSG("start: %u.%u(s), stop: %u.%u(s), delta: %u(ms)",
-			start_time.seconds, start_time.millis,
-			stop_time.seconds, stop_time.millis,
-			*spent_time_in_ms);
+	IMSG("start: %"PRIu32".%"PRIu32"(s), stop: %"PRIu32".%"PRIu32"(s), delta: %"PRIu32"(ms)",
+	     start_time.seconds, start_time.millis,
+	     stop_time.seconds, stop_time.millis, *spent_time_in_ms);
 
 exit:
 	return res;
@@ -164,7 +162,7 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 		res = TEE_ReadObjectData(object, chunk_buf, read_size,
 				&read_bytes);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to read data, res=0x%08x", res);
+			EMSG("Failed to read data, res=%#"PRIx32, res);
 			goto exit;
 		}
 
@@ -175,10 +173,9 @@ static TEE_Result test_read(TEE_ObjectHandle object, size_t data_size,
 
 	*spent_time_in_ms = get_delta_time_in_ms(start_time, stop_time);
 
-	IMSG("start: %u.%u(s), stop: %u.%u(s), delta: %u(ms)",
-			start_time.seconds, start_time.millis,
-			stop_time.seconds, stop_time.millis,
-			*spent_time_in_ms);
+	IMSG("start: %"PRIu32".%"PRIu32"(s), stop: %"PRIu32".%"PRIu32"(s), delta: %"PRIu32"(ms)",
+	     start_time.seconds, start_time.millis,
+	     stop_time.seconds, stop_time.millis, *spent_time_in_ms);
 
 exit:
 	return res;
@@ -210,7 +207,7 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 		res = TEE_ReadObjectData(object, chunk_buf, write_size,
 				&read_bytes);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to read data, res=0x%08x", res);
+			EMSG("Failed to read data, res=%#"PRIx32, res);
 			goto exit;
 		}
 
@@ -231,7 +228,7 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 		/* Write a chunk*/
 		res = TEE_WriteObjectData(object, chunk_buf, write_size);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to write data, res=0x%08x", res);
+			EMSG("Failed to write data, res=%#"PRIx32, res);
 			goto exit;
 		}
 
@@ -242,10 +239,9 @@ static TEE_Result test_rewrite(TEE_ObjectHandle object, size_t data_size,
 
 	*spent_time_in_ms = get_delta_time_in_ms(start_time, stop_time);
 
-	IMSG("start: %u.%u(s), stop: %u.%u(s), delta: %u(ms)",
-			start_time.seconds, start_time.millis,
-			stop_time.seconds, stop_time.millis,
-			*spent_time_in_ms);
+	IMSG("start: %"PRIu32".%"PRIu32"(s), stop: %"PRIu32".%"PRIu32"(s), delta: %"PRIu32"(ms)",
+	     start_time.seconds, start_time.millis,
+	     stop_time.seconds, stop_time.millis, *spent_time_in_ms);
 
 exit:
 	return res;
@@ -272,7 +268,7 @@ static TEE_Result verify_file_data(TEE_ObjectHandle object, size_t data_size,
 		res = TEE_ReadObjectData(object, chunk_buf, chunk_size,
 				&read_bytes);
 		if (res != TEE_SUCCESS) {
-			EMSG("Failed to read data, res=0x%08x", res);
+			EMSG("Failed to read data, res=%#"PRIx32, res);
 			goto exit;
 		}
 
@@ -284,7 +280,7 @@ static TEE_Result verify_file_data(TEE_ObjectHandle object, size_t data_size,
 
 		res = verify_buffer(chunk_buf, chunk_size);
 		if (res != TEE_SUCCESS) {
-			EMSG("Verify data failed, res=0x%08x", res);
+			EMSG("Verify data failed, res=%#"PRIx32, res);
 			goto exit;
 		}
 
@@ -323,7 +319,7 @@ static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 		chunk_size = DEFAULT_CHUNK_SIZE;
 
 	IMSG("command id: %u, test data size: %zd, chunk size: %zd",
-			nCommandID, data_size, chunk_size);
+	     nCommandID, data_size, chunk_size);
 
 	chunk_buf = TEE_Malloc(chunk_size, TEE_MALLOC_FILL_ZERO);
 	if (!chunk_buf) {
@@ -335,8 +331,7 @@ static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 	fill_buffer(chunk_buf, chunk_size);
 	res = prepare_test_file(data_size, chunk_buf, chunk_size);
 	if (res != TEE_SUCCESS) {
-		EMSG("Failed to create test file, res=0x%08x",
-				res);
+		EMSG("Failed to create test file, res=%#"PRIx32, res);
 		goto exit_free_chunk_buf;
 	}
 
@@ -347,8 +342,7 @@ static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 			TEE_DATA_FLAG_ACCESS_WRITE_META,
 			&object);
 	if (res != TEE_SUCCESS) {
-		EMSG("Failed to open persistent object, res=0x%08x",
-				res);
+		EMSG("Failed to open persistent object, res=%#"PRIx32, res);
 		goto exit_remove_object;
 	}
 
