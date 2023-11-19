@@ -29,7 +29,7 @@ static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
 				params, &cryp_session, &origin);
 
 	if (res != TEE_SUCCESS) {
-		EMSG("rpc_sha256 - TEE_OpenTASession returned 0x%x\n",
+		EMSG("rpc_sha256 - TEE_OpenTASession returned 0x%x",
 		     (unsigned int)res);
 		return res;
 	}
@@ -69,7 +69,7 @@ static TEE_Result rpc_call_cryp(bool sec_mem, uint32_t nParamTypes,
 	res = TEE_InvokeTACommand(cryp_session, TEE_TIMEOUT_INFINITE, cmd,
 				types, params, &origin);
 	if (res != TEE_SUCCESS) {
-		EMSG("rpc_call_cryp - TEE_InvokeTACommand returned 0x%x\n",
+		EMSG("rpc_call_cryp - TEE_InvokeTACommand returned 0x%x",
 		     (unsigned int)res);
 	}
 

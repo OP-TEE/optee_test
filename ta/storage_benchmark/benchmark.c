@@ -322,7 +322,7 @@ static TEE_Result ta_stroage_benchmark_chunk_access_test(uint32_t nCommandID,
 	if (chunk_size == 0)
 		chunk_size = DEFAULT_CHUNK_SIZE;
 
-	IMSG("command id: %u, test data size: %zd, chunk size: %zd\n",
+	IMSG("command id: %u, test data size: %zd, chunk size: %zd",
 			nCommandID, data_size, chunk_size);
 
 	chunk_buf = TEE_Malloc(chunk_size, TEE_MALLOC_FILL_ZERO);

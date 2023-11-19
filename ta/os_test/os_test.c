@@ -134,7 +134,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 
 		res = TEE_GetPropertyName(h, nbuf, &nblen);
 		if (res != TEE_SUCCESS) {
-			EMSG("TEE_GetPropertyName returned 0x%x\n",
+			EMSG("TEE_GetPropertyName returned 0x%x",
 			     (unsigned int)res);
 			return res;
 		}
@@ -182,7 +182,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 			return res;
 
 		if (strcmp(vbuf, vbuf2) != 0) {
-			EMSG("String of \"%s\" differs\n", nbuf);
+			EMSG("String of \"%s\" differs", nbuf);
 			return TEE_ERROR_GENERIC;
 		}
 
@@ -215,19 +215,19 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 		/* check specific myprop.hello property, which is larger than 80 */
 		if (!strcmp("myprop.hello", nbuf) &&
 		    vblen2 != 1 + strlen("hello property, larger than 80 characters, so that it checks that it is not truncated by anything in the source code which may be wrong")) {
-			EMSG("TEE_GetPropertyAsString(\"%s\") is truncated - returned \"%s\"\n",
+			EMSG("TEE_GetPropertyAsString(\"%s\") is truncated - returned \"%s\"",
 			     nbuf, vbuf);
 			return TEE_ERROR_GENERIC;
 		}
 
-		DMSG("Found \"%s\" value \"%s\"\n", nbuf, vbuf);
+		DMSG("Found \"%s\" value \"%s\"", nbuf, vbuf);
 
 		for (n = 0; n < num_p_attrs; n++) {
 			if (strcmp(nbuf, p_attrs[n].str) != 0)
 				continue;
 
 			if (p_attrs[n].retrieved) {
-				EMSG("Value \"%s\" already retrieved\n",
+				EMSG("Value \"%s\" already retrieved",
 				     p_attrs[n].str);
 				return TEE_ERROR_GENERIC;
 			}
@@ -242,7 +242,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					    TEE_GetPropertyAsBool(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
 						EMSG(
-						"TEE_GetPropertyAsBool(\"%s\") returned 0x%x\n",
+						"TEE_GetPropertyAsBool(\"%s\") returned 0x%x",
 						nbuf, (unsigned int)res);
 						return res;
 					}
@@ -256,7 +256,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					res = TEE_GetPropertyAsU32(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
 						EMSG(
-						"TEE_GetPropertyAsU32(\"%s\") returned 0x%x\n",
+						"TEE_GetPropertyAsU32(\"%s\") returned 0x%x",
 						nbuf, (unsigned int)res);
 						return res;
 					}
@@ -271,7 +271,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					    TEE_GetPropertyAsUUID(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
 						EMSG(
-						"TEE_GetPropertyAsUUID(\"%s\") returned 0x%x\n",
+						"TEE_GetPropertyAsUUID(\"%s\") returned 0x%x",
 						nbuf, (unsigned int)res);
 						return res;
 					}
@@ -287,7 +287,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 								      &v);
 					if (res != TEE_SUCCESS) {
 						EMSG(
-						"TEE_GetPropertyAsIdentity(\"%s\") returned 0x%x\n",
+						"TEE_GetPropertyAsIdentity(\"%s\") returned 0x%x",
 						nbuf, (unsigned int)res);
 						return res;
 					}
@@ -351,7 +351,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 				break;
 
 			default:
-				EMSG("Unknown type (%d) for \"%s\"\n",
+				EMSG("Unknown type (%d) for \"%s\"",
 				     p_attrs[n].type, p_attrs[n].str);
 				return TEE_ERROR_GENERIC;
 			}
@@ -371,7 +371,7 @@ static TEE_Result test_malloc(void)
 	void *p = TEE_Malloc(4, 0);
 
 	if (p == NULL) {
-		EMSG("TEE_Malloc failed\n");
+		EMSG("TEE_Malloc failed");
 		return TEE_ERROR_OUT_OF_MEMORY;
 	}
 	TEE_Free(p);
@@ -427,7 +427,7 @@ static TEE_Result test_properties(void)
 
 	res = TEE_AllocatePropertyEnumerator(&h);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_AllocatePropertyEnumerator: returned 0x%x\n",
+		EMSG("TEE_AllocatePropertyEnumerator: returned 0x%x",
 		     (unsigned int)res);
 		return TEE_ERROR_GENERIC;
 	}
@@ -451,7 +451,7 @@ static TEE_Result test_properties(void)
 
 	for (n = 0; n < num_p_attrs; n++) {
 		if (!p_attrs[n].retrieved) {
-			EMSG("\"%s\" not retrieved\n", p_attrs[n].str);
+			EMSG("\"%s\" not retrieved", p_attrs[n].str);
 			res = TEE_ERROR_GENERIC;
 			goto cleanup_return;
 		}
@@ -534,7 +534,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed");
 		return res;
 	}
 
@@ -548,7 +548,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 				  TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS)
-		EMSG("TEE_InvokeTACommand failed\n");
+		EMSG("TEE_InvokeTACommand failed");
 
 	TEE_CloseTASession(sess);
 	return res;
@@ -577,14 +577,14 @@ static TEE_Result test_time(void)
 		       (unsigned int)t.millis);
 		break;
 	case TEE_ERROR_OVERFLOW:
-		EMSG("Stored TA time overflowed %u.%03u\n",
+		EMSG("Stored TA time overflowed %u.%03u",
 		     (unsigned int)t.seconds, (unsigned int)t.millis);
 		break;
 	case TEE_ERROR_TIME_NOT_SET:
-		EMSG("TA time not stored\n");
+		EMSG("TA time not stored");
 		break;
 	case TEE_ERROR_TIME_NEEDS_RESET:
-		EMSG("TA time needs reset\n");
+		EMSG("TA time needs reset");
 		break;
 	default:
 		return res;
@@ -592,13 +592,13 @@ static TEE_Result test_time(void)
 
 	res = TEE_SetTAPersistentTime(&null_time);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_SetTAPersistentTime: failed\n");
+		EMSG("TEE_SetTAPersistentTime: failed");
 		return res;
 	}
 
 	res = TEE_GetTAPersistentTime(&t);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_GetTAPersistentTime null: failed\n");
+		EMSG("TEE_GetTAPersistentTime null: failed");
 		return res;
 	}
 	printf("TA time %u.%03u\n", (unsigned int)t.seconds,
@@ -609,31 +609,31 @@ static TEE_Result test_time(void)
 	 * it's not even a millisecond.
 	 */
 	if (t.seconds > 1 || t.millis >= 1000) {
-		EMSG("Unexpected stored TA time %u.%03u\n",
+		EMSG("Unexpected stored TA time %u.%03u",
 		     (unsigned int)t.seconds, (unsigned int)t.millis);
 		return TEE_ERROR_BAD_STATE;
 	}
 
 	res = TEE_SetTAPersistentTime(&wrap_time);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_SetTAPersistentTime wrap: failed\n");
+		EMSG("TEE_SetTAPersistentTime wrap: failed");
 		return res;
 	}
 
 	res = TEE_Wait(1000);
 	if (res != TEE_SUCCESS)
-		EMSG("TEE_Wait wrap: failed\n");
+		EMSG("TEE_Wait wrap: failed");
 
 	res = TEE_GetTAPersistentTime(&t);
 	if (res != TEE_ERROR_OVERFLOW) {
-		EMSG("TEE_GetTAPersistentTime: failed\n");
+		EMSG("TEE_GetTAPersistentTime: failed");
 		return TEE_ERROR_BAD_STATE;
 	}
 	printf("TA time %u.%03u\n", (unsigned int)t.seconds,
 	       (unsigned int)t.millis);
 
 	if (t.seconds > 1) {
-		EMSG("Unexpected wrapped time %u.%03u\n",
+		EMSG("Unexpected wrapped time %u.%03u",
 		     (unsigned int)t.seconds, (unsigned int)t.millis);
 		return TEE_ERROR_BAD_STATE;
 	}
@@ -881,14 +881,14 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 					   TEE_PARAM_TYPE_NONE,
 					   TEE_PARAM_TYPE_NONE,
 					   TEE_PARAM_TYPE_NONE)) {
-		EMSG("bad parameters\n");
+		EMSG("bad parameters");
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
 	res = TEE_OpenTASession(&os_test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed");
 		return res;
 	}
 
@@ -898,7 +898,7 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 				&ret_orig);
 
 	if (ret_orig != TEE_ORIGIN_TRUSTED_APP || res != TEE_ERROR_CANCEL) {
-		EMSG("TEE_InvokeTACommand: res 0x%x ret_orig 0x%x\n",
+		EMSG("TEE_InvokeTACommand: res 0x%x ret_orig 0x%x",
 		     (unsigned int)res, (unsigned int)ret_orig);
 		res = TEE_ERROR_GENERIC;
 	} else
@@ -940,7 +940,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	res = TEE_OpenTASession(&crypt_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed\n");
+		EMSG("TEE_OpenTASession failed");
 		goto cleanup_free;
 	}
 
@@ -955,12 +955,12 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 				  TA_CRYPT_CMD_SHA256, l_pts, l_params,
 				  &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_InvokeTACommand failed\n");
+		EMSG("TEE_InvokeTACommand failed");
 		goto cleanup_close_session;
 	}
 
 	if (TEE_MemCompare(sha256_out, out, sizeof(sha256_out)) != 0) {
-		EMSG("out parameter failed\n");
+		EMSG("out parameter failed");
 		res = TEE_ERROR_GENERIC;
 		goto cleanup_close_session;
 	}
