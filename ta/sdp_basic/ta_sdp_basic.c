@@ -32,7 +32,7 @@ static TEE_Result cmd_inject(uint32_t types,
 				     TEE_PARAM_TYPE_MEMREF_OUTPUT,
 				     TEE_PARAM_TYPE_NONE,
 				     TEE_PARAM_TYPE_NONE)) {
-		EMSG("bad parameters %x", (unsigned)types);
+		EMSG("bad parameters %#"PRIx32, types);
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
 
@@ -53,7 +53,7 @@ static TEE_Result cmd_inject(uint32_t types,
 					 params[ns_idx].memref.buffer,
 					 params[ns_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CheckMemoryAccessRights(nsec) failed %x", rc);
+		EMSG("TEE_CheckMemoryAccessRights(nsec) failed %#"PRIx32, rc);
 		return rc;
 	}
 
@@ -63,7 +63,7 @@ static TEE_Result cmd_inject(uint32_t types,
 					 params[sec_idx].memref.buffer,
 					 params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CheckMemoryAccessRights(secure) failed %x", rc);
+		EMSG("TEE_CheckMemoryAccessRights(secure) failed %#"PRIx32, rc);
 		return rc;
 	}
 
@@ -78,9 +78,9 @@ static TEE_Result cmd_inject(uint32_t types,
 	rc = TEE_CacheFlush(params[sec_idx].memref.buffer,
 			    params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CacheFlush(%p, %x) failed: 0x%x",
-					params[sec_idx].memref.buffer,
-					params[sec_idx].memref.size, rc);
+		EMSG("TEE_CacheFlush(%p, %zu) failed: %#"PRIx32,
+		     params[sec_idx].memref.buffer,
+		     params[sec_idx].memref.size, rc);
 		return rc;
 	}
 #endif /* CFG_CACHE_API */
@@ -94,9 +94,9 @@ static TEE_Result cmd_inject(uint32_t types,
 	rc = TEE_CacheFlush(params[sec_idx].memref.buffer,
 			    params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CacheFlush(%p, %x) failed: 0x%x",
-					params[sec_idx].memref.buffer,
-					params[sec_idx].memref.size, rc);
+		EMSG("TEE_CacheFlush(%p, %zu) failed: %#"PRIx32,
+		     params[sec_idx].memref.buffer,
+		     params[sec_idx].memref.size, rc);
 		return rc;
 	}
 #endif /* CFG_CACHE_API */
@@ -132,7 +132,7 @@ static TEE_Result cmd_transform(uint32_t types,
 					 params[0].memref.buffer,
 					 params[0].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CheckMemoryAccessRights(secure) failed %x", rc);
+		EMSG("TEE_CheckMemoryAccessRights(secure) failed %#"PRIx32, rc);
 		return rc;
 	}
 
@@ -147,9 +147,8 @@ static TEE_Result cmd_transform(uint32_t types,
 	rc = TEE_CacheFlush(params[0].memref.buffer,
 			    params[0].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CacheFlush(%p, %x) failed: 0x%x",
-					params[0].memref.buffer,
-					params[0].memref.size, rc);
+		EMSG("TEE_CacheFlush(%p, %zu) failed: %#"PRIx32,
+		     params[0].memref.buffer, params[0].memref.size, rc);
 		return rc;
 	}
 #endif /* CFG_CACHE_API */
@@ -164,9 +163,8 @@ static TEE_Result cmd_transform(uint32_t types,
 	rc = TEE_CacheFlush(params[0].memref.buffer,
 			    params[0].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CacheFlush(%p, %x) failed: 0x%x",
-					params[0].memref.buffer,
-					params[0].memref.size, rc);
+		EMSG("TEE_CacheFlush(%p, %zu) failed: %#"PRIx32,
+		     params[0].memref.buffer, params[0].memref.size, rc);
 		return rc;
 	}
 #endif /* CFG_CACHE_API */
@@ -204,7 +202,7 @@ static TEE_Result cmd_dump(uint32_t types,
 					 params[ns_idx].memref.buffer,
 					 params[ns_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CheckMemoryAccessRights(nsec) failed %x", rc);
+		EMSG("TEE_CheckMemoryAccessRights(nsec) failed %#"PRIx32, rc);
 		return rc;
 	}
 
@@ -214,7 +212,7 @@ static TEE_Result cmd_dump(uint32_t types,
 					 params[sec_idx].memref.buffer,
 					 params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CheckMemoryAccessRights(secure) failed %x", rc);
+		EMSG("TEE_CheckMemoryAccessRights(secure) failed %#"PRIx32, rc);
 		return rc;
 	}
 
@@ -228,9 +226,9 @@ static TEE_Result cmd_dump(uint32_t types,
 	rc = TEE_CacheFlush(params[sec_idx].memref.buffer,
 			    params[sec_idx].memref.size);
 	if (rc != TEE_SUCCESS) {
-		EMSG("TEE_CacheFlush(%p, %x) failed: 0x%x",
-					params[sec_idx].memref.buffer,
-					params[sec_idx].memref.size, rc);
+		EMSG("TEE_CacheFlush(%p, %zu) failed: %#"PRIx32,
+		     params[sec_idx].memref.buffer,
+		     params[sec_idx].memref.size, rc);
 		return rc;
 	}
 #endif /* CFG_CACHE_API */
@@ -265,8 +263,8 @@ static TEE_Result cmd_invoke(uint32_t nParamTypes,
         res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
 				  nCommandID, nParamTypes, pParams, &ret_orig);
         if (res != TEE_SUCCESS) {
-                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d",
-								res, ret_orig);
+                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %#"PRIx32"/%"PRIu32,
+		     res, ret_orig);
         }
 
 cleanup_return:
@@ -299,8 +297,8 @@ static TEE_Result cmd_invoke_pta(uint32_t nParamTypes,
         res = TEE_InvokeTACommand(sess, TEE_TIMEOUT_INFINITE,
 				  nCommandID, nParamTypes, pParams, &ret_orig);
         if (res != TEE_SUCCESS) {
-                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %x/%d",
-								res, ret_orig);
+                EMSG("SDP basic test TA: TEE_OpenTASession() FAILED %#"PRIx32"/%"PRIu32,
+		     res, ret_orig);
         }
 
 cleanup_return:
