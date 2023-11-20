@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: BSD-2-Clause
+/*
+ * Copyright (c) 2023, Linaro Limited
+ * All rights reserved.
+ */
+
 { TEE_ALG_HMAC_SHA1, TEE_TYPE_HMAC_SHA1,
 /* Key */ (const uint8_t []){0x59, 0x78, 0x59, 0x28, 0xd7, 0x25, 0x16, 0xe3, 0x12, 0x72, }, 10.0,
 0,
