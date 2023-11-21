@@ -134,8 +134,7 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 
 		res = TEE_GetPropertyName(h, nbuf, &nblen);
 		if (res != TEE_SUCCESS) {
-			EMSG("TEE_GetPropertyName returned 0x%x",
-			     (unsigned int)res);
+			EMSG("TEE_GetPropertyName() returned %#"PRIx32, res);
 			return res;
 		}
 		if (nblen != strlen(nbuf) + 1) {
@@ -241,9 +240,8 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					res =
 					    TEE_GetPropertyAsBool(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
-						EMSG(
-						"TEE_GetPropertyAsBool(\"%s\") returned 0x%x",
-						nbuf, (unsigned int)res);
+						EMSG("TEE_GetPropertyAsBool(\"%s\") returned %#"PRIx32,
+						     nbuf, res);
 						return res;
 					}
 				}
@@ -255,9 +253,8 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 
 					res = TEE_GetPropertyAsU32(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
-						EMSG(
-						"TEE_GetPropertyAsU32(\"%s\") returned 0x%x",
-						nbuf, (unsigned int)res);
+						EMSG("TEE_GetPropertyAsU32(\"%s\") returned %#"PRIx32,
+						     nbuf, res);
 						return res;
 					}
 				}
@@ -270,9 +267,8 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					res =
 					    TEE_GetPropertyAsUUID(h, NULL, &v);
 					if (res != TEE_SUCCESS) {
-						EMSG(
-						"TEE_GetPropertyAsUUID(\"%s\") returned 0x%x",
-						nbuf, (unsigned int)res);
+						EMSG("TEE_GetPropertyAsUUID(\"%s\") returned %#"PRIx32,
+						     nbuf, res);
 						return res;
 					}
 				}
@@ -286,9 +282,8 @@ static TEE_Result print_properties(TEE_PropSetHandle h,
 					    TEE_GetPropertyAsIdentity(h, NULL,
 								      &v);
 					if (res != TEE_SUCCESS) {
-						EMSG(
-						"TEE_GetPropertyAsIdentity(\"%s\") returned 0x%x",
-						nbuf, (unsigned int)res);
+						EMSG("TEE_GetPropertyAsIdentity(\"%s\") returned %#"PRIx32,
+						     nbuf, res);
 						return res;
 					}
 				}
@@ -371,7 +366,7 @@ static TEE_Result test_malloc(void)
 	void *p = TEE_Malloc(4, 0);
 
 	if (p == NULL) {
-		EMSG("TEE_Malloc failed");
+		EMSG("TEE_Malloc() failed");
 		return TEE_ERROR_OUT_OF_MEMORY;
 	}
 	TEE_Free(p);
@@ -427,23 +422,22 @@ static TEE_Result test_properties(void)
 
 	res = TEE_AllocatePropertyEnumerator(&h);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_AllocatePropertyEnumerator: returned 0x%x",
-		     (unsigned int)res);
+		EMSG("TEE_AllocatePropertyEnumerator: returned %#"PRIx32, res);
 		return TEE_ERROR_GENERIC;
 	}
 
-	printf("Getting properties for current TA\n");
+	MSG("Getting properties for current TA");
 	res = print_properties(h, TEE_PROPSET_CURRENT_TA, p_attrs, num_p_attrs);
 	if (res != TEE_SUCCESS)
 		goto cleanup_return;
 
-	printf("Getting properties for current client\n");
+	MSG("Getting properties for current client");
 	res = print_properties(h, TEE_PROPSET_CURRENT_CLIENT, p_attrs,
 			       num_p_attrs);
 	if (res != TEE_SUCCESS)
 		goto cleanup_return;
 
-	printf("Getting properties for implementation\n");
+	MSG("Getting properties for implementation");
 	res = print_properties(h, TEE_PROPSET_TEE_IMPLEMENTATION, p_attrs,
 			       num_p_attrs);
 	if (res != TEE_SUCCESS)
@@ -534,7 +528,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 	res = TEE_OpenTASession(&test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed");
+		EMSG("TEE_OpenTASession() failed: %#"PRIx32, res);
 		return res;
 	}
 
@@ -548,7 +542,7 @@ static TEE_Result test_mem_access_right(uint32_t param_types,
 				  TA_OS_TEST_CMD_PARAMS_ACCESS,
 				  l_pts, l_params, &ret_orig);
 	if (res != TEE_SUCCESS)
-		EMSG("TEE_InvokeTACommand failed");
+		EMSG("TEE_InvokeTACommand() failed: %#"PRIx32, res);
 
 	TEE_CloseTASession(sess);
 	return res;
@@ -563,22 +557,19 @@ static TEE_Result test_time(void)
 	static const TEE_Time wrap_time = { UINT32_MAX, 999 };
 
 	TEE_GetSystemTime(&sys_t);
-	printf("system time %u.%03u\n", (unsigned int)sys_t.seconds,
-	       (unsigned int)sys_t.millis);
+	MSG("system time %"PRIu32".%03"PRIx32, sys_t.seconds, sys_t.millis);
 
 	TEE_GetREETime(&t);
-	printf("REE time %u.%03u\n", (unsigned int)t.seconds,
-	       (unsigned int)t.millis);
+	MSG("REE time %"PRIu32".%03"PRIu32, t.seconds, t.millis);
 
 	res = TEE_GetTAPersistentTime(&t);
 	switch (res) {
 	case TEE_SUCCESS:
-		printf("Stored TA time %u.%03u\n", (unsigned int)t.seconds,
-		       (unsigned int)t.millis);
+		MSG("Stored TA time %"PRIu32".%03"PRIu32, t.seconds, t.millis);
 		break;
 	case TEE_ERROR_OVERFLOW:
-		EMSG("Stored TA time overflowed %u.%03u",
-		     (unsigned int)t.seconds, (unsigned int)t.millis);
+		EMSG("Stored TA time overflowed %"PRIu32".%03"PRIu32,
+		     t.seconds, t.millis);
 		break;
 	case TEE_ERROR_TIME_NOT_SET:
 		EMSG("TA time not stored");
@@ -592,49 +583,49 @@ static TEE_Result test_time(void)
 
 	res = TEE_SetTAPersistentTime(&null_time);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_SetTAPersistentTime: failed");
+		EMSG("TEE_SetTAPersistentTime() failed%#"PRIx32, res);
 		return res;
 	}
 
 	res = TEE_GetTAPersistentTime(&t);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_GetTAPersistentTime null: failed");
+		EMSG("TEE_GetTAPersistentTime() for null time: failed %#"PRIx32,
+		     res);
 		return res;
 	}
-	printf("TA time %u.%03u\n", (unsigned int)t.seconds,
-	       (unsigned int)t.millis);
+	MSG("TA time %"PRIu32".%03"PRIu32, t.seconds, t.millis);
+
 	/*
 	 * The time between TEE_SetTAPersistentTime() and
 	 * TEE_GetTAPersistentTime() should be much less than 1 second, in fact
 	 * it's not even a millisecond.
 	 */
 	if (t.seconds > 1 || t.millis >= 1000) {
-		EMSG("Unexpected stored TA time %u.%03u",
-		     (unsigned int)t.seconds, (unsigned int)t.millis);
+		EMSG("Unexpected stored TA time %"PRIu32".%03"PRIu32, t.seconds,
+		     t.millis);
 		return TEE_ERROR_BAD_STATE;
 	}
 
 	res = TEE_SetTAPersistentTime(&wrap_time);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_SetTAPersistentTime wrap: failed");
+		EMSG("TEE_SetTAPersistentTime() wrap: failed %#"PRIx32, res);
 		return res;
 	}
 
 	res = TEE_Wait(1000);
 	if (res != TEE_SUCCESS)
-		EMSG("TEE_Wait wrap: failed");
+		EMSG("TEE_Wait() wrap: failed %#"PRIx32, res);
 
 	res = TEE_GetTAPersistentTime(&t);
 	if (res != TEE_ERROR_OVERFLOW) {
-		EMSG("TEE_GetTAPersistentTime: failed");
+		EMSG("TEE_GetTAPersistentTime(): failed %#"PRIx32, res);
 		return TEE_ERROR_BAD_STATE;
 	}
-	printf("TA time %u.%03u\n", (unsigned int)t.seconds,
-	       (unsigned int)t.millis);
+	MSG("TA time %"PRIu32".%03"PRIu32, t.seconds, t.millis);
 
 	if (t.seconds > 1) {
-		EMSG("Unexpected wrapped time %u.%03u",
-		     (unsigned int)t.seconds, (unsigned int)t.millis);
+		EMSG("Unexpected wrapped time %"PRIu32".%03"PRIu32, t.seconds,
+		     t.millis);
 		return TEE_ERROR_BAD_STATE;
 	}
 
@@ -815,7 +806,7 @@ TEE_Result ta_entry_basic(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
 
-	printf("ta_entry_basic: enter\n");
+	MSG("enter");
 
 	res = test_malloc();
 	if (res != TEE_SUCCESS)
@@ -854,7 +845,7 @@ TEE_Result ta_entry_panic(uint32_t param_types, TEE_Param params[4])
 	(void)param_types;
 	(void)params;
 
-	printf("ta_entry_panic: enter\n");
+	MSG("enter");
 	/*
 	 * Somewhat clumsy way of avoiding compile errors if TEE_Panic() has
 	 * the __noreturn attribute.
@@ -888,7 +879,7 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 	res = TEE_OpenTASession(&os_test_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed");
+		EMSG("TEE_OpenTASession() failed %#"PRIx32, res);
 		return res;
 	}
 
@@ -898,8 +889,8 @@ TEE_Result ta_entry_client_with_timeout(uint32_t param_types,
 				&ret_orig);
 
 	if (ret_orig != TEE_ORIGIN_TRUSTED_APP || res != TEE_ERROR_CANCEL) {
-		EMSG("TEE_InvokeTACommand: res 0x%x ret_orig 0x%x",
-		     (unsigned int)res, (unsigned int)ret_orig);
+		EMSG("TEE_InvokeTACommand(): res %#"PRIx32" ret_orig %#"PRIx32,
+		     res, ret_orig);
 		res = TEE_ERROR_GENERIC;
 	} else
 		res = TEE_SUCCESS;
@@ -930,7 +921,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	(void)param_types;
 	(void)params;
 
-	printf("ta_entry_client: enter\n");
+	DMSG("ta_entry_client: enter");
 
 	in = TEE_Malloc(sizeof(sha256_in), 0);
 	if (in == NULL)
@@ -940,7 +931,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 	res = TEE_OpenTASession(&crypt_uuid, TEE_TIMEOUT_INFINITE, 0, NULL,
 				&sess, &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_OpenTASession failed");
+		EMSG("TEE_OpenTASession() failed %#"PRIx32, res);
 		goto cleanup_free;
 	}
 
@@ -955,7 +946,7 @@ TEE_Result ta_entry_client(uint32_t param_types, TEE_Param params[4])
 				  TA_CRYPT_CMD_SHA256, l_pts, l_params,
 				  &ret_orig);
 	if (res != TEE_SUCCESS) {
-		EMSG("TEE_InvokeTACommand failed");
+		EMSG("TEE_InvokeTACommand() failed %#"PRIx32, res);
 		goto cleanup_close_session;
 	}
 
@@ -1004,7 +995,7 @@ TEE_Result ta_entry_wait(uint32_t param_types, TEE_Param params[4])
 	TEE_Result res = TEE_SUCCESS;
 	(void)param_types;
 
-	printf("ta_entry_wait: waiting %d\n", (unsigned int)params[0].value.a);
+	MSG("waiting %"PRId32, params[0].value.a);
 	/* Wait */
 	res = TEE_Wait(params[0].value.a);
 
