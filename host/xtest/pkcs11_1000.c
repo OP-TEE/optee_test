@@ -1235,7 +1235,8 @@ static void test_create_destroy_session_objects(ADBG_Case_t *c)
 				    ARRAY_SIZE(cktest_session_object),
 				    obj_hdl + n);
 
-		if (rv == CKR_DEVICE_MEMORY || !ADBG_EXPECT_CK_OK(c, rv))
+		if (rv == CKR_DEVICE_MEMORY || rv == CKR_HOST_MEMORY ||
+		    !ADBG_EXPECT_CK_OK(c, rv))
 			break;
 	}
 
@@ -1654,13 +1655,13 @@ static CK_RV open_cipher_session(ADBG_Case_t *c,
 	}
 
 	rv = C_OpenSession(slot, session_flags, NULL, 0, session);
-	if (rv == CKR_DEVICE_MEMORY)
+	if (rv == CKR_DEVICE_MEMORY || rv == CKR_HOST_MEMORY)
 		return rv;
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return rv;
 
 	rv = C_CreateObject(*session, attr_key, attr_count, &object);
-	if (rv == CKR_DEVICE_MEMORY)
+	if (rv == CKR_DEVICE_MEMORY || rv == CKR_HOST_MEMORY)
 		return rv;
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return rv;
@@ -1670,7 +1671,7 @@ static CK_RV open_cipher_session(ADBG_Case_t *c,
 	if (mode == TEE_MODE_DECRYPT)
 		rv = C_DecryptInit(*session, mechanism, object);
 
-	if (rv == CKR_DEVICE_MEMORY)
+	if (rv == CKR_DEVICE_MEMORY || rv == CKR_HOST_MEMORY)
 		return rv;
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return CKR_GENERAL_ERROR;
@@ -1701,7 +1702,7 @@ static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
 					 TEE_MODE_ENCRYPT);
 
 		/* Failure due to memory allocation is not a error case */
-		if (rv == CKR_DEVICE_MEMORY)
+		if (rv == CKR_DEVICE_MEMORY || rv == CKR_HOST_MEMORY)
 			break;
 
 		if (!ADBG_EXPECT_CK_OK(c, rv))
