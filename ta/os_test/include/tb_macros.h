@@ -8,36 +8,35 @@
 
 #include <tee_internal_api_extensions.h>
 
-#define TB_HEADER(str)                               \
-	printf("\n*********** TESTBENCH ***********" \
-	       "\n***         RUNNING: <<< %s >>>"   \
-	       "\n*********************************\n\n", str)
+#define TB_HEADER(str)                            \
+	MSG("\n*********** TESTBENCH ***********" \
+	    "\n***         RUNNING: <<< %s >>>"   \
+	    "\n*********************************", str)
 
-#define TB_FOOTER(str)                               \
-	printf("\n*********** TESTBENCH ***********" \
-	       "\n***         PASSED:  <<< %s >>>"   \
-	       "\n*********************************\n\n", str)
+#define TB_FOOTER(str)                            \
+	MSG("\n*********** TESTBENCH ***********" \
+	    "\n***         PASSED:  <<< %s >>>"   \
+	    "\n*********************************", str)
 
-#define TB_INFO(str) printf("*** INFO : %s \n", (str))
+#define TB_INFO(str) MSG("*** INFO : %s \n", (str))
 
-#define HALT                                                             \
-	{                                                                \
-		printf("\n*** FAILED ***"                                \
-		       "\nTestbench halted at line %d in function %s\n", \
-			 __LINE__, __func__);                            \
-		printf("\nWaiting for keypress to enable debugging.\n"); \
-		TEE_Panic(0);                                            \
+#define HALT                                                           \
+	{                                                              \
+		EMSG("\n*** FAILED ***"                                \
+		     "\nTestbench halted at line %d in function %s";   \
+		MSG("\nWaiting for keypress to enable debugging.");    \
+		TEE_Panic(0);                                          \
 	}
 
-#define STARTING                                       \
-	printf("\n*********** TESTBENCH ***********"   \
-	       "\n*** For the GlobalPlatform Math API" \
-	       "\n*********************************\n\n")
+#define STARTING                                    \
+	MSG("\n*********** TESTBENCH ***********"   \
+	    "\n*** For the GlobalPlatform Math API" \
+	    "\n*********************************")
 
 #define ALL_PASSED \
-	printf("\n*********** TESTBENCH ***********" \
-	       "\n***     ALL TESTS PASSED      ***" \
-	       "\n*********************************\n\n")
+	MSG("\n*********** TESTBENCH ***********" \
+	    "\n***     ALL TESTS PASSED      ***" \
+	    "\n*********************************")
 
 /*
  * DEF_BIGINT defines and initialize a BigInt with name and size.
@@ -45,6 +44,7 @@
 #define DEF_BIGINT(name, size)                                                \
 	TEE_BigInt *name;                                                     \
 	size_t name##_size;                                                   \
+									      \
 	name##_size = TEE_BigIntSizeInU32(size);                              \
 	name = (TEE_BigInt *)TEE_Malloc(name##_size * sizeof(TEE_BigInt), 0); \
 	TEE_BigIntInit(name, name##_size)
