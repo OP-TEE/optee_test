@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <fnmatch.h>
 #include <inttypes.h>
+#include <pta_stats.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -20,33 +21,6 @@
 #include "xtest_helpers.h"
 #include "xtest_test.h"
 #include "stats.h"
-
-#define STATS_UUID { 0xd96a5b40, 0xe2c7, 0xb1af, \
-			{ 0x87, 0x94, 0x10, 0x02, 0xa5, 0xd5, 0xc6, 0x1b } }
-
-#define STATS_CMD_PAGER_STATS	0
-#define STATS_CMD_ALLOC_STATS	1
-#define STATS_CMD_MEMLEAK_STATS	2
-#define STATS_CMD_TA_STATS	3
-#define STATS_CMD_GET_TIME	4
-
-#define TEE_ALLOCATOR_DESC_LENGTH 32
-struct malloc_stats {
-	char desc[TEE_ALLOCATOR_DESC_LENGTH];
-	uint32_t allocated;		  /* Bytes currently allocated */
-	uint32_t max_allocated;		  /* Tracks max value of allocated */
-	uint32_t size;			  /* Total size for this allocator */
-	uint32_t num_alloc_fail;	  /* Number of failed alloc requests */
-	uint32_t biggest_alloc_fail;	  /* Size of biggest failed alloc */
-	uint32_t biggest_alloc_fail_used; /* Alloc bytes when above occurred */
-};
-
-struct ta_dump_stats {
-	TEEC_UUID uuid;
-	uint32_t panicked;	/* True if TA has panicked */
-	uint32_t sess_count;	/* Number of opened session */
-	struct malloc_stats heap;
-};
 
 static int usage(void)
 {
@@ -130,7 +104,7 @@ static int stat_alloc(int argc, char *argv[])
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t eo = 0;
 	TEEC_Operation op = { };
-	struct malloc_stats *stats = NULL;
+	struct pta_stats_alloc *stats = NULL;
 	size_t stats_size_bytes = 0;
 	size_t n = 0;
 
@@ -226,7 +200,7 @@ static int stat_loaded_ta(int argc, char *argv[])
 	uint32_t eo = 0;
 	TEEC_Operation op = { };
 	void *buff = NULL;
-	struct ta_dump_stats *stats = NULL;
+	struct pta_stats_ta *stats = NULL;
 	size_t stats_size_bytes = 0;
 	size_t n = 0;
 	uint32_t retry_count = 10;
@@ -293,7 +267,7 @@ retry:
 			stats[n].uuid.clockSeqAndNode[7]);
 		printf("\tpanicked(%"PRId32") -- True if TA has panicked\n",
 			stats[n].panicked);
-		printf("\tsession number(%"PRId32")\n", stats[n].sess_count);
+		printf("\tsession number(%"PRId32")\n", stats[n].sess_num);
 		printf("\tHeap Status:\n");
 		printf("\t\tBytes allocated:                       %"PRId32"\n",
 		       stats[n].heap.allocated);
