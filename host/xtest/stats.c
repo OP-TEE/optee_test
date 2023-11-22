@@ -33,6 +33,8 @@ static int usage(void)
 	fprintf(stderr, " --memleak      Dump memory leak data on secure console\n");
 	fprintf(stderr, " --ta           Print loaded TAs context\n");
 	fprintf(stderr, " --time         Print REE and TEE time\n");
+	fprintf(stderr, " --clocks       Dump clock tree on secure console\n");
+	fprintf(stderr, " --regulators   Dump regulator tree on secure console\n");
 
 	return EXIT_FAILURE;
 }
@@ -318,6 +320,32 @@ static int stat_system_time(int argc, char *argv[])
 	return close_sess(&ctx, &sess);
 }
 
+static int stat_driver_info(int argc, int driver_type)
+{
+	TEEC_Context ctx = { };
+	TEEC_Session sess = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t eo = 0;
+	TEEC_Operation op = { };
+
+	if (argc != 1)
+		return usage();
+
+	open_sess(&ctx, &sess);
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = driver_type;
+
+	res = TEEC_InvokeCommand(&sess, STATS_CMD_PRINT_DRIVER_INFO, &op, &eo);
+	if (res != TEEC_SUCCESS)
+		errx(EXIT_FAILURE,
+		     "TEEC_InvokeCommand(): res %#"PRIx32" err_orig %#"PRIx32,
+		     res, eo);
+
+	return close_sess(&ctx, &sess);
+}
+
 int stats_runner_cmd_parser(int argc, char *argv[])
 {
 	if (argc > 1) {
@@ -331,6 +359,12 @@ int stats_runner_cmd_parser(int argc, char *argv[])
 			return stat_loaded_ta(argc - 1, argv + 1);
 		if (!strcmp(argv[1], "--time"))
 			return stat_system_time(argc - 1, argv + 1);
+		if (!strcmp(argv[1], "--clocks"))
+			return stat_driver_info(argc - 1,
+						STATS_DRIVER_TYPE_CLOCK);
+		if (!strcmp(argv[1], "--regulators"))
+			return stat_driver_info(argc - 1,
+						STATS_DRIVER_TYPE_REGULATOR);
 	}
 
 	return usage();
