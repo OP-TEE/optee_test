@@ -2254,3 +2254,65 @@ exit1:
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6020)
 ADBG_CASE_DEFINE(regression, 6020, xtest_tee_test_6020,
 		 "Object IDs in SHM (negative)");
+
+static void xtest_tee_test_6021_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	const uint32_t flags = TEE_DATA_FLAG_ACCESS_READ |
+			       TEE_DATA_FLAG_ACCESS_WRITE |
+			       TEE_DATA_FLAG_ACCESS_WRITE_META;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEE_ObjectInfo obj_info = { };
+	uint32_t ou = 0xffffffff;
+	TEEC_Session sess = { };
+	uint32_t orig = 0;
+	uint32_t obj = 0;
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_create(&sess, file_01, sizeof(file_01),
+			flags | TEE_DATA_FLAG_OVERWRITE, 0,
+			data_00, sizeof(data_00), &obj, storage_id);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_get_obj_info(&sess, obj, &obj_info);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.objectUsage, ==, ou);
+
+	ou &= ~TEE_USAGE_EXTRACTABLE;
+	res = fs_restrict_usage(&sess, obj, ou);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_get_obj_info(&sess, obj, &obj_info);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.objectUsage, ==, ou);
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_close(&sess, obj));
+	TEEC_CloseSession(&sess);
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_open(&sess, file_01, sizeof(file_01), flags, &obj, storage_id);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_get_obj_info(&sess, obj, &obj_info);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.objectUsage, ==, ou);
+
+exit:
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+	TEEC_CloseSession(&sess);
+	return;
+}
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6021)
+ADBG_CASE_DEFINE(regression, 6021, xtest_tee_test_6021,
+		 "Modify and check persistent object usage");
