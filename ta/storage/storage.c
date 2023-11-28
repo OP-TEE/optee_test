@@ -487,7 +487,7 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 	result = check_obj(&keyInfo, &keyInfo2);
 	if (result != TEE_SUCCESS) {
 		EMSG("keyInfo and keyInfo2 are different");
-		goto cleanup2;
+		goto cleanup3;
 	}
 
 	TEE_CloseObject(persistent_key);
@@ -504,7 +504,7 @@ TEE_Result ta_storage_cmd_key_in_persistent(uint32_t param_types,
 	result = check_obj(&keyInfo3, &keyInfo2);
 	if (result != TEE_SUCCESS) {
 		EMSG("keyInfo2 and keyInfo3 are different");
-		goto cleanup2;
+		goto cleanup3;
 	}
 
 	result = TEE_AllocateOperation(&encrypt_op, alg, TEE_MODE_ENCRYPT,
