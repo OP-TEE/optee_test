@@ -309,6 +309,36 @@ static void xtest_pkcs11_test_1001(ADBG_Case_t *c)
 		if (!ADBG_EXPECT_CK_OK(c, rv))
 			goto out;
 
+		/**
+		 * OP-TEE's PKCS#11 implementaion always responds with
+		 * CK_UNAVAILABLE_INFORMATION for fields:
+		 *
+		 * - ulMaxSessionCount
+		 * - ulMaxRwSessionCount
+		 * - ulTotalPublicMemory
+		 * - ulFreePublicMemory
+		 *
+		 * Verify that CK_UNAVAILABLE_INFORMATION is correctly
+		 * translated (32 bit vs 64 bit difference).
+		 */
+
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+				token_info.ulMaxSessionCount, ==,
+				CK_UNAVAILABLE_INFORMATION))
+			goto out;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+				token_info.ulMaxRwSessionCount, ==,
+				CK_UNAVAILABLE_INFORMATION))
+			goto out;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+				token_info.ulTotalPublicMemory, ==,
+				CK_UNAVAILABLE_INFORMATION))
+			goto out;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+				token_info.ulFreePublicMemory, ==,
+				CK_UNAVAILABLE_INFORMATION))
+			goto out;
+
 		if (max_slot_id < slot)
 			max_slot_id = slot;
 	}
