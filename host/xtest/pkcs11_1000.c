@@ -9474,3 +9474,546 @@ out_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1029, xtest_pkcs11_test_1029,
 		 "PKCS11: Test support for object checksum value computation");
+
+struct aes_gcm_test {
+	int line_id;
+	CK_ATTRIBUTE_PTR attr_key;
+	CK_ULONG attr_count;
+	CK_MECHANISM_PTR mechanism;
+	const uint8_t *ctx;
+	size_t ctx_len;
+	const uint8_t *ptx;
+	size_t ptx_len;
+	const uint8_t *tag;
+	size_t tag_len;
+};
+
+#define MAKE_AES_GCM_TEST_CASE(_vect_)					\
+	static CK_GCM_PARAMS cktest_aes_gcm_params##_vect_ = {		\
+		.pIv = (CK_BYTE_PTR)ae_data_aes_gcm_vect##_vect_##_nonce,\
+		.ulIvLen = sizeof(ae_data_aes_gcm_vect##_vect_##_nonce),\
+		.ulIvBits = 0,						\
+		.pAAD = (CK_BYTE_PTR)ae_data_aes_gcm_vect##_vect_##_aad,\
+		.ulAADLen = (ae_data_aes_gcm_vect##_vect_##_aad == NULL) ? 0 : \
+			    sizeof(ae_data_aes_gcm_vect##_vect_##_aad),	\
+		.ulTagBits = AES_GCM_TAG_SIZE * 8,			\
+	};								\
+									\
+	static CK_MECHANISM cktest_aes_gcm_mechanism##_vect_ = {	\
+		.mechanism = CKM_AES_GCM,				\
+		.pParameter = (CK_BYTE_PTR)&cktest_aes_gcm_params##_vect_,\
+		.ulParameterLen = sizeof(cktest_aes_gcm_params##_vect_),\
+	};								\
+									\
+	static CK_ATTRIBUTE cktest_aes_gcm_key##_vect_[] = {		\
+		{ CKA_ENCRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },\
+		{ CKA_DECRYPT, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },\
+		{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
+		  sizeof(CK_OBJECT_CLASS) },				\
+		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },\
+		{ CKA_VALUE, (void *)(ae_data_aes_gcm_vect##_vect_##_key),\
+		  sizeof(ae_data_aes_gcm_vect##_vect_##_key) },		\
+	};								\
+									\
+	static const struct aes_gcm_test aes_gcm_test_case_##_vect_ = {	\
+		.line_id = __LINE__,					\
+		.attr_key = cktest_aes_gcm_key##_vect_,			\
+		.attr_count = ARRAY_SIZE(cktest_aes_gcm_key##_vect_),	\
+		.mechanism = &cktest_aes_gcm_mechanism##_vect_,		\
+		.ctx = ae_data_aes_gcm_vect##_vect_##_ctx,		\
+		.ctx_len = (ae_data_aes_gcm_vect##_vect_##_ctx == NULL) ? 0 : \
+			   sizeof(ae_data_aes_gcm_vect##_vect_##_ctx),	\
+		.ptx = ae_data_aes_gcm_vect##_vect_##_ptx,		\
+		.ptx_len = (ae_data_aes_gcm_vect##_vect_##_ptx == NULL) ? 0 : \
+			   sizeof(ae_data_aes_gcm_vect##_vect_##_ptx),	\
+		.tag = ae_data_aes_gcm_vect##_vect_##_tag,		\
+		.tag_len = sizeof(ae_data_aes_gcm_vect##_vect_##_tag)	\
+	}
+
+MAKE_AES_GCM_TEST_CASE(1);
+MAKE_AES_GCM_TEST_CASE(2);
+MAKE_AES_GCM_TEST_CASE(3);
+MAKE_AES_GCM_TEST_CASE(4);
+MAKE_AES_GCM_TEST_CASE(5);
+MAKE_AES_GCM_TEST_CASE(6);
+MAKE_AES_GCM_TEST_CASE(7);
+MAKE_AES_GCM_TEST_CASE(8);
+MAKE_AES_GCM_TEST_CASE(9);
+MAKE_AES_GCM_TEST_CASE(10);
+MAKE_AES_GCM_TEST_CASE(11);
+MAKE_AES_GCM_TEST_CASE(12);
+MAKE_AES_GCM_TEST_CASE(13);
+MAKE_AES_GCM_TEST_CASE(14);
+MAKE_AES_GCM_TEST_CASE(15);
+MAKE_AES_GCM_TEST_CASE(16);
+MAKE_AES_GCM_TEST_CASE(17);
+MAKE_AES_GCM_TEST_CASE(18);
+
+static const struct aes_gcm_test cktest_aes_gcm_cases[] = {
+	aes_gcm_test_case_1, aes_gcm_test_case_2, aes_gcm_test_case_3,
+	aes_gcm_test_case_4, aes_gcm_test_case_5, aes_gcm_test_case_6,
+	aes_gcm_test_case_7, aes_gcm_test_case_8, aes_gcm_test_case_9,
+	aes_gcm_test_case_10, aes_gcm_test_case_11, aes_gcm_test_case_12,
+	aes_gcm_test_case_13, aes_gcm_test_case_14, aes_gcm_test_case_15,
+	aes_gcm_test_case_16, aes_gcm_test_case_17, aes_gcm_test_case_18,
+};
+
+#define CHUNK_SIZE 6
+
+static void xtest_pkcs11_test_1030(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_OK;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION;
+	CK_OBJECT_HANDLE key_handle = CK_INVALID_HANDLE;
+	const struct aes_gcm_test *test = NULL;
+	size_t n = 0;
+	size_t proc_len = 0;
+	size_t total_len = 0;
+	size_t saved_size = 0;
+	uint8_t chunk[CHUNK_SIZE] = { 0 };
+	uint8_t out[512] = { 0 };
+	uint8_t in[512] = { 0 };
+	CK_ULONG chunk_len = 0;
+	CK_ULONG out_size = 0;
+	CK_ULONG in_size = 0;
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_close_lib;
+
+	for (n = 0; n < ARRAY_SIZE(cktest_aes_gcm_cases); n++) {
+		test = cktest_aes_gcm_cases + n;
+
+		Do_ADBG_BeginSubCase(c, "AES-GCM case %zu (line ID %d)", n,
+				     test->line_id);
+
+		rv = C_CreateObject(session, test->attr_key, test->attr_count,
+				    &key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_subcase;
+
+		/*
+		 * Test 1: encrypt with multi stage operation C_EncryptUpdate()
+		 */
+		total_len = 0;
+		memset(out, 0, sizeof(out));
+
+		rv = C_EncryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Encrypt plain text data, if any */
+		if (test->ptx) {
+			/* Get output buffer size for plaintext encryption */
+			out_size = 0;
+			rv = C_EncryptUpdate(session, (void *)test->ptx,
+					     test->ptx_len, NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv) ||
+			    !ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, <=,
+							  sizeof(out)))
+				goto err_destr_obj;
+
+			/* Encrypt plain text */
+			rv = C_EncryptUpdate(session, (void *)test->ptx,
+					     test->ptx_len, out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			total_len += out_size;
+		}
+
+		/* Finalize to get the tag: 1st get tag size then get tag data */
+		out_size = 0;
+		rv = C_EncryptFinal(session, NULL, &out_size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_OK, rv))
+			goto err_destr_obj;
+		saved_size = out_size;
+		out_size = 0;
+		rv = C_EncryptFinal(session, out + total_len, &out_size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+			goto err_destr_obj;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==, saved_size))
+			goto err_destr_obj;
+		rv = C_EncryptFinal(session, out + total_len, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==, saved_size))
+			goto err_destr_obj;
+
+		total_len += out_size;
+
+		/* Check ciphertext and tag */
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						  test->ctx_len + test->tag_len,
+						  ==, total_len))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_BUFFER(c, test->tag, test->tag_len,
+					out + test->ctx_len, test->tag_len))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_BUFFER(c, test->ctx, test->ctx_len, out,
+					test->ctx_len))
+			goto err_destr_obj;
+
+		/*
+		 * Test 2: decrypt with multi stage operation C_DecryptUpdate()
+		 */
+		rv = C_DecryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Concat ciphertext and tag */
+		memcpy(in, test->ctx, test->ctx_len);
+		memcpy(in + test->ctx_len, test->tag, test->tag_len);
+		in_size = test->ctx_len + test->tag_len;
+
+		/* Process decryption, when don't expect output data */
+		out_size = sizeof(out);
+		rv = C_DecryptUpdate(session, (void *)in, in_size, out,
+				     &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==, 0))
+			goto err_destr_obj;
+
+		/* Finalize and check MAC (get size then get data) */
+		out_size = 0;
+		rv = C_DecryptFinal(session, NULL, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+						  test->ptx_len))
+			goto err_destr_obj;
+
+		/* Get data only if there are plaintext data */
+		if (out_size) {
+			rv = C_DecryptFinal(session, out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_BUFFER(c, test->ptx, test->ptx_len,
+						out, out_size))
+				goto err_destr_obj;
+		}
+
+		/*
+		 * Test 3: encrypt with mult-stage opetation C_EncryptUpdate()
+		 * by 6 bytes chunks of plain text.
+		 */
+		rv = C_EncryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		proc_len = 0;
+		total_len = 0;
+		chunk_len = 0;
+		memset(chunk, 0, CHUNK_SIZE);
+
+		while (proc_len < test->ptx_len) {
+			if (test->ptx_len - proc_len > CHUNK_SIZE)
+				chunk_len = CHUNK_SIZE;
+			else
+				chunk_len = test->ptx_len - proc_len;
+
+			memcpy(chunk, test->ptx + proc_len, chunk_len);
+
+			out_size = sizeof(out) - total_len;
+			rv = C_EncryptUpdate(session, chunk, chunk_len,
+					     out + total_len, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			proc_len += chunk_len;
+			total_len += out_size;
+		}
+
+		/* Finalize tag computing, but get output size first */
+		out_size = 0;
+		rv = C_EncryptFinal(session, out + total_len, &out_size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+			goto err_destr_obj;
+		saved_size = out_size;
+		/* Test another way to get remaining data */
+		out_size = 1;
+		rv = C_EncryptFinal(session, NULL, &out_size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_OK, rv))
+			goto err_destr_obj;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==, saved_size))
+			goto err_destr_obj;
+
+		/* Now really finalize and get remaining data and tag */
+		rv = C_EncryptFinal(session, out + total_len, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		total_len += out_size;
+
+		/* Check ciphertext and tag */
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						  test->ctx_len + test->tag_len,
+						  ==, total_len))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_BUFFER(c, test->tag, test->tag_len,
+					out + test->ctx_len, test->tag_len))
+			goto err_destr_obj;
+
+		if (test->ctx &&
+		    !ADBG_EXPECT_BUFFER(c, test->ctx, test->ctx_len, out,
+					test->ctx_len))
+			goto err_destr_obj;
+
+		/*
+		 * Test 4: decrypt with multi-stage operation C_DecryptUpdate()
+		 * by 6 bytes chunks of plain text.
+		 */
+		rv = C_DecryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Process ptx in 8-byte chunks */
+		proc_len = 0;
+		total_len = 0;
+		chunk_len = 0;
+		while (proc_len < test->ctx_len) {
+			if (test->ctx_len - proc_len > CHUNK_SIZE)
+				chunk_len = CHUNK_SIZE;
+			else
+				chunk_len = test->ctx_len - proc_len;
+
+			memcpy(chunk, test->ctx + proc_len, chunk_len);
+
+			/* Decrypt the chunk, no output data expected */
+			out_size = 1;
+			rv = C_DecryptUpdate(session, chunk, chunk_len,
+					     out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv) ||
+			    !ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size,
+							  ==, 0))
+				goto err_destr_obj;
+
+			proc_len += chunk_len;
+		}
+
+		/* Decrypt the tag */
+		out_size = sizeof(out);
+		in_size = test->tag_len;
+		rv = C_DecryptUpdate(session, (void *)test->tag, in_size,
+				     out, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==, 0))
+			goto err_destr_obj;
+
+		/* Check Plaintext (get output size then the data, if any) */
+		out_size = 0;
+		rv = C_DecryptFinal(session, NULL, &out_size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_OK, rv))
+			goto err_destr_obj;
+
+		if (out_size) {
+			saved_size = out_size;
+			out_size = 0;
+			rv = C_DecryptFinal(session, out, &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+
+			rv = C_DecryptFinal(session, out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+		}
+
+		/* Check output is expected plaintext */
+		if (!ADBG_EXPECT_BUFFER(c, test->ptx, test->ptx_len,
+					out, out_size))
+			goto err_destr_obj;
+
+		/*
+		 * Test 5: encrypt with one-shot operation C_Encrypt()
+		 */
+		rv = C_EncryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Get output buffer size */
+		out_size = 0;
+		rv = C_Encrypt(session, (void *)test->ptx, test->ptx_len, NULL,
+			       &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		if (out_size) {
+			saved_size = out_size;
+
+			/* Test too short buffer case to get output data size */
+			out_size = 1;
+			rv = C_Encrypt(session, (void *)test->ptx,
+				       test->ptx_len, out, &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+
+			/* Test NULL ref with non-zero size to get output data size */
+			out_size = sizeof(out);
+			rv = C_Encrypt(session, (void *)test->ptx,
+				       test->ptx_len, NULL, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+
+			/* Encrypt the whole plain text in one shot */
+			memset(out, 0, out_size);
+			rv = C_Encrypt(session, (void *)test->ptx,
+				       test->ptx_len, out, &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+		}
+
+		/* Check Ciphertext + tag */
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						  test->ctx_len + test->tag_len,
+						  ==, out_size))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_BUFFER(c, test->ctx, test->ctx_len, out,
+					test->ctx_len))
+			goto err_destr_obj;
+
+		if (!ADBG_EXPECT_BUFFER(c, test->tag, test->tag_len,
+					out + test->ctx_len, test->tag_len))
+			goto err_destr_obj;
+
+		/*
+		 * Test 6 decrypt with one shot operation C_Decrypt()
+		 */
+		rv = C_DecryptInit(session, test->mechanism, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/* Concat ciphertext and tag */
+		memcpy(in, test->ctx, test->ctx_len);
+		memcpy(in + test->ctx_len, test->tag, test->tag_len);
+		in_size = test->ctx_len + test->tag_len;
+
+		/* Test NULL output buffer ref to get output data size */
+		out_size = 0;
+		rv = C_Decrypt(session, (void *)in, in_size, NULL, &out_size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		if (out_size) {
+			saved_size = out_size;
+
+			/* Test too short buffer case to get output data size */
+			out_size = 0;
+			rv = C_Decrypt(session, (void *)in, in_size, out,
+				       &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+
+			/* Test NULL ref with non-zero size to get output data size */
+			out_size = 42;
+			rv = C_Decrypt(session, (void *)in, in_size, NULL,
+				       &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+
+			/* Decrypt the whole cipher text and tag in one shot */
+			memset(out, 0, out_size);
+			rv = C_Decrypt(session, (void *)in, in_size, out,
+				       &out_size);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+			if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, ==,
+							  saved_size))
+				goto err_destr_obj;
+		}
+
+		/* Check Plaintext */
+		if (!ADBG_EXPECT_BUFFER(c, test->ptx, test->ptx_len, out,
+					out_size))
+			goto err_destr_obj;
+
+		/*
+		 * Test 7 decrypt altered data
+		 */
+		if (test->ptx && test->ctx) {
+			rv = C_DecryptInit(session, test->mechanism,
+					   key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			/* Concat ciphertext and tag */
+			memcpy(in, test->ctx, test->ctx_len);
+			memcpy(in + test->ctx_len, test->tag, test->tag_len);
+			in_size = test->ctx_len + test->tag_len;
+
+			/* Alter ciphertext and try to decrypt */
+			in[0] ^= 1;
+			out_size = sizeof(out);
+			rv = C_Decrypt(session, (void *)in, in_size, out,
+				       &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_INVALID,
+						   rv))
+				goto err_destr_obj;
+
+			/* Restore ciphertext, alter tag and try to decrypt */
+			rv = C_DecryptInit(session, test->mechanism,
+					   key_handle);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto err_destr_obj;
+
+			in[0] ^= 1;
+			in[test->ctx_len] ^= 1;
+			out_size = sizeof(out);
+			rv = C_Decrypt(session, (void *)in, in_size, out,
+				       &out_size);
+			if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_INVALID,
+						   rv))
+				goto err_destr_obj;
+		}
+
+		/*
+		 * We're done, release resources use by the subcase test
+		 */
+		rv = C_DestroyObject(session, key_handle);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_subcase;
+
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+	goto out;
+
+err_destr_obj:
+	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, key_handle));
+err_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+out_close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1030, xtest_pkcs11_test_1030,
+		 "PKCS11: Test AES-GCM Encryption/Decryption");
