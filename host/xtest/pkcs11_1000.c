@@ -27,6 +27,9 @@
 
 #include <regression_4000_data.h>
 
+/* AES GCM tag size in bytes */
+#define AES_GCM_TAG_SIZE 16
+
 /*
  * auth_type enumerates the types of user authentication
  *
@@ -45,7 +48,11 @@ static const CK_BYTE cktest_aes128_iv[16];
 static const CK_AES_CTR_PARAMS cktest_aes_ctr_params = {
 	.ulCounterBits = 1,
 };
-
+static const CK_GCM_PARAMS cktest_aes_gcm_params = {
+	.pIv = (CK_BYTE_PTR)cktest_aes128_iv,
+	.ulIvLen = sizeof(cktest_aes128_iv),
+	.ulTagBits = AES_GCM_TAG_SIZE * 8,
+};
 static CK_MECHANISM cktest_aes_ecb_mechanism = {
 	CKM_AES_ECB,
 	NULL, 0,
@@ -61,6 +68,10 @@ static CK_MECHANISM cktest_aes_ctr_mechanism = {
 static CK_MECHANISM cktest_aes_cts_mechanism = {
 	CKM_AES_CTS,
 	(CK_BYTE_PTR)cktest_aes128_iv, sizeof(cktest_aes128_iv),
+};
+static CK_MECHANISM cktest_aes_gcm_mechanism = {
+	CKM_AES_GCM,
+	(CK_BYTE_PTR)&cktest_aes_gcm_params, sizeof(cktest_aes_gcm_params),
 };
 static CK_MECHANISM cktest_aes_cmac_mechanism = {
 	CKM_AES_CMAC, NULL, 0,
@@ -1372,6 +1383,13 @@ static const CK_MECHANISM_TYPE allowed_not_aes_cts[] = {
 	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTR,
 	CKM_AES_GCM, CKM_AES_CCM,
 };
+static const CK_MECHANISM_TYPE allowed_only_aes_gcm[] = {
+	CKM_AES_GCM,
+};
+static const CK_MECHANISM_TYPE allowed_not_aes_gcm[] = {
+	CKM_AES_ECB, CKM_AES_CBC, CKM_AES_CBC_PAD, CKM_AES_CTS,
+	CKM_AES_CTR, CKM_AES_CCM,
+};
 
 #define CKTEST_AES_KEY \
 	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},	\
@@ -1413,6 +1431,8 @@ CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_cts, allowed_only_aes_cts);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_cts, allowed_not_aes_cts);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_ctr, allowed_only_aes_ctr);
 CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_ctr, allowed_not_aes_ctr);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_only_gcm, allowed_only_aes_gcm);
+CK_KEY_ALLOWED_AES_TEST(cktest_aes_not_gcm, allowed_not_aes_gcm);
 
 struct cktest_allowed_test {
 	CK_ATTRIBUTE_PTR attr_key;
@@ -1431,6 +1451,7 @@ static const struct cktest_allowed_test cktest_allowed_valid[] = {
 	CKTEST_KEY_MECHA(cktest_aes_only_cbcnopad, &cktest_aes_cbc_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_only_cts, &cktest_aes_cts_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_only_ctr, &cktest_aes_ctr_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_only_gcm, &cktest_aes_gcm_mechanism),
 };
 
 static const struct cktest_allowed_test cktest_allowed_invalid[] = {
@@ -1438,6 +1459,7 @@ static const struct cktest_allowed_test cktest_allowed_invalid[] = {
 	CKTEST_KEY_MECHA(cktest_aes_not_cbcnopad, &cktest_aes_cbc_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_not_cts, &cktest_aes_cts_mechanism),
 	CKTEST_KEY_MECHA(cktest_aes_not_ctr, &cktest_aes_ctr_mechanism),
+	CKTEST_KEY_MECHA(cktest_aes_not_gcm, &cktest_aes_gcm_mechanism),
 };
 
 /* Create session object and token object from a session */
