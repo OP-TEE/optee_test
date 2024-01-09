@@ -42,6 +42,7 @@ void TA_CloseSessionEntryPoint(void *pSessionContext)
 	(void)pSessionContext;
 
 	cmd_clean_res();
+	cmd_clean_obj();
 }
 
 /* Called when a command is invoked */
@@ -68,6 +69,22 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 		return cmd_hash_prepare_op(nParamTypes, pParams);
 	case TA_CRYPTO_PERF_CMD_HASH_PROCESS:
 		return cmd_hash_process(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PROCESS_GEN_KEYPAIR:
+		return cmd_asym_process_keypair(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PREPARE_ATTRS:
+		return cmd_asym_prepare_attrs(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PROCESS:
+		return cmd_asym_process_rsa_ecc(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PREPARE_KEYPAIR:
+		return cmd_asym_prepare_keypair(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PREPARE_HASH:
+		return cmd_asym_prepare_hash(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PREPARE_OBJ:
+		return cmd_asym_prepare_obj(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_PREPARE_ENC_SIGN:
+		return cmd_asym_prepare_enc_sign(nParamTypes, pParams);
+	case TA_CRYPTO_PERF_CMD_ASYM_FREE_ATTRS:
+		return cmd_asym_free_attrs(nParamTypes, pParams);
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
