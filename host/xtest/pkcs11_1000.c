@@ -1532,6 +1532,8 @@ CK_KEY_ALLOWED_AES_ENC_TEST(cktest_aes_enc_only_cts, allowed_only_aes_cts);
 
 CK_KEY_ALLOWED_AES_DEC_TEST(cktest_aes_dec_only_ctr, allowed_only_aes_ctr);
 
+CK_KEY_ALLOWED_AES_ENC_TEST(cktest_aes_enc_only_gcm, allowed_only_aes_gcm);
+
 static void xtest_pkcs11_test_1005(ADBG_Case_t *c)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
@@ -1644,6 +1646,25 @@ static void xtest_pkcs11_test_1006(ADBG_Case_t *c)
 				ARRAY_SIZE(cktest_aes_dec_only_ctr),
 				&cktest_aes_ctr_mechanism,
 				TEE_MODE_ENCRYPT,
+				CKR_KEY_FUNCTION_NOT_PERMITTED);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Encrypt only AES GCM key */
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_gcm,
+				ARRAY_SIZE(cktest_aes_enc_only_gcm),
+				&cktest_aes_gcm_mechanism,
+				TEE_MODE_ENCRYPT,
+				CKR_OK);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	rv = cipher_init_final(c, session,
+				cktest_aes_enc_only_gcm,
+				ARRAY_SIZE(cktest_aes_enc_only_gcm),
+				&cktest_aes_gcm_mechanism,
+				TEE_MODE_DECRYPT,
 				CKR_KEY_FUNCTION_NOT_PERMITTED);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
