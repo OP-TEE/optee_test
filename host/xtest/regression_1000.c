@@ -3857,3 +3857,118 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1048, xtest_tee_test_1048,
 		 "Test stack canaries");
+
+static TEEC_Result mbox_invoke(TEEC_Session *session, uint32_t test,
+			       uint32_t *ret_orig)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = test;
+
+	return TEEC_InvokeCommand(session, PTA_INVOKE_TESTS_CMD_MBOX_TESTS,
+				  &op, ret_orig);
+}
+
+/*
+ * The blocking receive relies on asynchronous notifications and needs two
+ * concurrent TEE threads: one blocks in mbox_recv_sync() while the other one
+ * sends the message.
+ */
+struct test_1099_thread_arg {
+	pthread_t thr;
+	uint32_t test;
+	TEEC_Result res;
+	uint32_t error_orig;
+};
+
+static void *test_1099_thread(void *arg)
+{
+	struct test_1099_thread_arg *a = arg;
+	TEEC_Session session = { };
+
+	a->res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid,
+					 NULL, &a->error_orig);
+	if (a->res != TEEC_SUCCESS)
+		return NULL;
+
+	a->res = mbox_invoke(&session, a->test, &a->error_orig);
+
+	TEEC_CloseSession(&session);
+
+	return NULL;
+}
+
+/* The start order of the receiver and the sender does not matter */
+static void test_1099_run_pair(ADBG_Case_t *c)
+{
+	struct test_1099_thread_arg arg[2] = { };
+	size_t nt = ARRAY_SIZE(arg);
+	size_t n = 0;
+
+	arg[0].test = PTA_MBOX_TEST_BLOCK_RECV;
+	arg[1].test = PTA_MBOX_TEST_BLOCK_SEND;
+
+	for (n = 0; n < nt; n++)
+		if (!ADBG_EXPECT(c, 0, pthread_create(&arg[n].thr, NULL,
+						      test_1099_thread,
+						      arg + n)))
+			nt = n; /* break loop and start cleanup */
+
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(arg[n].thr, NULL));
+		/* Not supported without CFG_CORE_ASYNC_NOTIF in OP-TEE core */
+		if (arg[n].res == TEEC_ERROR_NOT_SUPPORTED) {
+			Do_ADBG_Log(" - 1099 -   skip blocking receive, no async notification");
+			continue;
+		}
+		ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res);
+	}
+}
+
+static void xtest_tee_test_1099(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	/* Pseudo TA is optional: warn and nicely exit if not found */
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1099 -   skip test, pseudo TA not found");
+		return;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Controller registration");
+	res = mbox_invoke(&session, PTA_MBOX_TEST_REGISTER, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log(" - 1099 -   skip test, mailbox not embedded");
+		Do_ADBG_EndSubCase(c, "Controller registration");
+		TEEC_CloseSession(&session);
+		return;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "Controller registration");
+
+	Do_ADBG_BeginSubCase(c, "Channel request and release");
+	ADBG_EXPECT_TEEC_SUCCESS(c, mbox_invoke(&session,
+						PTA_MBOX_TEST_CHANNEL,
+						&ret_orig));
+	Do_ADBG_EndSubCase(c, "Channel request and release");
+
+	Do_ADBG_BeginSubCase(c, "Synchronous send and receive");
+	ADBG_EXPECT_TEEC_SUCCESS(c, mbox_invoke(&session, PTA_MBOX_TEST_SYNC,
+						&ret_orig));
+	Do_ADBG_EndSubCase(c, "Synchronous send and receive");
+
+	Do_ADBG_BeginSubCase(c, "Blocking receive");
+	test_1099_run_pair(c);
+	Do_ADBG_EndSubCase(c, "Blocking receive");
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1099, xtest_tee_test_1099, "Test Core Mailbox");
