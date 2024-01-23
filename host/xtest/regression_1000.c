@@ -3475,3 +3475,163 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1042, xtest_tee_test_1042,
 		 "Test ASAN (Memory address sanitizer)");
+
+static TEEC_Result mbox_invoke(TEEC_Session *session, uint32_t test,
+			       uint32_t count, uint32_t *ret_orig)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = test;
+	op.params[0].value.b = count;
+
+	return TEEC_InvokeCommand(session, PTA_INVOKE_TESTS_CMD_MBOX_TESTS,
+				  &op, ret_orig);
+}
+
+#ifdef CFG_CORE_ASYNC_NOTIF
+/*
+ * The blocking flavour of the mailbox API relies on asynchronous
+ * notifications and needs two concurrent TEE threads: the consumer side
+ * blocks in mbox_recv()/mbox_send() while the emulated coprocessor side
+ * drives the other end of the channel.
+ */
+struct test_1099_thread_arg {
+	pthread_t thr;
+	uint32_t test;
+	uint32_t count;
+	TEEC_Result res;
+	uint32_t error_orig;
+};
+
+static void *test_1099_thread(void *arg)
+{
+	struct test_1099_thread_arg *a = arg;
+	TEEC_Session session = { };
+
+	a->res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid,
+					 NULL, &a->error_orig);
+	if (a->res != TEEC_SUCCESS)
+		return NULL;
+
+	a->res = mbox_invoke(&session, a->test, a->count, &a->error_orig);
+
+	TEEC_CloseSession(&session);
+
+	return NULL;
+}
+
+/*
+ * Start the consumer and the coprocessor sides in parallel. Their start
+ * order does not matter: the coprocessor side waits for the consumer to
+ * register its channel before driving any transfer.
+ */
+static void test_1099_run_pair(ADBG_Case_t *c, uint32_t consumer_test,
+			       uint32_t copro_test, uint32_t count)
+{
+	struct test_1099_thread_arg arg[2] = { };
+	size_t nt = ARRAY_SIZE(arg);
+	size_t n = 0;
+
+	arg[0].test = consumer_test;
+	arg[1].test = copro_test;
+	for (n = 0; n < nt; n++)
+		arg[n].count = count;
+
+	for (n = 0; n < nt; n++)
+		if (!ADBG_EXPECT(c, 0, pthread_create(&arg[n].thr, NULL,
+						      test_1099_thread,
+						      arg + n)))
+			nt = n; /* break loop and start cleanup */
+
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(arg[n].thr, NULL));
+		ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res);
+	}
+}
+#endif /* CFG_CORE_ASYNC_NOTIF */
+
+static void xtest_tee_test_1099(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+
+	/* Pseudo TA is optional: warn and nicely exit if not found */
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1099 -   skip test, pseudo TA not found");
+		return;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	/*
+	 * Register the emulated coprocessor devices. This also tells whether
+	 * the mailbox framework is embedded at all.
+	 */
+	res = mbox_invoke(&session, PTA_MBOX_TEST_COPRO_INIT, 0, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log(" - 1099 -   skip test, mailbox not embedded");
+		TEEC_CloseSession(&session);
+		return;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		TEEC_CloseSession(&session);
+		return;
+	}
+
+	Do_ADBG_BeginSubCase(c, "Consumer callback on transmission");
+	ADBG_EXPECT_TEEC_SUCCESS(c, mbox_invoke(&session,
+						PTA_MBOX_TEST_CALLBACK_SEND, 0,
+						&ret_orig));
+	Do_ADBG_EndSubCase(c, "Consumer callback on transmission");
+
+	Do_ADBG_BeginSubCase(c, "Consumer callback on reception");
+	ADBG_EXPECT_TEEC_SUCCESS(c, mbox_invoke(&session,
+						PTA_MBOX_TEST_CALLBACK_RECEIVE,
+						0, &ret_orig));
+	Do_ADBG_EndSubCase(c, "Consumer callback on reception");
+
+#ifdef CFG_CORE_ASYNC_NOTIF
+	Do_ADBG_BeginSubCase(c, "Blocking receive then send");
+	test_1099_run_pair(c, PTA_MBOX_TEST_RECEIVE_SEND,
+			   PTA_MBOX_TEST_COPRO_SEND_WAIT, 10);
+	Do_ADBG_EndSubCase(c, "Blocking receive then send");
+
+	Do_ADBG_BeginSubCase(c, "Blocking send then receive");
+	test_1099_run_pair(c, PTA_MBOX_TEST_SEND_RECEIVE,
+			   PTA_MBOX_TEST_COPRO_WAIT_SEND, 10);
+	Do_ADBG_EndSubCase(c, "Blocking send then receive");
+#endif /* CFG_CORE_ASYNC_NOTIF */
+
+	/*
+	 * Invalid parameter tests. They only exercise error paths of the
+	 * consumer API, hence they need neither asynchronous notifications
+	 * nor a second thread.
+	 */
+	Do_ADBG_BeginSubCase(c, "Registration with incorrect parameters");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		mbox_invoke(&session,
+			    PTA_MBOX_TEST_REGISTER_INCORRECT_PARAM, 0,
+			    &ret_orig));
+	Do_ADBG_EndSubCase(c, "Registration with incorrect parameters");
+
+	Do_ADBG_BeginSubCase(c, "Transmission with incorrect parameters");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		mbox_invoke(&session, PTA_MBOX_TEST_SEND_INCORRECT, 0,
+			    &ret_orig));
+	Do_ADBG_EndSubCase(c, "Transmission with incorrect parameters");
+
+	Do_ADBG_BeginSubCase(c, "Reception with incorrect parameters");
+	ADBG_EXPECT_TEEC_SUCCESS(c,
+		mbox_invoke(&session, PTA_MBOX_TEST_RECEIVE_INCORRECT, 0,
+			    &ret_orig));
+	Do_ADBG_EndSubCase(c, "Reception with incorrect parameters");
+
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1099, xtest_tee_test_1099, "Test Core Mailbox");
+
