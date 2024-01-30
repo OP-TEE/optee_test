@@ -4368,6 +4368,21 @@ struct key_attrs {
 	uint32_t keysize_check;
 };
 
+static bool is_caam_black_key(uint8_t *buf, size_t size)
+{
+	/*
+	 * This value is a magic number for the a CAAM Black key. This value
+	 * must match the value defined in optee-os
+	 * core/drivers/crypto/caam/caam_key.c
+	 */
+	const uint8_t magic_number[4] = {0xFB, 0xBF, 0xAF, 0xCA};
+
+	if (size < sizeof(magic_number))
+		return false;
+
+	return !memcmp(buf, magic_number, sizeof(magic_number));
+}
+
 static bool test_keygen_attributes(ADBG_Case_t *c, TEEC_Session *s,
 				   TEE_ObjectHandle key, uint32_t key_size,
 				   struct key_attrs *attrs, size_t num_attrs)
@@ -4386,7 +4401,13 @@ static bool test_keygen_attributes(ADBG_Case_t *c, TEEC_Session *s,
 					key, attrs[m].attr, out, &out_size)))
 				return false;
 
-			if (attrs[m].keysize_check)
+			/*
+			 * Check for CAAM black key header. If the buffer holds
+			 * a CAAM black key, do not check the key size as the
+			 * buffer size and the key size do not match.
+			 */
+			if (attrs[m].keysize_check &&
+			    !is_caam_black_key(out, out_size))
 				ADBG_EXPECT_COMPARE_UNSIGNED(c, out_size, <=,
 							     key_size / 8);
 
