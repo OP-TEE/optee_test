@@ -2551,6 +2551,7 @@ struct xtest_ae_case {
 	const uint8_t *tag;
 	size_t tag_len;
 	size_t line;
+	uint32_t id;
 };
 
 
@@ -2564,13 +2565,13 @@ struct xtest_ae_case {
 		aad_array(vect ## _aad), (in_incr), \
 	  ptx_array(vect ## _ptx), ctx_array(vect ## _ctx), \
 		ARRAY(vect ## _tag), \
-	  __LINE__ }, \
+	  __LINE__, 0 }, \
 	{ (algo), TEE_MODE_DECRYPT, TEE_TYPE_AES, ARRAY(vect ## _key), \
 	  ARRAY(vect ## _nonce), (aad_incr), \
 		aad_array(vect ## _aad), (in_incr), \
 	  ptx_array(vect ## _ptx), ctx_array(vect ## _ctx), \
 		ARRAY(vect ## _tag), \
-	  __LINE__ }
+	  __LINE__, 0 }
 
 #define XTEST_AE_CASE_AES_CCM(vect, aad_incr, in_incr) \
 	XTEST_AE_CASE(TEE_ALG_AES_CCM, ae_data_aes_ccm_ ## vect, aad_incr, \
@@ -2615,6 +2616,8 @@ static const struct xtest_ae_case ae_cases[] = {
 #include "gcmEncryptExtIV192.h"
 #include "gcmEncryptExtIV256.h"
 #endif
+#include "aes_gcm_counter_overflow_test_encrypt.h"
+#include "aes_gcm_counter_overflow_test_decrypt.h"
 };
 
 static void xtest_tee_test_4005(ADBG_Case_t *c)
@@ -2637,9 +2640,15 @@ static void xtest_tee_test_4005(ADBG_Case_t *c)
 		return;
 
 	for (n = 0; n < ARRAY_SIZE(ae_cases); n++) {
-		Do_ADBG_BeginSubCase(c, "AE case %d algo 0x%x line %d",
-				     (int)n, (unsigned int)ae_cases[n].algo,
-				     (int)ae_cases[n].line);
+		if (ae_cases[n].id)
+			Do_ADBG_BeginSubCase(c, "AE case %d algo 0x%x line %d id %d",
+					     (int)n, (unsigned int)ae_cases[n].algo,
+					     (int)ae_cases[n].line,
+					     (unsigned int)ae_cases[n].id);
+		else
+			Do_ADBG_BeginSubCase(c, "AE case %d algo 0x%x line %d",
+					     (int)n, (unsigned int)ae_cases[n].algo,
+					     (int)ae_cases[n].line);
 
 		key_attr.attributeID = TEE_ATTR_SECRET_VALUE;
 		key_attr.content.ref.buffer = (void *)ae_cases[n].key;
