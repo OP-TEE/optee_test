@@ -701,7 +701,7 @@ TEE_Result cmd_asym_prepare_attrs(uint32_t param_types,
 }
 
 TEE_Result cmd_asym_free_attrs(uint32_t param_types,
-			       TEE_Param params[TEE_NUM_PARAMS])
+			       TEE_Param params[TEE_NUM_PARAMS] __unused)
 {
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE,
@@ -742,7 +742,6 @@ TEE_Result cmd_asym_process_keypair(uint32_t param_types,
 		TEE_ResetTransientObject(crypto_obj);
 	}
 
-out:
 	return res;
 }
 
@@ -793,7 +792,6 @@ TEE_Result cmd_asym_process_rsa_ecc(uint32_t param_types,
 		}
 	}
 
-out:
 	return res;
 }
 
