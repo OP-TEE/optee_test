@@ -393,10 +393,10 @@ static uint32_t get_curve_id(uint32_t width_bits)
 }
 
 static int asym_perf_run_test(int mode, size_t size, uint32_t n,
-				     uint32_t l, int is_random, uint32_t warmup,
-				     uint32_t verbosity, uint32_t width_bits,
-				     uint32_t main_algo, uint32_t salt_len,
-				     uint32_t algo)
+			      uint32_t l, int is_random, uint32_t warmup,
+			      uint32_t verbosity, uint32_t width_bits,
+			      uint32_t main_algo, uint32_t salt_len,
+			      uint32_t algo)
 {
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t cmd = TA_CRYPTO_PERF_CMD_ASYM_PROCESS;
