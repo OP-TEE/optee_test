@@ -446,7 +446,8 @@ TEE_Result cmd_hash_prepare_op(uint32_t param_types, TEE_Param params[4])
 		TEE_FreeOperation(crypto_op);
 
 	if (is_mac(hash_algo)) {
-		res = TEE_AllocateOperation(&crypto_op, hash_algo, TEE_MODE_MAC, max_key_size);
+		res = TEE_AllocateOperation(&crypto_op, hash_algo, TEE_MODE_MAC,
+					    max_key_size);
 		CHECK(res, "TEE_AllocateOperation", return res;);
 
 		res = TEE_AllocateTransientObject(key_type, max_key_size, &hkey);
@@ -737,7 +738,8 @@ TEE_Result cmd_asym_process_keypair(uint32_t param_types,
 	n = params[0].value.b;
 
 	while (n--) {
-		res = TEE_GenerateKey(crypto_obj, width_bits, asym_perf_attrs, asym_perf_attr_count);
+		res = TEE_GenerateKey(crypto_obj, width_bits, asym_perf_attrs,
+				      asym_perf_attr_count);
 		CHECK(res, "TEE_GenerateKey()", break;);
 		TEE_ResetTransientObject(crypto_obj);
 	}
@@ -768,9 +770,13 @@ TEE_Result cmd_asym_process_rsa_ecc(uint32_t param_types,
 
 	if (mode == MODE_VERIFY) {
 		while (n--) {
-			res = TEE_AsymmetricVerifyDigest(crypto_op, asym_perf_attrs, asym_perf_attr_count,
-			      			 params[1].memref.buffer, params[1].memref.size,
-			      			 params[2].memref.buffer, dummy_size);
+			res = TEE_AsymmetricVerifyDigest(crypto_op,
+							 asym_perf_attrs,
+							 asym_perf_attr_count,
+							 params[1].memref.buffer,
+							 params[1].memref.size,
+							 params[2].memref.buffer,
+							 dummy_size);
 
 			CHECK(res, "TEE processing failed", break;);
 		}
@@ -784,9 +790,11 @@ TEE_Result cmd_asym_process_rsa_ecc(uint32_t param_types,
 		else
 			return TEE_ERROR_BAD_PARAMETERS;
 		while (n--) {
-			res = do_asym(crypto_op, asym_perf_attrs, asym_perf_attr_count,
-				      params[1].memref.buffer, params[1].memref.size,
-			      	      params[2].memref.buffer, &dummy_size);
+			res = do_asym(crypto_op, asym_perf_attrs,
+				      asym_perf_attr_count,
+				      params[1].memref.buffer,
+				      params[1].memref.size,
+				      params[2].memref.buffer, &dummy_size);
 
 			CHECK(res, "TEE processing failed", break;);
 		}
@@ -937,8 +945,10 @@ TEE_Result cmd_asym_prepare_enc_sign(uint32_t param_types,
 
 	if (mode == MODE_DECRYPT)
 		res = TEE_AsymmetricEncrypt(crypto_op_enc_sign, NULL, 0,
-					    params[0].memref.buffer, params[0].memref.size,
-				            params[1].memref.buffer, &params[1].memref.size);
+					    params[0].memref.buffer,
+					    params[0].memref.size,
+					    params[1].memref.buffer,
+					    &params[1].memref.size);
 	else
 		res = TEE_AsymmetricSignDigest(crypto_op_enc_sign, attrs,
 					       attr_count,
