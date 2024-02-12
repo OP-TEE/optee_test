@@ -757,8 +757,8 @@ TEE_Result cmd_asym_process_rsa_ecc(uint32_t param_types,
 						   TEE_PARAM_TYPE_NONE);
 	size_t dummy_size = params[2].memref.size;
 	TEE_Result (*do_asym)(TEE_OperationHandle, const TEE_Attribute *,
-			      uint32_t, const void *, uint32_t, void *,
-			      uint32_t *) = NULL;
+			      uint32_t, const void *, size_t, void *,
+			      size_t *) = NULL;
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
