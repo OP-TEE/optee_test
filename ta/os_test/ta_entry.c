@@ -36,7 +36,6 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t nParamTypes,
 	(void)pParams;
 	(void)ppSessionContext;
 	DMSG("TA_OpenSessionEntryPoint");
-	TEE_UnmaskCancellation();
 	return TEE_SUCCESS;
 }
 
@@ -63,6 +62,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 				      TEE_Param pParams[4])
 {
 	(void)pSessionContext;
+	TEE_UnmaskCancellation();
 
 	switch (nCommandID) {
 	case TA_OS_TEST_CMD_INIT:
