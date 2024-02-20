@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * Copyright (c) 2022-2023, Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2022-2024, Arm Limited and Contributors. All rights reserved.
  */
 #include <fcntl.h>
 #include <stdio.h>
@@ -42,7 +42,10 @@ enum sp_tests {
 	EP_SP_MEM_SHARING_MULTI,
 	EP_SP_MEM_SHARING_EXC,
 	EP_SP_MEM_INCORRECT_ACCESS,
-	EP_SP_NOP
+	EP_SP_NOP,
+	EP_TEST_SP_COMMUNICATION_RESPONSE,
+	EP_TEST_INTERRUPT_START,
+	EP_TEST_INTERRUPT_CHECK,
 };
 
 static int ffa_fd = -1;
@@ -532,3 +535,70 @@ out:
 
 ADBG_CASE_DEFINE(regression, 1005, xtest_ffa_spmc_test_1005,
 		 "Test FF-A memory: multiple receiver");
+
+static void xtest_ffa_spmc_test_1006(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { 0 };
+	uint16_t endpoint1_id = 0;
+	int rc = 0;
+	int i = 0;
+
+	Do_ADBG_BeginSubCase(c, "SP1 secure interrupt test");
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	endpoint1_id = get_endpoint_id(test_endpoint1.uuid_ptr);
+	if (endpoint1_id == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact xtest_1 sp, skipping SP test");
+		Do_ADBG_Log("Add xtest_1 sp to the image to enable tests");
+		goto out;
+	}
+
+	/* Set watchdog timeout to 1 second */
+	memset(&args, 0, sizeof(args));
+	args.args[1] = 1;
+
+	/* Request SP to configure and start the secure watchdog timer */
+	rc = start_sp_test(endpoint1_id, EP_TEST_INTERRUPT_START, &args);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK))
+		goto out;
+
+	/*
+	 * While waiting in the following loop the secure interrupt should hit
+	 * and the SP acknowledges the interrupt. If the interrupt was handled
+	 * in the SP, EP_TEST_INTERRUPT_CHECK will return with SPMC_TEST_OK.
+	 */
+	for (i = 0; i < 5; i++) {
+		memset(&args, 0, sizeof(args));
+
+		/* Poll SP interrupt handled flag */
+		rc = start_sp_test(endpoint1_id, EP_TEST_INTERRUPT_CHECK, &args);
+		if (!ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0))
+			goto out;
+
+		if (args.args[0] == SPMC_TEST_OK)
+			break;
+
+		sleep(1);
+	}
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, SPMC_TEST_OK))
+		goto out;
+
+	Do_ADBG_EndSubCase(c, "SP1 secure interrupt test");
+	close_debugfs();
+
+	return;
+
+out:
+	Do_ADBG_EndSubCase(c, NULL);
+	close_debugfs();
+}
+
+ADBG_CASE_DEFINE(ffa_spmc, 1006, xtest_ffa_spmc_test_1006,
+		 "Test FF-A secure interrupt handling");
