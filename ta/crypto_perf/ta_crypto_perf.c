@@ -236,6 +236,27 @@ TEE_Result cmd_cipher_prepare_key(uint32_t param_types, TEE_Param params[4])
 		objectType = TEE_TYPE_AES;
 		use_iv = 1;
 		break;
+	case TA_SM4_ECB:
+		algo = TEE_ALG_SM4_ECB_NOPAD;
+		objectType = TEE_TYPE_SM4;
+		use_iv = 0;
+		break;
+	case TA_SM4_CBC:
+		algo = TEE_ALG_SM4_CBC_NOPAD;
+		objectType = TEE_TYPE_SM4;
+		use_iv = 1;
+		break;
+	case TA_SM4_CTR:
+		algo = TEE_ALG_SM4_CTR;
+		objectType = TEE_TYPE_SM4;
+		use_iv = 1;
+		break;
+	case TA_SM4_XTS:
+		algo = TEE_ALG_SM4_XTS;
+		objectType = TEE_TYPE_SM4;
+		use_iv = 1;
+		op_keysize *= 2;
+		break;
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
@@ -255,7 +276,7 @@ TEE_Result cmd_cipher_prepare_key(uint32_t param_types, TEE_Param params[4])
 	res = TEE_PopulateTransientObject(hkey, &attr, 1);
 	CHECK(res, "TEE_PopulateTransientObject", return res;);
 
-	if (algo == TEE_ALG_AES_XTS) {
+	if (algo == TEE_ALG_AES_XTS || algo == TEE_ALG_SM4_XTS) {
 		res = TEE_AllocateTransientObject(objectType, keysize, &hkey2);
 		CHECK(res, "TEE_AllocateTransientObject", return res;);
 

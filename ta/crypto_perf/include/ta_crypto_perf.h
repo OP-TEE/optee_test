@@ -36,6 +36,10 @@
 #define TA_AES_CTR	2
 #define TA_AES_XTS	3
 #define TA_AES_GCM	4
+#define TA_SM4_ECB	5
+#define TA_SM4_CBC	6
+#define TA_SM4_CTR	7
+#define TA_SM4_XTS	8
 
 /*
  * AES key sizes
@@ -90,6 +94,19 @@
 
 #define DH_MAX_SIZE 4096
 #define DH_G_SIZE 1
+
+enum symm_cipher {
+	AES = 0,
+	SM4 = 1,
+};
+
+enum symm_mode {
+	ECB = 0,
+	CBC = 1,
+	CTR = 2,
+	XTS = 3,
+	GCM = 4,
+};
 
 enum asym_algorithm {
 	ALGO_DH = 1,

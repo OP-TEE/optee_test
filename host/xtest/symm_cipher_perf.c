@@ -20,6 +20,7 @@
 #include <tee_client_api_extensions.h>
 #include <time.h>
 #include <unistd.h>
+#include <assert.h>
 
 #include "crypto_common.h"
 #include "xtest_helpers.h"
@@ -162,16 +163,39 @@ static double stddev(struct statistics *s)
 	return sqrt(s->M2/s->n);
 }
 
-static const char *mode_str(uint32_t mode)
+static const char *cipher_str(uint32_t algo)
 {
-	switch (mode) {
+	switch (algo) {
 	case TA_AES_ECB:
+	case TA_AES_CBC:
+	case TA_AES_CTR:
+	case TA_AES_XTS:
+	case TA_AES_GCM:
+		return "AES";
+	case TA_SM4_ECB:
+	case TA_SM4_CBC:
+	case TA_SM4_CTR:
+	case TA_SM4_XTS:
+		return "SM4";
+	default:
+		return "???";
+	}
+}
+
+static const char *mode_str(uint32_t algo)
+{
+	switch (algo) {
+	case TA_AES_ECB:
+	case TA_SM4_ECB:
 		return "ECB";
 	case TA_AES_CBC:
+	case TA_SM4_CBC:
 		return "CBC";
 	case TA_AES_CTR:
+	case TA_SM4_CTR:
 		return "CTR";
 	case TA_AES_XTS:
+	case TA_SM4_XTS:
 		return "XTS";
 	case TA_AES_GCM:
 		return "GCM";
@@ -183,19 +207,19 @@ static const char *mode_str(uint32_t mode)
 #define _TO_STR(x) #x
 #define TO_STR(x) _TO_STR(x)
 
-static void usage(const char *applet_optname, int keysize, int mode,
+static void usage(const char *applet_optname, int keysize, int algo,
 		  size_t size, size_t unit, int warmup, unsigned int l,
 		  unsigned int n)
 {
 	fprintf(stderr, "Usage: %s %s [-h]\n", xtest_progname, applet_optname);
 	fprintf(stderr, "Usage: %s %s [-d] [-i] [-k SIZE]", xtest_progname, applet_optname);
-	fprintf(stderr, " [-l LOOP] [-m MODE] [-n LOOP] [-r|--no-inited] [-s SIZE]");
+	fprintf(stderr, " [-l LOOP] [-c CIPHER] [-m MODE] [-n LOOP] [-r|--no-inited] [-s SIZE]");
 	fprintf(stderr, " [-v [-v]] [-w SEC]");
 #ifdef CFG_SECURE_DATA_PATH
 	fprintf(stderr, " [--sdp [-Id|-Ir|-IR] [-Od|-Or|-OR]]");
 #endif
 	fprintf(stderr, "\n");
-	fprintf(stderr, "AES performance testing tool for OP-TEE\n");
+	fprintf(stderr, "AES/SM4 performance testing tool for OP-TEE\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Options:\n");
 	fprintf(stderr, "  -d            Test AES decryption instead of encryption\n");
@@ -203,7 +227,8 @@ static void usage(const char *applet_optname, int keysize, int mode,
 	fprintf(stderr, "  -i|--in-place Use same buffer for input and output (decrypt in place)\n");
 	fprintf(stderr, "  -k SIZE       Key size in bits: 128, 192 or 256 [%u]\n", keysize);
 	fprintf(stderr, "  -l LOOP       Inner loop iterations [%u]\n", l);
-	fprintf(stderr, "  -m MODE       AES mode: ECB, CBC, CTR, XTS, GCM [%s]\n", mode_str(mode));
+	fprintf(stderr, "  -c CIPHER     cipher: AES, SM4 [%s]\n", cipher_str(algo));
+	fprintf(stderr, "  -m MODE       mode: ECB, CBC, CTR, XTS, GCM [%s]\n", mode_str(algo));
 	fprintf(stderr, "  -n LOOP       Outer test loop iterations [%u]\n", n);
 	fprintf(stderr, "  --not-inited  Do not initialize input buffer content.\n");
 	fprintf(stderr, "  -r|--random   Get input data from /dev/urandom (default: all zeros)\n");
@@ -349,7 +374,7 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return timespec_to_ns(end) - timespec_to_ns(start);
 }
 
-static void prepare_key(int decrypt, int keysize, int mode)
+static void prepare_key(int decrypt, int keysize, int algo)
 {
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_origin = 0;
@@ -360,7 +385,7 @@ static void prepare_key(int decrypt, int keysize, int mode)
 					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = decrypt;
 	op.params[0].value.b = keysize;
-	op.params[1].value.a = mode;
+	op.params[1].value.a = algo;
 	res = TEEC_InvokeCommand(&sess, cmd, &op,
 				 &ret_origin);
 	check_res(res, "TEEC_InvokeCommand", &ret_origin);
@@ -423,7 +448,7 @@ static void run_feed_input(void *in, size_t size, int random)
 }
 
 
-void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t unit,
+void aes_perf_run_test(int algo, int keysize, int decrypt, size_t size, size_t unit,
 				unsigned int n, unsigned int l, int input_data_init,
 				int in_place, int warmup, int verbosity)
 {
@@ -456,7 +481,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 	vverbose("output test buffer: %s\n", buf_type_str(output_buffer));
 
 	open_ta();
-	prepare_key(decrypt, keysize, mode);
+	prepare_key(decrypt, keysize, algo);
 
 	alloc_buffers(size, in_place, verbosity);
 	if (input_data_init == CRYPTO_USE_ZEROS)
@@ -474,7 +499,7 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 	op.params[2].value.b = unit;
 
 	verbose("Starting test: %s, %scrypt, keysize=%u bits, size=%zu bytes, ",
-		mode_str(mode), (decrypt ? "de" : "en"), keysize, size);
+		mode_str(algo), (decrypt ? "de" : "en"), keysize, size);
 	verbose("random=%s, ", yesno(input_data_init == CRYPTO_USE_RANDOM));
 	verbose("in place=%s, ", yesno(in_place));
 	verbose("inner loops=%u, loops=%u, warm-up=%u s, ", l, n, warmup);
@@ -539,7 +564,42 @@ void aes_perf_run_test(int mode, int keysize, int decrypt, size_t size, size_t u
 		} \
 	} while (0);
 
-#define USAGE() usage(argv[0], keysize, mode, size, unit, warmup, l, n)
+#define USAGE() usage(argv[0], keysize, algo, size, unit, warmup, l, n)
+
+static int get_symm_algo(int cipher, int mode)
+{
+	if (cipher == AES) {
+		switch (mode) {
+		case ECB:
+			return TA_AES_ECB;
+		case CBC:
+			return TA_AES_CBC;
+		case CTR:
+			return TA_AES_CTR;
+		case XTS:
+			return TA_AES_XTS;
+		case GCM:
+			return TA_AES_GCM;
+		default:
+			return -1;
+		}
+	} else if (cipher == SM4) {
+		switch (mode) {
+		case ECB:
+			return TA_SM4_ECB;
+		case CBC:
+			return TA_SM4_CBC;
+		case CTR:
+			return TA_SM4_CTR;
+		case XTS:
+			return TA_SM4_XTS;
+		default:
+			return -1;
+		}
+	} else {
+		return -1;
+	}
+}
 
 int aes_perf_runner_cmd_parser(int argc, char *argv[])
 {
@@ -554,7 +614,9 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	int verbosity = CRYPTO_DEF_VERBOSITY;	/* Verbosity (-v) */
 	int decrypt = 0;		/* Encrypt by default, -d to decrypt */
 	int keysize = AES_128;	/* AES key size (-k) */
-	int mode = TA_AES_ECB;	/* AES mode (-m) */
+	int cipher = AES;
+	int mode = ECB;
+	int algo = -1;
 	/* Get input data from /dev/urandom (-r) */
 	int input_data_init = CRYPTO_USE_ZEROS;
 	/* Use same buffer for in and out (-i) */
@@ -587,18 +649,30 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		} else if (!strcmp(argv[i], "-l")) {
 			NEXT_ARG(i);
 			l = atoi(argv[i]);
+		} else if (!strcmp(argv[i], "-c")) {
+			NEXT_ARG(i);
+			if (!strcasecmp(argv[i], "SM4"))
+				cipher = SM4;
+			else if (!strcasecmp(argv[i], "AES"))
+				cipher = AES;
+			else {
+				fprintf(stderr, "%s %s, invalid cipher\n",
+					xtest_progname, argv[0]);
+				USAGE();
+				return 1;
+			}
 		} else if (!strcmp(argv[i], "-m")) {
 			NEXT_ARG(i);
 			if (!strcasecmp(argv[i], "ECB"))
-				mode = TA_AES_ECB;
+				mode = ECB;
 			else if (!strcasecmp(argv[i], "CBC"))
-				mode = TA_AES_CBC;
+				mode = CBC;
 			else if (!strcasecmp(argv[i], "CTR"))
-				mode = TA_AES_CTR;
+				mode = CTR;
 			else if (!strcasecmp(argv[i], "XTS"))
-				mode = TA_AES_XTS;
+				mode = XTS;
 			else if (!strcasecmp(argv[i], "GCM"))
-				mode = TA_AES_GCM;
+				mode = GCM;
 			else {
 				fprintf(stderr, "%s %s, invalid mode\n",
 					xtest_progname, argv[0]);
@@ -662,6 +736,9 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
+	algo = get_symm_algo(cipher, mode);
+	assert(algo != -1);
+
 	if (size & (16 - 1)) {
 		fprintf(stderr, "invalid buffer size argument, must be a multiple of 16\n\n");
 		USAGE();
@@ -669,7 +746,7 @@ int aes_perf_runner_cmd_parser(int argc, char *argv[])
 	}
 
 
-	aes_perf_run_test(mode, keysize, decrypt, size, unit, n, l,
+	aes_perf_run_test(algo, keysize, decrypt, size, unit, n, l,
 			  input_data_init, in_place, warmup, verbosity);
 
 	return 0;
