@@ -57,7 +57,6 @@ srcs +=	adbg/src/adbg_case.c \
 	adbg/src/adbg_log.c \
 	adbg/src/adbg_run.c \
 	adbg/src/security_utils_hex.c \
-	aes_perf.c \
 	asym_perf.c \
 	benchmark_1000.c \
 	benchmark_2000.c \
@@ -70,6 +69,7 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_8100.c \
 	hash_perf.c \
 	stats.c \
+	symm_cipher_perf.c \
 	xtest_helpers.c \
 	xtest_main.c \
 	xtest_test.c \
