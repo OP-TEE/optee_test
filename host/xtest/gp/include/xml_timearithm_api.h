@@ -906,7 +906,7 @@ static TEEC_Result Macro_StoreBigInt(ADBG_Case_t *c, TEEC_Session *sess,
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm_value);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm_value);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm_value.buffer, value, value_size);
@@ -938,7 +938,7 @@ static TEEC_Result Invoke_BigIntConvertToOctetString(ADBG_Case_t *c,
 		.flags = TEEC_MEM_OUTPUT,
 	};
 
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
@@ -983,7 +983,7 @@ static TEEC_Result Invoke_BigIntConvertFromOctetString(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, value_size, <=, shm.size))
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm.buffer, value, value_size);
