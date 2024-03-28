@@ -233,7 +233,7 @@ static TEEC_Result GetObjectBufferAttribute_helper(ADBG_Case_t *c,
 	if (!buffer_is_null) {
 		shm.size = buffer_size;
 		shm.flags = TEEC_MEM_OUTPUT;
-		res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+		res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 			return res;
 		SET_SHARED_MEMORY_OPERATION_PARAMETER(1, 0, &shm, shm.size);

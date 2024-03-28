@@ -1141,7 +1141,7 @@ static TEEC_Result Invoke_Crypto_GetOperationInfoMultiple(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, max_num_keys, <=, 2))
 		return TEEC_ERROR_BAD_PARAMETERS;
 
-	res = TEEC_AllocateSharedMemory(s->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(s->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
@@ -1312,11 +1312,11 @@ Invoke_Crypto_InitObjectWithKeys(ADBG_Case_t *c, TEEC_Session *s, uint32_t cmd,
 		.flags = TEEC_MEM_INPUT,
 	};
 
-	res = TEEC_AllocateSharedMemory(s->ctx, &shm1);
+	res = TEEC_AllocateSharedMemory(s->imp.ctx, &shm1);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
-	res = TEEC_AllocateSharedMemory(s->ctx, &shm2);
+	res = TEEC_AllocateSharedMemory(s->imp.ctx, &shm2);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out_free_shm1;
 
@@ -1451,7 +1451,7 @@ static TEEC_Result Invoke_Crypto_AEInit(ADBG_Case_t *c, TEEC_Session *s,
 	};
 
 
-	res = TEEC_AllocateSharedMemory(s->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(s->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm.buffer, nonce_val, nonce_length);
@@ -1484,10 +1484,10 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_encryption(ADBG_Case_t *c,
 	uint32_t org = 0;
 	size_t initial_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, DS_BIG_SIZE,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, DS_BIG_SIZE,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = op_handle;
@@ -1547,13 +1547,13 @@ static TEEC_Result Invoke_Crypto_AEUpdate_for_decryption(ADBG_Case_t *c,
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01,
 					buffer_encrypted_chunks[chunk_id].size,
 					TEEC_MEM_INPUT,
 					buffer_encrypted_chunks[chunk_id].size,
 					buffer_encrypted_chunks[chunk_id].
 						buffer, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, partd_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = op_handle;
@@ -1611,7 +1611,7 @@ static TEEC_Result Invoke_Crypto_AEUpdateAAD(ADBG_Case_t *c, TEEC_Session *s,
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, aad_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, aad_length,
 					TEEC_MEM_INPUT, aad_length,
 					aad_data, mem01_exit)
 
@@ -1653,12 +1653,12 @@ static TEEC_Result Invoke_Crypto_AEEncryptFinal(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t ret_orig;
 	size_t initial_partd_size, initial_fdata_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, partd_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM03, partd_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM03, partd_length,
 			       TEEC_MEM_OUTPUT, mem03_exit)
 
 	op.params[0].value.a = op_handle;
@@ -1749,15 +1749,15 @@ static TEEC_Result Invoke_Crypto_AEDecryptFinal(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t ret_orig;
 	size_t initial_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01,
 					buffer_encrypted_chunks[chunk_id].size,
 					TEEC_MEM_INPUT,
 					buffer_encrypted_chunks[chunk_id].size,
 					buffer_encrypted_chunks[chunk_id].
 						buffer, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, partd_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM03, ae_encrypt_tag.size,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM03, ae_encrypt_tag.size,
 			       TEEC_MEM_INPUT, mem03_exit)
 	/* Fill "SharedMem3" with the tag previously
 	 * saved in Invoke_Crypto_AEEncryptFinal
@@ -1836,7 +1836,7 @@ static TEEC_Result Invoke_Crypto_GenerateRandom(ADBG_Case_t *c, TEEC_Session *s,
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, BIG_SIZE,
 			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(3, 0, SHARE_MEM01,
@@ -1892,7 +1892,7 @@ static TEEC_Result Invoke_Crypto_DigestUpdate(ADBG_Case_t *c, TEEC_Session *s,
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
 
@@ -1924,10 +1924,10 @@ static TEEC_Result Invoke_Crypto_DigestDoFinal(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t ret_orig;
 	size_t initial_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, fdata_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, fdata_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = op_handle;
@@ -1995,11 +1995,11 @@ Invoke_Crypto_AsymmetricSignDigest(ADBG_Case_t *c, TEEC_Session *s,
 
 	/* Fill SharedMem1 with the previously stored Digest
 		value after TEE_DigestDoFinal */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01,
 					saved_digest.size,
 					TEEC_MEM_INPUT, saved_digest.size,
 					saved_digest.buffer, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, 512,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = oph;
@@ -2057,10 +2057,10 @@ Invoke_Crypto_AsymmetricVerifyDigest(ADBG_Case_t *c, TEEC_Session *s,
 	uint32_t ret_orig;
 	uint32_t dec_input = 0;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, fdata_length,
 					TEEC_MEM_INPUT,
 					saved_digest.size, saved_digest.buffer, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, 512,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, 512,
 			       TEEC_MEM_INPUT, mem02_exit)
 
 	struct crypto_buffer signed_dgst;
@@ -2118,12 +2118,12 @@ static TEEC_Result Invoke_Crypto_AsymmetricEncrypt(ADBG_Case_t *c,
 	size_t initial_size;
 
 	/* Fill SharedMem1 with full_data */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, fdata_length,
 					TEEC_MEM_INPUT, fdata_length,
 					full_data, mem01_exit)
 
 
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, 512,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = oph;
@@ -2188,12 +2188,12 @@ static TEEC_Result Invoke_Crypto_AsymmetricDecrypt(ADBG_Case_t *c,
 	size_t sz;
 
 	/* Fill SharedMem1 with buffer_asym_encrypted */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01,
 					buffer_asym_encrypted.size,
 					TEEC_MEM_INPUT,
 					buffer_asym_encrypted.size,
 					buffer_asym_encrypted.buffer, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, 512,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, 512,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = op_handle;
@@ -2270,7 +2270,7 @@ static TEEC_Result Invoke_Crypto_MACInit(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM06, iv_len,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM06, iv_len,
 					TEEC_MEM_INPUT, iv_len, iv, mem06_exit)
 
 	op.params[0].value.a = oph;
@@ -2307,7 +2307,7 @@ static TEEC_Result Invoke_Crypto_MACUpdate(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
 
@@ -2339,10 +2339,10 @@ static TEEC_Result Invoke_Crypto_MACCompareFinal(
 	uint32_t ret_orig;
 
 	/* Fill SharedMem1 with part_data */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, fdata_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, fdata_length,
 			       TEEC_MEM_INPUT, mem02_exit)
 
 	/* Fill SharedMem2 with valid computed MAC of full_data */
@@ -2393,10 +2393,10 @@ static TEEC_Result Invoke_Crypto_MACComputeFinal(
 	size_t initial_size;
 
 	/* Fill SharedMem1 with part_data */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, fdata_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, fdata_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = oph;
@@ -2458,7 +2458,7 @@ static TEEC_Result Invoke_Crypto_CipherInit(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, iv_len,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, iv_len,
 					TEEC_MEM_INPUT, iv_len, iv, mem01_exit)
 
 	op.params[0].value.a = oph;
@@ -2503,10 +2503,10 @@ static TEEC_Result Invoke_Crypto_CipherUpdate(
 	uint32_t ret_orig;
 	size_t initial_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, partd_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, partd_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = oph;
@@ -2568,12 +2568,12 @@ static TEEC_Result Invoke_Crypto_CipherDoFinal(
 	uint32_t ret_orig;
 	size_t initial_size;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM01, partd_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM01, partd_length,
 					TEEC_MEM_INPUT, partd_length,
 					part_data, mem01_exit)
 	/* used fulld_length instead of partd_length as
 		described in the Adaptation layer specification.*/
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM02, fulld_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM02, fulld_length,
 			       TEEC_MEM_OUTPUT, mem02_exit)
 
 	op.params[0].value.a = oph;
@@ -3376,10 +3376,10 @@ static TEEC_Result mac_compute_final(
 
 	/* CMD_MACComputeFinal */
 	/* Fill SharedMem1 with full_data */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM04, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM04, fdata_length,
 					TEEC_MEM_INPUT, fdata_length,
 					full_data, mem04_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM05, fdata_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM05, fdata_length,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
 	op.params[0].value.a = (uint32_t)op1;
@@ -3444,7 +3444,7 @@ static TEEC_Result cipher_do_final(
 
 	}
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM04, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM04, fdata_length,
 					TEEC_MEM_INPUT,
 					saved_cipher_iv.size,
 					saved_cipher_iv.buffer,
@@ -3468,10 +3468,10 @@ static TEEC_Result cipher_do_final(
 
 	/* CMD_CipherDoFinal */
 	/* Fill SharedMem1 with full_data */
-	ALLOCATE_AND_FILL_SHARED_MEMORY(s->ctx, SHARE_MEM04, fdata_length,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(s->imp.ctx, SHARE_MEM04, fdata_length,
 					TEEC_MEM_INPUT, fdata_length,
 					full_data, mem04_exit)
-	ALLOCATE_SHARED_MEMORY(s->ctx, SHARE_MEM05, fdata_length,
+	ALLOCATE_SHARED_MEMORY(s->imp.ctx, SHARE_MEM05, fdata_length,
 			       TEEC_MEM_OUTPUT, mem05_exit)
 
 	op.params[0].value.a = (uint32_t)op1;
@@ -3541,7 +3541,7 @@ static TEEC_Result Invoke_StoreAttributeBuffer(ADBG_Case_t *c,
 
 	shm.size = value_size;
 	shm.flags = TEEC_MEM_INPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm.buffer, value_bufptr, shm.size);

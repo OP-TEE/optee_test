@@ -1215,7 +1215,7 @@ static TEEC_Result Invoke_ReadObjectData(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
-	ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM01, buffer_size,
+	ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, buffer_size,
 			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	op.params[0].value.a = obj_handle;
@@ -1268,7 +1268,7 @@ static TEEC_Result Invoke_RenamePersistentObject(ADBG_Case_t *c,
 
 	if (new_obj_id)
 		obj_id_len = strlen(new_obj_id);
-	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->ctx, SHARE_MEM01, obj_id_len,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, obj_id_len,
 					TEEC_MEM_INPUT, obj_id_len, new_obj_id,
 					mem01_exit);
 
@@ -1439,14 +1439,14 @@ static TEEC_Result Invoke_CreatePersistentObject(ADBG_Case_t *c,
 
 	shm_obj_id.size = strlen(obj_id);
 	shm_obj_id.flags = TEEC_MEM_INPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm_obj_id);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm_obj_id);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm_obj_id.buffer, obj_id, shm_obj_id.size);
 
 	shm_data.size = initial_data_len;
 	shm_data.flags = TEEC_MEM_INPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm_data);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm_data);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out_free_obj_id;
 	memcpy(shm_data.buffer, initial_data, shm_data.size);
@@ -1487,7 +1487,7 @@ static TEEC_Result Invoke_OpenPersistentObject(ADBG_Case_t *c,
 
 	shm.size = strlen(obj_id);
 	shm.flags = TEEC_MEM_INPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm.buffer, obj_id, shm.size);
@@ -1616,7 +1616,7 @@ static TEEC_Result Invoke_GetNextPersistentObject_All(ADBG_Case_t *c,
 
 	shm.size = TEE_OBJECT_ID_MAX_LEN;
 	shm.flags = TEEC_MEM_OUTPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
@@ -1899,7 +1899,7 @@ static TEEC_Result Invoke_StoreBuffer(ADBG_Case_t *c, TEEC_Session *sess,
 	if (data) {
 		shm_data.size = size;
 		shm_data.flags = TEEC_MEM_INPUT;
-		res = TEEC_AllocateSharedMemory(sess->ctx, &shm_data);
+		res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm_data);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 			return res;
 		memcpy(shm_data.buffer, data, shm_data.size);
@@ -1967,7 +1967,7 @@ static TEEC_Result Invoke_StoreAttributeBuffer(ADBG_Case_t *c,
 
 	shm.size = value_size;
 	shm.flags = TEEC_MEM_INPUT;
-	res = TEEC_AllocateSharedMemory(sess->ctx, &shm);
+	res = TEEC_AllocateSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 	memcpy(shm.buffer, value_bufptr, shm.size);
