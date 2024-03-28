@@ -279,14 +279,14 @@ static TEEC_Result Invoke_GetPropertyAsXXX_withoutEnum(
 	uint32_t expectedValueLen = 0;
 
 	nameLen = strlen(name) + 1;
-	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 					TEEC_MEM_INPUT, nameLen, name, mem01_exit)
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
-		ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM02, 1,
+		ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM02, 1,
 				       TEEC_MEM_OUTPUT, mem02_exit)
 	} else {
-		ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM02, BIG_SIZE,
+		ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM02, BIG_SIZE,
 				       TEEC_MEM_OUTPUT, mem02_exit)
 	}
 
@@ -373,7 +373,7 @@ static TEEC_Result Invoke_SetInstanceData(ADBG_Case_t *c,
 	size_t data_size = strlen(data) + 1;
 	uint32_t org;
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 					TEEC_MEM_INPUT,
 					data_size, data, mem01_exit)
 
@@ -397,7 +397,7 @@ static TEEC_Result Invoke_GetInstanceData(
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t org;
 
-	ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 			       TEEC_MEM_OUTPUT, mem01_exit)
 
 	SET_SHARED_MEMORY_OPERATION_PARAMETER(0, 0, SHARE_MEM01,
@@ -437,7 +437,7 @@ static TEEC_Result Invoke_ProcessInvokeTAOpenSession(
 	swapped_uuid.timeMid = htons(swapped_uuid.timeMid);
 	swapped_uuid.timeHiAndVersion = htons(swapped_uuid.timeHiAndVersion);
 
-	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_AND_FILL_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 					TEEC_MEM_INPUT, 16, &swapped_uuid,
 					mem01_exit)
 
@@ -494,7 +494,7 @@ static TEEC_Result Invoke_CheckMemoryAccessRight(ADBG_Case_t *c,
 		break;
 	}
 
-	ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+	ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 			       memory_flag, mem01_exit)
 
 	op.params[0].value.a = memoryAccessFlags;
@@ -570,10 +570,10 @@ static TEEC_Result Invoke_GetPropertyName(ADBG_Case_t *c, TEEC_Session *sess,
 	uint32_t strLen = 0;
 
 	if (kindBuffer == TOO_SHORT_BUFFER) {
-		ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM01, 1,
+		ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, 1,
 				       TEEC_MEM_OUTPUT, mem01_exit)
 	} else {
-		ALLOCATE_SHARED_MEMORY(sess->ctx, SHARE_MEM01, BIG_SIZE,
+		ALLOCATE_SHARED_MEMORY(sess->imp.ctx, SHARE_MEM01, BIG_SIZE,
 				       TEEC_MEM_OUTPUT, mem01_exit)
 	}
 
@@ -667,7 +667,7 @@ static TEEC_Result Invoke_OpenTASession(ADBG_Case_t *c, TEEC_Session *sess,
 	swapped_uuid.timeMid = htons(swapped_uuid.timeMid);
 	swapped_uuid.timeHiAndVersion = htons(swapped_uuid.timeHiAndVersion);
 
-	res = TEEC_RegisterSharedMemory(sess->ctx, &shm);
+	res = TEEC_RegisterSharedMemory(sess->imp.ctx, &shm);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		return res;
 
