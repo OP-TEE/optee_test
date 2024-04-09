@@ -3114,6 +3114,12 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_RSA_CASE(1, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1,
 			  TEE_MODE_ENCRYPT,
 			  ac_rsaes_oaep_vect10, NULL_ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256,
+			  TEE_MODE_DECRYPT,
+			  ac_rsaes_oaep_vect3, NULL_ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256,
+			  TEE_MODE_ENCRYPT,
+			  ac_rsaes_oaep_vect3, NULL_ARRAY, WITHOUT_SALT),
 
 	/* RSA test with crt parameters */
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT,
@@ -3222,6 +3228,12 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_RSA_CASE(1, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1,
 			  TEE_MODE_ENCRYPT,
 			  ac_rsaes_oaep_vect10, ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256,
+			  TEE_MODE_DECRYPT,
+			  ac_rsaes_oaep_vect3, ARRAY, WITHOUT_SALT),
+	XTEST_AC_RSA_CASE(0, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256,
+			  TEE_MODE_ENCRYPT,
+			  ac_rsaes_oaep_vect3, ARRAY, WITHOUT_SALT),
 
 	/* DSA tests */
 	/* [mod = L=1024, N=160, SHA-1] */
@@ -3823,6 +3835,7 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 static void xtest_tee_test_4006(ADBG_Case_t *c)
 {
 	TEEC_Session session = { };
+	TEEC_Result res = TEEC_ERROR_NOT_SUPPORTED;
 	TEE_OperationHandle op = TEE_HANDLE_NULL;
 	TEE_ObjectHandle priv_key_handle = TEE_HANDLE_NULL;
 	TEE_ObjectHandle pub_key_handle = TEE_HANDLE_NULL;
@@ -4140,7 +4153,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			pub_key_handle = TEE_HANDLE_NULL;
 
 			num_algo_params = 0;
-			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1) {
+			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1 ||
+			    tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256) {
 				algo_params[0].attributeID =
 					TEE_ATTR_RSA_OAEP_MGF_HASH;
 				algo_params[0].content.ref.length =
@@ -4150,12 +4164,18 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 				num_algo_params = 1;
 			}
 
-
 			out_enc_size = sizeof(out_enc);
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_asymmetric_encrypt(c, &session, op,
+			res = ta_crypt_cmd_asymmetric_encrypt(c, &session, op,
 					algo_params, num_algo_params, tv->ptx,
-					tv->ptx_len, out_enc, &out_enc_size)))
+					tv->ptx_len, out_enc, &out_enc_size);
+
+			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256 &&
+			    res == TEEC_ERROR_NOT_SUPPORTED) {
+				Do_ADBG_Log("RSA-OAEP with a different MGF1 hash not supported: skip subcase");
+				break;
+			}
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 				goto out;
 
 			/*
@@ -4189,8 +4209,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_asymmetric_decrypt(c, &session, op,
-					NULL, 0, out_enc, out_enc_size, out,
-					&out_size)))
+					algo_params, num_algo_params, out_enc,
+					out_enc_size, out, &out_size)))
 				goto out;
 
 			(void)ADBG_EXPECT_BUFFER(c, tv->ptx, tv->ptx_len, out,
@@ -4214,12 +4234,30 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 					priv_key_handle)))
 				goto out;
 
-			priv_key_handle = TEE_HANDLE_NULL;
+			num_algo_params = 0;
+			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA1 ||
+			    tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256) {
+				algo_params[0].attributeID =
+					TEE_ATTR_RSA_OAEP_MGF_HASH;
+				algo_params[0].content.ref.length =
+					sizeof(sha1_algo_id);
+				algo_params[0].content.ref.buffer =
+					&sha1_algo_id;
+				num_algo_params = 1;
+			}
 
-			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
-				ta_crypt_cmd_asymmetric_decrypt(c, &session, op,
-					NULL, 0, tv->ctx, tv->ctx_len, out,
-					&out_size)))
+			priv_key_handle = TEE_HANDLE_NULL;
+			res = ta_crypt_cmd_asymmetric_decrypt(c, &session, op,
+					algo_params, num_algo_params, tv->ctx,
+					tv->ctx_len, out, &out_size);
+
+			if (tv->algo == TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256 &&
+			    res == TEEC_ERROR_NOT_SUPPORTED) {
+				Do_ADBG_Log("RSA-OAEP with a different MGF1 hash not supported: skip subcase");
+				break;
+			}
+
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 				goto out;
 
 			(void)ADBG_EXPECT_BUFFER(c, tv->ptx, tv->ptx_len, out,
