@@ -114,6 +114,7 @@ enum asym_algorithm {
 	ALGO_ECDSA = 3,
 	ALGO_ECDH = 4,
 	ALGO_X25519 = 5,
+	ALGO_SM2 = 6,
 };
 
 enum asym_cipher_mode {

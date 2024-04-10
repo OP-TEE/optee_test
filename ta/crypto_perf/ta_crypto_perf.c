@@ -663,6 +663,15 @@ static TEE_Result get_algo(uint32_t tee_type, uint32_t mode,
 			EMSG("ECDSA error mode");
 			res = TEE_ERROR_BAD_PARAMETERS;
 		}
+	} else if (tee_type == ALGO_SM2) {
+		if (mode == MODE_ENCRYPT || mode == MODE_DECRYPT) {
+			algo = TEE_ALG_SM2_PKE;
+		} else if (mode == MODE_SIGN || mode == MODE_VERIFY) {
+			algo = TEE_ALG_SM2_DSA_SM3;
+		} else {
+			EMSG("SM2 error mode");
+			res = TEE_ERROR_BAD_PARAMETERS;
+		}
 	} else {
 		res = TEE_ERROR_BAD_PARAMETERS;
 	}
@@ -670,7 +679,7 @@ static TEE_Result get_algo(uint32_t tee_type, uint32_t mode,
 	return res;
 }
 
-static uint32_t get_keypair_type(uint32_t value)
+static uint32_t get_keypair_type(uint32_t value, uint32_t mode)
 {
 	switch (value) {
 	case ALGO_DH:
@@ -683,6 +692,15 @@ static uint32_t get_keypair_type(uint32_t value)
 		return TEE_TYPE_ECDH_KEYPAIR;
 	case ALGO_X25519:
 		return TEE_TYPE_X25519_KEYPAIR;
+	case ALGO_SM2:
+		if (mode == MODE_ENCRYPT || mode == MODE_DECRYPT) {
+			return TEE_TYPE_SM2_PKE_KEYPAIR;
+		} else if (mode == MODE_SIGN || mode == MODE_VERIFY) {
+			return TEE_TYPE_SM2_DSA_KEYPAIR;
+		} else {
+			EMSG("The mode[%"PRIu32"] is not valid", mode);
+			return TEE_TYPE_ILLEGAL_VALUE;
+		}
 	default:
 		EMSG("The algo[%"PRIu32"] is not valid", value);
 		return TEE_TYPE_ILLEGAL_VALUE;
@@ -817,14 +835,14 @@ TEE_Result cmd_asym_prepare_obj(uint32_t param_types,
 	TEE_Result res = TEE_ERROR_GENERIC;
 	uint32_t tee_type = TEE_TYPE_ILLEGAL_VALUE;
 	uint32_t exp_param_types = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
-						   TEE_PARAM_TYPE_NONE,
+						   TEE_PARAM_TYPE_VALUE_INPUT,
 						   TEE_PARAM_TYPE_NONE,
 						   TEE_PARAM_TYPE_NONE);
 
 	if (param_types != exp_param_types)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	tee_type = get_keypair_type(params[0].value.a);
+	tee_type = get_keypair_type(params[0].value.a, params[1].value.a);
 	if (tee_type == TEE_TYPE_ILLEGAL_VALUE)
 		return TEE_ERROR_BAD_PARAMETERS;
 
