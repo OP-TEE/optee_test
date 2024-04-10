@@ -153,7 +153,8 @@ static void usage(const char *progname, uint32_t width_bits, uint32_t main_algo,
 	fprintf(stderr, "                   RSASSA_PKCS1_PSS_MGF1_SHA256_SIGN, RSASSA_PKCS1_PSS_MGF1_SHA256_VERIFY\n");
 	fprintf(stderr, "                   RSASSA_PKCS1_PSS_MGF1_SHA384_SIGN, RSASSA_PKCS1_PSS_MGF1_SHA384_VERIFY\n");
 	fprintf(stderr, "                   RSASSA_PKCS1_PSS_MGF1_SHA512_SIGN, RSASSA_PKCS1_PSS_MGF1_SHA512_VERIFY\n");
-	fprintf(stderr, "                   ECDSA_SIGN, ECDSA_VERIFY, ECDH, X25519\n");
+	fprintf(stderr, "                   ECDSA_SIGN, ECDSA_VERIFY, ECDH, X25519, SM2_GENKEYPAIR, SM2_VERIFY\n");
+	fprintf(stderr, "                   SM2_ENCRYPT, SM2_DECRYPT\n");
 	fprintf(stderr, "  -l LOOP          Inner loop iterations [%u]\n", l);
 	fprintf(stderr, "  -n LOOP          Outer test loop iterations [%u]\n", n);
 	fprintf(stderr, "  -r|--random      Get input data from /dev/urandom (default: all zeros)\n");
@@ -232,17 +233,18 @@ static uint64_t timespec_diff_ns(struct timespec *start, struct timespec *end)
 	return timespec_to_ns(end) - timespec_to_ns(start);
 }
 
-static void prepare_obj(int width_bits, uint32_t main_algo)
+static void prepare_obj(int width_bits, uint32_t main_algo, int mode)
 {
 	uint32_t cmd = TA_CRYPTO_PERF_CMD_ASYM_PREPARE_OBJ;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	uint32_t ret_origin = 0;
 
-	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE, TEEC_NONE,
-					 TEEC_NONE);
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_INPUT,
+					 TEEC_NONE, TEEC_NONE);
 	op.params[0].value.a = main_algo;
 	op.params[0].value.b = width_bits;
+	op.params[1].value.a = mode;
 
 	res = TEEC_InvokeCommand(&sess, cmd, &op, &ret_origin);
 	check_res(res, "TEEC_InvokeCommand()", &ret_origin);
@@ -467,7 +469,7 @@ static int asym_perf_run_test(int mode, size_t size, uint32_t n,
 		break;
 	}
 
-	prepare_obj(width_bits, main_algo);
+	prepare_obj(width_bits, main_algo, mode);
 
 	res = pack_attrs(params, param_count, &buf, &blen);
 	CHECK(res, "pack_attrs", goto out;);
@@ -904,6 +906,26 @@ int asym_perf_runner_cmd_parser(int argc, char *argv[])
 				main_algo = ALGO_X25519;
 				width_bits = 256;
 				mode = MODE_GENKEYPAIR;
+			} else if (!strcasecmp(argv[i], "SM2_GENKEYPAIR")) {
+				main_algo = ALGO_SM2;
+				width_bits = 256;
+				mode = MODE_GENKEYPAIR;
+			} else if (!strcasecmp(argv[i], "SM2_SIGN")) {
+				main_algo = ALGO_SM2;
+				width_bits = 256;
+				mode = MODE_SIGN;
+			} else if (!strcasecmp(argv[i], "SM2_VERIFY")) {
+				main_algo = ALGO_SM2;
+				width_bits = 256;
+				mode = MODE_VERIFY;
+			} else if (!strcasecmp(argv[i], "SM2_ENCRYPT")) {
+				main_algo = ALGO_SM2;
+				width_bits = 256;
+				mode = MODE_ENCRYPT;
+			} else if (!strcasecmp(argv[i], "SM2_DECRYPT")) {
+				main_algo = ALGO_SM2;
+				width_bits = 256;
+				mode = MODE_DECRYPT;
 			} else {
 				fprintf(stderr, "%s, invalid main_algo\n",
 					argv[0]);
@@ -957,7 +979,7 @@ int asym_perf_runner_cmd_parser(int argc, char *argv[])
 		}
 	}
 
-	if (mode == MODE_GENKEYPAIR)
+	if (mode == MODE_GENKEYPAIR || main_algo == ALGO_SM2)
 		size = BITS_TO_BYTES(width_bits);
 
 	return asym_perf_run_test(mode, size, n, l, is_random, warmup,
