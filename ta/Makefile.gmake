@@ -62,6 +62,20 @@ $(eval $(foreach dir,$(TA_DIRS),$(call add-ta-target,$(dir))))
 
 ta-os_test: ta-os_test_lib ta-os_test_lib_dl
 
+ifneq (,$(GP_PACKAGE))
+define add-gp-ta-target
+.PHONY: gp-ta-$(1)
+gp-ta-$(1):
+	$(MAKE) -C $(1)
+
+ta: gp-ta-$(1)
+
+endef
+
+$(eval $(foreach f,$(dir $(wildcard ../host/xtest/gp-suite/TTAs_Internal_API_1_1_1/*/*/code_files/Makefile \
+	../host/xtest/gp-suite/TTAs_Internal_API_1_1_1/*/*/*/code_files/Makefile)),$(call add-gp-ta-target,$(f))))
+endif
+
 # remove build directories including ta/<ta-name>/ directories.
 # Note: $(out-dir) may be a relative path.
 RMDIR := rmdir --ignore-fail-on-non-empty
