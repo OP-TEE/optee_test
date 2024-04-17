@@ -48,7 +48,19 @@ all: ta
 
 .PHONY: ta
 ta:
-	$(q)$(foreach dir,$(TA_DIRS), $(MAKE) -C $(dir) O=$(out-dir)/ta/$(dir) &&) true
+
+define add-ta-target
+.PHONY: ta-$(1)
+ta-$(1):
+	$(MAKE) -C $(1) O=$(out-dir)/ta/$(1)
+
+ta: ta-$(1)
+
+endef
+
+$(eval $(foreach dir,$(TA_DIRS),$(call add-ta-target,$(dir))))
+
+ta-os_test: ta-os_test_lib ta-os_test_lib_dl
 
 # remove build directories including ta/<ta-name>/ directories.
 # Note: $(out-dir) may be a relative path.
