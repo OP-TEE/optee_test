@@ -6230,3 +6230,478 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 4016, xtest_tee_test_4016_ed25519,
 		 "Test TEE Internal API ED25519 sign/verify");
+
+struct buf_state {
+	bool buffer_two_blocks;
+	bool auth_enc;
+	bool decrypt;
+	uint8_t *plain_text;
+	uint8_t *ciph_text;
+	uint8_t *tmp_text;
+	size_t text_size;
+	size_t block_size;
+	uint8_t *iv;
+	size_t iv_len;
+	uint8_t tag[96 / 8];
+	uint8_t tmp_tag[96 / 8];
+	TEE_OperationHandle oph;
+	TEEC_Session *s;
+
+	size_t in_count;
+	size_t out_count;
+	size_t buf_count;
+};
+
+static bool process_bytes_4017(ADBG_Case_t *c, struct buf_state *bs,
+			       size_t count)
+{
+	TEE_Result res = TEEC_SUCCESS;
+	size_t new_buf_count = 0;
+	void *reference = NULL;
+	void *src = NULL;
+	size_t out = 0;
+	size_t dlen = 0;
+
+	if (bs->decrypt) {
+		src = bs->ciph_text + bs->in_count;
+		reference = bs->plain_text + bs->out_count;
+	} else {
+		src = bs->plain_text + bs->in_count;
+		reference = bs->ciph_text + bs->out_count;
+	}
+
+	bs->in_count += count;
+	if (bs->buffer_two_blocks) {
+		if (bs->in_count > bs->block_size)
+			new_buf_count = ((bs->in_count - 1) % bs->block_size) +
+					bs->block_size + 1;
+		else
+			new_buf_count = bs->in_count;
+	} else {
+		new_buf_count = bs->in_count % bs->block_size;
+	}
+
+	out = bs->buf_count + count - new_buf_count;
+	bs->out_count += out;
+	bs->buf_count = new_buf_count;
+
+	if (bs->auth_enc) {
+		res = ta_crypt_cmd_ae_update(c, bs->s, bs->oph, src, count,
+					     NULL, &dlen);
+		if (!res)
+			return ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==, 0) &&
+			       ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==, out);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==, out))
+			return false;
+		res = ta_crypt_cmd_ae_update(c, bs->s, bs->oph, src, count,
+					     bs->tmp_text, &dlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_BUFFER(c, reference, out,
+					bs->tmp_text, dlen))
+			return false;
+	} else {
+		res = ta_crypt_cmd_cipher_update(c, bs->s, bs->oph, src, count,
+						 NULL, &dlen);
+		if (!res)
+			return ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==, out);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==, out))
+			return false;
+		res = ta_crypt_cmd_cipher_update(c, bs->s, bs->oph, src, count,
+						 bs->tmp_text, &dlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_BUFFER(c, reference, out,
+					bs->tmp_text, dlen))
+			return false;
+	}
+
+	return true;
+}
+
+static bool process_bytes_final_4017(ADBG_Case_t *c, struct buf_state *bs)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	void *reference = NULL;
+	size_t src_len = 0;
+	void *src = NULL;
+	size_t dlen = 0;
+	size_t tlen = 0;
+
+	if (bs->decrypt) {
+		src = bs->ciph_text + bs->in_count;
+		reference = bs->plain_text + bs->out_count;
+	} else {
+		src = bs->plain_text + bs->in_count;
+		reference = bs->ciph_text + bs->out_count;
+	}
+	src_len = bs->text_size - bs->in_count;
+
+	if (bs->auth_enc) {
+		if (bs->decrypt)
+			res = ta_crypt_cmd_ae_decrypt_final(c, bs->s, bs->oph,
+							    src, src_len,
+							    NULL, &dlen,
+							    bs->tag,
+							    sizeof(bs->tag));
+		else
+			res = ta_crypt_cmd_ae_encrypt_final(c, bs->s, bs->oph,
+							    src, src_len,
+							    NULL, &dlen, NULL,
+							    &tlen);
+		if (!res && bs->decrypt)
+			return ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==,
+							   src_len);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, bs->text_size -
+                                                  bs->out_count, ==, dlen))
+			return false;
+		if (!bs->decrypt &&
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, sizeof(bs->tag), ==, tlen))
+			return false;
+		if (bs->decrypt)
+			res = ta_crypt_cmd_ae_decrypt_final(c, bs->s, bs->oph,
+							    src, src_len,
+							    bs->tmp_text, &dlen,
+							    bs->tag,
+							    sizeof(bs->tag));
+		else
+			res = ta_crypt_cmd_ae_encrypt_final(c, bs->s, bs->oph,
+							    src, src_len,
+							    bs->tmp_text, &dlen,
+							    bs->tmp_tag, &tlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_BUFFER(c, reference,
+					bs->text_size - bs->out_count,
+					bs->tmp_text, dlen))
+			return false;
+		if (!bs->decrypt &&
+		    !ADBG_EXPECT_BUFFER(c, bs->tag, sizeof(bs->tag),
+					bs->tmp_tag, tlen))
+			return false;
+	} else {
+		res = ta_crypt_cmd_cipher_do_final(c, bs->s, bs->oph,
+						   src, src_len, NULL, &dlen);
+		if (!res)
+			return ADBG_EXPECT_COMPARE_UNSIGNED(c, dlen, ==,
+							    src_len);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c,
+						  bs->text_size -
+						  bs->out_count, ==, dlen))
+			return false;
+
+		res = ta_crypt_cmd_cipher_do_final(c, bs->s, bs->oph,
+						   src, src_len,
+						   bs->tmp_text, &dlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_BUFFER(c, reference,
+					bs->text_size - bs->out_count,
+					bs->tmp_text, dlen))
+			return false;
+	}
+
+	return true;
+}
+
+static bool process_text_4017(ADBG_Case_t *c, struct buf_state *bs,
+			      size_t initial_count, size_t middle_count)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	size_t n = 0;
+
+	bs->in_count = 0;
+	bs->out_count = 0;
+	bs->buf_count = 0;
+
+	if (bs->auth_enc)
+		res = ta_crypt_cmd_ae_init(c, bs->s, bs->oph, bs->iv,
+					   bs->iv_len, sizeof(bs->tag), 0,
+					   bs->text_size);
+	else
+		res = ta_crypt_cmd_cipher_init(c, bs->s, bs->oph, bs->iv,
+					       bs->iv_len);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return false;
+
+	if (initial_count &&
+	    !ADBG_EXPECT_TRUE(c, process_bytes_4017(c, bs, initial_count)))
+		return false;
+
+	for (n = 0; n < middle_count && n + initial_count < bs->text_size; n++)
+		if (!ADBG_EXPECT_TRUE(c, process_bytes_4017(c, bs, 1)))
+			return false;
+
+	return process_bytes_final_4017(c, bs);
+}
+
+static bool alloc_oph_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
+			   uint32_t mode, void *key, size_t key_size,
+			   TEE_OperationHandle *oph)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key2_handle = TEE_HANDLE_NULL;
+	TEE_Attribute key_attr = {
+		.attributeID = TEE_ATTR_SECRET_VALUE,
+		.content.ref.buffer = key,
+		.content.ref.length = key_size,
+	};
+	bool ret = false;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, s, TEE_TYPE_AES,
+						     key_size * 8, &key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+	res = ta_crypt_cmd_populate_transient_object(c, s, key_handle,
+						     &key_attr, 1);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	if (algo == TEE_ALG_AES_XTS) {
+		res = ta_crypt_cmd_allocate_transient_object(c, s, TEE_TYPE_AES,
+							     key_size * 8,
+							     &key2_handle);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_populate_transient_object(c, s, key2_handle,
+							     &key_attr, 1);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		res = ta_crypt_cmd_allocate_operation(c, s, oph, algo, mode,
+						      key_size * 8 * 2);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_set_operation_key2(c, s, *oph, key_handle,
+						      key2_handle);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+	} else {
+		res = ta_crypt_cmd_allocate_operation(c, s, oph, algo, mode,
+						      key_size * 8);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_set_operation_key(c, s, *oph, key_handle);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+	}
+
+	ret = true;
+out:
+	if (key2_handle)
+		ta_crypt_cmd_free_transient_object(c, s, key2_handle);
+	if (key_handle)
+		ta_crypt_cmd_free_transient_object(c, s, key_handle);
+	return ret;
+}
+
+static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
+			 size_t extra_size)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	struct buf_state bs = { .s = s, };
+	size_t middle_count = 0;
+	uint8_t iv[16] = { };
+	uint8_t key[16] = { };
+	size_t prev_n = 0;
+	bool ret = false;
+	size_t dlen = 0;
+	size_t tlen = 0;
+	size_t n = 0;
+
+	if (level >= 12)
+		middle_count = 2 * TEE_AES_BLOCK_SIZE;
+
+	bs.block_size = 16;
+	bs.text_size = bs.block_size * 6 + extra_size;
+	bs.plain_text = calloc(3, bs.text_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, bs.plain_text))
+		return false;
+	bs.ciph_text = bs.plain_text + bs.text_size;
+	bs.tmp_text = bs.ciph_text + bs.text_size;
+
+	for (n = 0; n < bs.text_size; n++)
+		bs.plain_text[n] = n + 1;
+	for (n = 0; n < ARRAY_SIZE(iv); n++)
+		iv[n] = n + 1;
+	for (n = 0; n < ARRAY_SIZE(key); n++)
+		key[n] = n + 1;
+
+	if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo, TEE_MODE_ENCRYPT,
+						key, sizeof(key), &bs.oph)))
+		return false;
+
+	if (algo != TEE_ALG_AES_ECB_NOPAD) {
+		bs.iv = iv;
+		bs.iv_len = sizeof(iv);
+	}
+	if (algo == TEE_ALG_AES_CCM)
+		bs.iv_len = 13;
+	if (algo == TEE_ALG_AES_CTR || algo == TEE_ALG_AES_GCM)
+		bs.block_size = 1;
+	else
+		bs.block_size = TEE_AES_BLOCK_SIZE;
+	if (algo == TEE_ALG_AES_CTS || algo == TEE_ALG_AES_XTS)
+		bs.buffer_two_blocks = true;
+	if (algo == TEE_ALG_AES_CCM || algo == TEE_ALG_AES_GCM)
+		bs.auth_enc = true;
+
+	if (bs.auth_enc) {
+		res = ta_crypt_cmd_ae_init(c, bs.s, bs.oph, bs.iv, bs.iv_len,
+					   sizeof(bs.tag), 0, bs.text_size);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_ae_encrypt_final(c, bs.s, bs.oph,
+						    bs.plain_text, bs.text_size,
+						    NULL, &dlen, NULL, &tlen);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, bs.text_size, ==, dlen))
+			goto out;
+		res = ta_crypt_cmd_ae_encrypt_final(c, bs.s, bs.oph,
+						    bs.plain_text, bs.text_size,
+						    bs.ciph_text, &dlen, bs.tag,
+						    &tlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, bs.text_size, ==, dlen))
+			goto out;
+	} else {
+		res = ta_crypt_cmd_cipher_init(c, bs.s, bs.oph, bs.iv,
+					       bs.iv_len);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_cipher_do_final(c, bs.s, bs.oph,
+						   bs.plain_text, bs.text_size,
+						   NULL, &dlen);
+		if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, bs.text_size, ==, dlen))
+			goto out;
+		res = ta_crypt_cmd_cipher_do_final(c, bs.s, bs.oph,
+						   bs.plain_text, bs.text_size,
+						   bs.ciph_text, &dlen);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, bs.text_size, ==, dlen))
+			goto out;
+	}
+
+	for (n = 0; n < bs.text_size; n++) {
+		/*
+		 * If level < 12 test with initial count of:
+		 * 0, 1, 15 for each AES block, that is,
+		 * 0, 1, 15, 16, 17, 31, 32, 33, 47, 48, 49, 63, 64, 65,
+		 * 79, 80, 81, and 95
+		 * If level >= 12 test with initial count of each n, an
+		 * exhaustive of every possible initial count.
+		 *
+		 * If level < 12 test with middle_count of 32 else 0.
+		 * (middle_count - n) bytes are processed one by one.
+		 *
+		 * The idea is to try to match all corner cases when
+		 * buffering AES blocks. With special focus on what happens
+		 * when a complete block has been buffered.
+		 */
+		if (level < 12 && (n % TEE_AES_BLOCK_SIZE) > 1 &&
+		    (n % TEE_AES_BLOCK_SIZE) < (TEE_AES_BLOCK_SIZE - 1))
+			continue;
+		ret = process_text_4017(c, &bs, n, middle_count);
+		if (!ADBG_EXPECT_TRUE(c, ret)) {
+			Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
+				n, prev_n);
+			goto out;
+		}
+		prev_n = n;
+	}
+
+	ta_crypt_cmd_free_operation(c, s, bs.oph);
+	bs.oph = TEE_HANDLE_NULL;
+	if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo, TEE_MODE_DECRYPT,
+						key, sizeof(key), &bs.oph)))
+		goto out;
+	bs.decrypt = true;
+
+	/* Only test matching decryption for levels above 13 */
+	for (n = 0; level > 13 && n < bs.text_size; n++) {
+		if (level < 12 && (n % TEE_AES_BLOCK_SIZE) > 1 &&
+		    (n % TEE_AES_BLOCK_SIZE) < (TEE_AES_BLOCK_SIZE - 1))
+			continue;
+		ret = process_text_4017(c, &bs, n, middle_count);
+		if (!ADBG_EXPECT_TRUE(c, ret)) {
+			Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
+				n, prev_n);
+			goto out;
+		}
+		prev_n = n;
+	}
+
+	ret = true;
+out:
+	if (bs.oph)
+		ta_crypt_cmd_free_operation(c, s, bs.oph);
+	free(bs.plain_text);
+	return ret;
+}
+
+static void xtest_tee_test_4017(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	uint32_t ret_orig = 0;
+	TEEC_Session sess = { };
+
+	res = xtest_teec_open_session(&sess, &crypt_user_ta_uuid, NULL,
+				      &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_ECB_NOPAD");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_ECB_NOPAD, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_ECB_NOPAD");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CBC_NOPAD");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CBC_NOPAD, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CBC_NOPAD");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTR");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CTR, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTR");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTR 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CTR, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTR 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTS");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CTS, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTS");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTS 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CTS, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTS 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_XTS");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_XTS, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_XTS");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_XTS 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_XTS, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_XTS 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_GCM");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_GCM, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_GCM");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_GCM 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_GCM, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_GCM 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CCM");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CCM, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CCM");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_4017(c, &sess, TEE_ALG_AES_CCM, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
+
+	TEEC_CloseSession(&sess);
+}
+
+ADBG_CASE_DEFINE(regression, 4017, xtest_tee_test_4017,
+		 "Test TEE Internal API Cipher block buffering");
