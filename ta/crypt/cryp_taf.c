@@ -712,9 +712,8 @@ TEE_Result ta_entry_ae_update(uint32_t param_type, TEE_Param params[4])
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT, TEE_PARAM_TYPE_NONE));
 
-	TEE_AEUpdate(op, params[1].memref.buffer, params[1].memref.size,
-		     params[2].memref.buffer, &params[2].memref.size);
-	return TEE_SUCCESS;
+	return TEE_AEUpdate(op, params[1].memref.buffer, params[1].memref.size,
+			    params[2].memref.buffer, &params[2].memref.size);
 }
 
 TEE_Result ta_entry_ae_encrypt_final(uint32_t param_type, TEE_Param params[4])
@@ -730,18 +729,28 @@ TEE_Result ta_entry_ae_encrypt_final(uint32_t param_type, TEE_Param params[4])
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT));
 
-	b2 = TEE_Malloc(params[2].memref.size, 0);
-	b3 = TEE_Malloc(params[3].memref.size, 0);
-	if (!b2 || !b3)
-		goto out;
+	if (params[2].memref.buffer && params[2].memref.size) {
+		b2 = TEE_Malloc(params[2].memref.size, 0);
+		if (!b2)
+			goto out;
+	}
+	if (params[3].memref.buffer && params[3].memref.size) {
+		b3 = TEE_Malloc(params[3].memref.size, 0);
+		if (!b3)
+			goto out;
+	}
 
 	res = TEE_AEEncryptFinal(op, params[1].memref.buffer,
 				 params[1].memref.size, b2,
 				 &params[2].memref.size, b3,
 				 &params[3].memref.size);
 	if (!res) {
-		TEE_MemMove(params[2].memref.buffer, b2, params[2].memref.size);
-		TEE_MemMove(params[3].memref.buffer, b3, params[3].memref.size);
+		if (b2)
+			TEE_MemMove(params[2].memref.buffer, b2,
+				    params[2].memref.size);
+		if (b3)
+			TEE_MemMove(params[3].memref.buffer, b3,
+				    params[3].memref.size);
 	}
 out:
 	TEE_Free(b2);
@@ -762,17 +771,23 @@ TEE_Result ta_entry_ae_decrypt_final(uint32_t param_type, TEE_Param params[4])
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT));
 
-	b2 = TEE_Malloc(params[2].memref.size, 0);
-	b3 = TEE_Malloc(params[3].memref.size, 0);
-	if (!b2 || !b3)
-		goto out;
+	if (params[2].memref.buffer && params[2].memref.size) {
+		b2 = TEE_Malloc(params[2].memref.size, 0);
+		if (!b2)
+			goto out;
+	}
+	if (params[3].memref.buffer && params[3].memref.size) {
+		b3 = TEE_Malloc(params[3].memref.size, 0);
+		if (!b3)
+			goto out;
+		TEE_MemMove(b3, params[3].memref.buffer, params[3].memref.size);
+	}
 
-	TEE_MemMove(b3, params[3].memref.buffer, params[3].memref.size);
 	res = TEE_AEDecryptFinal(op, params[1].memref.buffer,
 				 params[1].memref.size, b2,
 				 &params[2].memref.size, b3,
 				 params[3].memref.size);
-	if (!res)
+	if (!res && b2)
 		TEE_MemMove(params[2].memref.buffer, b2, params[2].memref.size);
 out:
 	TEE_Free(b2);
