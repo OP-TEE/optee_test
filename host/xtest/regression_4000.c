@@ -398,8 +398,7 @@ static TEEC_Result ta_crypt_cmd_cipher_update(ADBG_Case_t *c, TEEC_Session *s,
 						    ret_orig);
 	}
 
-	if (res == TEEC_SUCCESS)
-		*dst_len = op.params[2].tmpref.size;
+	*dst_len = op.params[2].tmpref.size;
 
 	return res;
 }
@@ -437,8 +436,7 @@ static TEEC_Result ta_crypt_cmd_cipher_do_final(ADBG_Case_t *c,
 			    ret_orig);
 	}
 
-	if (res == TEEC_SUCCESS)
-		*dst_len = op.params[2].tmpref.size;
+	*dst_len = op.params[2].tmpref.size;
 
 	return res;
 }
@@ -564,8 +562,7 @@ static TEEC_Result ta_crypt_cmd_ae_update(ADBG_Case_t *c,
 						    ret_orig);
 	}
 
-	if (res == TEEC_SUCCESS)
-		*dst_len = op.params[2].tmpref.size;
+	*dst_len = op.params[2].tmpref.size;
 
 	return res;
 }
@@ -607,10 +604,8 @@ static TEEC_Result ta_crypt_cmd_ae_encrypt_final(ADBG_Case_t *c,
 						    ret_orig);
 	}
 
-	if (res == TEEC_SUCCESS) {
-		*dst_len = op.params[2].tmpref.size;
-		*tag_len = op.params[3].tmpref.size;
-	}
+	*dst_len = op.params[2].tmpref.size;
+	*tag_len = op.params[3].tmpref.size;
 
 	return res;
 }
@@ -651,8 +646,7 @@ static TEEC_Result ta_crypt_cmd_ae_decrypt_final(ADBG_Case_t *c,
 						    ret_orig);
 	}
 
-	if (res == TEEC_SUCCESS)
-		*dst_len = op.params[2].tmpref.size;
+	*dst_len = op.params[2].tmpref.size;
 
 	return res;
 }
