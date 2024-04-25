@@ -243,9 +243,7 @@ TEE_Result ta_storage_cmd_unlink(uint32_t param_types, TEE_Param params[4])
 			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
 
-	TEE_CloseAndDeletePersistentObject1(o);
-
-	return TEE_SUCCESS;
+	return TEE_CloseAndDeletePersistentObject1(o);
 }
 
 TEE_Result ta_storage_cmd_rename(uint32_t command, uint32_t param_types,

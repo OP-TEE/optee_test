@@ -466,7 +466,9 @@ static TEEC_Result check_storage_available(uint32_t id, bool *avail)
 	switch (res) {
 	case TEEC_SUCCESS:
 		*avail = true;
-		fs_unlink(&sess, obj);
+		res = fs_unlink(&sess, obj);
+		if (res != TEEC_SUCCESS)
+			Do_ADBG_Log("fs_unlink() failed");
 		break;
 	case TEE_ERROR_ITEM_NOT_FOUND:
 	case TEE_ERROR_STORAGE_NOT_AVAILABLE:
