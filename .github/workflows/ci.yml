@@ -25,6 +25,7 @@ jobs:
           set -e -v
           export LC_ALL=C
           export BR2_CCACHE_DIR=/github/home/.cache/ccache
+          export FORCE_UNSAFE_CONFIGURE=1 # Prevent Buildroot error when building as root
           WD=$(pwd)
           cd ..
           TOP=$(pwd)/optee_repo_qemu_v8
