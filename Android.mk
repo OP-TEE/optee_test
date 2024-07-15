@@ -124,6 +124,7 @@ LOCAL_CFLAGS += -I $(TA_DEV_KIT_DIR)/host_include -include conf.h
 LOCAL_CFLAGS += -pthread
 LOCAL_CFLAGS += -g3
 LOCAL_CFLAGS += -Wno-missing-field-initializers -Wno-format-zero-length
+LOCAL_CFLAGS += -Wno-unused-parameter
 
 ifneq ($(TA_DIR),)
 LOCAL_CFLAGS += -DTA_DIR=\"$(TA_DIR)\"
