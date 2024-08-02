@@ -2622,23 +2622,25 @@ static CK_RV test_find_objects(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 			       CK_ULONG expected_cnt)
 {
 	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_RV rv2 = CKR_GENERAL_ERROR;
 	CK_ULONG hdl_count = 0;
 
 	rv = C_FindObjectsInit(session, find_template, attr_count);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return rv;
 
-	rv = C_FindObjects(session, obj_found, obj_count, &hdl_count);
-	if (!ADBG_EXPECT_CK_OK(c, rv))
-		return rv;
-	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, hdl_count, ==, expected_cnt))
-		return CKR_GENERAL_ERROR;
+	rv2 = C_FindObjects(session, obj_found, obj_count, &hdl_count);
+	if (ADBG_EXPECT_CK_OK(c, rv2)) {
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, hdl_count, ==,
+						  expected_cnt))
+			rv2 = CKR_GENERAL_ERROR;
+	}
 
 	rv = C_FindObjectsFinal(session);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return rv;
 
-	return rv;
+	return rv2;
 }
 
 static void destroy_persistent_objects(ADBG_Case_t *c, CK_SLOT_ID slot)
