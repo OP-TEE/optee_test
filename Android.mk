@@ -96,6 +96,7 @@ LOCAL_SRC_FILES := $(patsubst %,host/xtest/%,$(srcs))
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/host/xtest \
 		$(LOCAL_PATH)/host/xtest/adbg/include \
+		$(LOCAL_PATH)/host/xtest/include/uapi \
 		$(LOCAL_PATH)/ta/include \
 		$(LOCAL_PATH)/ta/supp_plugin/include \
 		$(LOCAL_PATH)/ta/create_fail_test/include \

@@ -129,6 +129,7 @@ target_include_directories(${PROJECT_NAME}
 	PRIVATE .
 	PRIVATE ../supp_plugin/include
 	PRIVATE adbg/include
+	PRIVATE include/uapi
 	PRIVATE ${OPTEE_TEST_SDK}/host_include
 	PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
 	${GP_INCLUDES}
