@@ -107,6 +107,7 @@ endif
 
 CFLAGS += -I./
 CFLAGS += -I./adbg/include
+CFLAGS += -I./include/uapi
 CFLAGS += -I../supp_plugin/include
 CFLAGS += -I$(out-dir)/xtest
 
