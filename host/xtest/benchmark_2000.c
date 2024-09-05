@@ -56,7 +56,7 @@ static void xtest_tee_benchmark_2002(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(benchmark, 2001, xtest_tee_benchmark_2001,
 		"TEE SHA Performance test (TA_SHA_SHA1)");
 ADBG_CASE_DEFINE(benchmark, 2002, xtest_tee_benchmark_2002,
-		"TEE SHA Performance test (TA_SHA_SHA226)");
+		"TEE SHA Performance test (TA_SHA_SHA256)");
 
 
 /* ----------------------------------------------------------------------- */
