@@ -1757,6 +1757,7 @@ static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
 	CK_RV rv = CKR_GENERAL_ERROR;
 	CK_SLOT_ID slot = 0;
 	CK_SESSION_HANDLE sessions[128];
+	CK_SESSION_HANDLE session_saved = 0;
 	size_t n = 0;
 
 	for (n = 0; n < ARRAY_SIZE(sessions); n++)
@@ -1787,15 +1788,8 @@ static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
 
 	Do_ADBG_Log("    created sessions count: %zu", n);
 
-	/* Closing session with out bound and invalid IDs (or negative ID) */
-	rv = C_CloseSession(sessions[n - 1] + 1024);
-	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
-	rv = C_CloseSession(CK_INVALID_HANDLE);
-	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
-	rv = C_CloseSession(~0);
-	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
-
 	/* Closing each session: all related resources shall be free */
+	session_saved = sessions[n - 1];
 	for (n = 0; n < ARRAY_SIZE(sessions); n++) {
 		if (sessions[n] == CK_INVALID_HANDLE)
 			continue;
@@ -1804,6 +1798,14 @@ static void xtest_pkcs11_test_1007(ADBG_Case_t *c)
 		ADBG_EXPECT_CK_OK(c, rv);
 		sessions[n] = CK_INVALID_HANDLE;
 	}
+
+	/* Closing session with out bound and invalid IDs (or negative ID) */
+	rv = C_CloseSession(session_saved);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
+	rv = C_CloseSession(CK_INVALID_HANDLE);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
+	rv = C_CloseSession(~0);
+	ADBG_EXPECT_CK_RESULT(c, CKR_SESSION_HANDLE_INVALID, rv);
 
 	/* Open and close another session */
 	rv = open_cipher_session(c, slot, &sessions[0],
