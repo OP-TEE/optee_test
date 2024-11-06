@@ -1686,6 +1686,14 @@ static void xtest_tee_test_4002(ADBG_Case_t *c)
 		size_t key_size = 0;
 		size_t offs = 0;
 
+		if (mac_cases[n].algo == TEE_ALG_HMAC_SM3 &&
+		    !ta_crypt_cmd_is_algo_supported(c, &session,
+						    TEE_ALG_HMAC_SM3,
+						    TEE_CRYPTO_ELEMENT_NONE)) {
+			Do_ADBG_Log("SM3 not supported: skip subcase");
+			continue;
+		}
+
 		Do_ADBG_BeginSubCase(c, "MAC case %d algo 0x%x",
 				     (int)n, (unsigned int)mac_cases[n].algo);
 
