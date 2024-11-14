@@ -74,8 +74,8 @@ if (WITH_GP_TESTS)
 	macro(__GEN_GP_FILE outfile xmldir name basedir)
 		add_custom_command(
 			OUTPUT	${outfile}
-			COMMAND	xalan -in ${basedir}/${name}.xml
-				      -xsl gp/${name}.xsl -out ${outfile}
+			COMMAND	xsltproc -o ${outfile} gp/${name}.xsl
+							${basedir}/${name}.xml
 			DEPENDS ${basedir}/${name}.xml gp/${name}.xsl
 		)
 	endmacro(__GEN_GP_FILE)
