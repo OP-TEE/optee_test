@@ -10363,6 +10363,11 @@ static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
 	int ret = 0;
 
+#ifndef CFG_PKCS11_TA_RSA_X_509
+	Do_ADBG_Log("CFG_PKCS11_TA_RSA_X_509 is not enabled, skipping raw RSA tests");
+	return;
+#endif
+
 	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
