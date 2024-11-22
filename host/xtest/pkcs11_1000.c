@@ -10343,6 +10343,8 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 
 	Do_ADBG_EndSubCase(c, "Destroy key pair");
 
+	Do_ADBG_EndSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify", rsa_bits);
+
 	return 1;
 
 err_destr_obj:
@@ -10351,6 +10353,7 @@ err_destr_pub_obj:
 	ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
 err:
 	Do_ADBG_EndSubCase(c, NULL);
+	Do_ADBG_EndSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify", rsa_bits);
 
 	return 0;
 }
