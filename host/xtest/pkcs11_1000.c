@@ -6758,6 +6758,10 @@ static int test_rsa_pkcs_operations(ADBG_Case_t *c,
 	signature_len = sizeof(signature);
 
 	rv = C_SignInit(session, &sign_mechanism, private_key);
+	if (rv == CKR_MECHANISM_INVALID) {
+		Do_ADBG_Log("CKM_RSA_PKCS is not supported (CFG_CRYPTO_RSASSA_NA1 maybe disabled), skip test");
+		goto non_prehashed_rsa_tests;
+	}
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
@@ -6776,6 +6780,8 @@ static int test_rsa_pkcs_operations(ADBG_Case_t *c,
 		      signature_len);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
+
+non_prehashed_rsa_tests:
 
 	for (i = 0; i < ARRAY_SIZE(rsa_pkcs_sign_tests); i++) {
 		/*
