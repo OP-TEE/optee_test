@@ -8125,7 +8125,7 @@ static void xtest_pkcs11_test_1025(ADBG_Case_t *c)
 	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
 	size_t i = 0;
 	struct eddsa_test *test = NULL;
-	char sign[64] = { };
+	char sign[128] = { };
 	CK_EDDSA_PARAMS eddsa_params = { };
 	CK_ULONG sign_len = ARRAY_SIZE(sign);
 
@@ -8231,10 +8231,31 @@ static void xtest_pkcs11_test_1025(ADBG_Case_t *c)
 		if (!ADBG_EXPECT_CK_OK(c, rv))
 			goto err_destroy_keys;
 
+		/* Query signature size providing a 0 size value */
+		sign_len = 0;
+		rv = C_Sign(session, (CK_BYTE_PTR)test->message,
+			    test->message_len, NULL, &sign_len);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destroy_keys;
+
+		/* Query signature size providing a size value too small */
+		sign_len--;
+		rv = C_Sign(session, (CK_BYTE_PTR)test->message,
+			    test->message_len,
+			    (CK_BYTE_PTR)sign, &sign_len);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv))
+			goto err_destroy_keys;
+
+		/* Effective signature computation */
+		sign_len = ARRAY_SIZE(sign);
 		rv = C_Sign(session, (CK_BYTE_PTR)test->message,
 			    test->message_len,
 			    (CK_BYTE_PTR)sign, &sign_len);
 		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destroy_keys;
+
+		/* Check size of the signature */
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, sign_len, ==, 64))
 			goto err_destroy_keys;
 
 		rv = C_VerifyInit(session, &sign_mechanism, public_key);
