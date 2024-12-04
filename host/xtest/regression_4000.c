@@ -6431,7 +6431,7 @@ static void xtest_tee_test_4016_ed25519(ADBG_Case_t *c)
 	size_t num_key_attrs = 0;
 	TEE_Attribute attrs[2] = { };
 	size_t num_attrs = 0;
-	uint8_t out[64] = { };
+	uint8_t out[128] = { };
 	size_t out_size = sizeof(out);
 	size_t n = 0;
 	uint32_t ret_orig = 0;
@@ -6496,6 +6496,23 @@ static void xtest_tee_test_4016_ed25519(ADBG_Case_t *c)
 						 &session, op, key_handle)))
 				goto out;
 
+			out_size = 0;
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+					ta_crypt_cmd_asymmetric_sign(c,
+						&session, op,
+						attrs, num_attrs, tv->ptx,
+						tv->ptx_len, out, &out_size)))
+				goto out;
+
+			out_size = 63;
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+					ta_crypt_cmd_asymmetric_sign(c,
+						&session, op,
+						attrs, num_attrs, tv->ptx,
+						tv->ptx_len, out, &out_size)))
+				goto out;
+
+			out_size = sizeof(out);
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 					ta_crypt_cmd_asymmetric_sign(c,
 						&session, op,
