@@ -4601,6 +4601,21 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 
 			priv_key_handle = TEE_HANDLE_NULL;
 
+			out_size = 0;
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+				ta_crypt_cmd_asymmetric_sign(c, &session, op,
+					algo_params, num_algo_params, ptx_hash,
+					ptx_hash_size, out, &out_size)))
+				goto out;
+
+			out_size = 1;
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+				ta_crypt_cmd_asymmetric_sign(c, &session, op,
+					algo_params, num_algo_params, ptx_hash,
+					ptx_hash_size, out, &out_size)))
+				goto out;
+
+			out_size = sizeof(out);
 			if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 				ta_crypt_cmd_asymmetric_sign(c, &session, op,
 					algo_params, num_algo_params, ptx_hash,
