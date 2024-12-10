@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <ta_arm_bti.h>
 #include <ta_concurrent.h>
@@ -41,6 +42,7 @@
 #include <utee_defines.h>
 #include <util.h>
 
+#include "ftpm_ta.h"
 #include "xtest_helpers.h"
 #include "xtest_test.h"
 #include "xtest_uuid_helpers.h"
@@ -3361,3 +3363,32 @@ static void xtest_tee_test_1040(ADBG_Case_t *c)
 }
 ADBG_CASE_DEFINE(regression, 1040, xtest_tee_test_1040,
 		 "Test panic in concurrent open/invoke/close session");
+
+static void xtest_tee_test_1041(ADBG_Case_t *c)
+{
+	const char fname[] = "/dev/tpm0";
+	TEE_Result res = TEEC_SUCCESS;
+	TEEC_Session sess = { };
+	uint32_t ret_orig = 0;
+	struct stat sb = { };
+
+	res = xtest_teec_open_session(&sess, &(const TEEC_UUID)TA_FTPM_UUID,
+				      NULL, &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log("skip test, fTPM TA not present");
+		return;
+	}
+	if (res != TEEC_ERROR_BUSY && ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		TEEC_CloseSession(&sess);
+
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, stat(fname, &sb), ==, 0)) {
+		Do_ADBG_Log("stat(\"%s\"): %s", fname, strerror(errno));
+		if (res != TEEC_ERROR_BUSY)
+			Do_ADBG_Log("Perhaps fTPM hasn't finished probing");
+		return;
+	}
+
+	if (!ADBG_EXPECT_TRUE(c, S_ISCHR(sb.st_mode)))
+		Do_ADBG_Log("Expected \"%s\" to be a character device", fname);
+}
+ADBG_CASE_DEFINE(regression, 1041, xtest_tee_test_1041, "Test fTPM sanity");
