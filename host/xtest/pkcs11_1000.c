@@ -10140,25 +10140,16 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 		goto err;
 
 	/*
-	 * Size of the message to sign must be at most the size of the private
-	 * key. If smaller, it is strongly recommended to insert padding bytes
-	 * to reach the key size. Lets's use random data and use PKCS v1.5
-	 * padding scheme to ensure input data to be signed will generate well
-	 * sized signature.
-	 *
-	 * in_data = { 0x00, 0x02, non-zero bytes, 0x00, message }
+	 * Current implementation of the PKCS#11 TA requires that the
+	 * message to sign has to size of the private key. There is
+	 * no constraint regarding the padding scheme. Lets's use a
+	 * well sized buffer of random data.
 	 */
 	in_data_size = rsa_bits / 8;
 
 	rv = C_GenerateRandom(session, in_data, in_data_size);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
-
-	in_data[0] = 0;
-	in_data[1] = 2;
-	for (n = 2; n < 16; n++)
-		in_data[n] |= 0x80;
-	in_data[n] = 0;
 
 	rv = C_GetAttributeValue(session, public_key, get_public_template,
 				 ARRAY_SIZE(get_public_template));
