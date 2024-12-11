@@ -10141,10 +10141,10 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 
 	/*
 	 * Size of the message to sign must be at most the size of the private
-	 * key. If smaller, it is strongly recommended to inserrt padding
-	 * bytes to reach to key size. Lets's use random data and use PKCS v1.5
+	 * key. If smaller, it is strongly recommended to insert padding bytes
+	 * to reach the key size. Lets's use random data and use PKCS v1.5
 	 * padding scheme to ensure input data to be signed will generate well
-	 * szied signature.
+	 * sized signature.
 	 *
 	 * in_data = { 0x00, 0x02, non-zero bytes, 0x00, message }
 	 */
