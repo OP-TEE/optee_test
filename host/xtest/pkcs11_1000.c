@@ -10124,6 +10124,7 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	CK_ULONG in_data_size = 0;
 	CK_BYTE signature[1024] = { 0 };
 	CK_ULONG signature_len = 0;
+	unsigned int n = 0;
 
 	Do_ADBG_BeginSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify", rsa_bits);
 
@@ -10138,29 +10139,26 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err;
 
+	/*
+	 * Size of the message to sign must be at most the size of the private
+	 * key. If smaller, it is strongly recommended to inserrt padding
+	 * bytes to reach to key size. Lets's use random data and use PKCS v1.5
+	 * padding scheme to ensure input data to be signed will generate well
+	 * szied signature.
+	 *
+	 * in_data = { 0x00, 0x02, non-zero bytes, 0x00, message }
+	 */
 	in_data_size = rsa_bits / 8;
 
 	rv = C_GenerateRandom(session, in_data, in_data_size);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	/*
-	 * Ensure input data to be sign look like a not to bad padded message.
-	 * Not be too strict to better reflect the padding that are sometimes
-	 * used in the field.
-	 *
-	 * Reset first bit to 0 to ensure the message is not bigger than the
-	 * key modulus.
-	 *
-	 * If first byte is zero and 2nd byte is low, ensure the 2 next byte
-	 * are big (0xff). This will ensure the generated signature has the
-	 * same size as the key modulus.
-	 */
-	in_data[0] &= 0x7f;
-	if (!in_data[0] & !(in_data[1] & 0xf0)) {
-		in_data[2] = 0xff;
-		in_data[3] = 0xff;
-	}
+	in_data[0] = 0;
+	in_data[1] = 2;
+	for (n = 2; n < 16; n++)
+		in_data[n] |= 0x80;
+	in_data[n] = 0;
 
 	rv = C_GetAttributeValue(session, public_key, get_public_template,
 				 ARRAY_SIZE(get_public_template));
