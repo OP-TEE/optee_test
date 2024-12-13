@@ -10124,7 +10124,6 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	CK_ULONG in_data_size = 0;
 	CK_BYTE signature[1024] = { 0 };
 	CK_ULONG signature_len = 0;
-	unsigned int n = 0;
 
 	Do_ADBG_BeginSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify", rsa_bits);
 
