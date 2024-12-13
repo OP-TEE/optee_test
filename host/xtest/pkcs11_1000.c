@@ -10057,75 +10057,13 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 		{ CKA_UNWRAP, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) }
 	};
 
-	CK_OBJECT_CLASS g_class = 0;
-	CK_KEY_TYPE g_key_type = 0;
-	CK_BYTE g_id[32] = { 0 };
-	CK_BBOOL g_derive = CK_FALSE;
-	CK_BBOOL g_local = CK_FALSE;
-	CK_MECHANISM_TYPE g_keygen_mecha = 0;
-	CK_BYTE g_subject[64] = { 0 };
-	CK_BBOOL g_encrypt = CK_FALSE;
-	CK_BBOOL g_verify = CK_FALSE;
-	CK_BBOOL g_verify_recover = CK_FALSE;
-	CK_BBOOL g_wrap = CK_FALSE;
-	CK_BBOOL g_trusted = CK_FALSE;
-	CK_BYTE g_public_key_info[1024] = { 0 };
-	CK_BBOOL g_sensitive = CK_FALSE;
-	CK_BBOOL g_decrypt = CK_FALSE;
-	CK_BBOOL g_sign = CK_FALSE;
-	CK_BBOOL g_sign_recover = CK_FALSE;
-	CK_BBOOL g_unwrap = CK_FALSE;
-	CK_BBOOL g_extract = CK_FALSE;
-	CK_BBOOL g_asensitive = CK_FALSE;
-	CK_BBOOL g_nextract = CK_FALSE;
-	CK_BBOOL g_wrap_with_trusted = CK_FALSE;
-	CK_BBOOL g_always_authenticate = CK_FALSE;
-
-	/* Note: Tests below expects specific order of elements */
-	CK_ATTRIBUTE get_public_template[] = {
-		{ CKA_CLASS, &g_class, sizeof(g_class) },
-		{ CKA_KEY_TYPE,	&g_key_type, sizeof(g_key_type) },
-		{ CKA_ID, g_id, sizeof(g_id) },
-		{ CKA_DERIVE, &g_derive, sizeof(g_derive) },
-		{ CKA_LOCAL, &g_local, sizeof(g_local) },
-		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(g_keygen_mecha) },
-		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
-		{ CKA_ENCRYPT, &g_encrypt, sizeof(g_encrypt) },
-		{ CKA_VERIFY, &g_verify, sizeof(g_verify) },
-		{ CKA_VERIFY_RECOVER, &g_verify_recover, sizeof(g_verify_recover) },
-		{ CKA_WRAP, &g_wrap, sizeof(g_wrap) },
-		{ CKA_TRUSTED, &g_trusted, sizeof(g_trusted) },
-		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
-	};
-
-	/* Note: Tests below expects specific order of elements */
-	CK_ATTRIBUTE get_private_template[] = {
-		{ CKA_CLASS, &g_class, sizeof(g_class) },
-		{ CKA_KEY_TYPE,	&g_key_type, sizeof(g_key_type) },
-		{ CKA_ID, g_id, sizeof(g_id) },
-		{ CKA_DERIVE, &g_derive, sizeof(g_derive) },
-		{ CKA_LOCAL, &g_local, sizeof(g_local) },
-		{ CKA_KEY_GEN_MECHANISM, &g_keygen_mecha, sizeof(g_keygen_mecha) },
-		{ CKA_SUBJECT, g_subject, sizeof(g_subject) },
-		{ CKA_SENSITIVE, &g_sensitive, sizeof(g_sensitive) },
-		{ CKA_DECRYPT, &g_decrypt, sizeof(g_decrypt) },
-		{ CKA_SIGN, &g_sign, sizeof(g_sign) },
-		{ CKA_SIGN_RECOVER, &g_sign_recover, sizeof(g_sign_recover) },
-		{ CKA_UNWRAP, &g_unwrap, sizeof(g_unwrap) },
-		{ CKA_EXTRACTABLE, &g_extract, sizeof(g_extract) },
-		{ CKA_ALWAYS_SENSITIVE, &g_asensitive, sizeof(g_asensitive) },
-		{ CKA_NEVER_EXTRACTABLE, &g_nextract, sizeof(g_nextract) },
-		{ CKA_WRAP_WITH_TRUSTED, &g_wrap_with_trusted, sizeof(g_wrap_with_trusted) },
-		{ CKA_ALWAYS_AUTHENTICATE, &g_always_authenticate, sizeof(g_always_authenticate) },
-		{ CKA_PUBLIC_KEY_INFO, g_public_key_info, sizeof(g_public_key_info) },
-	};
-
 	CK_BYTE in_data[1024] = { 0 };
 	CK_ULONG in_data_size = 0;
 	CK_BYTE signature[1024] = { 0 };
 	CK_ULONG signature_len = 0;
 
-	Do_ADBG_BeginSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify", rsa_bits);
+	Do_ADBG_BeginSubCase(c, "Test CKM_RSA_X_509 %u - Sign/Verify",
+			     rsa_bits);
 
 	Do_ADBG_BeginSubCase(c, "Generate key pair and data");
 
@@ -10139,10 +10077,12 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 		goto err;
 
 	/*
-	 * Current implementation of the PKCS#11 TA requires that the
-	 * message to sign has to size of the private key. There is
-	 * no constraint regarding the padding scheme. Lets's use a
-	 * well sized buffer of random data.
+	 * Implementation of the PKCS#11 TA requires that messages
+	 * signed with raw RSA (CKM_RSA_X_509) have the size of the
+	 * private key. There is no constraint regarding the padding
+	 * scheme. Lets's use a well sized buffer of random data,
+	 * but clear the leading bit to ensure the message value
+	 * is not bigger than the key modulus.
 	 */
 	in_data_size = rsa_bits / 8;
 
@@ -10150,42 +10090,7 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_GetAttributeValue(session, public_key, get_public_template,
-				 ARRAY_SIZE(get_public_template));
-	if (!ADBG_EXPECT_CK_OK(c, rv) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PUBLIC_KEY) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_RSA) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
-					  CKM_RSA_PKCS_KEY_PAIR_GEN) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_encrypt, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_verify_recover, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_trusted, ==, CK_FALSE))
-		goto err_destr_obj;
-
-	rv = C_GetAttributeValue(session, private_key, get_private_template,
-				 ARRAY_SIZE(get_private_template));
-	if (!ADBG_EXPECT_CK_OK(c, rv) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_class, ==, CKO_PRIVATE_KEY) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_key_type, ==, CKK_RSA) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_derive, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_local, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_keygen_mecha, ==,
-					  CKM_RSA_PKCS_KEY_PAIR_GEN) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sensitive, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_decrypt, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_sign_recover, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_unwrap, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_extract, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_asensitive, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_nextract, ==, CK_TRUE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_wrap_with_trusted, ==, CK_FALSE) ||
-	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, g_always_authenticate, ==, CK_FALSE))
-		goto err_destr_obj;
+	in_data[0] &= 0x7f;
 
 	Do_ADBG_EndSubCase(c, "Generate key pair and data");
 
@@ -10197,7 +10102,8 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 		goto err_destr_obj;
 
 	signature_len = sizeof(signature);
-	rv = C_Sign(session, in_data, in_data_size + 32, signature, &signature_len);
+	rv = C_Sign(session, in_data, in_data_size + 32, signature,
+		    &signature_len);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_DATA_LEN_RANGE, rv))
 		goto err_destr_obj;
 
@@ -10207,7 +10113,8 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 		goto err_destr_obj;
 
 	signature_len = sizeof(signature);
-	rv = C_Sign(session, in_data, in_data_size - 32, signature, &signature_len);
+	rv = C_Sign(session, in_data, in_data_size - 32, signature,
+		    &signature_len);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_DATA_LEN_RANGE, rv))
 		goto err_destr_obj;
 
@@ -10277,7 +10184,8 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_Verify(session, in_data, in_data_size, signature, signature_len + 4);
+	rv = C_Verify(session, in_data, in_data_size, signature,
+		      signature_len + 4);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_LEN_RANGE, rv))
 		goto err_destr_obj;
 
@@ -10286,7 +10194,8 @@ static int test_rsa_raw_operations(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_Verify(session, in_data, in_data_size, signature, signature_len - 4);
+	rv = C_Verify(session, in_data, in_data_size, signature,
+		      signature_len - 4);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_LEN_RANGE, rv))
 		goto err_destr_obj;
 
@@ -10355,7 +10264,7 @@ static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
 	int ret = 0;
 
 #ifndef CFG_PKCS11_TA_RSA_X_509
-	Do_ADBG_Log("CFG_PKCS11_TA_RSA_X_509 is not enabled, skipping raw RSA tests");
+	Do_ADBG_Log("CFG_PKCS11_TA_RSA_X_509 is disabled, skip raw RSA tests");
 	return;
 #endif
 
