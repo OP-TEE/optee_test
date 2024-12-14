@@ -10261,12 +10261,8 @@ static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
 	CK_SLOT_ID slot = 0;
 	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
 	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_MECHANISM_INFO mechanism_info = { };
 	int ret = 0;
-
-#ifndef CFG_PKCS11_TA_RSA_X_509
-	Do_ADBG_Log("CFG_PKCS11_TA_RSA_X_509 is disabled, skip raw RSA tests");
-	return;
-#endif
 
 	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -10279,6 +10275,22 @@ static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
 	rv = init_user_test_token_pin_auth(slot);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
+
+	rv = C_GetMechanismInfo(slot, CKM_RSA_X_509, &mechanism_info);
+
+	if (rv == CKR_MECHANISM_INVALID) {
+		Do_ADBG_Log("CKM_RSA_X_509 not supported, skip raw RSA tests");
+		goto close_lib;
+	}
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	if ((mechanism_info.flags & (CKF_SIGN | CKF_VERIFY)) !=
+	    (CKF_SIGN | CKF_VERIFY)) {
+		Do_ADBG_Log("CKM_RSA_X_509 sign/verify not supported, skip raw RSA tests");
+		goto close_lib;
+	}
 
 	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
