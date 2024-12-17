@@ -6,7 +6,7 @@ jobs:
   QEMUv8_check:
     name: make check (QEMUv8)
     runs-on: ubuntu-latest
-    container: jforissier/optee_os_ci:qemuv8_check2
+    container: jforissier/optee_os_ci:qemu_check
     steps:
       - name: Remove /__t/*
         run: rm -rf /__t/*
@@ -29,7 +29,7 @@ jobs:
           WD=$(pwd)
           cd ..
           TOP=$(pwd)/optee_repo_qemu_v8
-          /root/get_optee_qemuv8.sh ${TOP}
+          /root/get_optee.sh qemu_v8 ${TOP}
           mv ${TOP}/optee_test ${TOP}/optee_test_old
           ln -s ${WD} ${TOP}/optee_test
           cd ${TOP}/build
