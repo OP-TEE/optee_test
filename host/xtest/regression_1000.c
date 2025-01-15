@@ -3371,6 +3371,8 @@ static void xtest_tee_test_1041(ADBG_Case_t *c)
 	TEEC_Session sess = { };
 	uint32_t ret_orig = 0;
 	struct stat sb = { };
+	bool found = false;
+	int i = 0;
 
 	res = xtest_teec_open_session(&sess, &(const TEEC_UUID)TA_FTPM_UUID,
 				      NULL, &ret_orig);
@@ -3381,7 +3383,19 @@ static void xtest_tee_test_1041(ADBG_Case_t *c)
 	if (res != TEEC_ERROR_BUSY && ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		TEEC_CloseSession(&sess);
 
-	if (!ADBG_EXPECT_COMPARE_SIGNED(c, stat(fname, &sb), ==, 0)) {
+	/*
+	 * Check for the presence of the TPM device. Give the kernel some time
+	 * (5 seconds) otherwise the test may fail if run immediately after
+	 * boot.
+	 */
+	for (i = 0; i < 5; i++) {
+		if (stat(fname, &sb) == 0) {
+			found = true;
+			break;
+		}
+		sleep(1);
+	}
+	if (!ADBG_EXPECT_TRUE(c, found)) {
 		Do_ADBG_Log("stat(\"%s\"): %s", fname, strerror(errno));
 		if (res != TEEC_ERROR_BUSY)
 			Do_ADBG_Log("Perhaps fTPM hasn't finished probing");
