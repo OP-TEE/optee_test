@@ -3271,7 +3271,7 @@ struct xtest_ac_case {
 #define XTEST_AC_EDDSA_CTX_CASE(level, algo, mode, vect, flag) \
 	XTEST_AC_CASE(level, algo, mode, vect, XTEST_AC_EDDSA_CTX_UNION(vect, flag))
 
-static const struct xtest_ac_case xtest_ac_cases[] = {
+static const struct xtest_ac_case xtest_ac_cases_rsa[] = {
 	/* RSA test without crt parameters */
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSA_NOPAD, TEE_MODE_ENCRYPT,
 			  ac_rsassa_vect1, NULL_ARRAY, WITHOUT_SALT),
@@ -3526,7 +3526,9 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSAES_PKCS1_OAEP_MGF1_SHA256,
 			  TEE_MODE_ENCRYPT,
 			  ac_rsaes_oaep_vect3, ARRAY, WITHOUT_SALT),
+};
 
+static const struct xtest_ac_case xtest_ac_cases_dsa[] = {
 	/* DSA tests */
 	/* [mod = L=1024, N=160, SHA-1] */
 	XTEST_AC_DSA_CASE(1, TEE_ALG_DSA_SHA1, TEE_MODE_VERIFY, ac_dsa_vect1),
@@ -3728,7 +3730,9 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	XTEST_AC_DSA_CASE(15, TEE_ALG_DSA_SHA256, TEE_MODE_SIGN, ac_dsa_vect270),
 	/* [mod = L=3072, N=256, SHA-384] - GP NOT SUPPORTED */
 	/* [mod = L=3072, N=256, SHA-512] - GP NOT SUPPORTED */
+};
 
+static const struct xtest_ac_case xtest_ac_cases_ecdsa[] = {
 	/* ECDSA tests */
 	/* [P-192] */
 	XTEST_AC_ECC_CASE(0, TEE_ALG_ECDSA_P192, TEE_MODE_VERIFY,
@@ -4045,7 +4049,9 @@ static const struct xtest_ac_case xtest_ac_cases[] = {
 	/* [B-283] - GP NOT SUPPORTED */
 	/* [B-409] - GP NOT SUPPORTED */
 	/* [B-571] - GP NOT SUPPORTED */
+};
 
+static const struct xtest_ac_case xtest_ac_cases_sm2[] = {
 	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_ENCRYPT,
 			  gmt_0003_part5_c2_sm2_testvector),
 	XTEST_AC_ECC_CASE(0, TEE_ALG_SM2_PKE, TEE_MODE_DECRYPT,
@@ -4124,7 +4130,9 @@ static bool create_key(ADBG_Case_t *c, TEEC_Session *s,
 
 #define XTEST_NO_CURVE 0xFFFFFFFF /* implementation-defined as per GP spec */
 
-static void xtest_tee_test_4006(ADBG_Case_t *c)
+static void xtest_tee_test_4006(ADBG_Case_t *c,
+				const struct xtest_ac_case *ac_cases,
+				size_t ac_cases_count)
 {
 	TEEC_Session session = { };
 	TEEC_Result res = TEEC_ERROR_NOT_SUPPORTED;
@@ -4155,8 +4163,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 			&ret_orig)))
 		return;
 
-	for (n = 0; n < ARRAY_SIZE(xtest_ac_cases); n++) {
-		const struct xtest_ac_case *tv = xtest_ac_cases + n;
+	for (n = 0; n < ac_cases_count; n++) {
+		const struct xtest_ac_case *tv = ac_cases + n;
 
 		if (tv->level > level)
 			continue;
@@ -4697,8 +4705,38 @@ static void xtest_tee_test_4006(ADBG_Case_t *c)
 out:
 	TEEC_CloseSession(&session);
 }
-ADBG_CASE_DEFINE(regression, 4006, xtest_tee_test_4006,
-		"Test TEE Internal API Asymmetric Cipher operations");
+
+static void xtest_tee_test_4006_rsa(ADBG_Case_t *c)
+{
+	xtest_tee_test_4006(c, xtest_ac_cases_rsa,
+			    ARRAY_SIZE(xtest_ac_cases_rsa));
+}
+ADBG_CASE_DEFINE(regression, 4006_rsa, xtest_tee_test_4006_rsa,
+		"Test TEE Internal API RSA Cipher/Authentication operations");
+
+static void xtest_tee_test_4006_dsa(ADBG_Case_t *c)
+{
+	xtest_tee_test_4006(c, xtest_ac_cases_dsa,
+			    ARRAY_SIZE(xtest_ac_cases_dsa));
+}
+ADBG_CASE_DEFINE(regression, 4006_dsa, xtest_tee_test_4006_dsa,
+		"Test TEE Internal API DSA Cipher/Authentication operations");
+
+static void xtest_tee_test_4006_ecdsa(ADBG_Case_t *c)
+{
+	xtest_tee_test_4006(c, xtest_ac_cases_ecdsa,
+			    ARRAY_SIZE(xtest_ac_cases_ecdsa));
+}
+ADBG_CASE_DEFINE(regression, 4006_ecdsa, xtest_tee_test_4006_ecdsa,
+		"Test TEE Internal API ECDSA Cipher/Authentication operations");
+
+static void xtest_tee_test_4006_sm2(ADBG_Case_t *c)
+{
+	xtest_tee_test_4006(c, xtest_ac_cases_sm2,
+			    ARRAY_SIZE(xtest_ac_cases_sm2));
+}
+ADBG_CASE_DEFINE(regression, 4006_sm2, xtest_tee_test_4006_sm2,
+		"Test TEE Internal API SM2 Cipher/Authentication operations");
 
 #define KEY_ATTR(x, y) { #x, (x), y }
 
