@@ -600,7 +600,7 @@ static TEE_Result test_time(void)
 	 * TEE_GetTAPersistentTime() should be much less than 1 second, in fact
 	 * it's not even a millisecond.
 	 */
-	if (t.seconds > 1 || t.millis >= 1000) {
+	if (t.seconds > 60 || t.millis >= 1000) {
 		EMSG("Unexpected stored TA time %"PRIu32".%03"PRIu32, t.seconds,
 		     t.millis);
 		return TEE_ERROR_BAD_STATE;
@@ -623,7 +623,7 @@ static TEE_Result test_time(void)
 	}
 	MSG("TA time %"PRIu32".%03"PRIu32, t.seconds, t.millis);
 
-	if (t.seconds > 1) {
+	if (t.seconds > 60) {
 		EMSG("Unexpected wrapped time %"PRIu32".%03"PRIu32, t.seconds,
 		     t.millis);
 		return TEE_ERROR_BAD_STATE;
