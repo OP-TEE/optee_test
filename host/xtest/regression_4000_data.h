@@ -6638,7 +6638,7 @@ static const uint32_t derive_key_max_keysize = 1024;
 
 static struct derive_key_ecdh_t {
 	uint32_t level;		/* test suite level */
-	uint32_t algo;		/* TEE_ALG_ECDH_P192,... */
+	uint32_t algo;		/* TEE_ALG_ECDH_DERIVE_SHARED_SECRET */
 	uint32_t curve;		/* TEE_ECC_CURVE_NIST_P192,... */
 	uint32_t keysize;	/* key size, in bits */
 	const uint8_t *public_x;	/* public key - x == QCAVSx */
@@ -6649,7 +6649,7 @@ static struct derive_key_ecdh_t {
 	/* [P-192] */
 	{
 		.level    = 0,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_1_public_x,
@@ -6659,7 +6659,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 1,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_2_public_x,
@@ -6669,7 +6669,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_3_public_x,
@@ -6679,7 +6679,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_4_public_x,
@@ -6689,7 +6689,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_5_public_x,
@@ -6699,7 +6699,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_6_public_x,
@@ -6709,7 +6709,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_7_public_x,
@@ -6719,7 +6719,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_8_public_x,
@@ -6729,7 +6729,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_9_public_x,
@@ -6739,7 +6739,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_10_public_x,
@@ -6749,7 +6749,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_11_public_x,
@@ -6759,7 +6759,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_12_public_x,
@@ -6769,7 +6769,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_13_public_x,
@@ -6779,7 +6779,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_14_public_x,
@@ -6789,7 +6789,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_15_public_x,
@@ -6799,7 +6799,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_16_public_x,
@@ -6809,7 +6809,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_17_public_x,
@@ -6819,7 +6819,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_18_public_x,
@@ -6829,7 +6829,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_19_public_x,
@@ -6839,7 +6839,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_20_public_x,
@@ -6849,7 +6849,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_21_public_x,
@@ -6859,7 +6859,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_22_public_x,
@@ -6869,7 +6869,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_23_public_x,
@@ -6879,7 +6879,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_24_public_x,
@@ -6889,7 +6889,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P192,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P192,
 		.keysize  = 192,
 		.public_x = nist_kas_ecc_cdh_testvector_25_public_x,
@@ -6900,7 +6900,7 @@ static struct derive_key_ecdh_t {
 	/* [P-224] */
 	{
 		.level    = 0,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_26_public_x,
@@ -6910,7 +6910,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 1,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_27_public_x,
@@ -6920,7 +6920,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_28_public_x,
@@ -6930,7 +6930,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_29_public_x,
@@ -6940,7 +6940,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_30_public_x,
@@ -6950,7 +6950,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_31_public_x,
@@ -6960,7 +6960,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_32_public_x,
@@ -6970,7 +6970,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_33_public_x,
@@ -6980,7 +6980,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_34_public_x,
@@ -6990,7 +6990,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_35_public_x,
@@ -7000,7 +7000,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_36_public_x,
@@ -7010,7 +7010,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_37_public_x,
@@ -7020,7 +7020,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_38_public_x,
@@ -7030,7 +7030,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_39_public_x,
@@ -7040,7 +7040,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_40_public_x,
@@ -7050,7 +7050,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_41_public_x,
@@ -7060,7 +7060,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_42_public_x,
@@ -7070,7 +7070,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_43_public_x,
@@ -7080,7 +7080,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_44_public_x,
@@ -7090,7 +7090,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_45_public_x,
@@ -7100,7 +7100,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_46_public_x,
@@ -7110,7 +7110,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_47_public_x,
@@ -7120,7 +7120,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_48_public_x,
@@ -7130,7 +7130,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_49_public_x,
@@ -7140,7 +7140,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P224,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P224,
 		.keysize  = 224,
 		.public_x = nist_kas_ecc_cdh_testvector_50_public_x,
@@ -7151,7 +7151,7 @@ static struct derive_key_ecdh_t {
 	/* [P-256] */
 	{
 		.level    = 0,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_51_public_x,
@@ -7161,7 +7161,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 1,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_52_public_x,
@@ -7171,7 +7171,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_53_public_x,
@@ -7181,7 +7181,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_54_public_x,
@@ -7191,7 +7191,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_55_public_x,
@@ -7201,7 +7201,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_56_public_x,
@@ -7211,7 +7211,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_57_public_x,
@@ -7221,7 +7221,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_58_public_x,
@@ -7231,7 +7231,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_59_public_x,
@@ -7241,7 +7241,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_60_public_x,
@@ -7251,7 +7251,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_61_public_x,
@@ -7261,7 +7261,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_62_public_x,
@@ -7271,7 +7271,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_63_public_x,
@@ -7281,7 +7281,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_64_public_x,
@@ -7291,7 +7291,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_65_public_x,
@@ -7301,7 +7301,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_66_public_x,
@@ -7311,7 +7311,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_67_public_x,
@@ -7321,7 +7321,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_68_public_x,
@@ -7331,7 +7331,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_69_public_x,
@@ -7341,7 +7341,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_70_public_x,
@@ -7351,7 +7351,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_71_public_x,
@@ -7361,7 +7361,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_72_public_x,
@@ -7371,7 +7371,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_73_public_x,
@@ -7381,7 +7381,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_74_public_x,
@@ -7391,7 +7391,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P256,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P256,
 		.keysize  = 256,
 		.public_x = nist_kas_ecc_cdh_testvector_75_public_x,
@@ -7402,7 +7402,7 @@ static struct derive_key_ecdh_t {
 	/* [P-384] */
 	{
 		.level    = 0,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_76_public_x,
@@ -7412,7 +7412,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 1,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_77_public_x,
@@ -7422,7 +7422,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_78_public_x,
@@ -7432,7 +7432,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_79_public_x,
@@ -7442,7 +7442,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_80_public_x,
@@ -7452,7 +7452,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_81_public_x,
@@ -7462,7 +7462,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_82_public_x,
@@ -7472,7 +7472,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_83_public_x,
@@ -7482,7 +7482,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_84_public_x,
@@ -7492,7 +7492,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_85_public_x,
@@ -7502,7 +7502,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_86_public_x,
@@ -7512,7 +7512,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_87_public_x,
@@ -7522,7 +7522,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_88_public_x,
@@ -7532,7 +7532,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_89_public_x,
@@ -7542,7 +7542,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_90_public_x,
@@ -7552,7 +7552,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_91_public_x,
@@ -7562,7 +7562,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_92_public_x,
@@ -7572,7 +7572,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_93_public_x,
@@ -7582,7 +7582,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_94_public_x,
@@ -7592,7 +7592,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_95_public_x,
@@ -7602,7 +7602,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_96_public_x,
@@ -7612,7 +7612,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_97_public_x,
@@ -7622,7 +7622,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_98_public_x,
@@ -7632,7 +7632,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_99_public_x,
@@ -7642,7 +7642,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P384,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P384,
 		.keysize  = 384,
 		.public_x = nist_kas_ecc_cdh_testvector_100_public_x,
@@ -7653,7 +7653,7 @@ static struct derive_key_ecdh_t {
 	/* [P-521] */
 	{
 		.level    = 0,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_101_public_x,
@@ -7663,7 +7663,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 1,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_102_public_x,
@@ -7673,7 +7673,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_103_public_x,
@@ -7683,7 +7683,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_104_public_x,
@@ -7693,7 +7693,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_105_public_x,
@@ -7703,7 +7703,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_106_public_x,
@@ -7713,7 +7713,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_107_public_x,
@@ -7723,7 +7723,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_108_public_x,
@@ -7733,7 +7733,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_109_public_x,
@@ -7743,7 +7743,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_110_public_x,
@@ -7753,7 +7753,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_111_public_x,
@@ -7763,7 +7763,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_112_public_x,
@@ -7773,7 +7773,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_113_public_x,
@@ -7783,7 +7783,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_114_public_x,
@@ -7793,7 +7793,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_115_public_x,
@@ -7803,7 +7803,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_116_public_x,
@@ -7813,7 +7813,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_117_public_x,
@@ -7823,7 +7823,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_118_public_x,
@@ -7833,7 +7833,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_119_public_x,
@@ -7843,7 +7843,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_120_public_x,
@@ -7853,7 +7853,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_121_public_x,
@@ -7863,7 +7863,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_122_public_x,
@@ -7873,7 +7873,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_123_public_x,
@@ -7883,7 +7883,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_124_public_x,
@@ -7893,7 +7893,7 @@ static struct derive_key_ecdh_t {
 	},
 	{
 		.level    = 15,
-		.algo     = TEE_ALG_ECDH_P521,
+		.algo     = TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
 		.curve    = TEE_ECC_CURVE_NIST_P521,
 		.keysize  = 521,
 		.public_x = nist_kas_ecc_cdh_testvector_125_public_x,
