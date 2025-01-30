@@ -4213,8 +4213,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c,
 		if (tv->mode == TEE_MODE_VERIFY || tv->mode == TEE_MODE_SIGN) {
 			/*
 			 * Current ECDSA tests are based on SHA1 hashed payload.
-			 * Current RSASSA_PKCS1_V1_5 are based on SHA25 hashed
-			 * payload.
+			 * Current RSASSA_PKCS1_V1_5 tests are based on SHA256
+			 * hashed payload.
 			 */
 			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA)
 				hash_algo = TEE_ALG_SHA1;
@@ -4391,22 +4391,27 @@ static void xtest_tee_test_4006(ADBG_Case_t *c,
 					curve = TEE_ECC_CURVE_NIST_P192;
 					break;
 				case 28:
-					curve = TEE_ECC_CURVE_NIST_P192;
+					curve = TEE_ECC_CURVE_NIST_P224;
 					break;
 				case 32:
-					curve = TEE_ECC_CURVE_NIST_P192;
+					curve = TEE_ECC_CURVE_NIST_P256;
 					break;
 				case 48:
-					curve = TEE_ECC_CURVE_NIST_P192;
+					curve = TEE_ECC_CURVE_NIST_P384;
 					break;
 				case 66:
-					curve = TEE_ECC_CURVE_NIST_P192;
+					curve = TEE_ECC_CURVE_NIST_P521;
 					break;
 				default:
-					/* Unsupported algorithm */
+					/* Unsupported key size */
 					ADBG_EXPECT_TRUE(c, false);
 					goto out;
 				}
+				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
+				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
+				break;
+			case __OPTEE_ALG_ECDSA_P192:
+				curve = TEE_ECC_CURVE_NIST_P192;
 				pub_key_type = TEE_TYPE_ECDSA_PUBLIC_KEY;
 				priv_key_type = TEE_TYPE_ECDSA_KEYPAIR;
 				break;
