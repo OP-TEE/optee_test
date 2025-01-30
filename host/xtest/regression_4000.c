@@ -3319,12 +3319,11 @@ static const struct xtest_ac_case xtest_ac_cases_rsa[] = {
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA224, TEE_MODE_VERIFY,
 			  ac_rsassa_vect16, NULL_ARRAY, WITHOUT_SALT),
 
-#ifdef CFG_CRYPTO_RSASSA_NA1
+	/* These 2 tests depend on CFG_CRYPTO_RSASSA_NA1=y OP-TEE OS */
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5, TEE_MODE_SIGN,
 			  ac_rsassa_vect20, NULL_ARRAY, WITHOUT_SALT),
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5, TEE_MODE_VERIFY,
 			  ac_rsassa_vect20, NULL_ARRAY, WITHOUT_SALT),
-#endif
 
 	XTEST_AC_RSA_CASE(0, TEE_ALG_RSASSA_PKCS1_V1_5_SHA256, TEE_MODE_SIGN,
 			  ac_rsassa_vect9, NULL_ARRAY, WITHOUT_SALT),
@@ -4177,6 +4176,13 @@ static void xtest_tee_test_4006(ADBG_Case_t *c,
 			continue;
 		}
 
+		if (tv->algo == TEE_ALG_RSASSA_PKCS1_V1_5 &&
+		    !ta_crypt_cmd_is_algo_supported(c, &session, tv->algo,
+						    TEE_CRYPTO_ELEMENT_NONE)) {
+			Do_ADBG_Log("RSASSA_PKCS1_V1_5 not supported: skip subcase");
+			continue;
+		}
+
 		Do_ADBG_BeginSubCase(c, "Asym Crypto case %d algo 0x%x line %d",
 				     (int)n, (unsigned int)tv->algo,
 				     (int)tv->line);
@@ -4188,10 +4194,8 @@ static void xtest_tee_test_4006(ADBG_Case_t *c,
 		if (tv->mode == TEE_MODE_VERIFY || tv->mode == TEE_MODE_SIGN) {
 			if (TEE_ALG_GET_MAIN_ALG(tv->algo) == TEE_MAIN_ALGO_ECDSA)
 				hash_algo = TEE_ALG_SHA1;
-#if defined(CFG_CRYPTO_RSASSA_NA1)
 			else if (tv->algo == TEE_ALG_RSASSA_PKCS1_V1_5)
 				hash_algo = TEE_ALG_SHA256;
-#endif
 			else
 				hash_algo = TEE_ALG_HASH_ALGO(
 					TEE_ALG_GET_DIGEST_HASH(tv->algo));
