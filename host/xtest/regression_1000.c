@@ -3372,6 +3372,7 @@ static void xtest_tee_test_1041(ADBG_Case_t *c)
 	uint32_t ret_orig = 0;
 	struct stat sb = { };
 	bool found = false;
+	int max_wait = 20;
 	int i = 0;
 
 	res = xtest_teec_open_session(&sess, &(const TEEC_UUID)TA_FTPM_UUID,
@@ -3388,11 +3389,12 @@ static void xtest_tee_test_1041(ADBG_Case_t *c)
 	 * (5 seconds) otherwise the test may fail if run immediately after
 	 * boot.
 	 */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < max_wait; i++) {
 		if (stat(fname, &sb) == 0) {
 			found = true;
 			break;
 		}
+		Do_ADBG_Log("Waiting for TPM device %d / %d", i, max_wait);
 		sleep(1);
 	}
 	if (!ADBG_EXPECT_TRUE(c, found)) {
