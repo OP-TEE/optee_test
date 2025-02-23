@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <fnmatch.h>
 #include <inttypes.h>
+#include <math.h>
 #include <pta_stats.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -154,6 +155,15 @@ static int stat_alloc(int argc, char *argv[])
 		       stats[n].desc);
 		printf("Bytes allocated:                       %"PRId32"\n",
 		       stats[n].allocated);
+		if (stats[n].free2_sum && stats[n].size != stats[n].allocated) {
+			double free2_sum = stats[n].free2_sum;
+			double free_sum = stats[n].size - stats[n].allocated;
+			double free_quote = sqrt(free2_sum) / free_sum;
+			double fragmentation = 1.0 - free_quote * free_quote;
+
+			printf("Fragmentation:			       %u %%\n",
+				(unsigned int)(fragmentation * 100.0));
+		}
 		printf("Max bytes allocated:                   %"PRId32"\n",
 		       stats[n].max_allocated);
 		printf("Size of pool:                          %"PRId32"\n",
