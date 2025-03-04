@@ -10,7 +10,7 @@
 #include <linux/dma-buf.h>
 #include <linux/version.h>
 #include <linux/dma-heap.h>
-#define DEFAULT_HEAP_NAME	"/dev/dma_heap/sdp"
+#define DEFAULT_HEAP_NAME	"/dev/dma_heap/protected,secure-video"
 
 #include "ta_sdp_basic.h"
 
