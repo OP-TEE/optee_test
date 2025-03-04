@@ -269,7 +269,7 @@ next:
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_ffa_spmc);
 #endif
 		else {
-			fprintf(stderr, "Unkown test suite: %s\n", token);
+			fprintf(stderr, "Unknown test suite: %s\n", token);
 			ret = -1;
 		}
 		if (ret < 0)
