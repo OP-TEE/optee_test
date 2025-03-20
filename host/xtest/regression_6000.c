@@ -1805,7 +1805,7 @@ out:
 		TEEC_CloseSession(&arg[i].session);
 }
 
-/* concurency */
+/* concurrency */
 static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
 {
 	int i = 0;
@@ -1816,7 +1816,7 @@ static void xtest_tee_test_6016_single(ADBG_Case_t *c, uint32_t storage_id)
 		xtest_tee_test_6016_loop(c, storage_id);
 }
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6016)
-ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurency");
+ADBG_CASE_DEFINE(regression, 6016, xtest_tee_test_6016, "Storage concurrency");
 
 static void xtest_tee_test_6017_single(ADBG_Case_t *c, uint32_t storage_id)
 {

@@ -18,12 +18,12 @@ struct ta_concurrent_shm {
 
 /*
  * Busy loops and updates max concurrency.  params[0].memref should contain
- * a struct ta_concurent_shm which can be used to tell how many instances
+ * a struct ta_concurrent_shm which can be used to tell how many instances
  * of this function is running in parallel.
  *
  * in/out	params[0].memref
  * in/out	params[1].value.a	(input) number times to calcule the hash
- * in/out	params[1].value.b	(output) max concurency
+ * in/out	params[1].value.b	(output) max concurrency
  */
 
 #define TA_CONCURRENT_CMD_BUSY_LOOP	0
@@ -31,12 +31,12 @@ struct ta_concurrent_shm {
 /*
  * Calculates a sha-256 hash over param[2].memref and stores the result in
  * params[3].memref. params[0].memref should contain a struct
- * ta_concurent_shm which can be used to tell how many instances of this
+ * ta_concurrent_shm which can be used to tell how many instances of this
  * function is running in parallel.
  *
  * in/out	params[0].memref
  * in/out	params[1].value.a	(input) number times to calcule the hash
- * in/out	params[1].value.b	(output) max concurency
+ * in/out	params[1].value.b	(output) max concurrency
  * in		params[2].memref
  * out		params[3].memref
  */
