@@ -3348,7 +3348,7 @@ static void xtest_tee_test_1040(ADBG_Case_t *c)
 	size_t nt = NUM_THREADS;
 	size_t n = 0;
 
-	Do_ADBG_BeginSubCase(c, "Concurent invoke with panic in TA");
+	Do_ADBG_BeginSubCase(c, "Concurrent invoke with panic in TA");
 	for (n = 0; n < nt; n++) {
 		if (!ADBG_EXPECT(c, 0, pthread_create(&arg[n].thr, NULL,
 						      test_1040_thread,
@@ -3359,7 +3359,7 @@ static void xtest_tee_test_1040(ADBG_Case_t *c)
 		ADBG_EXPECT(c, 0, pthread_join(arg[n].thr, NULL));
 		ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res);
 	}
-	Do_ADBG_EndSubCase(c, "Concurent invoke with panic in TA");
+	Do_ADBG_EndSubCase(c, "Concurrent invoke with panic in TA");
 }
 ADBG_CASE_DEFINE(regression, 1040, xtest_tee_test_1040,
 		 "Test panic in concurrent open/invoke/close session");
