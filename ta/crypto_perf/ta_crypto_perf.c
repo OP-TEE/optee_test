@@ -1001,10 +1001,12 @@ void cmd_clean_obj(void)
 
 void cmd_clean_res(void)
 {
-	if (crypto_op)
+	if (crypto_op) {
 		TEE_FreeOperation(crypto_op);
+		crypto_op = TEE_HANDLE_NULL;
+	}
 	if (crypto_op_enc_sign) {
 		TEE_FreeOperation(crypto_op_enc_sign);
-		crypto_op_enc_sign = NULL;
+		crypto_op_enc_sign = TEE_HANDLE_NULL;
 	}
 }
