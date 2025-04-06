@@ -8302,6 +8302,12 @@ ADBG_CASE_DEFINE(pkcs11, 1025, xtest_pkcs11_test_1025,
 		.prime1_len	= ARRAY_SIZE(vect ## _prime1), \
 		.prime2		= vect ## _prime2, \
 		.prime2_len	= ARRAY_SIZE(vect ## _prime2), \
+		.exp1		= vect ## _exp1, \
+		.exp1_len	= ARRAY_SIZE(vect ## _exp1), \
+		.exp2		= vect ## _exp2, \
+		.exp2_len	= ARRAY_SIZE(vect ## _exp2), \
+		.coeff		= vect ## _coeff, \
+		.coeff_len	= ARRAY_SIZE(vect ## _coeff), \
 	}
 
 #define RSA_AES_WRAP_RSA(vect) \
@@ -8326,6 +8332,14 @@ static struct rsa_aes_wrap_test {
 			size_t prime1_len;
 			const uint8_t *prime2;
 			size_t prime2_len;
+
+			const uint8_t *exp1;
+			size_t exp1_len;
+			const uint8_t *exp2;
+			size_t exp2_len;
+
+			const uint8_t *coeff;
+			size_t coeff_len;
 		} rsa;
 		struct {
 			CK_ULONG size;
@@ -8346,6 +8360,14 @@ static struct rsa_aes_wrap_test {
 		size_t prime1_len;
 		const uint8_t *prime2;
 		size_t prime2_len;
+
+		const uint8_t *exp1;
+		size_t exp1_len;
+		const uint8_t *exp2;
+		size_t exp2_len;
+
+		const uint8_t *coeff;
+		size_t coeff_len;
 	} key;
 } rsa_aes_wrap_tests[] = {
 	{ CKK_AES, RSA_AES_WRAP_AES(128), RSA_AES_WRAP_KEY(ac_rsassa_vect2) },
@@ -8392,6 +8414,12 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		  t->key.modulus_len },
 		{ CKA_PUBLIC_EXPONENT, (CK_VOID_PTR)t->key.pub_exp,
 		  t->key.pub_exp_len },
+		{ CKA_EXPONENT_1, (CK_VOID_PTR)t->key.exp1,
+		  t->key.prime2_len },
+		{ CKA_EXPONENT_2, (CK_VOID_PTR)t->key.exp2,
+		  t->key.prime2_len },
+		{ CKA_COEFFICIENT, (CK_VOID_PTR)t->key.coeff,
+		  t->key.coeff_len },
 	};
 
 	CK_ATTRIBUTE unwrapping_key_template[] = {
@@ -8415,6 +8443,12 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		  t->key.prime1_len },
 		{ CKA_PRIME_2, (CK_VOID_PTR)t->key.prime2,
 		  t->key.prime2_len },
+		{ CKA_EXPONENT_1, (CK_VOID_PTR)t->key.exp1,
+		  t->key.prime2_len },
+		{ CKA_EXPONENT_2, (CK_VOID_PTR)t->key.exp2,
+		  t->key.prime2_len },
+		{ CKA_COEFFICIENT, (CK_VOID_PTR)t->key.coeff,
+		  t->key.coeff_len },
 	};
 
 	CK_ATTRIBUTE aes_key_template[] = {
@@ -8444,6 +8478,12 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		  t->target.rsa.prime1_len },
 		{ CKA_PRIME_2, (CK_VOID_PTR)t->target.rsa.prime2,
 		  t->target.rsa.prime2_len },
+		{ CKA_EXPONENT_1, (CK_VOID_PTR)t->key.exp1,
+		  t->key.prime2_len },
+		{ CKA_EXPONENT_2, (CK_VOID_PTR)t->key.exp2,
+		  t->key.prime2_len },
+		{ CKA_COEFFICIENT, (CK_VOID_PTR)t->key.coeff,
+		  t->key.coeff_len },
 	};
 
 	CK_ATTRIBUTE unwrapped_aes_key_template[] = {
