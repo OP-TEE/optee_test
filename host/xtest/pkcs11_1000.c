@@ -5767,8 +5767,8 @@ static int test_ec_operations(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_Sign(session, (void *)digest_test_pattern_sha256,
-		    sizeof(digest_test_pattern_sha256), (void *)signature,
+	rv = C_Sign(session, (void *)digest_test_pattern_sha512,
+		    sizeof(digest_test_pattern_sha512), (void *)signature,
 		    &signature_len);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
@@ -5777,8 +5777,8 @@ static int test_ec_operations(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
-	rv = C_Verify(session, (void *)digest_test_pattern_sha256,
-		    sizeof(digest_test_pattern_sha256), (void *)signature,
+	rv = C_Verify(session, (void *)digest_test_pattern_sha512,
+		    sizeof(digest_test_pattern_sha512), (void *)signature,
 		    signature_len);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
