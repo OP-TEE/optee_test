@@ -7,10 +7,12 @@
 #include <compiler.h>
 #include <dlfcn.h>
 #include <link.h>
+#include <malloc.h>
 #include <memtag.h>
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/queue.h>
 #include <ta_crypt.h>
 #include <ta_os_test.h>
 #include <tee_internal_api_extensions.h>
@@ -758,20 +760,112 @@ static bool optee_pager_with_small_pool(void)
 	return rc;
 }
 
+struct consume_elem {
+	SLIST_ENTRY(consume_elem) link;
+};
+SLIST_HEAD(consume_elem_head, consume_elem);
+
+static void consume_all_heap(struct consume_elem_head *h)
+{
+	size_t p_sz = 4096 * 4096;
+	struct consume_elem *p = NULL;
+
+	while (true) {
+		p = malloc(p_sz);
+		if (!p) {
+			if (p_sz == sizeof(void *))
+				break;
+			p_sz /= 2;
+			continue;
+		}
+		SLIST_INSERT_HEAD(h, p, link);
+	}
+}
+
+static void free_consume_list(struct consume_elem_head *h)
+{
+	while (!SLIST_EMPTY(h)) {
+		struct consume_elem *p = SLIST_FIRST(h);
+
+		SLIST_REMOVE_HEAD(h, link);
+		free(p);
+	}
+}
+
+static bool test_add_pool(void)
+{
+	size_t ret = true;
+	size_t len = 4096;
+	char *buf = tee_map_zi(len, 0);
+	struct consume_elem_head h0 = { };
+	struct consume_elem_head h1 = { };
+	void *p = NULL;
+	size_t n = 0;
+
+	SLIST_INIT(&h0);
+	SLIST_INIT(&h1);
+
+	consume_all_heap(&h0);
+
+	/* Add with gaps so we can check later that some are merged */
+	for (n = 0; n < 8; n += 2)
+		malloc_add_pool(buf + n * len / 8, len / 8);
+
+	consume_all_heap(&h1);
+
+	/* Fill the gaps */
+	for (n = 1; n < 8; n += 2)
+		malloc_add_pool(buf + n * len / 8, len / 8);
+
+	/* Free the previously allocated blocks in the recently added pools */
+	free_consume_list(&h1);
+
+	/*
+	 * This is twice the size of the added pools so if this succeeds at
+	 * least some pools must have been merged. We can't expec the size
+	 * of all the pools since there is some overhead with the
+	 * end-sentinel and the array of pools. The latter is re-allocated
+	 * each time something is added or removed so in the worst case it
+	 * may take a buffer in the middle of all the merged pools.
+	 */
+	p = malloc(len / 4);
+	if (!p) {
+		EMSG("Failed to merge the pools");
+		ret = false;
+	}
+	free(p);
+
+	free_consume_list(&h0);
+
+	return ret;
+}
+
 static TEE_Result test_bget(void)
 {
+	TEE_Result res = TEE_SUCCESS;
+
 	if (optee_pager_with_small_pool()) {
 		IMSG("Skip testing bget due to pager pool constraints");
 		return TEE_SUCCESS;
 	}
 
+	EMSG("Testing malloc_add_pool pool");
+	if (!test_add_pool()) {
+		EMSG("malloc_add_pool pool Failed");
+		res = TEE_ERROR_GENERIC;
+	} else {
+		EMSG("malloc_add_pool pool OK");
+	}
+
 	DMSG("Testing bget");
 	if (bget_main_test(malloc_wrapper, free_wrapper)) {
 		EMSG("bget_main_test failed");
-		return TEE_ERROR_GENERIC;
+		res = TEE_ERROR_GENERIC;
+	} else {
+		DMSG("Bget OK");
 	}
-	DMSG("Bget OK");
-	return TEE_SUCCESS;
+
+	return res;
 }
 #else
 static TEE_Result test_bget(void)
