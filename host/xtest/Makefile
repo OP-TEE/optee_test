@@ -148,7 +148,8 @@ CFLAGS += -Wall -Wcast-align \
 	  -Wshadow -Wstrict-prototypes -Wswitch-default \
 	  -Wwrite-strings -Wno-unused-parameter \
 	  -Wno-declaration-after-statement \
-	  -Wno-missing-field-initializers -Wno-format-zero-length
+	  -Wno-missing-field-initializers -Wno-format-zero-length \
+	  -Wno-alloc-size
 
 ifeq ($(CFG_WERROR),y)
 CFLAGS += -Werror

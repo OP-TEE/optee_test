@@ -22,7 +22,7 @@ add_compile_options (
 	-Wswitch-default -Wunsafe-loop-optimizations
 	-Wwrite-strings -fPIC
  	-Wno-missing-field-initializers
-	-Wno-unused-parameter
+	-Wno-unused-parameter -Wno-alloc-size
 )
 if(CFG_WERROR)
     add_compile_options(-Werror)
