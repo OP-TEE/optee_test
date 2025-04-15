@@ -20,7 +20,7 @@ add_compile_options (
 	-Wswitch-default -Wunsafe-loop-optimizations
 	-Wwrite-strings -Werror -fPIC
  	-Wno-missing-field-initializers
-	-Wno-unused-parameter
+	-Wno-unused-parameter -Wno-alloc-size
 )
 
 find_program(CCACHE_FOUND ccache)
