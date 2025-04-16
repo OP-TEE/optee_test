@@ -303,18 +303,31 @@ static void xtest_tee_test_1001(ADBG_Case_t *c)
 
 	Do_ADBG_BeginSubCase(c, "Core self tests");
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
-		&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS, NULL, &ret_orig));
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_SELF_TESTS,
+				 NULL, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	Do_ADBG_EndSubCase(c, "Core self tests");
 
 	Do_ADBG_BeginSubCase(c, "Core dt_driver self tests");
 
-	(void)ADBG_EXPECT_TEEC_SUCCESS(c, TEEC_InvokeCommand(
-		&session, PTA_INVOKE_TESTS_CMD_DT_DRIVER_TESTS, NULL,
-		&ret_orig));
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_DT_DRIVER_TESTS,
+				 NULL, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
 
 	Do_ADBG_EndSubCase(c, "Core dt_driver self tests");
+
+	Do_ADBG_BeginSubCase(c, "Core transfer list self tests");
+
+	res = TEEC_InvokeCommand(&session,
+				 PTA_INVOKE_TESTS_CMD_TRANSFER_LIST_TESTS, NULL,
+				 &ret_orig);
+	if (res == TEE_ERROR_NOT_SUPPORTED)
+		Do_ADBG_Log("Transfer List tests not supported, skipping");
+	else
+		ADBG_EXPECT_TEEC_SUCCESS(c, res);
+
+	Do_ADBG_EndSubCase(c, "Core transfer list self tests");
 
 	TEEC_CloseSession(&session);
 }
