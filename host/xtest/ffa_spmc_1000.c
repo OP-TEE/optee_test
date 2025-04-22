@@ -536,7 +536,7 @@ out:
 	close_debugfs();
 }
 
-ADBG_CASE_DEFINE(regression, 1005, xtest_ffa_spmc_test_1005,
+ADBG_CASE_DEFINE(ffa_spmc, 1005, xtest_ffa_spmc_test_1005,
 		 "Test FF-A memory: multiple receiver");
 
 static void xtest_ffa_spmc_test_1006(ADBG_Case_t *c)
