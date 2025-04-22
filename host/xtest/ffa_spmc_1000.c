@@ -53,6 +53,8 @@ static const char test_endpoint2_uuid[] =
 	"7817164c-c40c-4d1a-867a-9bb2278cf41a";
 static const char test_endpoint3_uuid[] =
 	"23eb0100-e32a-4497-9052-2f11e584afa6";
+static const char test_lsp_endpoint_uuid[] =
+	"54b5440e-a3d2-48d1-872a-7b6cbfc34855";
 
 static struct ffa_ioctl_ep_desc test_endpoint1 = {
 	.uuid_ptr = (uint64_t)test_endpoint1_uuid,
@@ -64,6 +66,10 @@ static struct ffa_ioctl_ep_desc test_endpoint2 = {
 
 static struct ffa_ioctl_ep_desc test_endpoint3 = {
 	.uuid_ptr = (uint64_t)test_endpoint3_uuid,
+};
+
+static struct ffa_ioctl_ep_desc test_lsp_endpoint = {
+	.uuid_ptr = (uint64_t)test_lsp_endpoint_uuid,
 };
 
 static bool check_ffa_user_version(void)
@@ -532,3 +538,35 @@ out:
 
 ADBG_CASE_DEFINE(regression, 1005, xtest_ffa_spmc_test_1005,
 		 "Test FF-A memory: multiple receiver");
+
+static void xtest_ffa_spmc_test_1006(ADBG_Case_t *c)
+{
+	struct ffa_ioctl_msg_args args = { .args = {0, 1, 2, 3, 4 }};
+	uint16_t ep = 0;
+	int rc = 0;
+
+	if (!init_sp_xtest(c)) {
+		Do_ADBG_Log("Failed to initialise test, skipping SP test");
+		goto out;
+	}
+
+	ep = get_endpoint_id(test_lsp_endpoint.uuid_ptr);
+	if (ep == INCORRECT_ENDPOINT_ID) {
+		Do_ADBG_Log("Could not contact LSP, skipping LSP test");
+		goto out;
+	}
+
+	Do_ADBG_BeginSubCase(c, "LSP direct request/response");
+	args.dst_id = ep;
+	rc = ioctl(ffa_fd, FFA_IOC_MSG_SEND, &args);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, 10))
+		goto out;
+	Do_ADBG_EndSubCase(c, "LSP direct request/response");
+
+out:
+	close_debugfs();
+}
+ADBG_CASE_DEFINE(ffa_spmc, 1006, xtest_ffa_spmc_test_1006, "Test FF-A LSP")
