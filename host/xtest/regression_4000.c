@@ -6884,6 +6884,8 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 
 	if (level >= 12)
 		middle_count = 2 * TEE_AES_BLOCK_SIZE;
+	else
+		middle_count = 2;
 
 	bs.block_size = 16;
 	bs.text_size = bs.block_size * 6 + extra_size;
@@ -6965,7 +6967,7 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 		 * If level >= 12 test with initial count of each n, an
 		 * exhaustive of every possible initial count.
 		 *
-		 * If level < 12 test with middle_count of 32 else 0.
+		 * If level >= 12 test with middle_count of 32 else 2.
 		 * (middle_count - n) bytes are processed one by one.
 		 *
 		 * The idea is to try to match all corner cases when
