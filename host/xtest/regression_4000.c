@@ -6994,17 +6994,16 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 	bs.decrypt = true;
 
 	/* Only test matching decryption for levels above 13 */
-	for (n = 0; level > 13 && n < bs.text_size; n++) {
-		if (level < 12 && (n % TEE_AES_BLOCK_SIZE) > 1 &&
-		    (n % TEE_AES_BLOCK_SIZE) < (TEE_AES_BLOCK_SIZE - 1))
-			continue;
-		ret = process_text_4017(c, &bs, n, middle_count);
-		if (!ADBG_EXPECT_TRUE(c, ret)) {
-			Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
-				n, prev_n);
-			goto out;
+	if (level > 13) {
+		for (n = 0; n < bs.text_size; n++) {
+			ret = process_text_4017(c, &bs, n, middle_count);
+			if (!ADBG_EXPECT_TRUE(c, ret)) {
+				Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
+					    n, prev_n);
+				goto out;
+			}
+			prev_n = n;
 		}
-		prev_n = n;
 	}
 
 	ret = true;
