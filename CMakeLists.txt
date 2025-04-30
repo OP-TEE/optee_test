@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.4)
+cmake_minimum_required (VERSION 3.5)
 project (optee_test C)
 
 # Default cross compile settings
