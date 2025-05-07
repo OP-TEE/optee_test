@@ -1292,6 +1292,9 @@ static const uint8_t hash_data_shake256_out2[] = {
  * https://tools.ietf.org/html/draft-sca-cfrg-sm3-02
  * Appendix A.1
  */
+#if __has_attribute(nonstring)
+__attribute__((nonstring))
+#endif
 static const uint8_t hash_data_sm3_a1_in[3] = "abc";
 
 static const uint8_t hash_data_sm3_a1_out[] = {

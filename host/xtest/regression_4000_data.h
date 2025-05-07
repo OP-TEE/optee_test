@@ -7914,6 +7914,9 @@ static struct derive_key_ecdh_t {
 };
 
 /* G/MT 0003 (SM2) Part 5 Annex C.2 - encryption/decryption */
+#if __has_attribute(nonstring)
+__attribute__((nonstring))
+#endif
 static const uint8_t gmt_0003_part5_c2_sm2_testvector_ptx[19] =
 /* M */
 	"encryption standard";
@@ -8383,6 +8386,9 @@ static const uint8_t mac_data_sha3_512_out1[] = {
  * GM/T 0042-2015
  * Section D.3 Test vector 1
  */
+#if __has_attribute(nonstring)
+__attribute__((nonstring))
+#endif
 static const uint8_t mac_data_sm3_d31_in[112] =
 	"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomn"
 	"opnopqabcdbcdecdefdefgefghfghighijhijkijkljklmklmn"
