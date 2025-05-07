@@ -559,13 +559,10 @@ static void xtest_ffa_spmc_test_1006(ADBG_Case_t *c)
 	Do_ADBG_BeginSubCase(c, "LSP direct request/response");
 	args.dst_id = ep;
 	rc = ioctl(ffa_fd, FFA_IOC_MSG_SEND, &args);
-	if (!ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0))
-		goto out;
+	if (ADBG_EXPECT_COMPARE_SIGNED(c, rc, ==, 0))
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, 10);
 
-	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, args.args[0], ==, 10))
-		goto out;
 	Do_ADBG_EndSubCase(c, "LSP direct request/response");
-
 out:
 	close_debugfs();
 }
