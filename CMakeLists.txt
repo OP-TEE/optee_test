@@ -4,6 +4,8 @@ project (optee_test C)
 # Default cross compile settings
 set (CMAKE_TOOLCHAIN_FILE CMakeToolchain.txt)
 
+option(CFG_WERROR "Build with -Werror" FALSE)
+
 set (OPTEE_TEST_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 ################################################################################
 # Compiler flags:
@@ -18,10 +20,13 @@ add_compile_options (
 	-Wmissing-prototypes -Wnested-externs
 	-Wpointer-arith -Wshadow -Wstrict-prototypes
 	-Wswitch-default -Wunsafe-loop-optimizations
-	-Wwrite-strings -Werror -fPIC
+	-Wwrite-strings -fPIC
  	-Wno-missing-field-initializers
 	-Wno-unused-parameter
 )
+if(CFG_WERROR)
+    add_compile_options(-Werror)
+endif(CFG_WERROR)
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
