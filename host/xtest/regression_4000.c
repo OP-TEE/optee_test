@@ -6887,6 +6887,8 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 
 	if (level >= 12)
 		middle_count = 2 * TEE_AES_BLOCK_SIZE;
+	else
+		middle_count = 2;
 
 	bs.block_size = 16;
 	bs.text_size = bs.block_size * 6 + extra_size;
@@ -6968,7 +6970,7 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 		 * If level >= 12 test with initial count of each n, an
 		 * exhaustive of every possible initial count.
 		 *
-		 * If level < 12 test with middle_count of 32 else 0.
+		 * If level >= 12 test with middle_count of 32 else 2.
 		 * (middle_count - n) bytes are processed one by one.
 		 *
 		 * The idea is to try to match all corner cases when
@@ -6995,17 +6997,16 @@ static bool do_algo_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 	bs.decrypt = true;
 
 	/* Only test matching decryption for levels above 13 */
-	for (n = 0; level > 13 && n < bs.text_size; n++) {
-		if (level < 12 && (n % TEE_AES_BLOCK_SIZE) > 1 &&
-		    (n % TEE_AES_BLOCK_SIZE) < (TEE_AES_BLOCK_SIZE - 1))
-			continue;
-		ret = process_text_4017(c, &bs, n, middle_count);
-		if (!ADBG_EXPECT_TRUE(c, ret)) {
-			Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
-				n, prev_n);
-			goto out;
+	if (level > 13) {
+		for (n = 0; n < bs.text_size; n++) {
+			ret = process_text_4017(c, &bs, n, middle_count);
+			if (!ADBG_EXPECT_TRUE(c, ret)) {
+				Do_ADBG_Log("Failed processing with initial_count %zu (previous %zu)",
+					    n, prev_n);
+				goto out;
+			}
+			prev_n = n;
 		}
-		prev_n = n;
 	}
 
 	ret = true;
