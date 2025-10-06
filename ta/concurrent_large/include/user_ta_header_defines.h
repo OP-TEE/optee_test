@@ -13,7 +13,7 @@
 #define TA_UUID TA_CONCURRENT_LARGE_UUID
 
 #define TA_FLAGS	0
-#define TA_STACK_SIZE (2 * 1024)
-#define TA_DATA_SIZE (2 * 1024 * 1024)
+#define TA_STACK_SIZE	(2 * 1024)
+#define TA_DATA_SIZE	(2 * 1024 * 1024)
 
 #endif /*USER_TA_HEADER_DEFINES_H*/

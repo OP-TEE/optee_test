@@ -12,7 +12,7 @@
 #define TA_NAME		"MISS"
 #define TA_UUID		TA_MISS_TEST_UUID
 
-#define TA_FLAGS		(0UL)
+#define TA_FLAGS		0
 #define TA_STACK_SIZE		(32 * 1024)
 #define TA_DATA_SIZE		(32 * 1024)
 
