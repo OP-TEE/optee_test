@@ -11,11 +11,7 @@
 
 #define TA_UUID TA_STORAGE_UUID
 
-/*
- * This is important to have TA_FLAG_SINGLE_INSTANCE && !TA_FLAG_MULTI_SESSION
- * as it is used by the ytest
- */
-#define TA_FLAGS		TA_FLAG_MULTI_SESSION
+#define TA_FLAGS		0
 #define TA_STACK_SIZE		(2 * 1024)
 #define TA_DATA_SIZE		(64 * 1024)
 
