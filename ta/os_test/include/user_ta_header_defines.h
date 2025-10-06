@@ -15,8 +15,8 @@
 
 #define TA_FLAGS	0
 
-#define TA_STACK_SIZE (8 * 1024)
-#define TA_DATA_SIZE (900 * 1024)
+#define TA_STACK_SIZE	(8 * 1024)
+#define TA_DATA_SIZE	(900 * 1024)
 
 #define TA_CURRENT_TA_EXT_PROPERTIES \
 	{ "myprop.true", USER_TA_PROP_TYPE_BOOL, &(const bool){ true } }, \
