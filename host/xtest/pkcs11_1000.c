@@ -2390,7 +2390,7 @@ ADBG_CASE_DEFINE(pkcs11, 1009, xtest_pkcs11_test_1009,
 static CK_ATTRIBUTE cktest_generate_gensecret_object_error1[] = {
 	{ CKA_CLASS, &(CK_OBJECT_CLASS){CKO_SECRET_KEY},
 						sizeof(CK_OBJECT_CLASS) },
-	{ CKA_KEY_TYPE, &(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_AES }, sizeof(CK_KEY_TYPE) },
 	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
 };
 
@@ -10048,3 +10048,408 @@ out_close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1030, xtest_pkcs11_test_1030,
 		 "PKCS11: Test AES-GCM Encryption/Decryption");
+
+/* Indestructible Object template */
+static CK_ATTRIBUTE cktest_indestructible_token[] = {
+	{ CKA_DECRYPT,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_INDESTRUCTIBLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS) {CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE) {CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+};
+
+/*
+ * This test involves creating an indestructible object and
+ * attempting to destroy it, which returns the ACTION_PROHIBITED
+ * error code.
+ */
+static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	Do_ADBG_BeginSubCase(c, "Create and destroy an indestructible object");
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CreateObject(session, cktest_indestructible_token,
+			    ARRAY_SIZE(cktest_indestructible_token),
+			    &obj_hdl);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Indestructible object returns error code CKR_ACTION_PROHIBITED when destroyed */
+	rv = C_DestroyObject(session, obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ACTION_PROHIBITED, rv))
+		goto end;
+
+end:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, "Create and destroy an indestructible object");
+}
+ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
+		 "PKCS11: create/destroy PKCS#11 indestructible objects");
+
+
+/*
+ * This test involves creating an indestructible object and
+ * accessing it, then re-initializing the token
+ * and again accessing the object with the same handle.
+ */
+static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG obj_size = 0;
+	CK_ULONG obj_size2 = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	Do_ADBG_BeginSubCase(c, "Reinitialize a token with an indestructible object");
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CreateObject(session, cktest_indestructible_token,
+			    ARRAY_SIZE(cktest_indestructible_token),
+			    &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_GetObjectSize(session, obj_hdl, &obj_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CloseAllSessions(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Re-initializing the token clears the token objects except indestructible objects */
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Indestructible object is accessible */
+	rv = C_GetObjectSize(session, obj_hdl, &obj_size2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+end:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, "Reinitialize a token with an indestructible object");
+}
+ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
+		 "PKCS11: Reinitialize a token with an indestructible object");
+
+
+static CK_ATTRIBUTE cktest_destructible_token[] = {
+	{ CKA_DECRYPT,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS) {CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE) {CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+};
+
+/*
+ * This test involves creating destructible and indestructible token objects,
+ * attempting to destroy them, re-initializing the token, and trying to access both the objects
+ * from which only the indestructible object is accessible.
+ */
+static void xtest_pkcs11_test_1033(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG obj_size = 0;
+	CK_ULONG obj_size2 = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl2 = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	Do_ADBG_BeginSubCase(c, "Reinitialize a token with indestructible and destructible object");
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CreateObject(session, cktest_indestructible_token,
+			    ARRAY_SIZE(cktest_indestructible_token),
+			    &obj_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CreateObject(session, cktest_destructible_token,
+			    ARRAY_SIZE(cktest_destructible_token),
+			    &obj_hdl2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_DestroyObject(session, obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ACTION_PROHIBITED, rv))
+		goto end;
+
+	rv = C_CreateObject(session, cktest_destructible_token,
+			    ARRAY_SIZE(cktest_destructible_token),
+			    &obj_hdl2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CloseAllSessions(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Re-initializing the token clears the token objects except indestructible objects */
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Indestructible object is accessible */
+	rv = C_GetObjectSize(session, obj_hdl, &obj_size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Object is not accessible, destroyed when token re-initialized */
+	rv = C_GetObjectSize(session, obj_hdl2, &obj_size2);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OBJECT_HANDLE_INVALID, rv))
+		goto end;
+
+end:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, "Reinitialize a token with indestructible and destructible object");
+}
+ADBG_CASE_DEFINE(pkcs11, 1033, xtest_pkcs11_test_1033,
+		 "PKCS11: Reinitialize a token with indestructible and destructible object");
+
+
+
+static CK_ATTRIBUTE cktest_generate_indest[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS) {CKO_SECRET_KEY}, sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE) {CKK_GENERIC_SECRET}, sizeof(CK_KEY_TYPE) },
+	{ CKA_SIGN, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VERIFY, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+	{ CKA_TOKEN,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_INDESTRUCTIBLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+};
+
+static CK_ATTRIBUTE cktest_generate_dest[] = {
+	{ CKA_CLASS, &(CK_OBJECT_CLASS) {CKO_SECRET_KEY}, sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE, &(CK_KEY_TYPE) {CKK_GENERIC_SECRET}, sizeof(CK_KEY_TYPE) },
+	{ CKA_SIGN, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VERIFY, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_VALUE_LEN, &(CK_ULONG){16}, sizeof(CK_ULONG) },
+};
+
+/*
+ * This test involves creating multiple token keys with both
+ * indestructible and destructible objects, and checking
+ * the uniqueness of key handles.
+ */
+static void xtest_pkcs11_test_1034(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG obj_size = 0;
+	CK_ULONG obj_size2 = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_hdl = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_hdl2 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_hdl3 = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key_hdl4 = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	Do_ADBG_BeginSubCase(c, "Unique Indestructible Keys");
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Create indestructible key */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_indest,
+			   ARRAY_SIZE(cktest_generate_indest),
+			   &key_hdl);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_DestroyObject(session, key_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_ACTION_PROHIBITED, rv))
+		goto end;
+
+	/* Create destructible key */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_dest,
+			   ARRAY_SIZE(cktest_generate_dest),
+			   &key_hdl2);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_CloseAllSessions(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Re-initialize the token */
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Create indestructible key */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_indest,
+			   ARRAY_SIZE(cktest_generate_indest),
+			   &key_hdl3);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Create destructible key */
+	rv = C_GenerateKey(session, &cktest_gensecret_keygen_mechanism,
+			   cktest_generate_dest,
+			   ARRAY_SIZE(cktest_generate_dest),
+			   &key_hdl4);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	/* Asserting uniqueness of keys */
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, key_hdl, !=, key_hdl3))
+		goto end;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, key_hdl2, !=, key_hdl4))
+		goto end;
+
+end:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, "Unique Indestructible Keys");
+}
+ADBG_CASE_DEFINE(pkcs11, 1034, xtest_pkcs11_test_1034,
+		 "PKCS11: Unique Indestructible Keys");
+
+/*
+ * Defining an object template with CKA_INDESTRUCTIBLE attribute set to true,
+ * but CKA_TOKEN set to false
+ */
+static CK_ATTRIBUTE session_indestructible[] = {
+	{ CKA_DECRYPT,	&(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	&(CK_BBOOL) {CK_FALSE}, sizeof(CK_BBOOL) },
+	{ CKA_INDESTRUCTIBLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, &(CK_BBOOL) {CK_TRUE}, sizeof(CK_BBOOL) },
+	{ CKA_CLASS,	&(CK_OBJECT_CLASS) {CKO_SECRET_KEY},
+						sizeof(CK_OBJECT_CLASS) },
+	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE) {CKK_AES}, sizeof(CK_KEY_TYPE) },
+	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+};
+
+/*
+ * This test involves creating an indestructible object
+ * with just Indestructible attribute as true, and
+ * CKA_TOKEN (token object attribute) as false which returns CKR_TEMPLATE_INCONSISTENT.
+ */
+static void xtest_pkcs11_test_1035(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG obj_size = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE obj_hdl = CK_INVALID_HANDLE;
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+
+	Do_ADBG_BeginSubCase(c, "Indestructible Session Object");
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+	rv = C_OpenSession(slot, session_flags, NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto end;
+
+
+/*
+ * Creating object with incorrect template
+ * (CKA_TOKEN is false but CKA_INDESTRUCTIBLE is true)
+ */
+	rv = C_CreateObject(session, session_indestructible,
+			    ARRAY_SIZE(session_indestructible),
+			    &obj_hdl);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_TEMPLATE_INCONSISTENT, rv))
+		goto end;
+
+	rv = C_GetObjectSize(session, obj_hdl, &obj_size);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OBJECT_HANDLE_INVALID, rv))
+		goto end;
+
+end:
+	rv = C_CloseSession(session);
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+
+	Do_ADBG_EndSubCase(c, "Indestructible Session Object");
+}
+ADBG_CASE_DEFINE(pkcs11, 1035, xtest_pkcs11_test_1035,
+		 "PKCS11: Indestructible Session Object");
