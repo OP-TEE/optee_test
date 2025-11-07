@@ -4,6 +4,7 @@
  * All rights reserved.
  * Copyright (c) 2022, Linaro Limited.
  */
+#include <asan_test.h>
 #include <compiler.h>
 #include <dlfcn.h>
 #include <link.h>
@@ -1601,3 +1602,122 @@ TEE_Result ta_entry_memtag_buffer_overrun(void)
 	TEE_Free(p);
 	return TEE_ERROR_GENERIC;
 }
+
+#ifdef CFG_TA_SANITIZE_KADDRESS
+TEE_Result ta_entry_asan_stack(void)
+{
+	TEE_Result rc = TEE_SUCCESS;
+	struct asan_test_ctx ctx = {0};
+
+	asan_test_init(&ctx);
+	if (asan_call_test(&ctx, asan_test_stack, "stack overflow")) {
+		rc = TEE_ERROR_GENERIC;
+	}
+	asan_test_deinit(&ctx);
+	return rc;
+}
+
+TEE_Result ta_entry_asan_global(void)
+{
+	TEE_Result rc = TEE_SUCCESS;
+	struct asan_test_ctx ctx = {0};
+
+	asan_test_init(&ctx);
+	if (asan_call_test(&ctx, asan_test_global_stat, "global static")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+	if (asan_call_test(&ctx, asan_test_global_ro, "global ro")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+	if (asan_call_test(&ctx, asan_test_global, "global")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+out:
+	asan_test_deinit(&ctx);
+	return rc;
+}
+
+TEE_Result ta_entry_asan_malloc(void)
+{
+	TEE_Result rc = TEE_SUCCESS;
+	struct asan_test_ctx ctx = {0};
+
+	asan_test_init(&ctx);
+	if (asan_call_test(&ctx, asan_test_malloc, "malloc")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+	if (asan_call_test(&ctx, asan_test_malloc2, "malloc2")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+out:
+	asan_test_deinit(&ctx);
+	return rc;
+}
+
+TEE_Result ta_entry_asan_uaf(void)
+{
+	TEE_Result rc = TEE_SUCCESS;
+	struct asan_test_ctx ctx = {0};
+
+	asan_test_init(&ctx);
+	if (asan_call_test(&ctx, asan_test_use_after_free, "use after free")) {
+		rc = TEE_ERROR_GENERIC;
+	}
+	asan_test_deinit(&ctx);
+	return rc;
+}
+
+TEE_Result ta_entry_asan_memfunc(void)
+{
+	TEE_Result rc = TEE_SUCCESS;
+	struct asan_test_ctx ctx = {0};
+
+	asan_test_init(&ctx);
+	if (asan_call_test(&ctx, asan_test_memcpy_dst, "memcpy dst")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+	if (asan_call_test(&ctx, asan_test_memcpy_src, "memcpy src")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+	if (asan_call_test(&ctx, asan_test_memset, "memset")) {
+		rc = TEE_ERROR_GENERIC;
+		goto out;
+	}
+out:
+	asan_test_deinit(&ctx);
+	return rc;
+}
+
+#else
+TEE_Result ta_entry_asan_stack(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+TEE_Result ta_entry_asan_global(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+TEE_Result ta_entry_asan_malloc(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+TEE_Result ta_entry_asan_memfunc(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+
+TEE_Result ta_entry_asan_uaf(void)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+#endif
