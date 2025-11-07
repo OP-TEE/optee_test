@@ -46,5 +46,10 @@ TEE_Result ta_entry_memtag_use_after_free(void);
 TEE_Result ta_entry_memtag_invalid_tag(void);
 TEE_Result ta_entry_memtag_double_free(void);
 TEE_Result ta_entry_memtag_buffer_overrun(void);
+TEE_Result ta_entry_asan_stack(void);
+TEE_Result ta_entry_asan_global(void);
+TEE_Result ta_entry_asan_malloc(void);
+TEE_Result ta_entry_asan_memfunc(void);
+TEE_Result ta_entry_asan_uaf(void);
 
 #endif /*OS_TEST_H */

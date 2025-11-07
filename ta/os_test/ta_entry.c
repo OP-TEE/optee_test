@@ -180,6 +180,16 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 
 	case TA_OS_TEST_CMD_ATTESTATION:
 		return ta_entry_attestation(nParamTypes, pParams);
+	case TA_OS_TEST_CMD_ASAN_STACK:
+		return ta_entry_asan_stack();
+	case TA_OS_TEST_CMD_ASAN_GLOBAL:
+		return ta_entry_asan_global();
+	case TA_OS_TEST_CMD_ASAN_MALLOC:
+		return ta_entry_asan_malloc();
+	case TA_OS_TEST_CMD_ASAN_UAF:
+		return ta_entry_asan_uaf();
+	case TA_OS_TEST_CMD_ASAN_MEMFUNC:
+		return ta_entry_asan_memfunc();
 
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
