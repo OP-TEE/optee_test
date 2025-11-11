@@ -6781,6 +6781,20 @@ static int test_rsa_pkcs_operations(ADBG_Case_t *c,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto err_destr_obj;
 
+	rv = C_VerifyInit(session, &sign_mechanism, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto err_destr_obj;
+
+	/*
+	 * Use decreased length to represent "corrupted" message
+	 * of a different length
+	 */
+	rv = C_Verify(session, (void *)digest_test_pattern_sha256,
+		      sizeof(digest_test_pattern_sha256) - 1, (void *)signature,
+		      signature_len);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_INVALID, rv))
+		goto err_destr_obj;
+
 non_prehashed_rsa_tests:
 
 	for (i = 0; i < ARRAY_SIZE(rsa_pkcs_sign_tests); i++) {
@@ -6816,6 +6830,20 @@ non_prehashed_rsa_tests:
 			      rsa_pkcs_sign_tests[i].data_size,
 			      (void *)signature, signature_len);
 		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		rv = C_VerifyInit(session, &sign_mechanism, public_key);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto err_destr_obj;
+
+		/*
+		* Use decreased length to represent "corrupted" message
+		* of a different length
+		*/
+		rv = C_Verify(session, (void *)rsa_pkcs_sign_tests[i].data,
+			      rsa_pkcs_sign_tests[i].data_size - 1,
+			      (void *)signature, signature_len);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_SIGNATURE_INVALID, rv))
 			goto err_destr_obj;
 	}
 
