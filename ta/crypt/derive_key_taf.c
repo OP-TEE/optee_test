@@ -55,6 +55,7 @@ TEE_Result derive_ta_unique_key_test(uint32_t param_types,
 	TEE_TASessionHandle session = TEE_HANDLE_NULL;
 	uint8_t big_key[64] = { };
 	uint8_t extra_key_data[] = { "My dummy data" };
+	uint8_t extra_key_data_large[TA_DERIVED_EXTRA_DATA_MAX_SIZE + 1] = { "My dummy data" };
 	uint8_t key1[32] = { };
 	uint8_t key2[32] = { };
 	uint32_t ret_origin = 0;
@@ -131,11 +132,9 @@ TEE_Result derive_ta_unique_key_test(uint32_t param_types,
 	TEE_MemFill(key1, 0, sizeof(key1));
 	TEE_MemFill(key2, 0, sizeof(key2));
 
-	/*
-	 * Testing limits for extra data size (if this would success, then we
-	 * would overwrite the buffer extra_key_data also).
-	 */
-	res = derive_unique_key(session, key1, sizeof(key1), extra_key_data,
+	/* Testing limits for extra data size. */
+	res = derive_unique_key(session, key1, sizeof(key1),
+				extra_key_data_large,
 				TA_DERIVED_EXTRA_DATA_MAX_SIZE + 1);
 	/* This shall fail */
 	if (res == TEE_SUCCESS)
