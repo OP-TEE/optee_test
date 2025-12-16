@@ -7081,3 +7081,66 @@ static void xtest_tee_test_4017(ADBG_Case_t *c)
 
 ADBG_CASE_DEFINE(regression, 4017, xtest_tee_test_4017,
 		 "Test TEE Internal API Cipher block buffering");
+
+static void xtest_tee_test_4018(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEE_ObjectHandle key_obj = 0;
+	TEE_OperationHandle oph = 0;
+	uint32_t ret_orig = 0;
+	TEEC_Session s = { };
+	uint8_t key_data[16] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+	};
+	TEE_Attribute attr = {
+		.attributeID = TEE_ATTR_SECRET_VALUE,
+		.content.ref.buffer = key_data,
+		.content.ref.length = sizeof(key_data)
+	};
+	uint8_t iv[16] = { 0 };
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&s, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	res = ta_crypt_cmd_allocate_operation(c, &s, &oph, TEE_ALG_AES_CCM,
+					      TEE_MODE_ENCRYPT, 128);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto err;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &s, TEE_TYPE_AES,
+						     128, &key_obj);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto err_free_op;
+
+	res = ta_crypt_cmd_populate_transient_object(c, &s, key_obj, &attr, 1);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto err_free_key;
+
+	res = ta_crypt_cmd_set_operation_key(c, &s, oph, key_obj);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto err_free_key;
+
+	res = ta_crypt_cmd_ae_init(c, &s, oph, ae_cases[0].nonce,
+				   ae_cases[0].nonce_len, ae_cases[0].tag_len,
+				   ae_cases[0].aad_len, ae_cases[0].ptx_len);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto err_free_key;
+
+	res = ta_crypt_cmd_set_operation_key(c, &s, oph, (TEE_ObjectHandle)0);
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+
+	TEEC_CloseSession(&s);
+	return;
+
+err_free_key:
+	ta_crypt_cmd_free_transient_object(c, &s, key_obj);
+err_free_op:
+	ta_crypt_cmd_free_operation(c, &s, oph);
+err:
+	TEEC_CloseSession(&s);
+}
+ADBG_CASE_DEFINE(regression, 4018, xtest_tee_test_4018,
+		 "TEE_SetOperationKey() panic on an initialized operation")

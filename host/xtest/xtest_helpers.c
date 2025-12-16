@@ -234,6 +234,7 @@ TEE_Result ta_crypt_cmd_set_operation_key(ADBG_Case_t *c, TEEC_Session *s,
 	TEEC_Result res = TEEC_ERROR_GENERIC;
 	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
 	uint32_t ret_orig = 0;
+	uint32_t exp_ret_orig = 0;
 
 	assert((uintptr_t)oph <= UINT32_MAX);
 	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
@@ -248,8 +249,11 @@ TEE_Result ta_crypt_cmd_set_operation_key(ADBG_Case_t *c, TEEC_Session *s,
 				 &ret_orig);
 
 	if (res != TEEC_SUCCESS) {
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
+	       if (res == TEEC_ERROR_TARGET_DEAD)
+		       exp_ret_orig = TEEC_ORIGIN_TEE;
+	       else
+		       exp_ret_orig = TEEC_ORIGIN_TRUSTED_APP;
+		ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, exp_ret_orig, ret_orig);
 	}
 
 	return res;
