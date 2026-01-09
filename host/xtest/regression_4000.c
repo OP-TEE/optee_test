@@ -7098,7 +7098,6 @@ static void xtest_tee_test_4018(ADBG_Case_t *c)
 		.content.ref.buffer = key_data,
 		.content.ref.length = sizeof(key_data)
 	};
-	uint8_t iv[16] = { 0 };
 
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 		xtest_teec_open_session(&s, &crypt_user_ta_uuid, NULL,
