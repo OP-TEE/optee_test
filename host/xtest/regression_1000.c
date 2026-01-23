@@ -3421,3 +3421,57 @@ static void xtest_tee_test_1041(ADBG_Case_t *c)
 		Do_ADBG_Log("Expected \"%s\" to be a character device", fname);
 }
 ADBG_CASE_DEFINE(regression, 1041, xtest_tee_test_1041, "Test fTPM sanity");
+
+static void xtest_tee_test_1042(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	TEEC_Result res = TEEC_SUCCESS;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE, TEEC_NONE,
+					 TEEC_NONE);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+	Do_ADBG_BeginSubCase(c, "ASAN stack");
+
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASAN_STACK,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("Binary doesn't support ASAN - skip tests");
+		goto out;
+	}
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "ASAN stack");
+
+	Do_ADBG_BeginSubCase(c, "ASAN global");
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASAN_GLOBAL,
+				 &op, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "ASAN global");
+	Do_ADBG_BeginSubCase(c, "ASAN malloc");
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASAN_MALLOC,
+				 &op, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "ASAN malloc");
+
+	Do_ADBG_BeginSubCase(c, "ASAN use after free");
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASAN_UAF,
+				 &op, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "ASAN use after free");
+
+	Do_ADBG_BeginSubCase(c, "ASAN memory funcs");
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASAN_MEMFUNC,
+				 &op, &ret_orig);
+	ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_EndSubCase(c, "ASAN memory funcs");
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1042, xtest_tee_test_1042,
+		 "Test ASAN (Memory address sanitizer)");
