@@ -311,6 +311,416 @@ static const uint8_t pbkdf2_6_dkm[] = {
 	0xcc, 0x37, 0xd7, 0xf0, 0x34, 0x25, 0xe0, 0xc3
 };
 
+/*
+ * PBKDF2-HMAC-SHA224 test vectors
+ * Test cases compatible with RFC 6070 input parameters
+ */
+
+/* SHA224 Test Case 1 */
+#define pbkdf2_sha224_1_password pbkdf2_1_password
+#define pbkdf2_sha224_1_salt pbkdf2_1_salt
+#define pbkdf2_sha224_1_iteration_count pbkdf2_1_iteration_count
+static const uint8_t pbkdf2_sha224_1_dkm[] = {
+	0x3c, 0x19, 0x8c, 0xbd, 0xb9, 0x46, 0x4b, 0x78,
+	0x57, 0x96, 0x6b, 0xd0, 0x5b, 0x7b, 0xc9, 0x2b,
+	0xc1, 0xcc, 0x4e, 0x6e
+};
+
+/* SHA224 Test Case 2 */
+#define pbkdf2_sha224_2_password pbkdf2_2_password
+#define pbkdf2_sha224_2_salt pbkdf2_2_salt
+#define pbkdf2_sha224_2_iteration_count pbkdf2_2_iteration_count
+static const uint8_t pbkdf2_sha224_2_dkm[] = {
+	0x93, 0x20, 0x0f, 0xfa, 0x96, 0xc5, 0x77, 0x6d,
+	0x38, 0xfa, 0x10, 0xab, 0xdf, 0x8f, 0x5b, 0xfc,
+	0x00, 0x54, 0xb9, 0x71
+};
+
+/* SHA224 Test Case 3 */
+#define pbkdf2_sha224_3_password pbkdf2_3_password
+#define pbkdf2_sha224_3_salt pbkdf2_3_salt
+#define pbkdf2_sha224_3_iteration_count pbkdf2_3_iteration_count
+static const uint8_t pbkdf2_sha224_3_dkm[] = {
+	0x21, 0x8c, 0x45, 0x3b, 0xf9, 0x06, 0x35, 0xbd,
+	0x0a, 0x21, 0xa7, 0x5d, 0x17, 0x27, 0x03, 0xff,
+	0x61, 0x08, 0xef, 0x60
+};
+
+/* SHA224 Test Case 4 */
+#define pbkdf2_sha224_4_password pbkdf2_4_password
+#define pbkdf2_sha224_4_salt pbkdf2_4_salt
+#define pbkdf2_sha224_4_iteration_count pbkdf2_4_iteration_count
+static const uint8_t pbkdf2_sha224_4_dkm[] = {
+	0xb4, 0x99, 0x25, 0x18, 0x4c, 0xb4, 0xb5, 0x59,
+	0xf3, 0x65, 0xe9, 0x4f, 0xca, 0xfc, 0xd4, 0xcd,
+	0xb9, 0xf7, 0xae, 0xf4
+};
+
+/* SHA224 Test Case 5 */
+static const uint8_t pbkdf2_sha224_5_password[] = {
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd',
+	'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D',
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd'
+};
+
+static const uint8_t pbkdf2_sha224_5_salt[] = {
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't'
+};
+
+#define pbkdf2_sha224_5_iteration_count pbkdf2_5_iteration_count
+static const uint8_t pbkdf2_sha224_5_dkm[] = {
+	0x05, 0x6c, 0x4b, 0xa4, 0x38, 0xde, 0xd9, 0x1f,
+	0xc1, 0x4e, 0x05, 0x94, 0xe6, 0xf5, 0x2b, 0x87,
+	0xe1, 0xf3, 0x69, 0x0c, 0x0d, 0xc0, 0xfb, 0xc0,
+	0x57
+};
+
+/* SHA224 Test Case 6 */
+static const uint8_t pbkdf2_sha224_6_password[] = {
+	'p', 'a', 's', 's', '\0', 'w', 'o', 'r',
+	'd',
+};
+
+static const uint8_t pbkdf2_sha224_6_salt[] = {
+	's', 'a', '\0', 'l', 't'
+};
+
+#define pbkdf2_sha224_6_iteration_count pbkdf2_6_iteration_count
+static const uint8_t pbkdf2_sha224_6_dkm[] = {
+	0x9b, 0x40, 0x11, 0xb6, 0x41, 0xf4, 0x0a, 0x2a,
+	0x50, 0x0a, 0x31, 0xd4, 0xa3, 0x92, 0xd1, 0x5c
+};
+
+/*
+ * PBKDF2-HMAC-SHA256 test vectors
+ * Test cases compatible with RFC 6070 input parameters
+ */
+
+/* SHA256 Test Case 1 */
+#define pbkdf2_sha256_1_password pbkdf2_1_password
+#define pbkdf2_sha256_1_salt pbkdf2_1_salt
+#define pbkdf2_sha256_1_iteration_count pbkdf2_1_iteration_count
+static const uint8_t pbkdf2_sha256_1_dkm[] = {
+	0x12, 0x0f, 0xb6, 0xcf, 0xfc, 0xf8, 0xb3, 0x2c,
+	0x43, 0xe7, 0x22, 0x52, 0x56, 0xc4, 0xf8, 0x37,
+	0xa8, 0x65, 0x48, 0xc9
+};
+
+/* SHA256 Test Case 2 */
+#define pbkdf2_sha256_2_password pbkdf2_2_password
+#define pbkdf2_sha256_2_salt pbkdf2_2_salt
+#define pbkdf2_sha256_2_iteration_count pbkdf2_2_iteration_count
+static const uint8_t pbkdf2_sha256_2_dkm[] = {
+	0xae, 0x4d, 0x0c, 0x95, 0xaf, 0x6b, 0x46, 0xd3,
+	0x2d, 0x0a, 0xdf, 0xf9, 0x28, 0xf0, 0x6d, 0xd0,
+	0x2a, 0x30, 0x3f, 0x8e
+};
+
+/* SHA256 Test Case 3 */
+#define pbkdf2_sha256_3_password pbkdf2_3_password
+#define pbkdf2_sha256_3_salt pbkdf2_3_salt
+#define pbkdf2_sha256_3_iteration_count pbkdf2_3_iteration_count
+static const uint8_t pbkdf2_sha256_3_dkm[] = {
+	0xc5, 0xe4, 0x78, 0xd5, 0x92, 0x88, 0xc8, 0x41,
+	0xaa, 0x53, 0x0d, 0xb6, 0x84, 0x5c, 0x4c, 0x8d,
+	0x96, 0x28, 0x93, 0xa0
+};
+
+/* SHA256 Test Case 4 */
+#define pbkdf2_sha256_4_password pbkdf2_4_password
+#define pbkdf2_sha256_4_salt pbkdf2_4_salt
+#define pbkdf2_sha256_4_iteration_count pbkdf2_4_iteration_count
+static const uint8_t pbkdf2_sha256_4_dkm[] = {
+	0xcf, 0x81, 0xc6, 0x6f, 0xe8, 0xcf, 0xc0, 0x4d,
+	0x1f, 0x31, 0xec, 0xb6, 0x5d, 0xab, 0x40, 0x89,
+	0xf7, 0xf1, 0x79, 0xe8
+};
+
+/* SHA256 Test Case 5 */
+static const uint8_t pbkdf2_sha256_5_password[] = {
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd',
+	'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D',
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd'
+};
+
+static const uint8_t pbkdf2_sha256_5_salt[] = {
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't'
+};
+
+#define pbkdf2_sha256_5_iteration_count pbkdf2_5_iteration_count
+static const uint8_t pbkdf2_sha256_5_dkm[] = {
+	0x34, 0x8c, 0x89, 0xdb, 0xcb, 0xd3, 0x2b, 0x2f,
+	0x32, 0xd8, 0x14, 0xb8, 0x11, 0x6e, 0x84, 0xcf,
+	0x2b, 0x17, 0x34, 0x7e, 0xbc, 0x18, 0x00, 0x18,
+	0x1c
+};
+
+/* SHA256 Test Case 6 */
+static const uint8_t pbkdf2_sha256_6_password[] = {
+	'p', 'a', 's', 's', '\0', 'w', 'o', 'r',
+	'd',
+};
+
+static const uint8_t pbkdf2_sha256_6_salt[] = {
+	's', 'a', '\0', 'l', 't'
+};
+
+#define pbkdf2_sha256_6_iteration_count pbkdf2_6_iteration_count
+static const uint8_t pbkdf2_sha256_6_dkm[] = {
+	0x89, 0xb6, 0x9d, 0x05, 0x16, 0xf8, 0x29, 0x89,
+	0x3c, 0x69, 0x62, 0x26, 0x65, 0x0a, 0x86, 0x87
+};
+
+/*
+ * PBKDF2-HMAC-SHA384 test vectors
+ * Test cases compatible with RFC 6070 input parameters
+ */
+
+/* SHA384 Test Case 1 */
+#define pbkdf2_sha384_1_password pbkdf2_1_password
+#define pbkdf2_sha384_1_salt pbkdf2_1_salt
+#define pbkdf2_sha384_1_iteration_count pbkdf2_1_iteration_count
+static const uint8_t pbkdf2_sha384_1_dkm[] = {
+	0xc0, 0xe1, 0x4f, 0x06, 0xe4, 0x9e, 0x32, 0xd7,
+	0x3f, 0x9f, 0x52, 0xdd, 0xf1, 0xd0, 0xc5, 0xc7,
+	0x19, 0x16, 0x09, 0x23
+};
+
+/* SHA384 Test Case 2 */
+#define pbkdf2_sha384_2_password pbkdf2_2_password
+#define pbkdf2_sha384_2_salt pbkdf2_2_salt
+#define pbkdf2_sha384_2_iteration_count pbkdf2_2_iteration_count
+static const uint8_t pbkdf2_sha384_2_dkm[] = {
+	0x54, 0xf7, 0x75, 0xc6, 0xd7, 0x90, 0xf2, 0x19,
+	0x30, 0x45, 0x91, 0x62, 0xfc, 0x53, 0x5d, 0xbf,
+	0x04, 0xa9, 0x39, 0x18
+};
+
+/* SHA384 Test Case 3 */
+#define pbkdf2_sha384_3_password pbkdf2_3_password
+#define pbkdf2_sha384_3_salt pbkdf2_3_salt
+#define pbkdf2_sha384_3_iteration_count pbkdf2_3_iteration_count
+static const uint8_t pbkdf2_sha384_3_dkm[] = {
+	0x55, 0x97, 0x26, 0xbe, 0x38, 0xdb, 0x12, 0x5b,
+	0xc8, 0x5e, 0xd7, 0x89, 0x5f, 0x6e, 0x3c, 0xf5,
+	0x74, 0xc7, 0xa0, 0x1c
+};
+
+/* SHA384 Test Case 4 */
+#define pbkdf2_sha384_4_password pbkdf2_4_password
+#define pbkdf2_sha384_4_salt pbkdf2_4_salt
+#define pbkdf2_sha384_4_iteration_count pbkdf2_4_iteration_count
+static const uint8_t pbkdf2_sha384_4_dkm[] = {
+	0xa7, 0xfd, 0xb3, 0x49, 0xba, 0x2b, 0xfa, 0x6b,
+	0xf6, 0x47, 0xbb, 0x01, 0x61, 0xba, 0xe1, 0x32,
+	0x0d, 0xf2, 0x7e, 0x64
+};
+
+/* SHA384 Test Case 5 */
+static const uint8_t pbkdf2_sha384_5_password[] = {
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd',
+	'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D',
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd'
+};
+
+static const uint8_t pbkdf2_sha384_5_salt[] = {
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't'
+};
+
+#define pbkdf2_sha384_5_iteration_count pbkdf2_5_iteration_count
+static const uint8_t pbkdf2_sha384_5_dkm[] = {
+	0x81, 0x91, 0x43, 0xad, 0x66, 0xdf, 0x9a, 0x55,
+	0x25, 0x59, 0xb9, 0xe1, 0x31, 0xc5, 0x2a, 0xe6,
+	0xc5, 0xc1, 0xb0, 0xee, 0xd1, 0x8f, 0x4d, 0x28,
+	0x3b
+};
+
+/* SHA384 Test Case 6 */
+static const uint8_t pbkdf2_sha384_6_password[] = {
+	'p', 'a', 's', 's', '\0', 'w', 'o', 'r',
+	'd',
+};
+
+static const uint8_t pbkdf2_sha384_6_salt[] = {
+	's', 'a', '\0', 'l', 't'
+};
+
+#define pbkdf2_sha384_6_iteration_count pbkdf2_6_iteration_count
+static const uint8_t pbkdf2_sha384_6_dkm[] = {
+	0xa3, 0xf0, 0x0a, 0xc8, 0x65, 0x7e, 0x09, 0x5f,
+	0x8e, 0x08, 0x23, 0xd2, 0x32, 0xfc, 0x60, 0xb3
+};
+
+/*
+ * PBKDF2-HMAC-SHA512 test vectors
+ * Test cases compatible with RFC 6070 input parameters
+ */
+
+/* SHA512 Test Case 1 */
+#define pbkdf2_sha512_1_password pbkdf2_1_password
+#define pbkdf2_sha512_1_salt pbkdf2_1_salt
+#define pbkdf2_sha512_1_iteration_count pbkdf2_1_iteration_count
+static const uint8_t pbkdf2_sha512_1_dkm[] = {
+	0x86, 0x7f, 0x70, 0xcf, 0x1a, 0xde, 0x02, 0xcf,
+	0xf3, 0x75, 0x25, 0x99, 0xa3, 0xa5, 0x3d, 0xc4,
+	0xaf, 0x34, 0xc7, 0xa6
+};
+
+/* SHA512 Test Case 2 */
+#define pbkdf2_sha512_2_password pbkdf2_2_password
+#define pbkdf2_sha512_2_salt pbkdf2_2_salt
+#define pbkdf2_sha512_2_iteration_count pbkdf2_2_iteration_count
+static const uint8_t pbkdf2_sha512_2_dkm[] = {
+	0xe1, 0xd9, 0xc1, 0x6a, 0xa6, 0x81, 0x70, 0x8a,
+	0x45, 0xf5, 0xc7, 0xc4, 0xe2, 0x15, 0xce, 0xb6,
+	0x6e, 0x01, 0x1a, 0x2e
+};
+
+/* SHA512 Test Case 3 */
+#define pbkdf2_sha512_3_password pbkdf2_3_password
+#define pbkdf2_sha512_3_salt pbkdf2_3_salt
+#define pbkdf2_sha512_3_iteration_count pbkdf2_3_iteration_count
+static const uint8_t pbkdf2_sha512_3_dkm[] = {
+	0xd1, 0x97, 0xb1, 0xb3, 0x3d, 0xb0, 0x14, 0x3e,
+	0x01, 0x8b, 0x12, 0xf3, 0xd1, 0xd1, 0x47, 0x9e,
+	0x6c, 0xde, 0xbd, 0xcc
+};
+
+/* SHA512 Test Case 4 */
+#define pbkdf2_sha512_4_password pbkdf2_4_password
+#define pbkdf2_sha512_4_salt pbkdf2_4_salt
+#define pbkdf2_sha512_4_iteration_count pbkdf2_4_iteration_count
+static const uint8_t pbkdf2_sha512_4_dkm[] = {
+	0x61, 0x80, 0xa3, 0xce, 0xab, 0xab, 0x45, 0xcc,
+	0x39, 0x64, 0x11, 0x2c, 0x81, 0x1e, 0x01, 0x31,
+	0xbc, 0xa9, 0x3a, 0x35
+};
+
+/* SHA512 Test Case 5 */
+static const uint8_t pbkdf2_sha512_5_password[] = {
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd',
+	'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D',
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd'
+};
+
+static const uint8_t pbkdf2_sha512_5_salt[] = {
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't'
+};
+
+#define pbkdf2_sha512_5_iteration_count pbkdf2_5_iteration_count
+static const uint8_t pbkdf2_sha512_5_dkm[] = {
+	0x8c, 0x05, 0x11, 0xf4, 0xc6, 0xe5, 0x97, 0xc6,
+	0xac, 0x63, 0x15, 0xd8, 0xf0, 0x36, 0x2e, 0x22,
+	0x5f, 0x3c, 0x50, 0x14, 0x95, 0xba, 0x23, 0xb8,
+	0x68
+};
+
+/* SHA512 Test Case 6 */
+static const uint8_t pbkdf2_sha512_6_password[] = {
+	'p', 'a', 's', 's', '\0', 'w', 'o', 'r',
+	'd',
+};
+
+static const uint8_t pbkdf2_sha512_6_salt[] = {
+	's', 'a', '\0', 'l', 't'
+};
+
+#define pbkdf2_sha512_6_iteration_count pbkdf2_6_iteration_count
+static const uint8_t pbkdf2_sha512_6_dkm[] = {
+	0x9d, 0x9e, 0x9c, 0x4c, 0xd2, 0x1f, 0xe4, 0xbe,
+	0x24, 0xd5, 0xb8, 0x24, 0x4c, 0x75, 0x96, 0x65
+};
+
+/*
+ * PBKDF2-HMAC-SM3 test vectors
+ */
+
+/* SM3 Test Case 1 */
+#define pbkdf2_sm3_1_password pbkdf2_1_password
+#define pbkdf2_sm3_1_salt pbkdf2_1_salt
+#define pbkdf2_sm3_1_iteration_count pbkdf2_1_iteration_count
+static const uint8_t pbkdf2_sm3_1_dkm[] = {
+	0x46, 0x12, 0xf9, 0x22, 0xa1, 0xfd, 0xce, 0xfa,
+	0xf4, 0x31, 0x2f, 0xc6, 0xf8, 0xf3, 0x32, 0x2b,
+	0x48, 0x9c, 0xbf, 0x24
+};
+
+/* SM3 Test Case 2 */
+#define pbkdf2_sm3_2_password pbkdf2_2_password
+#define pbkdf2_sm3_2_salt pbkdf2_2_salt
+#define pbkdf2_sm3_2_iteration_count pbkdf2_2_iteration_count
+static const uint8_t pbkdf2_sm3_2_dkm[] = {
+	0xfe, 0xe7, 0x23, 0xa2, 0xbc, 0x96, 0x6e, 0x11,
+	0xdf, 0xfb, 0x66, 0x13, 0x3f, 0x4e, 0x8d, 0xf5,
+	0x77, 0x38, 0x3c, 0x78
+};
+
+/* SM3 Test Case 3 */
+#define pbkdf2_sm3_3_password pbkdf2_3_password
+#define pbkdf2_sm3_3_salt pbkdf2_3_salt
+#define pbkdf2_sm3_3_iteration_count pbkdf2_3_iteration_count
+static const uint8_t pbkdf2_sm3_3_dkm[] = {
+	0xb6, 0xe8, 0xf2, 0x07, 0x4c, 0x87, 0x43, 0x2b,
+	0x78, 0xf6, 0x2e, 0x5c, 0xed, 0x98, 0x0f, 0xdf,
+	0xf8, 0x9e, 0x86, 0xaf
+};
+
+/* SM3 Test Case 4 */
+static const uint8_t pbkdf2_sm3_4_password[] = {
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd',
+	'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D',
+	'p', 'a', 's', 's', 'w', 'o', 'r', 'd'
+};
+
+static const uint8_t pbkdf2_sm3_4_salt[] = {
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't', 'S', 'A', 'L', 'T',
+	's', 'a', 'l', 't'
+};
+
+#define pbkdf2_sm3_4_iteration_count 4096
+static const uint8_t pbkdf2_sm3_4_dkm[] = {
+	0x3b, 0x62, 0x82, 0xac, 0x85, 0x19, 0xf0, 0x59,
+	0xe4, 0x65, 0xab, 0xff, 0x0e, 0xa3, 0x7b, 0x0d,
+	0xbf, 0xe6, 0xc6, 0x72, 0xa7, 0x6e, 0x6b, 0x80,
+	0x53, 0x12, 0xd5, 0x39, 0x00, 0xdb, 0x63, 0x07,
+	0x32, 0xcc, 0xc1, 0xa8, 0x8f, 0xa5, 0x51, 0x2a
+};
+
+/* SM3 Test Case 5 */
+static const uint8_t pbkdf2_sm3_5_password[] = {
+	'p', 'a', 's', 's', '\0', 'w', 'o', 'r',
+	'd',
+};
+
+static const uint8_t pbkdf2_sm3_5_salt[] = {
+	's', 'a', '\0', 'l', 't'
+};
+
+#define pbkdf2_sm3_5_iteration_count 4096
+static const uint8_t pbkdf2_sm3_5_dkm[] = {
+	0x5f, 0x93, 0x6b, 0x2e, 0x35, 0x6f, 0x06, 0xe2,
+	0xbb, 0x39, 0x32, 0x16, 0x58, 0x21, 0x26, 0x1c
+};
+
 #ifdef WITH_HKDF
 static void xtest_test_derivation_hkdf(ADBG_Case_t *c, TEEC_Session *session)
 {
@@ -584,6 +994,12 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 #define RFC6070_TEST(l, n) \
 	TEST_PBKDF2_DATA(l, "RFC 6070 " TO_STR(n) " (HMAC-SHA1)", \
 			 TEE_ALG_PBKDF2_HMAC_SHA1_DERIVE_KEY, n, false)
+#define PBKDF2_SHA_TEST(l, algo, hash, n)                        \
+	TEST_PBKDF2_DATA(l, "PBKDF2-HMAC-" #hash " test " TO_STR(n), \
+			 algo, sha##hash##_##n, false)
+#define PBKDF2_SM3_TEST(l, n)                                  \
+	TEST_PBKDF2_DATA(l, "PBKDF2-HMAC-SM3 test " TO_STR(n), \
+			 TEE_ALG_PBKDF2_HMAC_SM3_DERIVE_KEY, sm3_##n, false)
 	static struct pbkdf2_case {
 		unsigned int level;
 		const char *subcase_name;
@@ -596,9 +1012,48 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 		const uint8_t *dkm;
 		size_t dkm_len;
 	} pbkdf2_cases[] = {
+		/* PBKDF2-HMAC-SHA1 */
 		RFC6070_TEST(0, 1), RFC6070_TEST(0, 2), RFC6070_TEST(0, 3),
 		RFC6070_TEST(15, 4), /* Lengthy! (2 min on HiKey @1.2GHz) */
-		RFC6070_TEST(0, 5), RFC6070_TEST(0, 6)
+		RFC6070_TEST(0, 5), RFC6070_TEST(0, 6),
+		/* PBKDF2-HMAC-SHA224 */
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 1),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 2),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 3),
+		PBKDF2_SHA_TEST(15, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 4),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 5),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA224_DERIVE_KEY, 224, 6),
+
+		/* PBKDF2-HMAC-SHA256 */
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 1),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 2),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 3),
+		PBKDF2_SHA_TEST(15, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 4),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 5),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA256_DERIVE_KEY, 256, 6),
+
+		/* PBKDF2-HMAC-SHA384 */
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 1),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 2),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 3),
+		PBKDF2_SHA_TEST(15, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 4),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 5),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA384_DERIVE_KEY, 384, 6),
+
+		/* PBKDF2-HMAC-SHA512 */
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 1),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 2),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 3),
+		PBKDF2_SHA_TEST(15, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 4),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 5),
+		PBKDF2_SHA_TEST(0, TEE_ALG_PBKDF2_HMAC_SHA512_DERIVE_KEY, 512, 6),
+
+		/* PBKDF2-HMAC-SM3 */
+		PBKDF2_SM3_TEST(0, 1),
+		PBKDF2_SM3_TEST(0, 2),
+		PBKDF2_SM3_TEST(0, 3),
+		PBKDF2_SM3_TEST(0, 4), 
+		PBKDF2_SM3_TEST(0, 5),
 	};
 	size_t max_size = 2048;
 
