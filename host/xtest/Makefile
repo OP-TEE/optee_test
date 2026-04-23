@@ -92,10 +92,18 @@ ifeq ($(CFG_PKCS11_TA),y)
 srcs += pkcs11_1000.c
 endif
 
+ifeq ($(CFG_APP_SECRETS_TA),y)
+srcs += asteec_1000.c
+endif
+
 objs 	:= $(patsubst %.c,$(out-dir)/xtest/%.o, $(srcs))
 
 ifeq ($(CFG_PKCS11_TA),y)
 CFLAGS += -DCFG_PKCS11_TA
+endif
+
+ifeq ($(CFG_APP_SECRETS_TA),y)
+CFLAGS += -DCFG_APP_SECRETS_TA
 endif
 
 ifeq ($(CFG_CRYPTO_SE05X),y)
@@ -160,6 +168,9 @@ CFLAGS += -g3
 LDFLAGS += -L$(OPTEE_CLIENT_EXPORT)/lib -lteec
 ifeq ($(CFG_PKCS11_TA),y)
 LDFLAGS += -lckteec
+endif
+ifeq ($(CFG_APP_SECRETS_TA),y)
+LDFLAGS += -lasteec
 endif
 LDFLAGS += -lpthread -lm
 
