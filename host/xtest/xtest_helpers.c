@@ -39,6 +39,20 @@ void xtest_teec_ctx_deinit(void)
 	TEEC_FinalizeContext(&xtest_teec_ctx);
 }
 
+static bool check_error_origin(ADBG_Case_t *c, TEEC_Result res,
+			       uint32_t ret_orig)
+{
+	/*
+	 * The result is normally from the TA, but if it, for instance, has
+	 * crashed or paniced we'll get an error code from the TEE instead.
+	 */
+	if (ret_orig == TEEC_ORIGIN_TEE)
+		return ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+
+	return ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+					     ret_orig);
+}
+
 TEEC_Result ta_crypt_cmd_allocate_operation(ADBG_Case_t *c, TEEC_Session *s,
 					    TEE_OperationHandle *oph,
 					    uint32_t algo, uint32_t mode,
@@ -312,11 +326,7 @@ TEEC_Result ta_crypt_cmd_derive_key(ADBG_Case_t *c, TEEC_Session *s,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_DERIVE_KEY, &op, &ret_orig);
-
-	if (res != TEEC_SUCCESS) {
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
-	}
+	ADBG_EXPECT_TRUE(c, check_error_origin(c, res, ret_orig));
 
 	free(buf);
 	return res;

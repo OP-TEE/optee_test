@@ -7143,3 +7143,91 @@ err:
 }
 ADBG_CASE_DEFINE(regression, 4018, xtest_tee_test_4018,
 		 "TEE_SetOperationKey() panic on an initialized operation")
+
+static void test_ecdh_off_curve_point(ADBG_Case_t *c,
+				      const struct ecdh_invalid_curve_t *v)
+{
+	TEE_ObjectHandle key_handle = TEE_HANDLE_NULL;
+	TEE_ObjectHandle sv_handle = TEE_HANDLE_NULL;
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEE_Attribute attrs[2] = { };
+	TEEC_Session session = { };
+	size_t attr_count = 0;
+	uint32_t ret_orig = 0;
+
+	Do_ADBG_BeginSubCase(c, "Invalid curve attack - ECDH %s", v->name);
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+				      &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	if (!ta_crypt_cmd_is_algo_supported(c, &session,
+					    TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
+					    v->curve)) {
+		Do_ADBG_Log("ECDH %s not supported: skip", v->name);
+		goto out;
+	}
+
+	res = ta_crypt_cmd_allocate_operation(c, &session, &op,
+					      TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
+					      TEE_MODE_DERIVE, v->keysize);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &session,
+						     TEE_TYPE_ECDH_KEYPAIR,
+						     v->keysize, &key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	xtest_add_attr_value(&attr_count, attrs, TEE_ATTR_ECC_CURVE,
+			     v->curve, 0);
+
+	res = ta_crypt_cmd_generate_key(c, &session, key_handle,
+					v->keysize, attrs, attr_count);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_set_operation_key(c, &session, op, key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_free_transient_object(c, &session, key_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+	key_handle = TEE_HANDLE_NULL;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &session,
+						     TEE_TYPE_GENERIC_SECRET,
+						     v->secret_size,
+						     &sv_handle);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	attr_count = 0;
+	xtest_add_attr(&attr_count, attrs, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       v->public_x, v->public_x_len);
+	xtest_add_attr(&attr_count, attrs, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       v->public_y, v->public_y_len);
+
+	res = ta_crypt_cmd_derive_key(c, &session, op, sv_handle,
+				      attrs, attr_count);
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD, res);
+
+out:
+	TEEC_CloseSession(&session);
+	Do_ADBG_EndSubCase(c, "Invalid curve attack - ECDH %s", v->name);
+}
+
+static void xtest_tee_test_4019(ADBG_Case_t *c)
+{
+	size_t n;
+
+	for (n = 0; n < ARRAY_SIZE(derive_key_ecdh_invalid_curve); n++)
+		test_ecdh_off_curve_point(c, derive_key_ecdh_invalid_curve + n);
+}
+
+ADBG_CASE_DEFINE(regression, 4019, xtest_tee_test_4019,
+		 "Test ECDH invalid curve attack rejection")
