@@ -2913,6 +2913,7 @@ static const struct xtest_ae_case ae_cases[] = {
 #endif
 #include "aes_gcm_counter_overflow_test_encrypt.h"
 #include "aes_gcm_counter_overflow_test_decrypt.h"
+#include "aes_gcm_counter_overflow_test_corner.h"
 };
 
 static void xtest_tee_test_4005(ADBG_Case_t *c)
