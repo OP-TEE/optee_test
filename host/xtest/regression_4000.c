@@ -2,7 +2,7 @@
 /*
  * Copyright (c) 2014, STMicroelectronics International N.V.
  * Copyright (c) 2021, SumUp Services GmbH
- * Copyright 2023 NXP
+ * Copyright 2023, 2026 NXP
  */
 
 #include <stdio.h>
@@ -7143,3 +7143,138 @@ err:
 }
 ADBG_CASE_DEFINE(regression, 4018, xtest_tee_test_4018,
 		 "TEE_SetOperationKey() panic on an initialized operation")
+
+/*
+ * ECDH Invalid Curve Attack - Wycheproof test vector tcId 335
+ * Verify that ECDH derivation rejects peer public keys not on the curve.
+ */
+static void xtest_tee_test_4019(ADBG_Case_t *c)
+{
+	TEEC_Session session = {};
+	uint32_t ret_orig = 0;
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	TEE_ObjectHandle key_pair = TEE_HANDLE_NULL;
+	TEE_ObjectHandle derived_key = TEE_HANDLE_NULL;
+	uint32_t key_size = 256;
+	size_t attr_count = 0;
+	TEE_Attribute key_attrs[4] = {};
+	TEE_Attribute derive_params[2] = {};
+
+	static const uint8_t private_key[] = {
+		0x7e, 0x4a, 0xa5, 0x4f, 0x71, 0x4b, 0xf0, 0x1d,
+		0xf8, 0x5c, 0x50, 0x26, 0x9b, 0xea, 0x3a, 0x86,
+		0x72, 0x1f, 0x84, 0xaf, 0xe7, 0x4f, 0x7b, 0x41,
+		0xea, 0x58, 0xab, 0xcf, 0x34, 0x74, 0xe8, 0x8d,
+	};
+
+	static const uint8_t public_key_x[] = {
+		0x47, 0xf6, 0x7d, 0xe3, 0x5e, 0x5c, 0xb4, 0x32,
+		0xb0, 0x57, 0xe8, 0xa0, 0xd0, 0xff, 0x62, 0x2e,
+		0xb6, 0x98, 0xb3, 0x4b, 0xc9, 0xff, 0xe5, 0x23,
+		0x51, 0x19, 0x36, 0x63, 0xcc, 0x6e, 0x72, 0x74,
+	};
+
+	static const uint8_t public_key_y[] = {
+		0x14, 0x0f, 0x81, 0x5e, 0xf6, 0x1f, 0xf6, 0xed,
+		0x06, 0xdf, 0x0a, 0x15, 0x03, 0x66, 0xea, 0xbc,
+		0xfb, 0x18, 0xed, 0xa1, 0xce, 0xe3, 0xd4, 0xb3,
+		0x0f, 0x2d, 0x15, 0xd4, 0xa4, 0xfa, 0xe5, 0x17,
+	};
+
+	static const uint8_t peer_public_key_x[32] = {};
+
+	static const uint8_t peer_public_key_y[] = {
+		0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x01,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+	};
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+					&ret_orig)))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "Wycheproof InvalidCurveAttack");
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_ECDH_KEYPAIR, key_size, &key_pair)))
+		goto out;
+
+	key_attrs[0].attributeID = TEE_ATTR_ECC_CURVE;
+	key_attrs[0].content.value.a = TEE_ECC_CURVE_NIST_P256;
+	key_attrs[0].content.value.b = 0;
+	attr_count = 1;
+
+	xtest_add_attr(&attr_count, key_attrs, TEE_ATTR_ECC_PRIVATE_VALUE,
+		       private_key, sizeof(private_key));
+	xtest_add_attr(&attr_count, key_attrs, TEE_ATTR_ECC_PUBLIC_VALUE_X,
+		       public_key_x, sizeof(public_key_x));
+	xtest_add_attr(&attr_count, key_attrs, TEE_ATTR_ECC_PUBLIC_VALUE_Y,
+		       public_key_y, sizeof(public_key_y));
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_populate_transient_object(c, &session,
+			key_pair, key_attrs, attr_count)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_operation(c, &session, &op,
+			TEE_ALG_ECDH_DERIVE_SHARED_SECRET,
+			TEE_MODE_DERIVE, key_size)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &session, op, key_pair)))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_transient_object(c, &session,
+			TEE_TYPE_GENERIC_SECRET, key_size, &derived_key)))
+		goto out;
+
+	derive_params[0].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_X;
+	derive_params[0].content.ref.buffer = (void *)peer_public_key_x;
+	derive_params[0].content.ref.length = sizeof(peer_public_key_x);
+
+	derive_params[1].attributeID = TEE_ATTR_ECC_PUBLIC_VALUE_Y;
+	derive_params[1].content.ref.buffer = (void *)peer_public_key_y;
+	derive_params[1].content.ref.length = sizeof(peer_public_key_y);
+
+	/*
+	 * Derive should fail because peer public key is not on the curve.
+	 * TEE_DeriveKey() panics on error per GP spec, so the TA dies
+	 * and we get TEEC_ERROR_TARGET_DEAD.
+	 */
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+		TEEC_ERROR_TARGET_DEAD,
+		ta_crypt_cmd_derive_key(c, &session, op, derived_key,
+					derive_params, 2));
+
+	/*
+	 * Verify session is dead - any further command must also fail
+	 * with TARGET_DEAD (same pattern as regression_1000).
+	 */
+	(void)ADBG_EXPECT_TEEC_RESULT(c,
+		TEEC_ERROR_TARGET_DEAD,
+		ta_crypt_cmd_derive_key(c, &session, op, derived_key,
+					derive_params, 2));
+
+	Do_ADBG_EndSubCase(c, "Wycheproof InvalidCurveAttack");
+	TEEC_CloseSession(&session);
+	return;
+
+out:
+	if (op != TEE_HANDLE_NULL)
+		ta_crypt_cmd_free_operation(c, &session, op);
+	if (key_pair != TEE_HANDLE_NULL)
+		ta_crypt_cmd_free_transient_object(c, &session, key_pair);
+	if (derived_key != TEE_HANDLE_NULL)
+		ta_crypt_cmd_free_transient_object(c, &session, derived_key);
+
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 4019, xtest_tee_test_4019,
+		 "Test ECDH invalid curve attack rejection (Wycheproof)");

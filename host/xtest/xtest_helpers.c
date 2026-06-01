@@ -314,8 +314,8 @@ TEEC_Result ta_crypt_cmd_derive_key(ADBG_Case_t *c, TEEC_Session *s,
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_DERIVE_KEY, &op, &ret_orig);
 
 	if (res != TEEC_SUCCESS) {
-		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
-						    ret_orig);
+		(void)ADBG_EXPECT_TRUE(c, ret_orig == TEEC_ORIGIN_TRUSTED_APP ||
+			ret_orig == TEEC_ORIGIN_TEE);
 	}
 
 	free(buf);
