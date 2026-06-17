@@ -10076,3 +10076,603 @@ out_close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1030, xtest_pkcs11_test_1030,
 		 "PKCS11: Test AES-GCM Encryption/Decryption");
+
+/*
+ * RFC 5869 test vector A.1 (basic SHA-256, with salt and info).
+ * IKM  = 22 * 0x0b
+ * salt = 0x000102...0c (13 octets)
+ * info = 0xf0f1...f9 (10 octets)
+ * L    = 42
+ */
+static const uint8_t hkdf_rfc5869_a1_ikm[] = {
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+};
+static const uint8_t hkdf_rfc5869_a1_salt[] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c,
+};
+static const uint8_t hkdf_rfc5869_a1_info[] = {
+	0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+	0xf8, 0xf9,
+};
+static const uint8_t hkdf_rfc5869_a1_okm[] = {
+	0x3c, 0xb2, 0x5f, 0x25, 0xfa, 0xac, 0xd5, 0x7a,
+	0x90, 0x43, 0x4f, 0x64, 0xd0, 0x36, 0x2f, 0x2a,
+	0x2d, 0x2d, 0x0a, 0x90, 0xcf, 0x1a, 0x5a, 0x4c,
+	0x5d, 0xb0, 0x2d, 0x56, 0xec, 0xc4, 0xc5, 0xbf,
+	0x34, 0x00, 0x72, 0x08, 0xd5, 0xb8, 0x87, 0x18,
+	0x58, 0x65,
+};
+
+/*
+ * RFC 5869 test vector A.2 (longer inputs/outputs, SHA-256).
+ * IKM  = 0x00..0x4f (80 octets)
+ * salt = 0x60..0xaf (80 octets)
+ * info = 0xb0..0xff (80 octets)
+ * L    = 82
+ */
+static const uint8_t hkdf_rfc5869_a2_ikm[] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+	0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+	0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+	0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+};
+static const uint8_t hkdf_rfc5869_a2_salt[] = {
+	0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+	0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+	0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+	0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
+	0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+	0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f,
+	0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97,
+	0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
+	0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+	0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+};
+static const uint8_t hkdf_rfc5869_a2_info[] = {
+	0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+	0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+	0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
+	0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf,
+	0xd0, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+	0xd8, 0xd9, 0xda, 0xdb, 0xdc, 0xdd, 0xde, 0xdf,
+	0xe0, 0xe1, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
+	0xe8, 0xe9, 0xea, 0xeb, 0xec, 0xed, 0xee, 0xef,
+	0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+	0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff,
+};
+static const uint8_t hkdf_rfc5869_a2_okm[] = {
+	0xb1, 0x1e, 0x39, 0x8d, 0xc8, 0x03, 0x27, 0xa1,
+	0xc8, 0xe7, 0xf7, 0x8c, 0x59, 0x6a, 0x49, 0x34,
+	0x4f, 0x01, 0x2e, 0xda, 0x2d, 0x4e, 0xfa, 0xd8,
+	0xa0, 0x50, 0xcc, 0x4c, 0x19, 0xaf, 0xa9, 0x7c,
+	0x59, 0x04, 0x5a, 0x99, 0xca, 0xc7, 0x82, 0x72,
+	0x71, 0xcb, 0x41, 0xc6, 0x5e, 0x59, 0x0e, 0x09,
+	0xda, 0x32, 0x75, 0x60, 0x0c, 0x2f, 0x09, 0xb8,
+	0x36, 0x77, 0x93, 0xa9, 0xac, 0xa3, 0xdb, 0x71,
+	0xcc, 0x30, 0xc5, 0x81, 0x79, 0xec, 0x3e, 0x87,
+	0xc1, 0x4c, 0x01, 0xd5, 0xc1, 0xf3, 0x43, 0x4f,
+	0x1d, 0x87,
+};
+
+/*
+ * RFC 5869 test vector A.3 (SHA-256, zero-length salt and info).
+ * IKM  = 22 * 0x0b
+ * salt = empty
+ * info = empty
+ * L    = 42
+ */
+static const uint8_t hkdf_rfc5869_a3_ikm[] = {
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+};
+static const uint8_t hkdf_rfc5869_a3_okm[] = {
+	0x8d, 0xa4, 0xe7, 0x75, 0xa5, 0x63, 0xc1, 0x8f,
+	0x71, 0x5f, 0x80, 0x2a, 0x06, 0x3c, 0x5a, 0x31,
+	0xb8, 0xa1, 0x1f, 0x5c, 0x5e, 0xe1, 0x87, 0x9e,
+	0xc3, 0x45, 0x4e, 0x5f, 0x3c, 0x73, 0x8d, 0x2d,
+	0x9d, 0x20, 0x13, 0x95, 0xfa, 0xa4, 0xb6, 0x1a,
+	0x96, 0xc8,
+};
+
+/* RFC 5869 A.1 PRK (= HMAC-SHA-256(salt, IKM)), used for extract/expand subcases. */
+static const uint8_t hkdf_rfc5869_a1_prk[] = {
+	0x07, 0x77, 0x09, 0x36, 0x2c, 0x2e, 0x32, 0xdf,
+	0x0d, 0xdc, 0x3f, 0x0d, 0xc4, 0x7b, 0xba, 0x63,
+	0x90, 0xb6, 0xc7, 0x3b, 0xb5, 0x0f, 0x9c, 0x31,
+	0x22, 0xec, 0x84, 0x4a, 0xd7, 0xc2, 0xb3, 0xe5,
+};
+
+/*
+ * RFC 5869 test vector A.4 (basic SHA-1).
+ * IKM  = 11 * 0x0b
+ * salt = 0x000102...0c (13 octets)
+ * info = 0xf0f1...f9 (10 octets)
+ * L    = 42
+ */
+static const uint8_t hkdf_rfc5869_a4_ikm[] = {
+	0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b, 0x0b,
+	0x0b, 0x0b, 0x0b,
+};
+static const uint8_t hkdf_rfc5869_a4_okm[] = {
+	0x08, 0x5a, 0x01, 0xea, 0x1b, 0x10, 0xf3, 0x69,
+	0x33, 0x06, 0x8b, 0x56, 0xef, 0xa5, 0xad, 0x81,
+	0xa4, 0xf1, 0x4b, 0x82, 0x2f, 0x5b, 0x09, 0x15,
+	0x68, 0xa9, 0xcd, 0xd4, 0xf1, 0x55, 0xfd, 0xa2,
+	0xc2, 0x2e, 0x42, 0x24, 0x78, 0xd3, 0x05, 0xf3,
+	0xf8, 0x96,
+};
+
+/*
+ * Drive one HKDF derive: create a generic-secret base key holding @ikm,
+ * call C_DeriveKey with @params, read CKA_VALUE of the derived key into
+ * @okm_out. Returns the first non-OK CK_RV encountered, or CKR_OK on
+ * success. On return, *base_key_out / *derived_key_out hold whatever
+ * handles were created (caller destroys them) - either is set to
+ * CK_INVALID_HANDLE if not created.
+ */
+static CK_RV hkdf_derive_and_get(CK_SESSION_HANDLE session,
+				 const uint8_t *ikm, CK_ULONG ikm_len,
+				 CK_HKDF_PARAMS *params,
+				 CK_ULONG okm_len,
+				 uint8_t *okm_out,
+				 CK_OBJECT_HANDLE *base_key_out,
+				 CK_OBJECT_HANDLE *derived_key_out)
+{
+	CK_OBJECT_CLASS secret = CKO_SECRET_KEY;
+	CK_KEY_TYPE generic = CKK_GENERIC_SECRET;
+	CK_BBOOL ck_true = CK_TRUE;
+	CK_ATTRIBUTE base_template[] = {
+		{ CKA_CLASS, &secret, sizeof(secret) },
+		{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+		{ CKA_DERIVE, &ck_true, sizeof(ck_true) },
+		{ CKA_VALUE, (void *)ikm, ikm_len },
+	};
+	CK_ATTRIBUTE derived_template[] = {
+		{ CKA_CLASS, &secret, sizeof(secret) },
+		{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+		{ CKA_EXTRACTABLE, &ck_true, sizeof(ck_true) },
+		{ CKA_VALUE_LEN, &okm_len, sizeof(okm_len) },
+	};
+	CK_MECHANISM mech = {
+		.mechanism = CKM_HKDF_DERIVE,
+		.pParameter = params,
+		.ulParameterLen = sizeof(*params),
+	};
+	CK_ATTRIBUTE get_value[] = {
+		{ CKA_VALUE, okm_out, okm_len },
+	};
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	*base_key_out = CK_INVALID_HANDLE;
+	*derived_key_out = CK_INVALID_HANDLE;
+
+	rv = C_CreateObject(session, base_template, ARRAY_SIZE(base_template),
+			    base_key_out);
+	if (rv)
+		return rv;
+
+	rv = C_DeriveKey(session, &mech, *base_key_out, derived_template,
+			 ARRAY_SIZE(derived_template), derived_key_out);
+	if (rv)
+		return rv;
+
+	return C_GetAttributeValue(session, *derived_key_out, get_value,
+				   ARRAY_SIZE(get_value));
+}
+
+static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
+{
+	CK_RV rv = CKR_GENERAL_ERROR;
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE base_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE derived_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE salt_key = CK_INVALID_HANDLE;
+	CK_OBJECT_CLASS secret = CKO_SECRET_KEY;
+	CK_KEY_TYPE generic = CKK_GENERIC_SECRET;
+	CK_KEY_TYPE aes_type = CKK_AES;
+	CK_BBOOL ck_true = CK_TRUE;
+	CK_BBOOL ck_false = CK_FALSE;
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION, NULL,
+			   NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_close_lib;
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.1 - SHA-256, salt+info");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a1_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a1_ikm,
+					 sizeof(hkdf_rfc5869_a1_ikm), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a1_okm,
+					   sizeof(hkdf_rfc5869_a1_okm),
+					   okm, sizeof(okm));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.2 - SHA-256, long inputs");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a2_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a2_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a2_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a2_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a2_info),
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a2_ikm,
+					 sizeof(hkdf_rfc5869_a2_ikm), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a2_okm,
+					   sizeof(hkdf_rfc5869_a2_okm),
+					   okm, sizeof(okm));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.3 - SHA-256, null salt, no info");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a3_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_NULL,
+			.pSalt = NULL,
+			.ulSaltLen = 0,
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = NULL,
+			.ulInfoLen = 0,
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a3_ikm,
+					 sizeof(hkdf_rfc5869_a3_ikm), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a3_okm,
+					   sizeof(hkdf_rfc5869_a3_okm),
+					   okm, sizeof(okm));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.1 - salt supplied as key object");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a1_okm)] = { 0 };
+		CK_ATTRIBUTE salt_template[] = {
+			{ CKA_CLASS, &secret, sizeof(secret) },
+			{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+			{ CKA_VALUE, (void *)hkdf_rfc5869_a1_salt,
+			  sizeof(hkdf_rfc5869_a1_salt) },
+		};
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_KEY,
+			.pSalt = NULL,
+			.ulSaltLen = 0,
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+
+		rv = C_CreateObject(session, salt_template,
+				    ARRAY_SIZE(salt_template), &salt_key);
+		if (ADBG_EXPECT_CK_OK(c, rv)) {
+			params.hSaltKey = salt_key;
+			rv = hkdf_derive_and_get(session, hkdf_rfc5869_a1_ikm,
+						 sizeof(hkdf_rfc5869_a1_ikm),
+						 &params, sizeof(okm), okm,
+						 &base_key, &derived_key);
+			if (ADBG_EXPECT_CK_OK(c, rv))
+				ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a1_okm,
+						   sizeof(hkdf_rfc5869_a1_okm),
+						   okm, sizeof(okm));
+		}
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	if (salt_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, salt_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	salt_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.1 - extract-only");
+	{
+		uint8_t prk[sizeof(hkdf_rfc5869_a1_prk)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_FALSE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = NULL,
+			.ulInfoLen = 0,
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a1_ikm,
+					 sizeof(hkdf_rfc5869_a1_ikm), &params,
+					 sizeof(prk), prk, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a1_prk,
+					   sizeof(hkdf_rfc5869_a1_prk),
+					   prk, sizeof(prk));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.1 - expand-only (PRK as base key)");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a1_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_FALSE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_NULL,
+			.pSalt = NULL,
+			.ulSaltLen = 0,
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a1_prk,
+					 sizeof(hkdf_rfc5869_a1_prk), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a1_okm,
+					   sizeof(hkdf_rfc5869_a1_okm),
+					   okm, sizeof(okm));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "RFC 5869 A.4 - SHA-1, salt+info");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a4_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA_1,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a4_ikm,
+					 sizeof(hkdf_rfc5869_a4_ikm), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		if (ADBG_EXPECT_CK_OK(c, rv))
+			ADBG_EXPECT_BUFFER(c, hkdf_rfc5869_a4_okm,
+					   sizeof(hkdf_rfc5869_a4_okm),
+					   okm, sizeof(okm));
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Negative: base key without CKA_DERIVE");
+	{
+		CK_ATTRIBUTE base_template[] = {
+			{ CKA_CLASS, &secret, sizeof(secret) },
+			{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+			{ CKA_DERIVE, &ck_false, sizeof(ck_false) },
+			{ CKA_VALUE, (void *)hkdf_rfc5869_a1_ikm,
+			  sizeof(hkdf_rfc5869_a1_ikm) },
+		};
+		CK_ULONG okm_len = sizeof(hkdf_rfc5869_a1_okm);
+		CK_ATTRIBUTE derived_template[] = {
+			{ CKA_CLASS, &secret, sizeof(secret) },
+			{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+			{ CKA_EXTRACTABLE, &ck_true, sizeof(ck_true) },
+			{ CKA_VALUE_LEN, &okm_len, sizeof(okm_len) },
+		};
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+		CK_MECHANISM mech = {
+			.mechanism = CKM_HKDF_DERIVE,
+			.pParameter = &params,
+			.ulParameterLen = sizeof(params),
+		};
+
+		rv = C_CreateObject(session, base_template,
+				    ARRAY_SIZE(base_template), &base_key);
+		if (ADBG_EXPECT_CK_OK(c, rv)) {
+			rv = C_DeriveKey(session, &mech, base_key,
+					 derived_template,
+					 ARRAY_SIZE(derived_template),
+					 &derived_key);
+			ADBG_EXPECT_CK_RESULT(c, CKR_KEY_TYPE_INCONSISTENT,
+					      rv);
+		}
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Negative: AES base key with CKA_DERIVE");
+	{
+		CK_ULONG aes_value_len = 16;
+		CK_ATTRIBUTE base_template[] = {
+			{ CKA_CLASS, &secret, sizeof(secret) },
+			{ CKA_KEY_TYPE, &aes_type, sizeof(aes_type) },
+			{ CKA_DERIVE, &ck_true, sizeof(ck_true) },
+			{ CKA_VALUE_LEN, &aes_value_len,
+			  sizeof(aes_value_len) },
+		};
+		CK_MECHANISM aes_keygen = {
+			.mechanism = CKM_AES_KEY_GEN,
+			.pParameter = NULL,
+			.ulParameterLen = 0,
+		};
+		CK_ULONG okm_len = sizeof(hkdf_rfc5869_a1_okm);
+		CK_ATTRIBUTE derived_template[] = {
+			{ CKA_CLASS, &secret, sizeof(secret) },
+			{ CKA_KEY_TYPE, &generic, sizeof(generic) },
+			{ CKA_EXTRACTABLE, &ck_true, sizeof(ck_true) },
+			{ CKA_VALUE_LEN, &okm_len, sizeof(okm_len) },
+		};
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_TRUE,
+			.bExpand = CK_TRUE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+		CK_MECHANISM mech = {
+			.mechanism = CKM_HKDF_DERIVE,
+			.pParameter = &params,
+			.ulParameterLen = sizeof(params),
+		};
+
+		rv = C_GenerateKey(session, &aes_keygen, base_template,
+				   ARRAY_SIZE(base_template), &base_key);
+		if (ADBG_EXPECT_CK_OK(c, rv)) {
+			rv = C_DeriveKey(session, &mech, base_key,
+					 derived_template,
+					 ARRAY_SIZE(derived_template),
+					 &derived_key);
+			ADBG_EXPECT_CK_RESULT(c, CKR_KEY_TYPE_INCONSISTENT,
+					      rv);
+		}
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Negative: neither extract nor expand");
+	{
+		uint8_t okm[sizeof(hkdf_rfc5869_a1_okm)] = { 0 };
+		CK_HKDF_PARAMS params = {
+			.bExtract = CK_FALSE,
+			.bExpand = CK_FALSE,
+			.prfHashMechanism = CKM_SHA256,
+			.ulSaltType = CKF_HKDF_SALT_DATA,
+			.pSalt = (CK_BYTE_PTR)hkdf_rfc5869_a1_salt,
+			.ulSaltLen = sizeof(hkdf_rfc5869_a1_salt),
+			.hSaltKey = CK_INVALID_HANDLE,
+			.pInfo = (CK_BYTE_PTR)hkdf_rfc5869_a1_info,
+			.ulInfoLen = sizeof(hkdf_rfc5869_a1_info),
+		};
+
+		rv = hkdf_derive_and_get(session, hkdf_rfc5869_a1_ikm,
+					 sizeof(hkdf_rfc5869_a1_ikm), &params,
+					 sizeof(okm), okm, &base_key,
+					 &derived_key);
+		ADBG_EXPECT_CK_RESULT(c, CKR_MECHANISM_PARAM_INVALID, rv);
+	}
+	if (derived_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, derived_key));
+	if (base_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, base_key));
+	derived_key = CK_INVALID_HANDLE;
+	base_key = CK_INVALID_HANDLE;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+out_close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
+		 "PKCS11: HKDF derive (RFC 5869 A.1-A.4, extract/expand modes, salt-as-key, negatives)");
