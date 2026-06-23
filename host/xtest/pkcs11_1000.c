@@ -1201,14 +1201,18 @@ static CK_ATTRIBUTE cktest_token_object[] = {
 	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
 };
 
+static const CK_BBOOL ck_true = CK_TRUE;
+static const CK_BBOOL ck_false = CK_FALSE;
+static const CK_OBJECT_CLASS secret_key_class = CKO_SECRET_KEY;
+static const CK_KEY_TYPE aes_key_type = CKK_AES;
+
 static CK_ATTRIBUTE cktest_session_object[] = {
-	{ CKA_DECRYPT,	&(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
-	{ CKA_TOKEN,	&(CK_BBOOL){CK_FALSE}, sizeof(CK_BBOOL) },
-	{ CKA_MODIFIABLE, &(CK_BBOOL){CK_TRUE}, sizeof(CK_BBOOL) },
-	{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){CKK_AES}, sizeof(CK_KEY_TYPE) },
-	{ CKA_CLASS,	&(CK_OBJECT_CLASS){CKO_SECRET_KEY},
-						sizeof(CK_OBJECT_CLASS) },
-	{ CKA_VALUE,	(void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
+	{ CKA_DECRYPT,	  (void *)&ck_true,         sizeof(CK_BBOOL) },
+	{ CKA_TOKEN,	  (void *)&ck_false,        sizeof(CK_BBOOL) },
+	{ CKA_MODIFIABLE, (void *)&ck_true,         sizeof(CK_BBOOL) },
+	{ CKA_KEY_TYPE,	  (void *)&aes_key_type,    sizeof(CK_KEY_TYPE) },
+	{ CKA_CLASS,	  (void *)&secret_key_class, sizeof(CK_OBJECT_CLASS) },
+	{ CKA_VALUE,	  (void *)cktest_aes128_key, sizeof(cktest_aes128_key) },
 };
 
 /* Create session object and token object from a session */
