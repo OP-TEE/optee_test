@@ -3,6 +3,8 @@
  * Copyright (c) 2016, Linaro Limited
  */
 
+#ifdef CFG_GP_SOCKETS
+
 #include <assert.h>
 #include <err.h>
 #include <pthread.h>
@@ -927,3 +929,5 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 2004, xtest_tee_test_2004,
 		"UDP iSocket API tests");
+
+#endif /* CFG_GP_SOCKETS */

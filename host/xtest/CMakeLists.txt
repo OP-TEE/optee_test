@@ -50,6 +50,7 @@ set (SRC
 	benchmark_2000.c
 	clear_storage.c
 	regression_1000.c
+	regression_2000.c
 	regression_4000.c
 	regression_4100.c
 	regression_5000.c
@@ -58,6 +59,8 @@ set (SRC
 	regression_8100.c
 	hash_perf.c
 	install_ta.c
+	rand_stream.c
+	sock_server.c
 	stats.c
 	symm_cipher_perf.c
 	xtest_helpers.c
@@ -92,14 +95,6 @@ if (WITH_GP_TESTS)
 	GEN_GP_FILE(gp_40000.c Time_Arithmetical/xmlstable TEE_TimeArithm_API)
 	GEN_GP_FILE(gp_50000.c Crypto/xmlstable TEE_Crypto_API)
 	set (GP_INCLUDES PRIVATE gp/include)
-endif()
-
-if (CFG_GP_SOCKETS)
-	list (APPEND SRC
-		regression_2000.c
-		sock_server.c
-		rand_stream.c
-	)
 endif()
 
 if (CFG_SECURE_DATA_PATH)

@@ -47,15 +47,7 @@ endif
 LDFLAGS += -lcrypto
 endif #require OpenSSL
 
-srcs := regression_1000.c
-
-ifeq ($(CFG_GP_SOCKETS),y)
-srcs += regression_2000.c \
-	sock_server.c \
-	rand_stream.c
-endif
-
-srcs +=	adbg/src/adbg_case.c \
+srcs :=	adbg/src/adbg_case.c \
 	adbg/src/adbg_enum.c \
 	adbg/src/adbg_expect.c \
 	adbg/src/adbg_log.c \
@@ -65,6 +57,8 @@ srcs +=	adbg/src/adbg_case.c \
 	benchmark_1000.c \
 	benchmark_2000.c \
 	clear_storage.c \
+	regression_1000.c \
+	regression_2000.c \
 	regression_4000.c \
 	regression_4100.c \
 	regression_5000.c \
@@ -73,6 +67,8 @@ srcs +=	adbg/src/adbg_case.c \
 	regression_8100.c \
 	hash_perf.c \
 	install_ta.c \
+	rand_stream.c \
+	sock_server.c \
 	stats.c \
 	symm_cipher_perf.c \
 	xtest_helpers.c \

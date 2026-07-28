@@ -3,6 +3,8 @@
  * Copyright (c) 2016, Linaro Limited
  */
 
+#ifdef CFG_GP_SOCKETS
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -115,3 +117,5 @@ void rand_stream_advance(struct rand_stream *rs, size_t num_bytes)
 	get_random(rs, rs->stream_buf, rs->sb_size);
 	rs->sb_offs = nb;
 }
+
+#endif /* CFG_GP_SOCKETS */

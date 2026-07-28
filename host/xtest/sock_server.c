@@ -3,6 +3,8 @@
  * Copyright (c) 2016, Linaro Limited
  */
 
+#ifdef CFG_GP_SOCKETS
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
@@ -394,3 +396,5 @@ void sock_server_unlock(struct sock_server *ts)
 		errx(1, "sock_server_unlock: pthread_mutex_unlock: %s",
 		     strerror(e));
 }
+
+#endif /* CFG_GP_SOCKETS */
