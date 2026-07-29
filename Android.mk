@@ -15,7 +15,9 @@ VERSION = $(shell git describe --always --dirty=-dev 2>/dev/null || echo Unknown
 # We set the default value to an invalid path.
 TA_DEV_KIT_DIR ?= ../invalid_include_path
 
--include $(TA_DEV_KIT_DIR)/host_include/conf.mk
+# optee_os generates this configuration while the Android makefiles are parsed
+# so it is always available and must be a hard include.
+include $(TA_DEV_KIT_DIR)/host_include/conf.mk
 include $(LOCAL_PATH)/scripts/common.mk
 
 ################################################################################
