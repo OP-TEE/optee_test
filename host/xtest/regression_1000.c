@@ -3492,3 +3492,181 @@ static void xtest_tee_test_1043(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1043, xtest_tee_test_1043,
 		 "Reject a user TA with the nil UUID");
 
+/*
+ * RISC-V floating-point context switching.
+ *
+ * A TA runs with the floating-point unit disabled and is handed a context
+ * on the first floating-point instruction it executes, while the normal
+ * world context is switched eagerly whenever a thread crosses into the TEE
+ * and back. The sub-tests below check both halves of that: the TA side by
+ * asking the TA to verify its own registers across various excursions, and
+ * the normal world side by holding a pattern in this process' registers
+ * across a call into the TEE.
+ */
+
+static TEEC_Result fp_invoke(TEEC_Session *session, uint32_t subtest,
+			     uint32_t seed, uint32_t *bad_field,
+			     uint32_t *ret_orig)
+{
+	TEEC_Operation op = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = subtest;
+	op.params[0].value.b = seed;
+
+	res = TEEC_InvokeCommand(session, TA_OS_TEST_CMD_RISCV_FP_CONTEXT,
+				 &op, ret_orig);
+	if (bad_field)
+		*bad_field = op.params[1].value.a;
+
+	return res;
+}
+
+static void fp_log_bad_field(uint32_t field)
+{
+	/* riscv_fp_ctx_diff() in the TA reports 12 (fs0..fs11) when only fcsr differs */
+	if (field == 12)
+		Do_ADBG_Log("    fcsr was not preserved");
+	else
+		Do_ADBG_Log("    fs%u was the first register not preserved",
+			    field);
+}
+
+static void fp_check_ta_subtest(ADBG_Case_t *c, TEEC_Session *session,
+				uint32_t subtest, uint32_t seed)
+{
+	uint32_t ret_orig = 0;
+	uint32_t bad_field = 0;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+
+	res = fp_invoke(session, subtest, seed, &bad_field, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		fp_log_bad_field(bad_field);
+}
+
+struct test_1045_thread_arg {
+	pthread_t thr;
+	uint32_t seed;
+	TEEC_Result res;
+	uint32_t bad_field;
+};
+
+static void *test_1045_thread(void *a)
+{
+	struct test_1045_thread_arg *arg = a;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
+
+	arg->res = xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+					   &ret_orig);
+	if (arg->res != TEEC_SUCCESS)
+		return NULL;
+
+	for (n = 0; n < 8; n++) {
+		arg->res = fp_invoke(&session, TA_RISCV_FP_SUBTEST_RPC,
+				     arg->seed, &arg->bad_field, &ret_orig);
+		if (arg->res != TEEC_SUCCESS)
+			break;
+	}
+
+	TEEC_CloseSession(&session);
+
+	return NULL;
+}
+
+static void xtest_tee_test_1045(ADBG_Case_t *c)
+{
+	struct test_1045_thread_arg arg[NUM_THREADS] = { };
+	TEEC_Session session = { };
+	TEEC_Session tainted = { };
+	uint32_t ret_orig = 0;
+	uint32_t bad_field = 0;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	size_t nt = NUM_THREADS;
+	size_t n = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	/*
+	 * Probe first: a TA built for an architecture without this test, or
+	 * an OP-TEE built without floating-point context switching, has
+	 * nothing to say here.
+	 */
+	res = fp_invoke(&session, TA_RISCV_FP_SUBTEST_SYSCALL, 0x11,
+			&bad_field, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("TA has no RISC-V FP context test - skip tests");
+		goto out;
+	}
+
+	Do_ADBG_BeginSubCase(c, "TA context across a syscall");
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		fp_log_bad_field(bad_field);
+	Do_ADBG_EndSubCase(c, "TA context across a syscall");
+
+	Do_ADBG_BeginSubCase(c, "TA context across an RPC");
+	fp_check_ta_subtest(c, &session, TA_RISCV_FP_SUBTEST_RPC, 0x22);
+	Do_ADBG_EndSubCase(c, "TA context across an RPC");
+
+	Do_ADBG_BeginSubCase(c, "TA context across a crypto operation");
+	fp_check_ta_subtest(c, &session, TA_RISCV_FP_SUBTEST_CRYPTO, 0x33);
+	Do_ADBG_EndSubCase(c, "TA context across a crypto operation");
+
+	/*
+	 * A TA that has just been loaded must not find another TA's values
+	 * in the registers. os_test is multi instance, so closing the
+	 * session below unloads the instance that left the pattern behind
+	 * and the next session gets a fresh floating-point context.
+	 */
+	Do_ADBG_BeginSubCase(c, "TA context is not carried between instances");
+	res = xtest_teec_open_session(&tainted, &os_test_ta_uuid, NULL,
+				      &ret_orig);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+			fp_invoke(&tainted, TA_RISCV_FP_SUBTEST_TAINT, 0x44,
+				  NULL, &ret_orig));
+		TEEC_CloseSession(&tainted);
+
+		memset(&tainted, 0, sizeof(tainted));
+		res = xtest_teec_open_session(&tainted, &os_test_ta_uuid, NULL,
+					      &ret_orig);
+		if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+			fp_check_ta_subtest(c, &tainted,
+					    TA_RISCV_FP_SUBTEST_CHECK_TAINT,
+					    0x44);
+			TEEC_CloseSession(&tainted);
+		}
+	}
+	Do_ADBG_EndSubCase(c, "TA context is not carried between instances");
+
+	/*
+	 * Each OP-TEE thread carries its own floating-point bookkeeping, so
+	 * run the RPC case from several threads at once to check that one
+	 * thread's context does not end up in another.
+	 */
+	Do_ADBG_BeginSubCase(c, "Concurrent TA contexts");
+	for (n = 0; n < nt; n++) {
+		arg[n].seed = 0x80 + n;
+		if (!ADBG_EXPECT(c, 0, pthread_create(&arg[n].thr, NULL,
+						      test_1045_thread,
+						      arg + n)))
+			nt = n; /* break loop and start cleanup */
+	}
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(arg[n].thr, NULL));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
+			fp_log_bad_field(arg[n].bad_field);
+	}
+	Do_ADBG_EndSubCase(c, "Concurrent TA contexts");
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1045, xtest_tee_test_1045,
+		 "Test RISC-V floating-point context switching");
