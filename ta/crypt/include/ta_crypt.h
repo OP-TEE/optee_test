@@ -115,6 +115,10 @@
  * in       params[0].value.a = operation
  * in       params[1].memref = srcData
  * out      params[2].memref = destData
+ *
+ * params[2] may instead be TEE_PARAM_TYPE_NONE, in which case destData
+ * and destLen are passed as NULL, exercising the [outbufopt] discard
+ * case.
  */
 #define TA_CRYPT_CMD_CIPHER_DO_FINAL    16
 
@@ -303,6 +307,10 @@
  * in       params[1].memref = srcData
  * out      params[2].memref = destData
  * out      params[3].memref = tag
+ *
+ * params[2] may instead be TEE_PARAM_TYPE_NONE, in which case destData
+ * and destLen are passed as NULL, exercising the [outbufopt] discard
+ * case. params[3] (tag) is always mandatory.
  */
 #define TA_CRYPT_CMD_AE_ENCRYPT_FINAL           36
 

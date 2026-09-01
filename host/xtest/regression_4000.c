@@ -441,6 +441,37 @@ static TEEC_Result ta_crypt_cmd_cipher_do_final(ADBG_Case_t *c,
 	return res;
 }
 
+static TEEC_Result ta_crypt_cmd_cipher_do_final_discard(ADBG_Case_t *c,
+							 TEEC_Session *s,
+							 TEE_OperationHandle oph,
+							 const void *src,
+							 size_t src_len)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)oph <= UINT32_MAX);
+	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
+
+	op.params[1].tmpref.buffer = (void *)src;
+	op.params[1].tmpref.size = src_len;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_CIPHER_DO_FINAL, &op,
+				 &ret_orig);
+
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+	}
+
+	return res;
+}
+
 static TEEC_Result ta_crypt_cmd_random_number_generate(ADBG_Case_t *c,
 						       TEEC_Session *s,
 						       void *buf,
@@ -605,6 +636,45 @@ static TEEC_Result ta_crypt_cmd_ae_encrypt_final(ADBG_Case_t *c,
 	}
 
 	*dst_len = op.params[2].tmpref.size;
+	*tag_len = op.params[3].tmpref.size;
+
+	return res;
+}
+
+static TEEC_Result ta_crypt_cmd_ae_encrypt_final_discard(ADBG_Case_t *c,
+							  TEEC_Session *s,
+							  TEE_OperationHandle oph,
+							  const void *src,
+							  size_t src_len,
+							  void *tag,
+							  size_t *tag_len)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)oph <= UINT32_MAX);
+	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
+
+	op.params[1].tmpref.buffer = (void *)src;
+	op.params[1].tmpref.size = src_len;
+
+	op.params[3].tmpref.buffer = tag;
+	op.params[3].tmpref.size = *tag_len;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE,
+					 TEEC_MEMREF_TEMP_OUTPUT);
+
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_AE_ENCRYPT_FINAL, &op,
+				 &ret_orig);
+
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+	}
+
 	*tag_len = op.params[3].tmpref.size;
 
 	return res;
@@ -7232,3 +7302,242 @@ static void xtest_tee_test_4019(ADBG_Case_t *c)
 
 ADBG_CASE_DEFINE(regression, 4019, xtest_tee_test_4019,
 		 "Test ECDH invalid curve attack rejection")
+
+static bool do_algo_discard_4020(ADBG_Case_t *c, TEEC_Session *s,
+				 uint32_t algo, size_t extra_size)
+{
+	bool auth_enc = (algo == TEE_ALG_AES_CCM || algo == TEE_ALG_AES_GCM);
+	TEE_OperationHandle oph = TEE_HANDLE_NULL;
+	TEEC_Result res = TEEC_SUCCESS;
+	uint8_t tmp_tag[96 / 8] = { };
+	uint8_t tag[96 / 8] = { };
+	uint8_t iv[16] = { };
+	uint8_t key[16] = { };
+	uint8_t *plain_text = NULL;
+	uint8_t *ciph_text = NULL;
+	uint8_t *tmp_text = NULL;
+	size_t text_size = 0;
+	size_t iv_len = 0;
+	size_t dlen = 0;
+	size_t tlen = 0;
+	bool ret = false;
+	size_t n = 0;
+	size_t split_points[] = { 0, 1, TEE_AES_BLOCK_SIZE,
+				  TEE_AES_BLOCK_SIZE + 1,
+				  TEE_AES_BLOCK_SIZE * 2,
+				  TEE_AES_BLOCK_SIZE * 6 + extra_size};
+
+	text_size = split_points[ARRAY_SIZE(split_points) - 1];
+	plain_text = calloc(3, text_size);
+	if (!ADBG_EXPECT_NOT_NULL(c, plain_text))
+		return false;
+	ciph_text = plain_text + text_size;
+	tmp_text = ciph_text + text_size;
+
+	for (n = 0; n < text_size; n++)
+		plain_text[n] = n + 1;
+	for (n = 0; n < ARRAY_SIZE(iv); n++)
+		iv[n] = n + 1;
+	for (n = 0; n < ARRAY_SIZE(key); n++)
+		key[n] = n + 1;
+
+
+	if (algo != TEE_ALG_AES_ECB_NOPAD) {
+		iv_len = sizeof(iv);
+		if (algo == TEE_ALG_AES_CCM)
+			iv_len = 13;
+	}
+
+	/* Compute the reference cipher text (and tag) with an ordinary pass */
+	if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo, TEE_MODE_ENCRYPT,
+						key, sizeof(key), &oph)))
+		goto out;
+
+	dlen = text_size;
+	if (auth_enc) {
+		tlen = sizeof(tag);
+		res = ta_crypt_cmd_ae_init(c, s, oph, iv, iv_len, tlen, 0,
+					   text_size);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_ae_encrypt_final(c, s, oph, plain_text,
+						    text_size, ciph_text,
+						    &dlen, tag, &tlen);
+	} else {
+		res = ta_crypt_cmd_cipher_init(c, s, oph, iv, iv_len);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		res = ta_crypt_cmd_cipher_do_final(c, s, oph, plain_text,
+						   text_size, ciph_text, &dlen);
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+	    !ADBG_EXPECT_COMPARE_UNSIGNED(c, text_size, ==, dlen))
+		goto out;
+
+	ta_crypt_cmd_free_operation(c, s, oph);
+	oph = TEE_HANDLE_NULL;
+
+	for (n = 0; n < ARRAY_SIZE(split_points); n++) {
+		size_t initial_count = split_points[n];
+
+		if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo,
+							TEE_MODE_ENCRYPT, key,
+							sizeof(key), &oph)))
+			goto out;
+
+		if (auth_enc) {
+			tlen = sizeof(tmp_tag);
+			res = ta_crypt_cmd_ae_init(c, s, oph, iv, iv_len,
+						   tlen, 0, text_size);
+		} else {
+			res = ta_crypt_cmd_cipher_init(c, s, oph, iv, iv_len);
+		}
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		if (initial_count) {
+			dlen = text_size;
+			if (auth_enc)
+				res = ta_crypt_cmd_ae_update(c, s, oph,
+							     plain_text,
+							     initial_count,
+							     tmp_text, &dlen);
+			else
+				res = ta_crypt_cmd_cipher_update(c, s, oph,
+								 plain_text,
+								 initial_count,
+								 tmp_text,
+								 &dlen);
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+				goto out;
+		}
+
+		if (auth_enc)
+			res = ta_crypt_cmd_ae_encrypt_final_discard(c, s, oph,
+					plain_text + initial_count,
+					text_size - initial_count,
+					tmp_tag, &tlen);
+		else
+			res = ta_crypt_cmd_cipher_do_final_discard(c, s, oph,
+					plain_text + initial_count,
+					text_size - initial_count);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+		if (auth_enc &&
+		    !ADBG_EXPECT_BUFFER(c, tag, sizeof(tag), tmp_tag, tlen))
+			goto out;
+
+		/*
+		 * The discard call above must not have corrupted the
+		 * operation state: reuse the same handle for an ordinary
+		 * pass and check that the output still matches the
+		 * reference.
+		 */
+		dlen = text_size;
+		if (auth_enc) {
+			tlen = sizeof(tmp_tag);
+			res = ta_crypt_cmd_ae_init(c, s, oph, iv, iv_len,
+						   tlen, 0, text_size);
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+				goto out;
+			res = ta_crypt_cmd_ae_encrypt_final(c, s, oph,
+							    plain_text,
+							    text_size, tmp_text,
+							    &dlen, tmp_tag,
+							    &tlen);
+		} else {
+			res = ta_crypt_cmd_cipher_init(c, s, oph, iv, iv_len);
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+				goto out;
+			res = ta_crypt_cmd_cipher_do_final(c, s, oph,
+							   plain_text,
+							   text_size, tmp_text,
+							   &dlen);
+		}
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, text_size, ==, dlen) ||
+		    !ADBG_EXPECT_BUFFER(c, ciph_text, text_size, tmp_text,
+					dlen))
+			goto out;
+		if (auth_enc &&
+		    !ADBG_EXPECT_BUFFER(c, tag, sizeof(tag), tmp_tag, tlen))
+			goto out;
+
+		ta_crypt_cmd_free_operation(c, s, oph);
+		oph = TEE_HANDLE_NULL;
+	}
+
+	ret = true;
+out:
+	if (oph)
+		ta_crypt_cmd_free_operation(c, s, oph);
+	free(plain_text);
+	return ret;
+}
+
+static void xtest_tee_test_4020(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_SUCCESS;
+	uint32_t ret_orig = 0;
+	TEEC_Session sess = { };
+
+	res = xtest_teec_open_session(&sess, &crypt_user_ta_uuid, NULL,
+				      &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_ECB_NOPAD");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess,
+						 TEE_ALG_AES_ECB_NOPAD, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_ECB_NOPAD");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CBC_NOPAD");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess,
+						 TEE_ALG_AES_CBC_NOPAD, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CBC_NOPAD");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTR");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CTR, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTR");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTR 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CTR, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTR 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTS");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CTS, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTS");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CTS 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CTS, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CTS 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_XTS");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_XTS, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_XTS");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_XTS 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_XTS, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_XTS 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_GCM");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_GCM, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_GCM");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_GCM 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_GCM, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_GCM 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CCM");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CCM, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CCM");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CCM, 1));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
+
+	TEEC_CloseSession(&sess);
+}
+
+ADBG_CASE_DEFINE(regression, 4020, xtest_tee_test_4020,
+		 "Test TEE Internal API Cipher/AE discard output ([outbufopt])")
