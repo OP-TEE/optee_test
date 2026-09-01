@@ -1545,6 +1545,8 @@ seek_write_read_out:
 		fs_next_enum(&sess, e, NULL, 0, out, sizeof(out)));
 	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
 		fs_start_enum(&sess, e, storage_id));
+	ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_ITEM_NOT_FOUND,
+		fs_next_enum(&sess, e, NULL, 0, out, sizeof(out)));
 	ADBG_EXPECT_TEEC_SUCCESS(c, fs_free_enum(&sess, e));
 	Do_ADBG_EndSubCase(c, "StartPersistentObjectEnumerator ItemNotFound");
 
