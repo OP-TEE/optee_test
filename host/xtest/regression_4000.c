@@ -6893,9 +6893,13 @@ static bool alloc_oph_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 		.content.ref.buffer = key,
 		.content.ref.length = key_size,
 	};
+	uint32_t key_type = TEE_TYPE_AES;
 	bool ret = false;
 
-	res = ta_crypt_cmd_allocate_transient_object(c, s, TEE_TYPE_AES,
+	if (algo == TEE_ALG_DES_CBC_NOPAD)
+		key_type = TEE_TYPE_DES;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, s, key_type,
 						     key_size * 8, &key_handle);
 	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
 		goto out;
@@ -6905,7 +6909,7 @@ static bool alloc_oph_4017(ADBG_Case_t *c, TEEC_Session *s, uint32_t algo,
 		goto out;
 
 	if (algo == TEE_ALG_AES_XTS) {
-		res = ta_crypt_cmd_allocate_transient_object(c, s, TEE_TYPE_AES,
+		res = ta_crypt_cmd_allocate_transient_object(c, s, key_type,
 							     key_size * 8,
 							     &key2_handle);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
@@ -7310,24 +7314,37 @@ static bool do_algo_discard_4020(ADBG_Case_t *c, TEEC_Session *s,
 	TEE_OperationHandle oph = TEE_HANDLE_NULL;
 	TEEC_Result res = TEEC_SUCCESS;
 	uint8_t tmp_tag[96 / 8] = { };
+	size_t split_points[6] = { };
 	uint8_t tag[96 / 8] = { };
 	uint8_t iv[16] = { };
 	uint8_t key[16] = { };
 	uint8_t *plain_text = NULL;
 	uint8_t *ciph_text = NULL;
 	uint8_t *tmp_text = NULL;
+	size_t block_size = 0;
 	size_t text_size = 0;
+	size_t key_size = 0;
 	size_t iv_len = 0;
 	size_t dlen = 0;
 	size_t tlen = 0;
 	bool ret = false;
 	size_t n = 0;
-	size_t split_points[] = { 0, 1, TEE_AES_BLOCK_SIZE,
-				  TEE_AES_BLOCK_SIZE + 1,
-				  TEE_AES_BLOCK_SIZE * 2,
-				  TEE_AES_BLOCK_SIZE * 6 + extra_size};
 
-	text_size = split_points[ARRAY_SIZE(split_points) - 1];
+	if (algo == TEE_ALG_DES_CBC_NOPAD) {
+		block_size = TEE_DES_BLOCK_SIZE;
+		key_size = 8;
+	} else {
+		block_size = TEE_AES_BLOCK_SIZE;
+		key_size = sizeof(key);
+	}
+
+	text_size = block_size * 6 + extra_size;
+	split_points[1] = 1;
+	split_points[2] = block_size;
+	split_points[3] = block_size + 1;
+	split_points[4] = block_size * 2;
+	split_points[5] = text_size;
+
 	plain_text = calloc(3, text_size);
 	if (!ADBG_EXPECT_NOT_NULL(c, plain_text))
 		return false;
@@ -7338,19 +7355,18 @@ static bool do_algo_discard_4020(ADBG_Case_t *c, TEEC_Session *s,
 		plain_text[n] = n + 1;
 	for (n = 0; n < ARRAY_SIZE(iv); n++)
 		iv[n] = n + 1;
-	for (n = 0; n < ARRAY_SIZE(key); n++)
+	for (n = 0; n < key_size; n++)
 		key[n] = n + 1;
 
-
 	if (algo != TEE_ALG_AES_ECB_NOPAD) {
-		iv_len = sizeof(iv);
+		iv_len = block_size;
 		if (algo == TEE_ALG_AES_CCM)
 			iv_len = 13;
 	}
 
 	/* Compute the reference cipher text (and tag) with an ordinary pass */
 	if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo, TEE_MODE_ENCRYPT,
-						key, sizeof(key), &oph)))
+						key, key_size, &oph)))
 		goto out;
 
 	dlen = text_size;
@@ -7382,7 +7398,7 @@ static bool do_algo_discard_4020(ADBG_Case_t *c, TEEC_Session *s,
 
 		if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo,
 							TEE_MODE_ENCRYPT, key,
-							sizeof(key), &oph)))
+							key_size, &oph)))
 			goto out;
 
 		if (auth_enc) {
@@ -7535,6 +7551,11 @@ static void xtest_tee_test_4020(ADBG_Case_t *c)
 	Do_ADBG_BeginSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
 	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess, TEE_ALG_AES_CCM, 1));
 	Do_ADBG_EndSubCase(c, "TEE_ALG_AES_CCM 1 extra byte");
+
+	Do_ADBG_BeginSubCase(c, "TEE_ALG_DES_CBC_NOPAD");
+	ADBG_EXPECT_TRUE(c, do_algo_discard_4020(c, &sess,
+						 TEE_ALG_DES_CBC_NOPAD, 0));
+	Do_ADBG_EndSubCase(c, "TEE_ALG_DES_CBC_NOPAD");
 
 	TEEC_CloseSession(&sess);
 }
