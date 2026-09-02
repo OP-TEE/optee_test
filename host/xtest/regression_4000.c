@@ -721,6 +721,43 @@ static TEEC_Result ta_crypt_cmd_ae_decrypt_final(ADBG_Case_t *c,
 	return res;
 }
 
+static TEEC_Result ta_crypt_cmd_ae_decrypt_final_discard(ADBG_Case_t *c,
+							  TEEC_Session *s,
+							  TEE_OperationHandle oph,
+							  const void *src,
+							  size_t src_len,
+							  const void *tag,
+							  size_t tag_len)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)oph <= UINT32_MAX);
+	op.params[0].value.a = (uint32_t)(uintptr_t)oph;
+
+	op.params[1].tmpref.buffer = (void *)src;
+	op.params[1].tmpref.size = src_len;
+
+	op.params[3].tmpref.buffer = (void *)tag;
+	op.params[3].tmpref.size = tag_len;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_NONE,
+					 TEEC_MEMREF_TEMP_INPUT);
+
+	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_AE_DECRYPT_FINAL, &op,
+				 &ret_orig);
+
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+	}
+
+	return res;
+}
+
 static TEEC_Result ta_crypt_cmd_asymmetric_operate(ADBG_Case_t *c,
 						   TEEC_Session *s,
 						   TEE_OperationHandle oph,
@@ -7442,6 +7479,49 @@ static bool do_algo_discard_4020(ADBG_Case_t *c, TEEC_Session *s,
 		if (auth_enc &&
 		    !ADBG_EXPECT_BUFFER(c, tag, sizeof(tag), tmp_tag, tlen))
 			goto out;
+
+		if (auth_enc) {
+			TEE_OperationHandle doph = TEE_HANDLE_NULL;
+
+			if (!ADBG_EXPECT_TRUE(c, alloc_oph_4017(c, s, algo,
+								TEE_MODE_DECRYPT,
+								key, key_size,
+								&doph)))
+				goto out;
+
+			tlen = sizeof(tag);
+			res = ta_crypt_cmd_ae_init(c, s, doph, iv, iv_len,
+						   tlen, 0, text_size);
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+				ta_crypt_cmd_free_operation(c, s, doph);
+				goto out;
+			}
+
+			if (initial_count) {
+				dlen = text_size;
+				res = ta_crypt_cmd_ae_update(c, s, doph,
+							     ciph_text,
+							     initial_count,
+							     tmp_text, &dlen);
+				if (!ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+					ta_crypt_cmd_free_operation(c, s, doph);
+					goto out;
+				}
+			}
+
+			/*
+			 * TEE_AEDecryptFinal() discard case: feed the
+			 * remaining ciphertext with the output discarded,
+			 * but the tag must still be verified.
+			 */
+			res = ta_crypt_cmd_ae_decrypt_final_discard(c, s, doph,
+					ciph_text + initial_count,
+					text_size - initial_count,
+					tag, sizeof(tag));
+			ta_crypt_cmd_free_operation(c, s, doph);
+			if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+				goto out;
+		}
 
 		/*
 		 * The discard call above must not have corrupted the

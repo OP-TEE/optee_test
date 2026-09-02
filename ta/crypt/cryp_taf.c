@@ -791,6 +791,24 @@ TEE_Result ta_entry_ae_decrypt_final(uint32_t param_type, TEE_Param params[4])
 	void *b2 = NULL;
 	void *b3 = NULL;
 
+	if (param_type == TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+					  TEE_PARAM_TYPE_MEMREF_INPUT,
+					  TEE_PARAM_TYPE_NONE,
+					  TEE_PARAM_TYPE_MEMREF_INPUT)) {
+		if (params[3].memref.buffer && params[3].memref.size) {
+			b3 = TEE_Malloc(params[3].memref.size, 0);
+			if (!b3)
+				goto out;
+			TEE_MemMove(b3, params[3].memref.buffer,
+				    params[3].memref.size);
+		}
+
+		res = TEE_AEDecryptFinal(op, params[1].memref.buffer,
+					 params[1].memref.size, NULL, NULL, b3,
+					 params[3].memref.size);
+		goto out;
+	}
+
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,

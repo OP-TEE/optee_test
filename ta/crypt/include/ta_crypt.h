@@ -323,6 +323,10 @@
  * in       params[1].memref = srcData
  * out      params[2].memref = destData
  * in       params[3].memref = tag
+ *
+ * params[2] may instead be TEE_PARAM_TYPE_NONE, in which case destData
+ * and destLen are passed as NULL, exercising the [outbufopt] discard
+ * case.
  */
 #define TA_CRYPT_CMD_AE_DECRYPT_FINAL           37
 
