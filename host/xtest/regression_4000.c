@@ -1609,6 +1609,15 @@ static void xtest_tee_test_4001(ADBG_Case_t *c)
 			ta_crypt_cmd_copy_operation(c, &session, op2, op1)))
 			goto out;
 
+		if (hash_cases[n].algo != TEE_ALG_SHAKE128 &&
+		    hash_cases[n].algo != TEE_ALG_SHAKE256) {
+			out_size = 1;
+			if (!ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+				ta_crypt_cmd_digest_do_final(c, &session, op1,
+							     NULL, 0, out, &out_size)))
+				goto out;
+		}
+
 		out_size = hash_cases[n].out_len - hash_cases[n].in_incr;
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_digest_do_final(c, &session, op1,
