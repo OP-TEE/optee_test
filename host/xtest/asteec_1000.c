@@ -4,6 +4,8 @@
  */
 
 #include <asteec.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +22,22 @@
  * ta/app_secrets/app_secrets_ta.c.
  */
 #define ASTEEC_TA_MAX_BUF_SIZE 4096
+
+/*
+ * Must match struct secret_blob_hdr, AS_MAGIC and AS_BLOB_VERSION defined in
+ * optee-os ta/app_secrets/app_secrets_ta.c.
+ */
+#define ASTEEC_BLOB_MAGIC	0x41534543
+#define ASTEEC_BLOB_VERSION	1
+#define ASTEEC_BLOB_IV_SIZE	12
+#define ASTEEC_BLOB_TAG_SIZE	16
+
+struct asteec_blob_hdr {
+	uint32_t magic;
+	uint32_t version;
+	uint8_t iv[ASTEEC_BLOB_IV_SIZE];
+	uint8_t tag[ASTEEC_BLOB_TAG_SIZE];
+};
 
 static TEEC_Result seal(uint32_t login_method, gid_t login_gid,
 			const void *plain, size_t plain_len,
@@ -73,6 +91,38 @@ static TEEC_Result unseal(uint32_t login_method, gid_t login_gid,
 		*plain = NULL;
 	}
 	return res;
+}
+
+static bool seal_pattern(ADBG_Case_t *c, uint8_t *plain, size_t plain_len,
+			 uint8_t **sealed, size_t *sealed_len)
+{
+	const struct asteec_blob_hdr *hdr = NULL;
+
+	memset(plain, 0xCC, plain_len);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, seal(TEEC_LOGIN_PUBLIC, 0, plain,
+					      plain_len, sealed, sealed_len)))
+		return false;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, *sealed_len, >, sizeof(*hdr)))
+		return false;
+
+	hdr = (const struct asteec_blob_hdr *)(const void *)*sealed;
+	return ADBG_EXPECT_COMPARE_UNSIGNED(c, hdr->magic, ==,
+					    ASTEEC_BLOB_MAGIC) &&
+	       ADBG_EXPECT_COMPARE_UNSIGNED(c, hdr->version, ==,
+					    ASTEEC_BLOB_VERSION);
+}
+
+static void expect_unseal_result(ADBG_Case_t *c, TEEC_Result expected,
+				 const uint8_t *sealed, size_t sealed_len)
+{
+	uint8_t *unsealed = NULL;
+	size_t unsealed_len = 0;
+
+	ADBG_EXPECT_TEEC_RESULT(c, expected,
+				unseal(TEEC_LOGIN_PUBLIC, 0, sealed, sealed_len,
+				       &unsealed, &unsealed_len));
+	free(unsealed);
 }
 
 static TEEC_Result probe_sealing_overhead(ADBG_Case_t *c, size_t *overhead)
@@ -267,21 +317,15 @@ static void xtest_asteec_test_1000(ADBG_Case_t *c)
 		size_t sealed1_len = 0;
 		size_t sealed2_len = 0;
 
-		memset(plain, 0xCC, sizeof(plain));
-
-		res = seal(TEEC_LOGIN_PUBLIC, 0, plain, sizeof(plain),
-			   &sealed1, &sealed1_len);
-		if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
-			res = seal(TEEC_LOGIN_PUBLIC, 0, plain, sizeof(plain),
-				   &sealed2, &sealed2_len);
-			if (ADBG_EXPECT_TEEC_SUCCESS(c, res) &&
-			    ADBG_EXPECT_COMPARE_UNSIGNED(c, sealed1_len, ==,
-							 sealed2_len)) {
-				ADBG_EXPECT_COMPARE_SIGNED(c,
-							   memcmp(sealed1, sealed2, sealed1_len),
-							   !=, 0);
-			}
-		}
+		if (seal_pattern(c, plain, sizeof(plain), &sealed1,
+				 &sealed1_len) &&
+		    seal_pattern(c, plain, sizeof(plain), &sealed2,
+				 &sealed2_len) &&
+		    ADBG_EXPECT_COMPARE_UNSIGNED(c, sealed1_len, ==,
+						 sealed2_len))
+			ADBG_EXPECT_COMPARE_SIGNED(c,
+						   memcmp(sealed1, sealed2, sealed1_len),
+						   !=, 0);
 
 		free(sealed1);
 		free(sealed2);
@@ -292,66 +336,143 @@ static void xtest_asteec_test_1000(ADBG_Case_t *c)
 	Do_ADBG_BeginSubCase(c, "Byte flip in sealed blob rejected");
 	{
 		uint8_t *sealed = NULL;
-		uint8_t *unsealed = NULL;
 		size_t sealed_len = 0;
-		size_t unsealed_len = 0;
 
-		memset(plain, 0xCC, sizeof(plain));
-
-		res = seal(TEEC_LOGIN_PUBLIC, 0, plain, sizeof(plain),
-			   &sealed, &sealed_len);
-		if (ADBG_EXPECT_TEEC_SUCCESS(c, res) &&
-		    ADBG_EXPECT_COMPARE_UNSIGNED(c, sealed_len, >, 0)) {
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len)) {
 			sealed[sealed_len / 2] ^= 0xff;
-			ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY,
-						unseal(TEEC_LOGIN_PUBLIC, 0,
-						       sealed, sealed_len,
-						       &unsealed,
-						       &unsealed_len));
+			expect_unseal_result(c, TEEC_ERROR_SECURITY,
+					     sealed, sealed_len);
 		}
 
 		free(sealed);
-		free(unsealed);
 	}
 	Do_ADBG_EndSubCase(c, "Byte flip in sealed blob rejected");
+
+	Do_ADBG_BeginSubCase(c, "Invalid magic in sealed blob rejected");
+	{
+		const uint32_t bad_magics[] = { 0, ~ASTEEC_BLOB_MAGIC };
+		struct asteec_blob_hdr *hdr = NULL;
+		uint8_t *sealed = NULL;
+		size_t sealed_len = 0;
+		size_t i = 0;
+
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len)) {
+			hdr = (struct asteec_blob_hdr *)(void *)sealed;
+			for (i = 0; i < ARRAY_SIZE(bad_magics); i++) {
+				Do_ADBG_Log("Setting magic to 0x%08" PRIx32,
+					    bad_magics[i]);
+				hdr->magic = bad_magics[i];
+				expect_unseal_result(c, TEEC_ERROR_SECURITY,
+						     sealed, sealed_len);
+			}
+		}
+
+		free(sealed);
+	}
+	Do_ADBG_EndSubCase(c, "Invalid magic in sealed blob rejected");
+
+	Do_ADBG_BeginSubCase(c, "Unsupported version in sealed blob rejected");
+	{
+		const uint32_t bad_versions[] = {
+			0, ASTEEC_BLOB_VERSION + 1, UINT32_MAX
+		};
+		struct asteec_blob_hdr *hdr = NULL;
+		uint8_t *sealed = NULL;
+		size_t sealed_len = 0;
+		size_t i = 0;
+
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len)) {
+			hdr = (struct asteec_blob_hdr *)(void *)sealed;
+			for (i = 0; i < ARRAY_SIZE(bad_versions); i++) {
+				Do_ADBG_Log("Setting version to %" PRIu32,
+					    bad_versions[i]);
+				hdr->version = bad_versions[i];
+				expect_unseal_result(c, TEEC_ERROR_SECURITY,
+						     sealed, sealed_len);
+			}
+		}
+
+		free(sealed);
+	}
+	Do_ADBG_EndSubCase(c, "Unsupported version in sealed blob rejected");
 
 	Do_ADBG_BeginSubCase(c, "Truncated sealed blob rejected");
 	{
 		uint8_t *sealed = NULL;
-		uint8_t *unsealed = NULL;
 		size_t sealed_len = 0;
-		size_t unsealed_len = 0;
 
-		memset(plain, 0xCC, sizeof(plain));
-
-		res = seal(TEEC_LOGIN_PUBLIC, 0, plain, sizeof(plain),
-			   &sealed, &sealed_len);
-		if (ADBG_EXPECT_TEEC_SUCCESS(c, res) &&
-		    ADBG_EXPECT_COMPARE_UNSIGNED(c, sealed_len, >, 0))
-			ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SECURITY,
-						unseal(TEEC_LOGIN_PUBLIC, 0,
-						       sealed, sealed_len - 1,
-						       &unsealed,
-						       &unsealed_len));
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len))
+			expect_unseal_result(c, TEEC_ERROR_SECURITY,
+					     sealed, sealed_len - 1);
 
 		free(sealed);
-		free(unsealed);
 	}
 	Do_ADBG_EndSubCase(c, "Truncated sealed blob rejected");
+
+	Do_ADBG_BeginSubCase(c, "Sealed blob with trailing bytes rejected");
+	{
+		uint8_t *sealed = NULL;
+		uint8_t *extended = NULL;
+		size_t sealed_len = 0;
+
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len)) {
+			extended = malloc(sealed_len + 1);
+			if (ADBG_EXPECT_NOT_NULL(c, extended)) {
+				memcpy(extended, sealed, sealed_len);
+				extended[sealed_len] = 0;
+				expect_unseal_result(c, TEEC_ERROR_SECURITY,
+						     extended, sealed_len + 1);
+			}
+		}
+
+		free(sealed);
+		free(extended);
+	}
+	Do_ADBG_EndSubCase(c, "Sealed blob with trailing bytes rejected");
+
+	Do_ADBG_BeginSubCase(c, "Sealed blob over maximum size rejected");
+	{
+		uint8_t junk[ASTEEC_TA_MAX_BUF_SIZE + 1] = { };
+
+		expect_unseal_result(c, TEEC_ERROR_BAD_PARAMETERS, junk,
+				     sizeof(junk));
+	}
+	Do_ADBG_EndSubCase(c, "Sealed blob over maximum size rejected");
 
 	Do_ADBG_BeginSubCase(c, "Undersized sealed blob rejected");
 	{
 		uint8_t junk[16] = { };
-		uint8_t *unsealed = NULL;
-		size_t unsealed_len = 0;
 
-		ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_BAD_PARAMETERS,
-					unseal(TEEC_LOGIN_PUBLIC, 0, junk,
-					       sizeof(junk), &unsealed,
-					       &unsealed_len));
-		free(unsealed);
+		expect_unseal_result(c, TEEC_ERROR_BAD_PARAMETERS, junk,
+				     sizeof(junk));
 	}
 	Do_ADBG_EndSubCase(c, "Undersized sealed blob rejected");
+
+	Do_ADBG_BeginSubCase(c, "Unseal into too small output buffer");
+	{
+		uint8_t *sealed = NULL;
+		uint8_t small[sizeof(plain) - 1] = { };
+		size_t sealed_len = 0;
+		size_t small_len = sizeof(small);
+
+		if (seal_pattern(c, plain, sizeof(plain), &sealed,
+				 &sealed_len)) {
+			res = asteec_unseal(TEEC_LOGIN_PUBLIC, 0, sealed,
+					    sealed_len, small, &small_len);
+			ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_SHORT_BUFFER,
+						res);
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, small_len, ==,
+						     sizeof(plain));
+		}
+
+		free(sealed);
+	}
+	Do_ADBG_EndSubCase(c, "Unseal into too small output buffer");
 
 	Do_ADBG_BeginSubCase(c, "Round-trip with user login");
 	{
