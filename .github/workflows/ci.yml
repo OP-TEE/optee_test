@@ -10,10 +10,6 @@ jobs:
     name: Build QEMUv8 image
     runs-on: ubuntu-latest
     steps:
-      - name: Host cleanup
-        run: |
-          wget https://raw.githubusercontent.com/OP-TEE/optee_os/refs/heads/master/scripts/ci-host-cleanup.sh
-          bash ci-host-cleanup.sh
       - uses: actions/checkout@v4
       - name: Create Dockerfile
         run: |
@@ -43,10 +39,6 @@ jobs:
             make_commands: |
               make -j$(nproc) check
     steps:
-      - name: Host cleanup
-        run: |
-          wget https://raw.githubusercontent.com/OP-TEE/optee_os/refs/heads/master/scripts/ci-host-cleanup.sh
-          bash ci-host-cleanup.sh
       - name: Checkout
         uses: actions/checkout@v4
       - name: Update Git config
