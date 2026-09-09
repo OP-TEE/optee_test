@@ -7725,10 +7725,10 @@ static void xtest_pkcs11_test_1024(ADBG_Case_t *c)
 	X509 *x509_cert = NULL;
 	uint8_t *x509_cert_der = NULL;
 	int x509_cert_der_size = 0;
-	X509_NAME *x509_subject_name = NULL;
+	const X509_NAME *x509_subject_name = NULL;
 	uint8_t *x509_subject_name_der = NULL;
 	int x509_subject_name_der_size = 0;
-	X509_NAME *x509_issuer_name = NULL;
+	const X509_NAME *x509_issuer_name = NULL;
 	uint8_t *x509_issuer_name_der = NULL;
 	int x509_issuer_name_der_size = 0;
 	ASN1_INTEGER *x509_serial_number = NULL;
