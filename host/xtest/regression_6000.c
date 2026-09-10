@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <adbg.h>
 #include <xtest_test.h>
@@ -2318,3 +2322,84 @@ exit:
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6021)
 ADBG_CASE_DEFINE(regression, 6021, xtest_tee_test_6021,
 		 "Modify and check persistent object usage");
+
+static bool fill_ree_fs(const char *dir, char *path, size_t path_size)
+{
+	char buf[4096] = { };
+	ssize_t count = 0;
+	int fd = -1;
+	int err = 0;
+	int len = 0;
+
+	len = snprintf(path, path_size, "%s/.xtest-truncate-enospc", dir);
+	if (len < 0 || (size_t)len >= path_size)
+		return false;
+
+	fd = open(path, O_CREAT | O_TRUNC | O_WRONLY, 0600);
+	if (fd < 0)
+		return false;
+
+	do {
+		count = write(fd, buf, sizeof(buf));
+	} while (count > 0 || (count < 0 && errno == EINTR));
+
+	err = errno;
+	close(fd);
+
+	if (count < 0 && err == ENOSPC)
+		return true;
+
+	unlink(path);
+	return false;
+}
+
+static void xtest_tee_test_6022(ADBG_Case_t *c)
+{
+	static const uint8_t object_id[] = "truncate-enospc";
+	const char *ree_fs_dir = getenv("XTEST_REE_FS_ENOSPC_DIR");
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	char filler_path[512] = { };
+	TEEC_Session sess = { };
+	uint32_t orig = 0;
+	uint32_t obj = 0;
+
+	if (!ree_fs_dir || !*ree_fs_dir) {
+		Do_ADBG_Log("Set XTEST_REE_FS_ENOSPC_DIR to run");
+		return;
+	}
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_create(&sess, (void *)object_id, sizeof(object_id),
+			TEE_DATA_FLAG_ACCESS_WRITE |
+			TEE_DATA_FLAG_ACCESS_WRITE_META |
+			TEE_DATA_FLAG_OVERWRITE,
+			0, data_00, sizeof(data_00), &obj,
+			TEE_STORAGE_PRIVATE_REE);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	if (!ADBG_EXPECT_TRUE(c, fill_ree_fs(ree_fs_dir, filler_path,
+					    sizeof(filler_path))))
+		goto out;
+
+	res = fs_trunc(&sess, obj, 64 * 1024);
+	unlink(filler_path);
+
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_STORAGE_NO_SPACE, res))
+		goto out;
+
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+	obj = 0;
+
+out:
+	if (obj && res != TEE_ERROR_TARGET_DEAD)
+		ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+
+	TEEC_CloseSession(&sess);
+}
+
+ADBG_CASE_DEFINE(regression, 6022, xtest_tee_test_6022,
+		 "Return ENOSPC from TEE_TruncateObjectData");
