@@ -7232,3 +7232,172 @@ static void xtest_tee_test_4019(ADBG_Case_t *c)
 
 ADBG_CASE_DEFINE(regression, 4019, xtest_tee_test_4019,
 		 "Test ECDH invalid curve attack rejection")
+
+static TEEC_Result
+ta_crypt_cmd_restrict_object_usage(ADBG_Case_t *c, 
+				   TEEC_Session *session,
+				   TEE_ObjectHandle object, 
+				   uint32_t usage)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)object <= UINT32_MAX);
+
+	op.params[0].value.a = (uint32_t)(uintptr_t)object;
+	op.params[0].value.b = usage;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(session,
+				 TA_CRYPT_CMD_RESTRICT_OBJECT_USAGE,
+				 &op, &ret_orig);
+	if (res != TEEC_SUCCESS)
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c,
+						    TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+
+	return res;
+}
+
+static TEEC_Result
+ta_crypt_cmd_copy_object_attributes(ADBG_Case_t *c, TEEC_Session *session,
+				    TEE_ObjectHandle dst,
+				    TEE_ObjectHandle src)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)dst <= UINT32_MAX);
+	assert((uintptr_t)src <= UINT32_MAX);
+
+	op.params[0].value.a = (uint32_t)(uintptr_t)dst;
+	op.params[0].value.b = (uint32_t)(uintptr_t)src;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(session,
+				 TA_CRYPT_CMD_COPY_OBJECT_ATTRIBUTES,
+				 &op, &ret_orig);
+	if (res != TEEC_SUCCESS)
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c,
+						    TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+
+	return res;
+}
+
+static TEEC_Result
+ta_crypt_cmd_get_object_usage(ADBG_Case_t *c, TEEC_Session *session,
+			      TEE_ObjectHandle object, uint32_t *usage)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint32_t ret_orig = 0;
+
+	assert((uintptr_t)object <= UINT32_MAX);
+
+	op.params[0].value.a = (uint32_t)(uintptr_t)object;
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+					 TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+
+	res = TEEC_InvokeCommand(session, TA_CRYPT_CMD_GET_OBJECT_USAGE,
+				 &op, &ret_orig);
+	if (res != TEEC_SUCCESS) {
+		(void)ADBG_EXPECT_TEEC_ERROR_ORIGIN(c,
+						    TEEC_ORIGIN_TRUSTED_APP,
+						    ret_orig);
+		return res;
+	}
+
+	*usage = op.params[1].value.a;
+
+	return res;
+}
+
+static void xtest_tee_test_4020(ADBG_Case_t *c)
+{
+	static const uint8_t key[16];
+	const uint32_t src_usage =
+		TEE_USAGE_ENCRYPT | TEE_USAGE_DECRYPT;
+	const uint32_t dst_usage = TEE_USAGE_ENCRYPT;
+	TEE_ObjectHandle src = TEE_HANDLE_NULL;
+	TEE_ObjectHandle dst = TEE_HANDLE_NULL;
+	TEE_Attribute attr = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	size_t attr_count = 0;
+	uint32_t usage = 0;
+	uint32_t ret_orig = 0;
+
+	res = xtest_teec_open_session(&session, &crypt_user_ta_uuid,
+				      NULL, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &session,
+						     TEE_TYPE_AES, 128,
+						     &src);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_allocate_transient_object(c, &session,
+						     TEE_TYPE_AES, 128,
+						     &dst);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	xtest_add_attr(&attr_count, &attr, TEE_ATTR_SECRET_VALUE,
+		       key, sizeof(key));
+
+	res = ta_crypt_cmd_populate_transient_object(c, &session, src,
+						     &attr, attr_count);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_restrict_object_usage(c, &session, src,
+						 src_usage);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_restrict_object_usage(c, &session, dst,
+						 dst_usage);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_get_object_usage(c, &session, src, &usage);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, usage, ==, src_usage))
+		goto out;
+
+	res = ta_crypt_cmd_get_object_usage(c, &session, dst, &usage);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, usage, ==, dst_usage))
+		goto out;
+
+	res = ta_crypt_cmd_copy_object_attributes(c, &session, dst, src);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	res = ta_crypt_cmd_get_object_usage(c, &session, dst, &usage);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, usage, ==, dst_usage);
+
+out:
+	if (dst != TEE_HANDLE_NULL)
+		(void)ta_crypt_cmd_free_transient_object(c, &session, dst);
+	if (src != TEE_HANDLE_NULL)
+		(void)ta_crypt_cmd_free_transient_object(c, &session, src);
+
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 4020, xtest_tee_test_4020,
+		 "TEE_CopyObjectAttributes1() intersects object usage");

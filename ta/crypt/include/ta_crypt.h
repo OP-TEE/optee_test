@@ -184,7 +184,7 @@
 #define TA_CRYPT_CMD_POPULATE_TRANSIENT_OBJECT  24
 
 /*
- * void TEE_CopyObjectAttributes(TEE_ObjectHandle destObject,
+ * TEE_Result TEE_CopyObjectAttributes1(TEE_ObjectHandle destObject,
  *              TEE_ObjectHandle srcObject);
  * in       params[0].value.a = destObject
  * in       params[0].value.b = srcObject
@@ -651,4 +651,18 @@
  */
 #define TA_CRYPT_CMD_ARITH_EXPMOD		84
 
+/*
+ * TEE_Result TEE_RestrictObjectUsage1(TEE_ObjectHandle object,
+ *				       uint32_t objectUsage);
+ * in	params[0].value.a = object
+ * in	params[0].value.b = objectUsage
+ */
+#define TA_CRYPT_CMD_RESTRICT_OBJECT_USAGE	85
+
+/*
+ * Retrieve objectUsage using TEE_GetObjectInfo1().
+ * in	params[0].value.a = object
+ * out	params[1].value.a = objectUsage
+ */
+#define TA_CRYPT_CMD_GET_OBJECT_USAGE		86
 #endif /*TA_CRYPT_H */

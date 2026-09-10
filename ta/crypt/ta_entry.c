@@ -157,6 +157,12 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_CRYPT_CMD_COPY_OBJECT_ATTRIBUTES:
 		return ta_entry_copy_object_attributes(nParamTypes, pParams);
 
+	case TA_CRYPT_CMD_RESTRICT_OBJECT_USAGE:
+		return ta_entry_restrict_object_usage(nParamTypes, pParams);
+
+	case TA_CRYPT_CMD_GET_OBJECT_USAGE:
+		return ta_entry_get_object_usage(nParamTypes, pParams);
+
 	case TA_CRYPT_CMD_GENERATE_KEY:
 		return ta_entry_generate_key(nParamTypes, pParams);
 

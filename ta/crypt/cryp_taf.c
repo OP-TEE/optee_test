@@ -511,6 +511,39 @@ TEE_Result ta_entry_copy_object_attributes(uint32_t param_type,
 	return TEE_CopyObjectAttributes1(dst, src);
 }
 
+TEE_Result ta_entry_restrict_object_usage(uint32_t param_type,
+					 TEE_Param params[4])
+{
+	TEE_ObjectHandle object = obj_handle_lookup(params[0].value.a);
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	return TEE_RestrictObjectUsage1(object, params[0].value.b);
+}
+
+TEE_Result ta_entry_get_object_usage(uint32_t param_type,
+				    TEE_Param params[4])
+{
+	TEE_ObjectHandle object = obj_handle_lookup(params[0].value.a);
+	TEE_ObjectInfo info = { };
+	TEE_Result res = TEE_SUCCESS;
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_VALUE_INPUT,
+			   TEE_PARAM_TYPE_VALUE_OUTPUT,
+			   TEE_PARAM_TYPE_NONE, TEE_PARAM_TYPE_NONE));
+
+	res = TEE_GetObjectInfo1(object, &info);
+	if (!res) {
+		params[1].value.a = info.objectUsage;
+		params[1].value.b = 0;
+	}
+
+	return res;
+}
+
 TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = obj_handle_lookup(params[0].value.a);
