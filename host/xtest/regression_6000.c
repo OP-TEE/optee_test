@@ -2318,3 +2318,87 @@ exit:
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6021)
 ADBG_CASE_DEFINE(regression, 6021, xtest_tee_test_6021,
 		 "Modify and check persistent object usage");
+
+static void xtest_tee_test_6022(ADBG_Case_t *c)
+{
+	const uint32_t flags = TEE_DATA_FLAG_ACCESS_WRITE |
+			       TEE_DATA_FLAG_ACCESS_WRITE_META;
+	char object_id[] = "xtest_write_position_limit";
+	uint8_t data[2] = { };
+	TEE_ObjectInfo obj_info = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session sess = { };
+	uint32_t orig = 0;
+	uint32_t obj = 0;
+
+	if (!is_storage_available(TEE_STORAGE_PRIVATE_RPMB)) {
+		Do_ADBG_Log("RPMB storage not available, skipping test 6022");
+		return;
+	}
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_create(&sess, object_id, sizeof(object_id),
+			flags | TEE_DATA_FLAG_OVERWRITE, 0, NULL, 0, &obj,
+			TEE_STORAGE_PRIVATE_RPMB);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_seek(&sess, obj, INT32_MAX, TEE_DATA_SEEK_CUR);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_get_obj_info(&sess, obj, &obj_info);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.dataPosition, ==,
+					  TEE_DATA_MAX_POSITION - 1))
+		goto exit;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.dataSize, ==, 0))
+		goto exit;
+
+	res = fs_write(&sess, obj, data, sizeof(data));
+	if (!ADBG_EXPECT_TEEC_RESULT(c, TEE_ERROR_OVERFLOW, res)) {
+		if (res == TEE_ERROR_TARGET_DEAD)
+			goto recover;
+		goto exit;
+	}
+
+	res = fs_get_obj_info(&sess, obj, &obj_info);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.dataPosition, ==,
+				     TEE_DATA_MAX_POSITION - 1);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, obj_info.dataSize, ==, 0);
+exit:
+	if (obj)
+		ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+	TEEC_CloseSession(&sess);
+	return;
+recover:
+	/* The broken implementation panics the TA. Reopen it for cleanup. */
+	TEEC_CloseSession(&sess);
+	obj = 0;
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_open(&sess, object_id, sizeof(object_id), flags, &obj,
+		      TEE_STORAGE_PRIVATE_RPMB);
+
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+
+	TEEC_CloseSession(&sess);
+}
+ADBG_CASE_DEFINE(regression, 6022, xtest_tee_test_6022,
+		 "Write past TEE_DATA_MAX_POSITION");
