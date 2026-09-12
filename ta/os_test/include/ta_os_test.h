@@ -52,5 +52,25 @@
 #define TA_OS_TEST_CMD_ASAN_MALLOC          40
 #define TA_OS_TEST_CMD_ASAN_UAF             41
 #define TA_OS_TEST_CMD_ASAN_MEMFUNC         42
+#define TA_OS_TEST_CMD_RISCV_VEC_CONTEXT    44
+
+/*
+ * Sub-tests of TA_OS_TEST_CMD_RISCV_VEC_CONTEXT, selected with
+ * params[0].value.a. params[0].value.b carries a seed which picks the
+ * register pattern. On failure params[1].value.a holds the index of the
+ * first vector register that did not survive, or 32 for the vector CSRs,
+ * and params[1].value.b holds vlenb.
+ */
+
+/* Return immediately without touching the vector unit */
+#define TA_RISCV_VEC_SUBTEST_NO_VECTOR	0
+/* Check the context survives a syscall issued through a bare ecall */
+#define TA_RISCV_VEC_SUBTEST_SYSCALL	1
+/* Read a vector CSR before any vector instruction, then check the file */
+#define TA_RISCV_VEC_SUBTEST_CSR_FIRST	2
+/* Leave the pattern in the registers and return */
+#define TA_RISCV_VEC_SUBTEST_TAINT	3
+/* Fail if the registers still hold the pattern left by an earlier TA */
+#define TA_RISCV_VEC_SUBTEST_CHECK_TAINT	4
 
 #endif /*TA_OS_TEST_H */

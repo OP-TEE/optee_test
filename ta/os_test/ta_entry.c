@@ -191,6 +191,9 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_ASAN_MEMFUNC:
 		return ta_entry_asan_memfunc();
 
+	case TA_OS_TEST_CMD_RISCV_VEC_CONTEXT:
+		return ta_entry_riscv_vec_context(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}

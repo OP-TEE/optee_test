@@ -16,6 +16,10 @@
 #include <ta_os_test.h>
 #include <tee_internal_api_extensions.h>
 
+#define RISCV_VECTOR_CTX_IMPLEMENTATION
+#include <riscv_vector_ctx.h>
+#include <tee_syscall_numbers.h>
+
 #include "os_test.h"
 #include "test_float_subj.h"
 #include "os_test_lib.h"
@@ -1721,3 +1725,214 @@ TEE_Result ta_entry_asan_uaf(void)
 	return TEE_ERROR_NOT_SUPPORTED;
 }
 #endif
+#ifdef RISCV_VECTOR_CTX_SUPPORTED
+/*
+ * Vector context switching.
+ *
+ * A TA runs with the vector unit disabled and is given it on the first
+ * vector instruction, or the first access to a vector CSR, that it
+ * executes. Every sub-test below therefore starts by taking that trap.
+ *
+ * The RISC-V vector calling convention has no callee-saved vector
+ * registers, so nothing may be assumed about v0..v31 across an ordinary
+ * call. The register checks here go through riscv_vector_ctx_syscall(),
+ * which reaches the TEE with a bare ecall and no compiler-generated code
+ * between installing the context and reading it back, so the whole file
+ * can be checked rather than a callee-saved subset.
+ */
+
+static TEE_Result vec_check_syscall(uint32_t seed, TEE_Param params[4])
+{
+	struct riscv_vector_ctx *expect = NULL;
+	struct riscv_vector_ctx *got = NULL;
+	TEE_Result res = TEE_ERROR_GENERIC;
+	unsigned long vlenb = 0;
+	unsigned long rc = 0;
+	int diff = 0;
+
+	vlenb = riscv_vector_ctx_vlenb();
+	params[1].value.b = vlenb;
+	if (vlenb > RISCV_VECTOR_CTX_VLENB_MAX) {
+		EMSG("Vector context: vlenb %lu is wider than this test "
+		     "was built for", vlenb);
+		return TEE_ERROR_NOT_SUPPORTED;
+	}
+
+	expect = TEE_Malloc(sizeof(*expect), TEE_MALLOC_FILL_ZERO);
+	got = TEE_Malloc(sizeof(*got), TEE_MALLOC_FILL_ZERO);
+	if (!expect || !got) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
+
+	riscv_vector_ctx_pattern(expect, seed, vlenb);
+
+	/*
+	 * TEE_SCN_WAIT leaves the TEE altogether: the thread is suspended,
+	 * the normal world runs, and the thread is later resumed through
+	 * thread_resume_from_rpc(). The TA context has to survive that.
+	 */
+	rc = riscv_vector_ctx_syscall(expect, got, TEE_SCN_WAIT, 10);
+	if (rc != TEE_SUCCESS) {
+		EMSG("Vector context: syscall failed: %#lx", rc);
+		res = (TEE_Result)rc;
+		goto out;
+	}
+
+	diff = riscv_vector_ctx_diff(expect, got, vlenb);
+	if (diff < 0) {
+		res = TEE_SUCCESS;
+		goto out;
+	}
+
+	params[1].value.a = diff;
+	if (diff == RISCV_VECTOR_CTX_NUM_REGS)
+		EMSG("Vector context: CSRs changed, vl %lu/%lu vtype %#lx/%#lx"
+		     " vcsr %#lx/%#lx", expect->vl, got->vl, expect->vtype,
+		     got->vtype, expect->vcsr, got->vcsr);
+	else
+		EMSG("Vector context: v%d was the first register lost", diff);
+	res = TEE_ERROR_GENERIC;
+out:
+	TEE_Free(expect);
+	TEE_Free(got);
+
+	return res;
+}
+
+static TEE_Result vec_check_csr_first(TEE_Param params[4])
+{
+	unsigned long vlenb = 0;
+
+	/*
+	 * Reading vlenb touches the vector unit without issuing a vector
+	 * instruction. With VS Off that traps as an illegal instruction just
+	 * as an instruction would, so getting an answer at all is the check:
+	 * a TEE that decodes only the instructions and not the CSRs kills
+	 * the TA here instead of handing it a context.
+	 *
+	 * Nothing is asserted about the register file. The vector calling
+	 * convention has no callee-saved vector registers, and this TA is
+	 * compiled for a hart with the extension, so the compiler is free to
+	 * use v0..v31 in ordinary C between the trap and any read we could
+	 * make. What the registers must not contain is checked against a
+	 * known pattern by the taint sub-test instead.
+	 */
+	vlenb = riscv_vector_ctx_vlenb();
+	params[1].value.b = vlenb;
+
+	if (!vlenb || vlenb > RISCV_VECTOR_CTX_VLENB_MAX ||
+	    (vlenb & (vlenb - 1))) {
+		EMSG("Vector context: implausible vlenb %lu", vlenb);
+		return TEE_ERROR_GENERIC;
+	}
+
+	return TEE_SUCCESS;
+}
+
+static TEE_Result vec_check_taint(uint32_t seed, TEE_Param params[4])
+{
+	struct riscv_vector_ctx *taint = NULL;
+	struct riscv_vector_ctx *got = NULL;
+	TEE_Result res = TEE_SUCCESS;
+	unsigned long vlenb = 0;
+	size_t reg = 0;
+
+	vlenb = riscv_vector_ctx_vlenb();
+	params[1].value.b = vlenb;
+	if (!vlenb || vlenb > RISCV_VECTOR_CTX_VLENB_MAX)
+		return TEE_ERROR_NOT_SUPPORTED;
+
+	taint = TEE_Malloc(sizeof(*taint), TEE_MALLOC_FILL_ZERO);
+	got = TEE_Malloc(sizeof(*got), TEE_MALLOC_FILL_ZERO);
+	if (!taint || !got) {
+		res = TEE_ERROR_OUT_OF_MEMORY;
+		goto out;
+	}
+
+	riscv_vector_ctx_store(got);
+	riscv_vector_ctx_pattern(taint, seed, vlenb);
+
+	for (reg = 0; reg < RISCV_VECTOR_CTX_NUM_REGS; reg++) {
+		if (!memcmp(got->vregs + reg * vlenb,
+			    taint->vregs + reg * vlenb, vlenb)) {
+			EMSG("Vector context: v%zu still holds what an "
+			     "earlier TA left there", reg);
+			params[1].value.a = reg;
+			res = TEE_ERROR_GENERIC;
+			break;
+		}
+	}
+out:
+	TEE_Free(taint);
+	TEE_Free(got);
+
+	return res;
+}
+
+TEE_Result ta_entry_riscv_vec_context(uint32_t param_types,
+				      TEE_Param params[4])
+{
+	uint32_t subtest = 0;
+	uint32_t seed = 0;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+					   TEE_PARAM_TYPE_VALUE_OUTPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	subtest = params[0].value.a;
+	seed = params[0].value.b;
+	params[1].value.a = 0;
+	params[1].value.b = 0;
+
+	switch (subtest) {
+	case TA_RISCV_VEC_SUBTEST_NO_VECTOR:
+		/*
+		 * Used by the normal world to check that its own context
+		 * survives a call into a TA which never enables the vector
+		 * unit, the path where the TEE elides the restore on the
+		 * way out.
+		 */
+		return TEE_SUCCESS;
+
+	case TA_RISCV_VEC_SUBTEST_SYSCALL:
+		return vec_check_syscall(seed, params);
+
+	case TA_RISCV_VEC_SUBTEST_CSR_FIRST:
+		return vec_check_csr_first(params);
+
+	case TA_RISCV_VEC_SUBTEST_TAINT: {
+		struct riscv_vector_ctx *taint = NULL;
+		unsigned long vlenb = riscv_vector_ctx_vlenb();
+
+		params[1].value.b = vlenb;
+		if (!vlenb || vlenb > RISCV_VECTOR_CTX_VLENB_MAX)
+			return TEE_ERROR_NOT_SUPPORTED;
+
+		taint = TEE_Malloc(sizeof(*taint), TEE_MALLOC_FILL_ZERO);
+		if (!taint)
+			return TEE_ERROR_OUT_OF_MEMORY;
+
+		riscv_vector_ctx_pattern(taint, seed, vlenb);
+		riscv_vector_ctx_load(taint);
+		TEE_Free(taint);
+
+		return TEE_SUCCESS;
+	}
+
+	case TA_RISCV_VEC_SUBTEST_CHECK_TAINT:
+		return vec_check_taint(seed, params);
+
+	default:
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+}
+#else /*RISCV_VECTOR_CTX_SUPPORTED*/
+TEE_Result ta_entry_riscv_vec_context(uint32_t param_types __unused,
+				      TEE_Param params[4] __unused)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+#endif /*RISCV_VECTOR_CTX_SUPPORTED*/

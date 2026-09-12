@@ -46,6 +46,8 @@
 #include "xtest_helpers.h"
 #include "xtest_test.h"
 #include "xtest_uuid_helpers.h"
+#define RISCV_VECTOR_CTX_IMPLEMENTATION
+#include <riscv_vector_ctx.h>
 
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -3475,3 +3477,271 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1042, xtest_tee_test_1042,
 		 "Test ASAN (Memory address sanitizer)");
+
+
+/*
+ * RISC-V vector context switching.
+ *
+ * A TA runs with the vector unit disabled and is given it on the first
+ * vector instruction, or vector CSR access, it executes, while the normal
+ * world context is switched whenever a thread crosses into the TEE and
+ * back. Both halves are checked here.
+ */
+
+static TEEC_Result vec_invoke(TEEC_Session *session, uint32_t subtest,
+			      uint32_t seed, uint32_t *bad_reg,
+			      uint32_t *vlenb, uint32_t *ret_orig)
+{
+	TEEC_Operation op = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_VALUE_OUTPUT,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = subtest;
+	op.params[0].value.b = seed;
+
+	res = TEEC_InvokeCommand(session, TA_OS_TEST_CMD_RISCV_VEC_CONTEXT,
+				 &op, ret_orig);
+	if (bad_reg)
+		*bad_reg = op.params[1].value.a;
+	if (vlenb)
+		*vlenb = op.params[1].value.b;
+
+	return res;
+}
+
+static void vec_log_bad_reg(uint32_t reg)
+{
+	if (reg == 32)
+		Do_ADBG_Log("    the vector CSRs were not preserved");
+	else
+		Do_ADBG_Log("    v%u was the first register not preserved",
+			    reg);
+}
+
+static void vec_check_ta_subtest(ADBG_Case_t *c, TEEC_Session *session,
+				 uint32_t subtest, uint32_t seed)
+{
+	uint32_t ret_orig = 0;
+	uint32_t bad_reg = 0;
+	uint32_t vlenb = 0;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+
+	res = vec_invoke(session, subtest, seed, &bad_reg, &vlenb, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		vec_log_bad_reg(bad_reg);
+}
+
+#ifdef RISCV_VECTOR_CTX_SUPPORTED
+struct vec_ree_arg {
+	TEEC_Session *session;
+	uint32_t subtest;
+	uint32_t seed;
+	uint32_t bad_reg;
+	uint32_t vlenb;
+	uint32_t ret_orig;
+};
+
+static unsigned long vec_ree_invoke(void *a)
+{
+	struct vec_ree_arg *arg = a;
+
+	return vec_invoke(arg->session, arg->subtest, arg->seed, &arg->bad_reg,
+			  &arg->vlenb, &arg->ret_orig);
+}
+
+/*
+ * Holds a pattern in this process' vector registers across an invoke and
+ * checks that the TEE gave them back. This is the normal world half of the
+ * domain switch.
+ *
+ * The vector calling convention allows any call to clobber any vector
+ * register, so strictly this only holds because neither libteec nor the
+ * kernel's syscall path uses vector. That is true of both today and is
+ * what makes the check worth having: if the TEE fails to put the normal
+ * world context back, this is where it shows.
+ */
+static void vec_check_ree_preserved(ADBG_Case_t *c, TEEC_Session *session,
+				    uint32_t subtest, uint32_t seed)
+{
+	struct riscv_vector_ctx *expect = NULL;
+	struct riscv_vector_ctx *got = NULL;
+	struct vec_ree_arg arg = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	unsigned long vlenb = riscv_vector_ctx_vlenb();
+	int diff = 0;
+
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, vlenb, <=,
+					  (unsigned long)
+					  RISCV_VECTOR_CTX_VLENB_MAX))
+		return;
+
+	expect = calloc(1, sizeof(*expect));
+	got = calloc(1, sizeof(*got));
+	if (!ADBG_EXPECT_NOT_NULL(c, expect) ||
+	    !ADBG_EXPECT_NOT_NULL(c, got))
+		goto out;
+
+	arg.session = session;
+	arg.subtest = subtest;
+	arg.seed = seed;
+
+	riscv_vector_ctx_pattern(expect, seed, vlenb);
+
+	res = (TEEC_Result)riscv_vector_ctx_roundtrip(expect, got,
+						      vec_ree_invoke, &arg);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		vec_log_bad_reg(arg.bad_reg);
+		goto out;
+	}
+
+	diff = riscv_vector_ctx_diff(expect, got, vlenb);
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, diff, ==, -1))
+		vec_log_bad_reg((uint32_t)diff);
+out:
+	free(expect);
+	free(got);
+}
+#endif /*RISCV_VECTOR_CTX_SUPPORTED*/
+
+struct test_1046_thread_arg {
+	pthread_t thr;
+	uint32_t seed;
+	TEEC_Result res;
+	uint32_t bad_reg;
+};
+
+static void *test_1046_thread(void *a)
+{
+	struct test_1046_thread_arg *arg = a;
+	TEEC_Session session = { };
+	uint32_t ret_orig = 0;
+	size_t n = 0;
+
+	arg->res = xtest_teec_open_session(&session, &os_test_ta_uuid, NULL,
+					   &ret_orig);
+	if (arg->res != TEEC_SUCCESS)
+		return NULL;
+
+	for (n = 0; n < 4; n++) {
+		arg->res = vec_invoke(&session, TA_RISCV_VEC_SUBTEST_SYSCALL,
+				      arg->seed, &arg->bad_reg, NULL,
+				      &ret_orig);
+		if (arg->res != TEEC_SUCCESS)
+			break;
+	}
+
+	TEEC_CloseSession(&session);
+
+	return NULL;
+}
+
+static void xtest_tee_test_1046(ADBG_Case_t *c)
+{
+	struct test_1046_thread_arg arg[NUM_THREADS] = { };
+	TEEC_Session session = { };
+	TEEC_Session tainted = { };
+	uint32_t ret_orig = 0;
+	uint32_t bad_reg = 0;
+	uint32_t vlenb = 0;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	size_t nt = NUM_THREADS;
+	size_t n = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		return;
+
+	res = vec_invoke(&session, TA_RISCV_VEC_SUBTEST_SYSCALL, 0x11,
+			 &bad_reg, &vlenb, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log("TA has no RISC-V vector context test - skip");
+		goto out;
+	}
+	Do_ADBG_Log("    vlenb %u, VLEN %u", vlenb, vlenb * 8);
+
+	Do_ADBG_BeginSubCase(c, "TA context across a syscall");
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		vec_log_bad_reg(bad_reg);
+	Do_ADBG_EndSubCase(c, "TA context across a syscall");
+
+	/*
+	 * Reading a vector CSR traps with VS Off exactly as a vector
+	 * instruction does, so a TEE that decodes only the instructions
+	 * kills the TA here instead of handing it a context.
+	 */
+	Do_ADBG_BeginSubCase(c, "TA reads a vector CSR");
+	vec_check_ta_subtest(c, &session, TA_RISCV_VEC_SUBTEST_CSR_FIRST,
+			     0x22);
+	Do_ADBG_EndSubCase(c, "TA reads a vector CSR");
+
+	Do_ADBG_BeginSubCase(c, "TA context is not carried between instances");
+	res = xtest_teec_open_session(&tainted, &os_test_ta_uuid, NULL,
+				      &ret_orig);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		ADBG_EXPECT_TEEC_SUCCESS(c,
+			vec_invoke(&tainted, TA_RISCV_VEC_SUBTEST_TAINT, 0x33,
+				   NULL, NULL, &ret_orig));
+		TEEC_CloseSession(&tainted);
+
+		memset(&tainted, 0, sizeof(tainted));
+		res = xtest_teec_open_session(&tainted, &os_test_ta_uuid, NULL,
+					      &ret_orig);
+		if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+			vec_check_ta_subtest(c, &tainted,
+					     TA_RISCV_VEC_SUBTEST_CHECK_TAINT,
+					     0x33);
+			TEEC_CloseSession(&tainted);
+		}
+	}
+	Do_ADBG_EndSubCase(c, "TA context is not carried between instances");
+
+#ifdef RISCV_VECTOR_CTX_SUPPORTED
+	/*
+	 * The TEE saves the normal world context on the way in. On the way
+	 * out it puts it back, unless nothing in the TEE ever enabled the
+	 * vector unit, in which case the registers were never disturbed and
+	 * the restore is skipped. Cover both with a TA command that uses
+	 * vector and one that does not.
+	 */
+	Do_ADBG_BeginSubCase(c, "REE context across an invoke using vector");
+	vec_check_ree_preserved(c, &session, TA_RISCV_VEC_SUBTEST_SYSCALL,
+				0x44);
+	Do_ADBG_EndSubCase(c, "REE context across an invoke using vector");
+
+	Do_ADBG_BeginSubCase(c, "REE context across an invoke not using it");
+	vec_check_ree_preserved(c, &session, TA_RISCV_VEC_SUBTEST_NO_VECTOR,
+				0x55);
+	Do_ADBG_EndSubCase(c, "REE context across an invoke not using it");
+#else /*RISCV_VECTOR_CTX_SUPPORTED*/
+	/*
+	 * xtest itself has to be built for a hart with the vector extension
+	 * to hold a pattern in the vector registers across the call, which
+	 * is a property of the toolchain the normal world was built with,
+	 * not of what the TEE supports.
+	 */
+	Do_ADBG_Log("xtest built without the vector extension - the normal "
+		    "world half of the domain switch is not checked");
+#endif /*RISCV_VECTOR_CTX_SUPPORTED*/
+
+	Do_ADBG_BeginSubCase(c, "Concurrent TA contexts");
+	for (n = 0; n < nt; n++) {
+		arg[n].seed = 0x80 + n;
+		if (!ADBG_EXPECT(c, 0, pthread_create(&arg[n].thr, NULL,
+						      test_1046_thread,
+						      arg + n)))
+			nt = n; /* break loop and start cleanup */
+	}
+	for (n = 0; n < nt; n++) {
+		ADBG_EXPECT(c, 0, pthread_join(arg[n].thr, NULL));
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, arg[n].res))
+			vec_log_bad_reg(arg[n].bad_reg);
+	}
+	Do_ADBG_EndSubCase(c, "Concurrent TA contexts");
+
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1046, xtest_tee_test_1046,
+		 "Test RISC-V vector context switching");
