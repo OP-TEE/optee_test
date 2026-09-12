@@ -16,6 +16,9 @@
 #include <ta_os_test.h>
 #include <tee_internal_api_extensions.h>
 
+#define RISCV_FP_CTX_IMPLEMENTATION
+#include <riscv_fp_ctx.h>
+
 #include "os_test.h"
 #include "test_float_subj.h"
 #include "os_test_lib.h"
@@ -1721,3 +1724,184 @@ TEE_Result ta_entry_asan_uaf(void)
 	return TEE_ERROR_NOT_SUPPORTED;
 }
 #endif
+#ifdef RISCV_FP_CTX_SUPPORTED
+/*
+ * Floating-point context switching.
+ *
+ * A TA runs with the floating-point unit disabled and is given it on the
+ * first floating-point instruction it executes, so every one of these
+ * sub-tests starts by trapping into the TEE and being handed a context.
+ * What each one then checks is that the context comes back intact across a
+ * different kind of excursion out of the TA.
+ */
+
+static unsigned long fp_call_syscall(void *arg __unused)
+{
+	TEE_Time t = { };
+
+	/*
+	 * A syscall handled entirely inside the TEE. The TA's context is
+	 * saved on the way in and has to be handed back on the first
+	 * floating-point instruction after the return.
+	 */
+	TEE_GetSystemTime(&t);
+
+	return TEE_SUCCESS;
+}
+
+static unsigned long fp_call_rpc(void *arg)
+{
+	uint32_t *ms = arg;
+
+	/*
+	 * TEE_Wait() leaves the TEE altogether: the thread is suspended,
+	 * the normal world runs, and the thread is later resumed through
+	 * thread_resume_from_rpc(). Both the TA context and the normal
+	 * world context have to survive that.
+	 */
+	return TEE_Wait(*ms);
+}
+
+static unsigned long fp_call_crypto(void *arg __unused)
+{
+	TEE_OperationHandle op = TEE_HANDLE_NULL;
+	uint8_t digest[32] = { };
+	size_t digest_len = sizeof(digest);
+	static const uint8_t msg[] = "floating-point context switch";
+	TEE_Result res = TEE_ERROR_GENERIC;
+
+	/*
+	 * Crypto work is done by the TEE on the TA's behalf and may open a
+	 * secure kernel floating-point section of its own, which has to
+	 * take the registers from the TA and give them back.
+	 */
+	res = TEE_AllocateOperation(&op, TEE_ALG_SHA256, TEE_MODE_DIGEST, 0);
+	if (res)
+		return res;
+
+	res = TEE_DigestDoFinal(op, msg, sizeof(msg), digest, &digest_len);
+
+	TEE_FreeOperation(op);
+
+	return res;
+}
+
+static TEE_Result fp_check_roundtrip(uint32_t seed, TEE_Param params[4],
+				     unsigned long (*fn)(void *), void *arg)
+{
+	struct riscv_fp_ctx expect = { };
+	struct riscv_fp_ctx got = { };
+	unsigned long res = 0;
+	int diff = 0;
+
+	riscv_fp_ctx_pattern(&expect, seed);
+
+	res = riscv_fp_ctx_roundtrip(&expect, &got, fn, arg);
+	if (res != TEE_SUCCESS) {
+		EMSG("FP context: call failed: %#lx", res);
+		return (TEE_Result)res;
+	}
+
+	diff = riscv_fp_ctx_diff(&expect, &got);
+	if (diff < 0)
+		return TEE_SUCCESS;
+
+	params[1].value.a = diff;
+	if (diff == 12)
+		EMSG("FP context: fcsr changed, expected %#" PRIx32
+		     " got %#" PRIx32, expect.fcsr, got.fcsr);
+	else
+		EMSG("FP context: fs%d changed, expected %#" PRIx64
+		     " got %#" PRIx64, diff, expect.fs[diff], got.fs[diff]);
+
+	return TEE_ERROR_GENERIC;
+}
+
+TEE_Result ta_entry_riscv_fp_context(uint32_t param_types,
+				     TEE_Param params[4])
+{
+	uint32_t wait_ms = 10;
+	uint32_t subtest = 0;
+	uint32_t seed = 0;
+
+	if (param_types != TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_INPUT,
+					   TEE_PARAM_TYPE_VALUE_OUTPUT,
+					   TEE_PARAM_TYPE_NONE,
+					   TEE_PARAM_TYPE_NONE))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	subtest = params[0].value.a;
+	seed = params[0].value.b;
+	params[1].value.a = 0;
+	params[1].value.b = 0;
+
+	switch (subtest) {
+	case TA_RISCV_FP_SUBTEST_NO_FP:
+		/*
+		 * Used by the normal world to check that its own context
+		 * survives a call into a TA which never enables the
+		 * floating-point unit, the path where the TEE elides the
+		 * restore on the way out.
+		 */
+		return TEE_SUCCESS;
+
+	case TA_RISCV_FP_SUBTEST_SYSCALL:
+		return fp_check_roundtrip(seed, params, fp_call_syscall, NULL);
+
+	case TA_RISCV_FP_SUBTEST_RPC:
+		return fp_check_roundtrip(seed, params, fp_call_rpc, &wait_ms);
+
+	case TA_RISCV_FP_SUBTEST_CRYPTO:
+		return fp_check_roundtrip(seed, params, fp_call_crypto, NULL);
+
+	case TA_RISCV_FP_SUBTEST_TAINT: {
+		struct riscv_fp_ctx taint = { };
+
+		riscv_fp_ctx_pattern(&taint, seed);
+		riscv_fp_ctx_load(&taint);
+
+		return TEE_SUCCESS;
+	}
+
+	case TA_RISCV_FP_SUBTEST_CHECK_TAINT: {
+		struct riscv_fp_ctx taint = { };
+		struct riscv_fp_ctx got = { };
+		size_t n = 0;
+
+		/*
+		 * Read the registers before writing any of them, so that
+		 * the first floating-point instruction this TA executes is
+		 * the one below. Whatever an earlier TA left behind must
+		 * not be visible here.
+		 *
+		 * Nothing is asserted about what the registers do hold: on
+		 * the way back to the normal world the TEE puts the normal
+		 * world context back, so by the time this TA runs they
+		 * carry that rather than a known constant.
+		 */
+		riscv_fp_ctx_store(&got);
+		riscv_fp_ctx_pattern(&taint, seed);
+
+		for (n = 0; n < ARRAY_SIZE(got.fs); n++) {
+			if (got.fs[n] == taint.fs[n]) {
+				EMSG("FP context: fs%zu still holds %#" PRIx64
+				     " left by an earlier TA", n, taint.fs[n]);
+				params[1].value.a = n;
+				return TEE_ERROR_GENERIC;
+			}
+		}
+
+		return TEE_SUCCESS;
+	}
+
+	default:
+		return TEE_ERROR_BAD_PARAMETERS;
+	}
+}
+#else /*RISCV_FP_CTX_SUPPORTED*/
+TEE_Result ta_entry_riscv_fp_context(uint32_t param_types __unused,
+				     TEE_Param params[4] __unused)
+{
+	return TEE_ERROR_NOT_SUPPORTED;
+}
+#endif /*RISCV_FP_CTX_SUPPORTED*/

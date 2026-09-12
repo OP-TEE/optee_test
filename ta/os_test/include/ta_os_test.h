@@ -52,5 +52,27 @@
 #define TA_OS_TEST_CMD_ASAN_MALLOC          40
 #define TA_OS_TEST_CMD_ASAN_UAF             41
 #define TA_OS_TEST_CMD_ASAN_MEMFUNC         42
+#define TA_OS_TEST_CMD_RISCV_FP_CONTEXT     43
+
+/*
+ * Sub-tests of TA_OS_TEST_CMD_RISCV_FP_CONTEXT, selected with
+ * params[0].value.a. params[0].value.b carries a seed which picks the
+ * register pattern, so that one invocation can be told apart from another.
+ * On failure params[1].value.a holds the index of the first field that did
+ * not survive, 0..11 for fs0..fs11 and 12 for fcsr.
+ */
+
+/* Return immediately without touching the floating-point unit */
+#define TA_RISCV_FP_SUBTEST_NO_FP	0
+/* Check the context survives a syscall that stays inside the TEE */
+#define TA_RISCV_FP_SUBTEST_SYSCALL	1
+/* Check the context survives an RPC out to the normal world */
+#define TA_RISCV_FP_SUBTEST_RPC		2
+/* Check the context survives a crypto operation carried out by the TEE */
+#define TA_RISCV_FP_SUBTEST_CRYPTO	3
+/* Leave the pattern in the registers and return */
+#define TA_RISCV_FP_SUBTEST_TAINT	4
+/* Fail if the registers still hold the pattern left by an earlier TA */
+#define TA_RISCV_FP_SUBTEST_CHECK_TAINT	5
 
 #endif /*TA_OS_TEST_H */
