@@ -28,3 +28,4 @@ srcs-$(CFG_TA_PAUTH) += ta_arm_pauth.c
 cflags-$(CFG_TA_PAUTH) += -march=armv8.3-a
 endif
 srcs-y += attestation.c
+srcs-y += hardening.c

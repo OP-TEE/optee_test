@@ -52,5 +52,26 @@
 #define TA_OS_TEST_CMD_ASAN_MALLOC          40
 #define TA_OS_TEST_CMD_ASAN_UAF             41
 #define TA_OS_TEST_CMD_ASAN_MEMFUNC         42
+#define TA_OS_TEST_CMD_ASLR                 43
+#define TA_OS_TEST_CMD_STACK_PROTECTOR      44
+#define TA_OS_TEST_CMD_STACK_SMASH          45
+
+/*
+ * TA_OS_TEST_CMD_ASLR
+ * [out] value[0].a	TA_OS_TEST_ASLR_* flags
+ * [out] value[1].a/b	low/high 32 bits of a code address in the TA
+ * [out] value[2].a/b	low/high 32 bits of a data address in the TA
+ */
+#define TA_OS_TEST_ASLR_ENABLED			(1U << 0)
+
+/*
+ * TA_OS_TEST_CMD_STACK_PROTECTOR
+ * [out] value[0].a	TA_OS_TEST_STACK_PROTECTOR_* flags
+ */
+#define TA_OS_TEST_STACK_PROTECTOR_ENABLED	(1U << 0)
+#define TA_OS_TEST_STACK_PROTECTOR_RANDOMIZED	(1U << 1)
+#define TA_OS_TEST_STACK_PROTECTOR_CANARY	(1U << 2)
+
+/* TA_OS_TEST_CMD_STACK_SMASH: overflows a stack buffer, must panic the TA */
 
 #endif /*TA_OS_TEST_H */

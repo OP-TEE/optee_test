@@ -51,5 +51,11 @@ TEE_Result ta_entry_asan_global(void);
 TEE_Result ta_entry_asan_malloc(void);
 TEE_Result ta_entry_asan_memfunc(void);
 TEE_Result ta_entry_asan_uaf(void);
+extern void *__stack_chk_guard;
+
+TEE_Result ta_entry_aslr(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_entry_stack_protector(uint32_t param_types,
+				    TEE_Param params[4]);
+TEE_Result ta_entry_stack_smash(uint32_t param_types, TEE_Param params[4]);
 
 #endif /*OS_TEST_H */
