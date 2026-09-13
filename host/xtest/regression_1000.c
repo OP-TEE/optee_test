@@ -3492,3 +3492,172 @@ static void xtest_tee_test_1043(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1043, xtest_tee_test_1043,
 		 "Reject a user TA with the nil UUID");
 
+#define ASLR_SAMPLES	8
+#define PAGE_SIZE_4K	4096
+
+static void xtest_tee_test_1047(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint32_t flags = 0;
+	uint64_t code[ASLR_SAMPLES] = { };
+	uint64_t data[ASLR_SAMPLES] = { };
+	size_t distinct = 0;
+	size_t n = 0;
+	size_t m = 0;
+
+	Do_ADBG_BeginSubCase(c, "Core ASLR");
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1047 -   skip test, pseudo TA not found");
+	} else if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+						 TEEC_NONE, TEEC_NONE);
+		res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_ASLR,
+					 &op, &ret_orig);
+		flags = op.params[0].value.a;
+		if (!(flags & PTA_INVOKE_TESTS_ASLR_ENABLED)) {
+			Do_ADBG_Log(" - 1047 -   CFG_CORE_ASLR=n, skip");
+		} else {
+			bool rnd = flags & PTA_INVOKE_TESTS_ASLR_RANDOMIZED;
+
+			ADBG_EXPECT_TEEC_SUCCESS(c, res);
+			ADBG_EXPECT_TRUE(c, rnd);
+		}
+		TEEC_CloseSession(&session);
+	}
+
+	Do_ADBG_EndSubCase(c, "Core ASLR");
+
+	Do_ADBG_BeginSubCase(c, "TA ASLR");
+
+	for (n = 0; n < ASLR_SAMPLES; n++) {
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+			goto out;
+
+		memset(&op, 0, sizeof(op));
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT,
+						 TEEC_VALUE_OUTPUT,
+						 TEEC_VALUE_OUTPUT, TEEC_NONE);
+		res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASLR, &op,
+					 &ret_orig);
+		TEEC_CloseSession(&session);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		flags = op.params[0].value.a;
+		code[n] = ((uint64_t)op.params[1].value.b << 32) |
+			  op.params[1].value.a;
+		data[n] = ((uint64_t)op.params[2].value.b << 32) |
+			  op.params[2].value.a;
+	}
+
+	if (!(flags & TA_OS_TEST_ASLR_ENABLED)) {
+		Do_ADBG_Log(" - 1047 -   CFG_TA_ASLR=n, skip");
+		goto out;
+	}
+
+	for (n = 0; n < ASLR_SAMPLES; n++) {
+		for (m = 0; m < n; m++)
+			if (code[m] == code[n])
+				break;
+		if (m == n)
+			distinct++;
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, (code[n] - code[0]) %
+					     PAGE_SIZE_4K, ==, 0);
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, data[n] - code[n], ==,
+					     data[0] - code[0]);
+	}
+	Do_ADBG_Log(" - 1047 -   %zu distinct TA load addresses in %d loads",
+		    distinct, ASLR_SAMPLES);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, distinct, >, 1);
+
+out:
+	Do_ADBG_EndSubCase(c, "TA ASLR");
+}
+ADBG_CASE_DEFINE(regression, 1047, xtest_tee_test_1047, "Test ASLR");
+
+static void xtest_tee_test_1048(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint32_t flags = 0;
+
+	Do_ADBG_BeginSubCase(c, "Core stack canaries");
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1048 -   skip test, pseudo TA not found");
+	} else if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+						 TEEC_NONE, TEEC_NONE);
+		res = TEEC_InvokeCommand(&session,
+					 PTA_INVOKE_TESTS_CMD_STACK_PROTECTOR,
+					 &op, &ret_orig);
+		flags = op.params[0].value.a;
+		if (ADBG_EXPECT_TEEC_SUCCESS(c, res) &&
+		    !(flags & PTA_INVOKE_TESTS_STACK_PROTECTOR_ENABLED)) {
+			Do_ADBG_Log(" - 1048 -   no core protector, skip");
+		} else {
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, flags, ==,
+				PTA_INVOKE_TESTS_STACK_PROTECTOR_ENABLED |
+				PTA_INVOKE_TESTS_STACK_PROTECTOR_RANDOMIZED |
+				PTA_INVOKE_TESTS_STACK_PROTECTOR_CANARY |
+				PTA_INVOKE_TESTS_STACK_PROTECTOR_DETECTED);
+		}
+		TEEC_CloseSession(&session);
+	}
+
+	Do_ADBG_EndSubCase(c, "Core stack canaries");
+
+	Do_ADBG_BeginSubCase(c, "TA stack canaries");
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		goto out;
+
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_STACK_PROTECTOR,
+				 &op, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto close;
+
+	flags = op.params[0].value.a;
+	if (!(flags & TA_OS_TEST_STACK_PROTECTOR_ENABLED)) {
+		Do_ADBG_Log(" - 1048 -   CFG_TA_STACK_PROTECTOR*=n, skip");
+		goto close;
+	}
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, flags, ==,
+				     TA_OS_TEST_STACK_PROTECTOR_ENABLED |
+				     TA_OS_TEST_STACK_PROTECTOR_RANDOMIZED |
+				     TA_OS_TEST_STACK_PROTECTOR_CANARY);
+
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = 256;
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				TEEC_InvokeCommand(&session,
+						   TA_OS_TEST_CMD_STACK_SMASH,
+						   &op, &ret_orig));
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+close:
+	TEEC_CloseSession(&session);
+out:
+	Do_ADBG_EndSubCase(c, "TA stack canaries");
+}
+ADBG_CASE_DEFINE(regression, 1048, xtest_tee_test_1048,
+		 "Test stack canaries");
