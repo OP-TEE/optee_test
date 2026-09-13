@@ -1074,6 +1074,13 @@ static void xtest_test_derivation_pbkdf2(ADBG_Case_t *c, TEEC_Session *session)
 		if (pc->level > level)
 			continue;
 
+		if (pc->algo == TEE_ALG_PBKDF2_HMAC_SM3_DERIVE_KEY &&
+		    !ta_crypt_cmd_is_algo_supported(c, session,
+			TEE_ALG_HMAC_SM3, TEE_CRYPTO_ELEMENT_NONE)) {
+			Do_ADBG_Log("HMAC-SM3 not supported: skip subcase");
+			continue;
+		}
+
 		Do_ADBG_BeginSubCase(c, "PBKDF2 %s", pc->subcase_name);
 		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
 			ta_crypt_cmd_allocate_operation(c, session, &op,
