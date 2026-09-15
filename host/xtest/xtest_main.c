@@ -41,6 +41,9 @@ ADBG_SUITE_DEFINE(pkcs11);
 ADBG_SUITE_DEFINE(ffa_spmc);
 #endif
 ADBG_SUITE_DEFINE(regression);
+#ifdef CFG_APP_SECRETS_TA
+ADBG_SUITE_DEFINE(asteec);
+#endif
 
 char *xtest_progname;
 char *xtest_tee_name = NULL;
@@ -65,7 +68,13 @@ static const char glevel[] = "0";
 #define FFA_SPMC_SUITE	""
 #endif
 
-static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE FFA_SPMC_SUITE;
+#ifdef CFG_APP_SECRETS_TA
+#define ASTEEC_SUITE	"+asteec"
+#else
+#define ASTEEC_SUITE	""
+#endif
+
+static char gsuitename[] = "regression" GP_SUITE PKCS11_SUITE FFA_SPMC_SUITE ASTEEC_SUITE;
 
 void usage(char *program);
 
@@ -86,6 +95,9 @@ void usage(char *program)
 #endif
 #ifdef CFG_SPMC_TESTS
 	printf(" ffa_spmc");
+#endif
+#ifdef CFG_APP_SECRETS_TA
+	printf(" asteec");
 #endif
 	printf("\n");
 	printf("\t                   To run several suites, use multiple names\n");
@@ -267,6 +279,10 @@ next:
 #ifdef CFG_SPMC_TESTS
 		else if (!strcmp(token, "ffa_spmc"))
 			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_ffa_spmc);
+#endif
+#ifdef CFG_APP_SECRETS_TA
+		else if (!strcmp(token, "asteec"))
+			ret = Do_ADBG_AppendToSuite(&all, &ADBG_Suite_asteec);
 #endif
 		else {
 			fprintf(stderr, "Unknown test suite: %s\n", token);
