@@ -212,23 +212,14 @@ TEE_Result ta_storage_cmd_read_to_shm(uint32_t param_types,
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
-	TEE_Result res = TEE_SUCCESS;
-	void *b0 = NULL;
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
-	b0 = TEE_Malloc(params[0].memref.size, 0);
-	if (!b0)
-		return TEE_ERROR_OUT_OF_MEMORY;
-	TEE_MemMove(b0, params[0].memref.buffer, params[0].memref.size);
-
-	res = TEE_WriteObjectData(o, b0, params[0].memref.size);
-	TEE_Free(b0);
-
-	return res;
+	return TEE_WriteObjectData(o, params[0].memref.buffer,
+			params[0].memref.size);
 }
 
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
