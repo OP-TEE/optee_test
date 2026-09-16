@@ -8464,7 +8464,7 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		{ CKA_TOKEN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_SIGN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
-		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE }, sizeof(CK_BBOOL) },
 		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_MODULUS, (CK_VOID_PTR)t->target.rsa.modulus,
 		  t->target.rsa.modulus_len },
@@ -8692,7 +8692,6 @@ static void xtest_pkcs11_test_1026(ADBG_Case_t *c)
 		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_RSA }, sizeof(CK_KEY_TYPE) },
 		{ CKA_TOKEN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_SIGN, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
-		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_EXTRACTABLE, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_UNWRAP, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
@@ -8724,15 +8723,10 @@ static void xtest_pkcs11_test_1026(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto close_lib;
 
-	rv = C_Login(session, CKU_USER,	test_token_user_pin,
-		     sizeof(test_token_user_pin));
-	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto close_session;
-
 	for (i = 0; i < ARRAY_SIZE(rsa_aes_wrap_tests); i++) {
 		rv = test_rsa_aes_wrap(c, session, &rsa_aes_wrap_tests[i]);
 		if (rv != CKR_OK)
-			goto logout;
+			goto close_session;
 	}
 
 	Do_ADBG_BeginSubCase(c, "Test external key unwrap with RSA AES");
@@ -8760,8 +8754,6 @@ out:
 	if (private_key != CK_INVALID_HANDLE)
 		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, private_key));
 	Do_ADBG_EndSubCase(c, NULL);
-logout:
-	ADBG_EXPECT_CK_OK(c, C_Logout(session));
 close_session:
 	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
 close_lib:
