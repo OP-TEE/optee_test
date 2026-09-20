@@ -53,6 +53,8 @@ TEE_Result ta_entry_asan_memfunc(void);
 TEE_Result ta_entry_asan_uaf(void);
 TEE_Result ta_entry_riscv_fp_context(uint32_t param_types,
 				     TEE_Param params[4]);
+TEE_Result ta_entry_riscv_vec_context(uint32_t param_types,
+				      TEE_Param params[4]);
 
 extern void *__stack_chk_guard;
 
