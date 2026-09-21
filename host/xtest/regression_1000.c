@@ -2384,7 +2384,6 @@ static void xtest_tee_test_1030(ADBG_Case_t *c)
 ADBG_CASE_DEFINE(regression, 1030, xtest_tee_test_1030,
 		 "Test dl_iterate_phdr()");
 
-#ifndef __clang__
 static void xtest_tee_test_1031(ADBG_Case_t *c)
 {
 	TEEC_Result ret = TEE_SUCCESS;
@@ -2436,7 +2435,6 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1031, xtest_tee_test_1031,
 		 "Test C++ features");
-#endif
 
 static void xtest_tee_test_1032(ADBG_Case_t *c)
 {
