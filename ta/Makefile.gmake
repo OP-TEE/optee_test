@@ -33,7 +33,8 @@ TA_DIRS := create_fail_test \
 	   supp_plugin \
 	   large \
 	   subkey1 \
-	   subkey2
+	   subkey2 \
+	   nil_uuid
 
 ifeq ($(CFG_SECURE_DATA_PATH),y)
 TA_DIRS += sdp_basic

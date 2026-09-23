@@ -3475,3 +3475,20 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1042, xtest_tee_test_1042,
 		 "Test ASAN (Memory address sanitizer)");
+
+static void xtest_tee_test_1043(ADBG_Case_t *c)
+{
+	TEEC_Session session = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	const TEEC_UUID nil_uuid = { };
+	uint32_t ret_orig = 0;
+
+	res = xtest_teec_open_session(&session, &nil_uuid, NULL, &ret_orig);
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_ITEM_NOT_FOUND, res);
+	if (!res)
+		TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 1043, xtest_tee_test_1043,
+		 "Reject a user TA with the nil UUID");
+
