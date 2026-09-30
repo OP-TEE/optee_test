@@ -85,4 +85,17 @@
 
 #define TA_OS_TEST_ASLR_ENABLED			(1U << 0)
 
+/*
+ * TA_OS_TEST_CMD_STACK_PROTECTOR
+ * [out] value[0].a	TA_OS_TEST_STACK_PROTECTOR_* flags
+ */
+#define TA_OS_TEST_CMD_STACK_PROTECTOR      45
+
+#define TA_OS_TEST_STACK_PROTECTOR_ENABLED	(1U << 0)
+#define TA_OS_TEST_STACK_PROTECTOR_RANDOMIZED	(1U << 1)
+#define TA_OS_TEST_STACK_PROTECTOR_CANARY	(1U << 2)
+
+/* TA_OS_TEST_CMD_STACK_SMASH: overflows a stack buffer, must panic the TA */
+#define TA_OS_TEST_CMD_STACK_SMASH          46
+
 #endif /*TA_OS_TEST_H */
