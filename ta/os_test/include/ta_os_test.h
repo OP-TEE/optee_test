@@ -75,4 +75,17 @@
 /* Fail if the registers still hold the pattern left by an earlier TA */
 #define TA_RISCV_FP_SUBTEST_CHECK_TAINT	5
 
+#define TA_OS_TEST_CMD_STACK_PROTECTOR      45
+#define TA_OS_TEST_CMD_STACK_SMASH          46
+
+/*
+ * TA_OS_TEST_CMD_STACK_PROTECTOR
+ * [out] value[0].a	TA_OS_TEST_STACK_PROTECTOR_* flags
+ */
+#define TA_OS_TEST_STACK_PROTECTOR_ENABLED	(1U << 0)
+#define TA_OS_TEST_STACK_PROTECTOR_RANDOMIZED	(1U << 1)
+#define TA_OS_TEST_STACK_PROTECTOR_CANARY	(1U << 2)
+
+/* TA_OS_TEST_CMD_STACK_SMASH: overflows a stack buffer, must panic the TA */
+
 #endif /*TA_OS_TEST_H */
