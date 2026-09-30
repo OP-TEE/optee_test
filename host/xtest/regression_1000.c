@@ -3670,3 +3670,100 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1045, xtest_tee_test_1045,
 		 "Test RISC-V floating-point context switching");
+
+#define ASLR_SAMPLES	8
+
+static void xtest_tee_test_1047(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint32_t flags = 0;
+	uint64_t code[ASLR_SAMPLES] = { };
+	uint64_t data[ASLR_SAMPLES] = { };
+	size_t distinct = 0;
+	size_t n = 0;
+	size_t m = 0;
+
+	Do_ADBG_BeginSubCase(c, "Core ASLR");
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1047 -   skip test, pseudo TA not found");
+		goto next;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto next;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_ASLR, &op,
+				 &ret_orig);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		flags = op.params[0].value.a;
+		if (!(flags & PTA_INVOKE_TESTS_ASLR_ENABLED))
+			Do_ADBG_Log(" - 1047 -   CFG_CORE_ASLR=n, skip");
+		else if (flags & PTA_INVOKE_TESTS_ASLR_RANDOMIZED)
+			Do_ADBG_Log(" - 1047 -   core relocated by ASLR");
+		else
+			Do_ADBG_Log(" - 1047 -   no ASLR seed, core not relocated");
+	}
+	TEEC_CloseSession(&session);
+
+next:
+	Do_ADBG_EndSubCase(c, "Core ASLR");
+
+	Do_ADBG_BeginSubCase(c, "TA ASLR");
+
+	for (n = 0; n < ASLR_SAMPLES; n++) {
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+			goto out;
+
+		memset(&op, 0, sizeof(op));
+		op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT,
+						 TEEC_VALUE_OUTPUT,
+						 TEEC_VALUE_OUTPUT, TEEC_NONE);
+		res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_ASLR, &op,
+					 &ret_orig);
+		TEEC_CloseSession(&session);
+		if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+			goto out;
+
+		if (n == 0)
+			flags = op.params[0].value.a;
+		else if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, flags, ==,
+						       op.params[0].value.a))
+			goto out;
+
+		code[n] = ((uint64_t)op.params[1].value.b << 32) |
+			  op.params[1].value.a;
+		data[n] = ((uint64_t)op.params[2].value.b << 32) |
+			  op.params[2].value.a;
+	}
+
+	if (!(flags & TA_OS_TEST_ASLR_ENABLED)) {
+		Do_ADBG_Log(" - 1047 -   CFG_TA_ASLR=n, skip");
+		goto out;
+	}
+
+	for (n = 0; n < ASLR_SAMPLES; n++) {
+		for (m = 0; m < n; m++)
+			if (code[m] == code[n])
+				break;
+		if (m == n)
+			distinct++;
+		ADBG_EXPECT_COMPARE_UNSIGNED(c, data[n] - code[n], ==,
+					     data[0] - code[0]);
+	}
+	Do_ADBG_Log(" - 1047 -   %zu distinct TA load addresses in %d loads",
+		    distinct, ASLR_SAMPLES);
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, distinct, >, 1);
+
+out:
+	Do_ADBG_EndSubCase(c, "TA ASLR");
+}
+ADBG_CASE_DEFINE(regression, 1047, xtest_tee_test_1047, "Test ASLR");
