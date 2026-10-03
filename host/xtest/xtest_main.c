@@ -127,7 +127,9 @@ void usage(char *program)
 static void init_ossl(void)
 {
 #ifdef OPENSSL_FOUND
+#ifndef OPENSSL_IS_BORINGSSL
 	OPENSSL_init();
+#endif
 	OpenSSL_add_all_algorithms();
 	ERR_load_crypto_strings();
 #endif

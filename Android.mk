@@ -30,6 +30,13 @@ LOCAL_SHARED_LIBRARIES := libteec
 
 TA_DIR ?= /vendor/lib/optee_armtz
 
+# OpenSSL (BoringSSL in AOSP) is used by:
+# - Mbed TLS test 8103
+# - User/group login tests 1027 and 1028
+# - Remote attestation test 1037
+LOCAL_CFLAGS += -DOPENSSL_FOUND=1
+LOCAL_SHARED_LIBRARIES += libcrypto
+
 srcs := regression_1000.c
 
 ifeq ($(CFG_GP_SOCKETS),y)
