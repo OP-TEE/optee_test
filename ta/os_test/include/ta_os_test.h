@@ -75,4 +75,14 @@
 /* Fail if the registers still hold the pattern left by an earlier TA */
 #define TA_RISCV_FP_SUBTEST_CHECK_TAINT	5
 
+/*
+ * TA_OS_TEST_CMD_ASLR
+ * [out] value[0].a	TA_OS_TEST_ASLR_* flags
+ * [out] value[1].a/b	low/high 32 bits of a code address in the TA
+ * [out] value[2].a/b	low/high 32 bits of a data address in the TA
+ */
+#define TA_OS_TEST_CMD_ASLR                 44
+
+#define TA_OS_TEST_ASLR_ENABLED			(1U << 0)
+
 #endif /*TA_OS_TEST_H */
