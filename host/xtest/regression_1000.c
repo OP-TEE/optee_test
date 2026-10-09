@@ -3668,3 +3668,94 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1045, xtest_tee_test_1045,
 		 "Test RISC-V floating-point context switching");
+
+static void xtest_tee_test_1048(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint32_t flags = 0;
+
+	Do_ADBG_BeginSubCase(c, "Core stack canaries");
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1048 -   skip test, pseudo TA not found");
+		goto next;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto next;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&session,
+				 PTA_INVOKE_TESTS_CMD_STACK_PROTECTOR, &op,
+				 &ret_orig);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		uint32_t exp = PTA_INVOKE_TESTS_STACK_PROTECTOR_ENABLED |
+			       PTA_INVOKE_TESTS_STACK_PROTECTOR_RANDOMIZED |
+			       PTA_INVOKE_TESTS_STACK_PROTECTOR_CANARY;
+
+		flags = op.params[0].value.a;
+		if (!(flags & PTA_INVOKE_TESTS_STACK_PROTECTOR_ENABLED))
+			Do_ADBG_Log(" - 1048 -   no core protector, skip");
+		else
+			ADBG_EXPECT_COMPARE_UNSIGNED(c, flags & exp, ==, exp);
+
+		/*
+		 * The core only reports detection when it can take control
+		 * before the panic, which it cannot do with
+		 * CFG_FTRACE_SUPPORT=y.
+		 */
+		if (flags & PTA_INVOKE_TESTS_STACK_PROTECTOR_DETECTED)
+			Do_ADBG_Log(" - 1048 -   corrupted canary detected");
+	}
+	TEEC_CloseSession(&session);
+
+next:
+	Do_ADBG_EndSubCase(c, "Core stack canaries");
+
+	Do_ADBG_BeginSubCase(c, "TA stack canaries");
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+			xtest_teec_open_session(&session, &os_test_ta_uuid,
+						NULL, &ret_orig)))
+		goto out;
+
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&session, TA_OS_TEST_CMD_STACK_PROTECTOR,
+				 &op, &ret_orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto close;
+
+	flags = op.params[0].value.a;
+	if (!(flags & TA_OS_TEST_STACK_PROTECTOR_ENABLED)) {
+		Do_ADBG_Log(" - 1048 -   CFG_TA_STACK_PROTECTOR*=n, skip");
+		goto close;
+	}
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, flags, ==,
+				     TA_OS_TEST_STACK_PROTECTOR_ENABLED |
+				     TA_OS_TEST_STACK_PROTECTOR_RANDOMIZED |
+				     TA_OS_TEST_STACK_PROTECTOR_CANARY);
+
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	op.params[0].value.a = 256;
+	ADBG_EXPECT_TEEC_RESULT(c, TEEC_ERROR_TARGET_DEAD,
+				TEEC_InvokeCommand(&session,
+						   TA_OS_TEST_CMD_STACK_SMASH,
+						   &op, &ret_orig));
+	ADBG_EXPECT_TEEC_ERROR_ORIGIN(c, TEEC_ORIGIN_TEE, ret_orig);
+
+close:
+	TEEC_CloseSession(&session);
+out:
+	Do_ADBG_EndSubCase(c, "TA stack canaries");
+}
+ADBG_CASE_DEFINE(regression, 1048, xtest_tee_test_1048,
+		 "Test stack canaries");

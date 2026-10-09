@@ -194,6 +194,11 @@ TEE_Result TA_InvokeCommandEntryPoint(void *pSessionContext,
 	case TA_OS_TEST_CMD_RISCV_FP_CONTEXT:
 		return ta_entry_riscv_fp_context(nParamTypes, pParams);
 
+	case TA_OS_TEST_CMD_STACK_PROTECTOR:
+		return ta_entry_stack_protector(nParamTypes, pParams);
+	case TA_OS_TEST_CMD_STACK_SMASH:
+		return ta_entry_stack_smash(nParamTypes, pParams);
+
 	default:
 		return TEE_ERROR_BAD_PARAMETERS;
 	}
