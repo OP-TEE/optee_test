@@ -21,6 +21,8 @@ TEE_Result ta_storage_cmd_read(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_read_to_shm(uint32_t param_types, 
 				       TEE_Param params[4]);
 TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4]);
+TEE_Result ta_storage_cmd_write_from_shm(uint32_t param_types,
+					TEE_Param params[4]);
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_unlink(uint32_t param_types, TEE_Param params[4]);
 TEE_Result ta_storage_cmd_rename(uint32_t command, uint32_t param_types,

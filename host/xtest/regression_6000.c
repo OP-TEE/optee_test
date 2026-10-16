@@ -229,6 +229,25 @@ static TEEC_Result fs_write(TEEC_Session *sess, uint32_t obj, void *data,
 	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_WRITE, &op, &org);
 }
 
+static TEEC_Result fs_write_from_shm(TEEC_Session *sess, uint32_t obj,
+				     void *data, uint32_t data_size)
+{
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t org = 0;
+
+	op.params[0].tmpref.buffer = data;
+	op.params[0].tmpref.size = data_size;
+	op.params[1].value.a = obj;
+	op.params[1].value.b = 0;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_VALUE_INPUT, TEEC_NONE,
+					 TEEC_NONE);
+
+	return TEEC_InvokeCommand(sess, TA_STORAGE_CMD_WRITE_FROM_SHM,
+				  &op, &org);
+}
+
 static TEEC_Result fs_seek(TEEC_Session *sess, uint32_t obj, int32_t offset,
 			   int32_t whence)
 {
@@ -2386,3 +2405,48 @@ close_session:
 DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6022)
 ADBG_CASE_DEFINE(regression, 6022, xtest_tee_test_6022,
 		 "TEE_ReadObjectData output in SHM");
+
+static void xtest_tee_test_6023_single(ADBG_Case_t *c, uint32_t storage_id)
+{
+	const uint32_t flags = TEE_DATA_FLAG_ACCESS_READ |
+			       TEE_DATA_FLAG_ACCESS_WRITE |
+			       TEE_DATA_FLAG_ACCESS_WRITE_META |
+			       TEE_DATA_FLAG_OVERWRITE;
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint8_t out[sizeof(data_00)] = { };
+	char id[] = "xtest_write_from_shm";
+	TEEC_Session sess = { };
+	uint32_t count = 0;
+	uint32_t orig = 0;
+	uint32_t obj = 0;
+
+	res = xtest_teec_open_session(&sess, &storage_ta_uuid, NULL, &orig);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	res = fs_create(&sess, id, sizeof(id), flags, 0, NULL, 0,
+			&obj, storage_id);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto exit;
+
+	res = fs_write_from_shm(&sess, obj, data_00, sizeof(data_00));
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto unlink;
+
+	res = fs_seek(&sess, obj, 0, TEE_DATA_SEEK_SET);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto unlink;
+
+	res = fs_read(&sess, obj, out, sizeof(out), &count);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		(void)ADBG_EXPECT_BUFFER(c, data_00, sizeof(data_00),
+					 out, count);
+
+unlink:
+	ADBG_EXPECT_TEEC_SUCCESS(c, fs_unlink(&sess, obj));
+exit:
+	TEEC_CloseSession(&sess);
+}
+DEFINE_TEST_MULTIPLE_STORAGE_IDS(xtest_tee_test_6023)
+ADBG_CASE_DEFINE(regression, 6023, xtest_tee_test_6023,
+		 "TEE_WriteObjectData input in SHM");

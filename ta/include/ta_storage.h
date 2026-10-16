@@ -52,5 +52,6 @@ struct ta_storage_obj_info {
 #define TA_STORAGE_CMD_RENAME_ID_IN_SHM		25
 #define TA_STORAGE_CMD_CLEAR_STORAGE		26
 #define TA_STORAGE_CMD_READ_TO_SHM              27
+#define TA_STORAGE_CMD_WRITE_FROM_SHM		28
 
 #endif /*__TA_STORAGE_H*/
