@@ -32,3 +32,4 @@ srcs-y += riscv_fp_ctx.c
 srcs-y += riscv_fp_ctx_rv64.S
 endif
 srcs-y += attestation.c
+srcs-y += stack_protector.c
