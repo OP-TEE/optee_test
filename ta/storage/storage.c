@@ -231,6 +231,20 @@ TEE_Result ta_storage_cmd_write(uint32_t param_types, TEE_Param params[4])
 	return res;
 }
 
+TEE_Result ta_storage_cmd_write_from_shm(uint32_t param_types,
+					 TEE_Param params[4])
+{
+	TEE_ObjectHandle o = VAL2HANDLE(params[1].value.a);
+
+	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
+			  (TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_VALUE_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_NONE));
+
+	return TEE_WriteObjectData(o, params[0].memref.buffer,
+				   params[0].memref.size);
+}
+
 TEE_Result ta_storage_cmd_seek(uint32_t param_types, TEE_Param params[4])
 {
 	TEE_Result res = TEE_ERROR_GENERIC;
