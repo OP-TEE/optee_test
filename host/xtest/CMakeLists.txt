@@ -111,6 +111,11 @@ if (CFG_PKCS11_TA)
 	list (APPEND SRC pkcs11_1000.c)
 endif()
 
+if (CFG_APP_SECRETS_TA)
+	add_compile_options(-DCFG_APP_SECRETS_TA)
+	list (APPEND SRC asteec_1000.c)
+endif()
+
 if (CFG_CRYPTO_SE05X)
 	add_compile_options(-DCFG_CRYPTO_SE05X)
 endif()
@@ -140,6 +145,10 @@ target_link_libraries (${PROJECT_NAME}
 	PRIVATE ${OPENSSL_PRIVATE_LINK}
 	PRIVATE ckteec
 )
+
+if (CFG_APP_SECRETS_TA)
+	target_link_libraries (${PROJECT_NAME} PRIVATE asteec)
+endif()
 
 ################################################################################
 # Install targets
