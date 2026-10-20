@@ -30,5 +30,7 @@ endif
 ifeq ($(sm),ta_rv64)
 srcs-y += riscv_fp_ctx.c
 srcs-y += riscv_fp_ctx_rv64.S
+srcs-y += riscv_vector_ctx.c
+srcs-y += riscv_vector_ctx_rv64.S
 endif
 srcs-y += attestation.c
