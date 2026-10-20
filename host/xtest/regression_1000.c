@@ -3668,3 +3668,47 @@ out:
 }
 ADBG_CASE_DEFINE(regression, 1045, xtest_tee_test_1045,
 		 "Test RISC-V floating-point context switching");
+
+static void xtest_tee_test_1049(ADBG_Case_t *c)
+{
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	TEEC_Session session = { };
+	TEEC_Operation op = TEEC_OPERATION_INITIALIZER;
+	uint32_t ret_orig = 0;
+	uint32_t flags = 0;
+
+	res = xtest_teec_open_session(&session, &pta_invoke_tests_ta_uuid, NULL,
+				      &ret_orig);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		Do_ADBG_Log(" - 1049 -   skip test, pseudo TA not found");
+		return;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		return;
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, TEEC_NONE,
+					 TEEC_NONE, TEEC_NONE);
+	res = TEEC_InvokeCommand(&session, PTA_INVOKE_TESTS_CMD_CORE_REGIONS,
+				 &op, &ret_orig);
+	if (res == TEEC_ERROR_NOT_SUPPORTED) {
+		Do_ADBG_Log(" - 1049 -   CFG_RISCV_CORE_NAPOT_REGIONS=n, skip");
+		goto out;
+	}
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+
+	flags = op.params[0].value.a;
+
+	/* .text, .rodata and .data each get one PMP entry */
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, op.params[0].value.b, ==, 3);
+
+	ADBG_EXPECT_COMPARE_UNSIGNED(c, flags, ==,
+				     PTA_INVOKE_TESTS_REGIONS_ENABLED |
+				     PTA_INVOKE_TESTS_REGIONS_NAPOT |
+				     PTA_INVOKE_TESTS_REGIONS_PERMS |
+				     PTA_INVOKE_TESTS_REGIONS_ACCESS);
+out:
+	TEEC_CloseSession(&session);
+}
+ADBG_CASE_DEFINE(regression, 1049, xtest_tee_test_1049,
+		 "Test core PMP data permissions");
