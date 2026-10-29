@@ -27,9 +27,9 @@ srcs-$(CFG_TA_PAUTH) += ta_arm_pauth.c
 #  such instruction in the PAC test.
 cflags-$(CFG_TA_PAUTH) += -march=armv8.3-a
 endif
-ifeq ($(sm),ta_rv64)
+ifneq ($(filter ta_rv32 ta_rv64,$(sm)),)
 srcs-y += riscv_fp_ctx.c
-srcs-y += riscv_fp_ctx_rv64.S
+srcs-y += riscv_fp_ctx_rv.S
 endif
 srcs-y += attestation.c
 srcs-y += aslr.c
