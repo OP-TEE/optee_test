@@ -55,6 +55,12 @@ test_plugin:
 			     --no-builtin-variables \
 			     O=$(out-dir)
 
+.PHONY: core_fuzz_demo
+core_fuzz_demo:
+	$(q)$(MAKE) -C host/core_fuzz_ta \
+		CROSS_COMPILE="$(CROSS_COMPILE_HOST)" \
+		O=$(out-dir)/core_fuzz_demo
+
 .PHONY: clean
 ifneq ($(wildcard $(TA_DEV_KIT_DIR)/host_include/conf.mk),)
 clean:
