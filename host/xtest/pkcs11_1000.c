@@ -10144,7 +10144,14 @@ static bool context_auth_sign_rejected(ADBG_Case_t *c,
 
 	rv = C_Sign(session, context_auth_message,
 		    sizeof(context_auth_message) - 1, signature, &size);
-	return ADBG_EXPECT_CK_RESULT(c, expected, rv);
+	if (!ADBG_EXPECT_CK_RESULT(c, expected, rv))
+		return false;
+
+	/* A failed signing operation must have been terminated. */
+	size = sizeof(signature);
+	rv = C_Sign(session, context_auth_message,
+		    sizeof(context_auth_message) - 1, signature, &size);
+	return ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv);
 }
 
 static void cleanup_context_auth_token(ADBG_Case_t *c, CK_SLOT_ID slot,
@@ -10168,8 +10175,8 @@ static void cleanup_context_auth_token(ADBG_Case_t *c, CK_SLOT_ID slot,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		return;
 	ADBG_EXPECT_TRUE(c, !(token_info.flags &
-		(CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
-		 CKF_USER_PIN_COUNT_LOW)));
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW)));
 	ADBG_EXPECT_TRUE(c, !!(token_info.flags & CKF_USER_PIN_INITIALIZED));
 }
 
@@ -10220,98 +10227,114 @@ static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	Do_ADBG_Log("Ordinary key");
+	Do_ADBG_BeginSubCase(c, "Ordinary key");
 	rv = C_SignInit(session, &context_auth_sign_mechanism, normal_private);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
 		     sizeof(test_token_user_pin));
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_and_verify(c, session, normal_public))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("Missing context login");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Missing context login");
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("Context login");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Context login");
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
 		     sizeof(test_token_user_pin));
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_and_verify(c, session, public_key))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("Incorrect context PIN");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Incorrect context PIN");
 	rv = C_GetTokenInfo(slot, &token_info);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags &
-		(CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
-		 CKF_USER_PIN_COUNT_LOW))))
-		goto out;
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW))))
+		goto out_subcase;
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, wrong_pin,
 		     sizeof(wrong_pin) - 1);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_PIN_INCORRECT, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("Retry after incorrect PIN");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Retry after incorrect PIN");
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, wrong_pin,
 		     sizeof(wrong_pin) - 1);
 	if (!ADBG_EXPECT_CK_RESULT(c, CKR_PIN_INCORRECT, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
 		     sizeof(test_token_user_pin));
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_and_verify(c, session, public_key))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("New operation");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "New operation");
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
-		goto out;
+		goto out_subcase;
 
-	Do_ADBG_Log("Other session");
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Other session");
 	rv = C_OpenSession(slot, session_flags, NULL, NULL, &other);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = test_find_objects(c, other, find_template,
 			       ARRAY_SIZE(find_template), &other_key, 1, 1);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
 		     sizeof(test_token_user_pin));
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	rv = C_SignInit(other, &context_auth_sign_mechanism, other_key);
 	if (!ADBG_EXPECT_CK_OK(c, rv))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_rejected(c, other, CKR_USER_NOT_LOGGED_IN))
-		goto out;
+		goto out_subcase;
 	if (!context_auth_sign_and_verify(c, session, public_key))
-		goto out;
+		goto out_subcase;
 
+	Do_ADBG_EndSubCase(c, NULL);
+	goto out;
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
 out:
 	cleanup_context_auth_token(c, slot, token_initialized);
 	rv = close_lib();
@@ -10359,8 +10382,8 @@ static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags &
-		(CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
-		 CKF_USER_PIN_COUNT_LOW))))
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW))))
 		goto out;
 	rv = generate_context_auth_key(session, CK_TRUE, 0x63, &public_key,
 				       &private_key);
@@ -10609,3 +10632,110 @@ out:
 
 ADBG_CASE_DEFINE(pkcs11, 1033, xtest_pkcs11_test_1033,
 		 "PKCS11: Always-authenticate requires a private object");
+
+static void xtest_pkcs11_test_1034(ADBG_Case_t *c)
+{
+#ifdef OPENSSL_FOUND
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0 };
+	CK_ULONG bits = 2048;
+	CK_BYTE exponent[] = { 1, 0, 1 };
+	CK_BBOOL yes = CK_TRUE;
+	char gid_str[GID_STR_LEN] = { };
+	int len = 0;
+	CK_ATTRIBUTE pub_attrs[] = {
+		{ CKA_MODULUS_BITS, &bits, sizeof(bits) },
+		{ CKA_PUBLIC_EXPONENT, exponent, sizeof(exponent) },
+		{ CKA_VERIFY, &yes, sizeof(yes) },
+	};
+	/* Session keys are released even if a subcase fails. */
+	CK_ATTRIBUTE priv_attrs[] = {
+		{ CKA_PRIVATE, &yes, sizeof(yes) },
+		{ CKA_SIGN, &yes, sizeof(yes) },
+		{ CKA_ALWAYS_AUTHENTICATE, &yes, sizeof(yes) },
+	};
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	/* Initialize the ACL token as its user-identity security officer. */
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "user", 1)))
+		return;
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+	rv = init_test_token_acl_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = init_user_test_token_acl_auth(c, slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = close_lib();
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+
+	/* Reconnect using the group identity registered for CKU_USER. */
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "group", 1)))
+		goto out_unsetenv;
+	len = snprintf(gid_str, sizeof(gid_str), "%u",
+		       (unsigned int)getegid());
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, len, >=, 0) ||
+	    !ADBG_EXPECT_COMPARE_SIGNED(c, len, <, (int)sizeof(gid_str)))
+		goto out_unsetenv;
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_GID", gid_str, 1)))
+		goto out_unsetenv;
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = C_Login(session, CKU_USER, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_session;
+	rv = C_GenerateKeyPair(session, &mechanism, pub_attrs,
+			       ARRAY_SIZE(pub_attrs), priv_attrs,
+			       ARRAY_SIZE(priv_attrs), &public_key,
+			       &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_session;
+
+	Do_ADBG_BeginSubCase(c, "Missing context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, public_key))
+		goto out_subcase;
+	Do_ADBG_EndSubCase(c, NULL);
+	goto out_session;
+
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+out_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+out_unsetenv:
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_TYPE"));
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_GID"));
+#else /* !OPENSSL_FOUND */
+	UNUSED(c);
+	Do_ADBG_Log("OpenSSL not available, skipping test 1034");
+#endif /* OPENSSL_FOUND */
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1034, xtest_pkcs11_test_1034,
+		 "PKCS11: Context authentication with ACL identity");
