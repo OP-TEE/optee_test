@@ -10417,3 +10417,195 @@ out:
 }
 ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
 		 "PKCS11: Context PIN lockout logs out all sessions");
+
+static bool check_context_key_attributes(ADBG_Case_t *c,
+					 CK_SESSION_HANDLE session,
+					 CK_OBJECT_HANDLE key,
+					 CK_BBOOL always_authenticate,
+					 CK_BBOOL private)
+{
+	CK_BBOOL actual_always = CK_FALSE;
+	CK_BBOOL actual_private = CK_FALSE;
+	CK_ATTRIBUTE template[] = {
+		{ CKA_ALWAYS_AUTHENTICATE, &actual_always,
+		  sizeof(actual_always) },
+		{ CKA_PRIVATE, &actual_private, sizeof(actual_private) },
+	};
+	CK_RV rv = C_GetAttributeValue(session, key, template,
+				     ARRAY_SIZE(template));
+
+	return ADBG_EXPECT_CK_OK(c, rv) &&
+	       ADBG_EXPECT_COMPARE_UNSIGNED(c, actual_always, ==,
+					    always_authenticate) &&
+	       ADBG_EXPECT_COMPARE_UNSIGNED(c, actual_private, ==, private);
+}
+
+static void xtest_pkcs11_test_1033(ADBG_Case_t *c)
+{
+	static const struct {
+		CK_BBOOL always_authenticate;
+		CK_BBOOL private;
+		CK_ULONG count;
+		CK_RV expected;
+	} cases[] = {
+		{ CK_TRUE, CK_TRUE, 2, CKR_OK },
+		{ CK_TRUE, CK_FALSE, 2, CKR_TEMPLATE_INCONSISTENT },
+		{ CK_FALSE, CK_TRUE, 2, CKR_OK },
+		{ CK_FALSE, CK_FALSE, 2, CKR_OK },
+		/* Omitted CKA_PRIVATE defaults to CK_FALSE. */
+		{ CK_TRUE, CK_FALSE, 1, CKR_TEMPLATE_INCONSISTENT },
+		/* Both attributes default to CK_FALSE. */
+		{ CK_FALSE, CK_FALSE, 0, CKR_OK },
+	};
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE copy = CK_INVALID_HANDLE;
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0 };
+	CK_BBOOL always_authenticate = CK_FALSE;
+	CK_BBOOL private = CK_FALSE;
+	CK_BBOOL changed = CK_FALSE;
+	CK_ULONG bits = 2048;
+	CK_ATTRIBUTE pub_attrs[] = {
+		{ CKA_MODULUS_BITS, &bits, sizeof(bits) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+	};
+	CK_ATTRIBUTE gen_attrs[] = {
+		{ CKA_ALWAYS_AUTHENTICATE, &always_authenticate,
+		  sizeof(always_authenticate) },
+		{ CKA_PRIVATE, &private, sizeof(private) },
+	};
+	CK_ATTRIBUTE attrs[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_PRIVATE_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_RSA },
+		  sizeof(CK_KEY_TYPE) },
+		{ CKA_MODULUS, (void *)ac_rsassa_vect2_modulus,
+		  sizeof(ac_rsassa_vect2_modulus) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+		{ CKA_PRIVATE_EXPONENT, (void *)ac_rsassa_vect2_priv_exp,
+		  sizeof(ac_rsassa_vect2_priv_exp) },
+		{ CKA_ALWAYS_AUTHENTICATE, &always_authenticate,
+		  sizeof(always_authenticate) },
+		{ CKA_PRIVATE, &private, sizeof(private) },
+	};
+	CK_ATTRIBUTE set_always = {
+		CKA_ALWAYS_AUTHENTICATE, &changed, sizeof(changed),
+	};
+	CK_ATTRIBUTE set_private = {
+		CKA_PRIVATE, &changed, sizeof(changed),
+	};
+	bool token_initialized = false;
+	size_t api = 0;
+	size_t n = 0;
+	CK_RV rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	token_initialized = true;
+	rv = init_user_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	for (api = 0; api < 2; api++) {
+		Do_ADBG_BeginSubCase(c, api ? "C_GenerateKeyPair()" :
+					    "C_CreateObject()");
+		for (n = 0; n < ARRAY_SIZE(cases); n++) {
+			always_authenticate = cases[n].always_authenticate;
+			private = cases[n].private;
+			Do_ADBG_Log("always=%u private=%u attrs=%lu",
+				    always_authenticate, private,
+				    cases[n].count);
+			if (api)
+				rv = C_GenerateKeyPair(session, &mechanism,
+						       pub_attrs,
+						       ARRAY_SIZE(pub_attrs),
+						       gen_attrs,
+						       cases[n].count,
+						       &public_key, &key);
+			else
+				rv = C_CreateObject(session, attrs,
+						    ARRAY_SIZE(attrs) -
+						    ARRAY_SIZE(gen_attrs) +
+						    cases[n].count, &key);
+			if (!ADBG_EXPECT_CK_RESULT(c, cases[n].expected, rv))
+				goto out_subcase;
+			if (rv != CKR_OK)
+				continue;
+			if (!check_context_key_attributes(c, session, key,
+							  always_authenticate,
+							  private))
+				goto out_subcase;
+
+			/* Both attributes are read-only after creation. */
+			changed = !always_authenticate;
+			rv = C_SetAttributeValue(session, key, &set_always, 1);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+			rv = C_CopyObject(session, key, &set_always, 1, &copy);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+			changed = !private;
+			rv = C_SetAttributeValue(session, key, &set_private, 1);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+
+			/* A copy preserves always-authenticate and privacy. */
+			rv = C_CopyObject(session, key, NULL, 0, &copy);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+			if (!check_context_key_attributes(c, session, copy,
+							  always_authenticate,
+							  private))
+				goto out_subcase;
+			rv = C_DestroyObject(session, copy);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+
+			if (always_authenticate) {
+				const CK_RV expect = CKR_TEMPLATE_INCONSISTENT;
+
+				changed = CK_FALSE;
+				rv = C_CopyObject(session, key, &set_private, 1,
+						  &copy);
+				if (!ADBG_EXPECT_CK_RESULT(c, expect, rv))
+					goto out_subcase;
+			}
+			rv = C_DestroyObject(session, key);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+			if (api) {
+				rv = C_DestroyObject(session, public_key);
+				if (!ADBG_EXPECT_CK_OK(c, rv))
+					goto out_subcase;
+			}
+		}
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+	goto out;
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	cleanup_context_auth_token(c, slot, token_initialized);
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1033, xtest_pkcs11_test_1033,
+		 "PKCS11: Always-authenticate requires a private object");
