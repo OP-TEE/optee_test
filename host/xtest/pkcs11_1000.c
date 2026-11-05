@@ -10076,6 +10076,7 @@ ADBG_CASE_DEFINE(pkcs11, 1030, xtest_pkcs11_test_1030,
 static CK_MECHANISM context_auth_sign_mechanism = {
 	CKM_SHA256_RSA_PKCS, NULL, 0,
 };
+
 static CK_BYTE context_auth_message[] = "PKCS11 context authentication";
 
 static CK_RV generate_context_auth_key(CK_SESSION_HANDLE session,
@@ -10114,8 +10115,8 @@ static CK_RV generate_context_auth_key(CK_SESSION_HANDLE session,
 }
 
 static bool context_auth_sign_and_verify(ADBG_Case_t *c,
-					CK_SESSION_HANDLE session,
-					CK_OBJECT_HANDLE public_key)
+					 CK_SESSION_HANDLE session,
+					 CK_OBJECT_HANDLE public_key)
 {
 	CK_BYTE signature[256] = { };
 	CK_ULONG size = sizeof(signature);
@@ -10136,7 +10137,8 @@ static bool context_auth_sign_and_verify(ADBG_Case_t *c,
 }
 
 static bool context_auth_sign_rejected(ADBG_Case_t *c,
-				      CK_SESSION_HANDLE session, CK_RV expected)
+				       CK_SESSION_HANDLE session,
+				       CK_RV expected)
 {
 	CK_BYTE signature[256] = { };
 	CK_ULONG size = sizeof(signature);
@@ -10340,6 +10342,7 @@ out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
 }
+
 ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
 		 "PKCS11: Context authentication per operation and session");
 
@@ -10396,7 +10399,7 @@ static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	/* Stop at the token's final-try indication, bounded for test failures. */
+	/* Bound retries using the token's final-try indication. */
 	for (attempt = 0; attempt < 16; attempt++) {
 		rv = C_GetTokenInfo(slot, &token_info);
 		if (!ADBG_EXPECT_CK_OK(c, rv))
@@ -10438,6 +10441,7 @@ out:
 	rv = close_lib();
 	ADBG_EXPECT_CK_OK(c, rv);
 }
+
 ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
 		 "PKCS11: Context PIN lockout logs out all sessions");
 
