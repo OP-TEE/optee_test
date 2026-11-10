@@ -84,12 +84,19 @@ LOCAL_CFLAGS += -DCFG_PKCS11_TA
 LOCAL_SHARED_LIBRARIES += libckteec
 endif
 
+# Generate the headers in xtest's own directory, which binary.mk adds to the
+# include path. Before each build, the build system deletes every file in
+# $(TARGET_OUT_HEADERS) that it did not copy there itself.
+LOCAL_MODULE_CLASS := EXECUTABLES
+gen_dir := $(call local-generated-sources-dir)
+
 define my-embed-file
-$(TARGET_OUT_HEADERS)/$(1).h: $(LOCAL_PATH)/$(2)
+$(gen_dir)/$(1).h: $(LOCAL_PATH)/$(2)
 	@echo '  GEN     $$@'
+	@mkdir -p $$(dir $$@)
 	@$(PYTHON3) $(LOCAL_PATH)/scripts/file_to_c.py --inf $$< --out $$@ --name $(1)
 
-LOCAL_ADDITIONAL_DEPENDENCIES += $(TARGET_OUT_HEADERS)/$(1).h
+LOCAL_GENERATED_SOURCES += $(gen_dir)/$(1).h
 
 endef
 
