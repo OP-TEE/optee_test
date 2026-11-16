@@ -226,7 +226,7 @@ TEEC_Result ta_crypt_cmd_populate_transient_object(ADBG_Case_t *c,
 	op.params[1].tmpref.size = blen;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
+					 TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_POPULATE_TRANSIENT_OBJECT, &op,
@@ -322,7 +322,7 @@ TEEC_Result ta_crypt_cmd_derive_key(ADBG_Case_t *c, TEEC_Session *s,
 	op.params[1].tmpref.size = blen;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
+					 TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_DERIVE_KEY, &op, &ret_orig);

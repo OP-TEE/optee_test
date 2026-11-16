@@ -492,7 +492,7 @@ TEE_Result ta_entry_populate_transient_object(uint32_t param_type,
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_MEMREF_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
 	res = unpack_attrs(params[1].memref.buffer, params[1].memref.size,
@@ -560,7 +560,7 @@ TEE_Result ta_entry_generate_key(uint32_t param_type, TEE_Param params[4])
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_MEMREF_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
 	res = unpack_attrs(params[1].memref.buffer, params[1].memref.size,
@@ -582,7 +582,7 @@ TEE_Result ta_entry_asymmetric_encrypt(uint32_t param_type, TEE_Param params[4])
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_MEMREF_INOUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT));
 
@@ -607,7 +607,7 @@ TEE_Result ta_entry_asymmetric_decrypt(uint32_t param_type, TEE_Param params[4])
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_MEMREF_INOUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT));
 
@@ -633,7 +633,7 @@ TEE_Result ta_entry_asymmetric_sign_digest(uint32_t param_type,
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_MEMREF_INOUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_OUTPUT));
 
@@ -659,7 +659,7 @@ TEE_Result ta_entry_asymmetric_verify_digest(uint32_t param_type,
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT,
+			   TEE_PARAM_TYPE_MEMREF_INOUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT,
 			   TEE_PARAM_TYPE_MEMREF_INPUT));
 
@@ -685,7 +685,7 @@ TEE_Result ta_entry_derive_key(uint32_t param_type, TEE_Param params[4])
 
 	ASSERT_PARAM_TYPE(TEE_PARAM_TYPES
 			  (TEE_PARAM_TYPE_VALUE_INPUT,
-			   TEE_PARAM_TYPE_MEMREF_INPUT, TEE_PARAM_TYPE_NONE,
+			   TEE_PARAM_TYPE_MEMREF_INOUT, TEE_PARAM_TYPE_NONE,
 			   TEE_PARAM_TYPE_NONE));
 
 	res = unpack_attrs(params[1].memref.buffer, params[1].memref.size,
