@@ -10072,3 +10072,674 @@ out_close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1030, xtest_pkcs11_test_1030,
 		 "PKCS11: Test AES-GCM Encryption/Decryption");
+
+static CK_MECHANISM context_auth_sign_mechanism = {
+	CKM_SHA256_RSA_PKCS, NULL, 0,
+};
+
+static CK_BYTE context_auth_message[] = "PKCS11 context authentication";
+
+static CK_RV generate_context_auth_key(CK_SESSION_HANDLE session,
+				       CK_BBOOL always_authenticate, CK_BYTE id,
+				       CK_OBJECT_HANDLE *public_key,
+				       CK_OBJECT_HANDLE *private_key)
+{
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0 };
+	CK_ULONG bits = 2048;
+	CK_BYTE exponent[] = { 1, 0, 1 };
+	CK_BBOOL yes = CK_TRUE;
+	CK_BBOOL no = CK_FALSE;
+	CK_ATTRIBUTE public_template[] = {
+		{ CKA_TOKEN, &yes, sizeof(yes) },
+		{ CKA_PRIVATE, &no, sizeof(no) },
+		{ CKA_VERIFY, &yes, sizeof(yes) },
+		{ CKA_MODULUS_BITS, &bits, sizeof(bits) },
+		{ CKA_PUBLIC_EXPONENT, exponent, sizeof(exponent) },
+		{ CKA_ID, &id, sizeof(id) },
+	};
+	CK_ATTRIBUTE private_template[] = {
+		{ CKA_TOKEN, &yes, sizeof(yes) },
+		{ CKA_PRIVATE, &yes, sizeof(yes) },
+		{ CKA_SIGN, &yes, sizeof(yes) },
+		{ CKA_SENSITIVE, &yes, sizeof(yes) },
+		{ CKA_EXTRACTABLE, &no, sizeof(no) },
+		{ CKA_ALWAYS_AUTHENTICATE, &always_authenticate,
+		  sizeof(always_authenticate) },
+		{ CKA_ID, &id, sizeof(id) },
+	};
+
+	return C_GenerateKeyPair(session, &mechanism, public_template,
+				 ARRAY_SIZE(public_template), private_template,
+				 ARRAY_SIZE(private_template), public_key,
+				 private_key);
+}
+
+static bool context_auth_sign_and_verify(ADBG_Case_t *c,
+					 CK_SESSION_HANDLE session,
+					 CK_OBJECT_HANDLE public_key)
+{
+	CK_BYTE signature[256] = { };
+	CK_ULONG size = sizeof(signature);
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	rv = C_Sign(session, context_auth_message,
+		    sizeof(context_auth_message) - 1, signature, &size);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return false;
+
+	rv = C_VerifyInit(session, &context_auth_sign_mechanism, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return false;
+
+	rv = C_Verify(session, context_auth_message,
+		      sizeof(context_auth_message) - 1, signature, size);
+	return ADBG_EXPECT_CK_OK(c, rv);
+}
+
+static bool context_auth_sign_rejected(ADBG_Case_t *c,
+				       CK_SESSION_HANDLE session,
+				       CK_RV expected)
+{
+	CK_BYTE signature[256] = { };
+	CK_ULONG size = sizeof(signature);
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	rv = C_Sign(session, context_auth_message,
+		    sizeof(context_auth_message) - 1, signature, &size);
+	if (!ADBG_EXPECT_CK_RESULT(c, expected, rv))
+		return false;
+
+	/* A failed signing operation must have been terminated. */
+	size = sizeof(signature);
+	rv = C_Sign(session, context_auth_message,
+		    sizeof(context_auth_message) - 1, signature, &size);
+	return ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv);
+}
+
+static void cleanup_context_auth_token(ADBG_Case_t *c, CK_SLOT_ID slot,
+				       bool token_initialized)
+{
+	CK_TOKEN_INFO token_info = { };
+	CK_RV rv = C_CloseAllSessions(slot);
+
+	ADBG_EXPECT_CK_OK(c, rv);
+	if (!token_initialized)
+		return;
+
+	/* Remove persistent test keys and restore the test user's PIN. */
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = init_user_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	ADBG_EXPECT_TRUE(c, !(token_info.flags &
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW)));
+	ADBG_EXPECT_TRUE(c, !!(token_info.flags & CKF_USER_PIN_INITIALIZED));
+}
+
+static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
+{
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE other = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE normal_public = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE normal_private = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE other_key = CK_INVALID_HANDLE;
+	CK_OBJECT_CLASS private_class = CKO_PRIVATE_KEY;
+	CK_BYTE id = 0x62;
+	CK_UTF8CHAR wrong_pin[] = "incorrect context PIN";
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_TOKEN_INFO token_info = { };
+	bool token_initialized = false;
+	CK_ATTRIBUTE find_template[] = {
+		{ CKA_CLASS, &private_class, sizeof(private_class) },
+		{ CKA_ID, &id, sizeof(id) },
+	};
+	CK_RV rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	token_initialized = true;
+	rv = init_user_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_OpenSession(slot, session_flags, NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = generate_context_auth_key(session, CK_TRUE, id, &public_key,
+				       &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = generate_context_auth_key(session, CK_FALSE, 0x61,
+				       &normal_public, &normal_private);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	Do_ADBG_BeginSubCase(c, "Ordinary key");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, normal_private);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_OPERATION_NOT_INITIALIZED, rv))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, normal_public))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Missing context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, public_key))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Incorrect context PIN");
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags &
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW))))
+		goto out_subcase;
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, wrong_pin,
+		     sizeof(wrong_pin) - 1);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_PIN_INCORRECT, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Retry after incorrect PIN");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, wrong_pin,
+		     sizeof(wrong_pin) - 1);
+	if (!ADBG_EXPECT_CK_RESULT(c, CKR_PIN_INCORRECT, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, public_key))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "New operation");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Other session");
+	rv = C_OpenSession(slot, session_flags, NULL, NULL, &other);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = test_find_objects(c, other, find_template,
+			       ARRAY_SIZE(find_template), &other_key, 1, 1);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_SignInit(other, &context_auth_sign_mechanism, other_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, other, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, public_key))
+		goto out_subcase;
+
+	Do_ADBG_EndSubCase(c, NULL);
+	goto out;
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	cleanup_context_auth_token(c, slot, token_initialized);
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
+		 "PKCS11: Context authentication per operation and session");
+
+static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
+{
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE other = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+	CK_SESSION_INFO session_info = { };
+	CK_FLAGS session_flags = CKF_SERIAL_SESSION | CKF_RW_SESSION;
+	CK_UTF8CHAR wrong_pin[] = "incorrect context PIN";
+	CK_TOKEN_INFO token_info = { };
+	unsigned int attempt = 0;
+	bool token_initialized = false;
+	CK_RV expected = CKR_GENERAL_ERROR;
+	CK_RV rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	token_initialized = true;
+	rv = init_user_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_OpenSession(slot, session_flags, NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_OpenSession(slot, session_flags, NULL, NULL, &other);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	if (!ADBG_EXPECT_TRUE(c, !(token_info.flags &
+			      (CKF_USER_PIN_LOCKED | CKF_USER_PIN_FINAL_TRY |
+			       CKF_USER_PIN_COUNT_LOW))))
+		goto out;
+	rv = generate_context_auth_key(session, CK_TRUE, 0x63, &public_key,
+				       &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_SignInit(other, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	/* Bound retries using the token's final-try indication. */
+	for (attempt = 0; attempt < 16; attempt++) {
+		rv = C_GetTokenInfo(slot, &token_info);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+		expected = token_info.flags & CKF_USER_PIN_FINAL_TRY ?
+			   CKR_PIN_LOCKED : CKR_PIN_INCORRECT;
+		rv = C_Login(session, CKU_CONTEXT_SPECIFIC, wrong_pin,
+			     sizeof(wrong_pin) - 1);
+		if (!ADBG_EXPECT_CK_RESULT(c, expected, rv))
+			goto out;
+		if (expected == CKR_PIN_LOCKED)
+			break;
+	}
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, attempt, <, 16))
+		goto out;
+	rv = C_GetTokenInfo(slot, &token_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	if (!ADBG_EXPECT_TRUE(c, !!(token_info.flags & CKF_USER_PIN_LOCKED)))
+		goto out;
+	rv = C_GetSessionInfo(session, &session_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, session_info.state, ==,
+					  CKS_RW_PUBLIC_SESSION))
+		goto out;
+	rv = C_GetSessionInfo(other, &session_info);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, session_info.state, ==,
+					  CKS_RW_PUBLIC_SESSION))
+		goto out;
+	if (!context_auth_sign_rejected(c, session,
+					CKR_OPERATION_NOT_INITIALIZED))
+		goto out;
+	context_auth_sign_rejected(c, other, CKR_OPERATION_NOT_INITIALIZED);
+out:
+	cleanup_context_auth_token(c, slot, token_initialized);
+	rv = close_lib();
+	ADBG_EXPECT_CK_OK(c, rv);
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
+		 "PKCS11: Context PIN lockout logs out all sessions");
+
+static bool check_context_key_attributes(ADBG_Case_t *c,
+					 CK_SESSION_HANDLE session,
+					 CK_OBJECT_HANDLE key,
+					 CK_BBOOL always_authenticate,
+					 CK_BBOOL private)
+{
+	CK_BBOOL actual_always = CK_FALSE;
+	CK_BBOOL actual_private = CK_FALSE;
+	CK_ATTRIBUTE template[] = {
+		{ CKA_ALWAYS_AUTHENTICATE, &actual_always,
+		  sizeof(actual_always) },
+		{ CKA_PRIVATE, &actual_private, sizeof(actual_private) },
+	};
+	CK_RV rv = C_GetAttributeValue(session, key, template,
+				     ARRAY_SIZE(template));
+
+	return ADBG_EXPECT_CK_OK(c, rv) &&
+	       ADBG_EXPECT_COMPARE_UNSIGNED(c, actual_always, ==,
+					    always_authenticate) &&
+	       ADBG_EXPECT_COMPARE_UNSIGNED(c, actual_private, ==, private);
+}
+
+static void xtest_pkcs11_test_1033(ADBG_Case_t *c)
+{
+	static const struct {
+		CK_BBOOL always_authenticate;
+		CK_BBOOL private;
+		CK_ULONG count;
+		CK_RV expected;
+	} cases[] = {
+		{ CK_TRUE, CK_TRUE, 2, CKR_OK },
+		{ CK_TRUE, CK_FALSE, 2, CKR_TEMPLATE_INCONSISTENT },
+		{ CK_FALSE, CK_TRUE, 2, CKR_OK },
+		{ CK_FALSE, CK_FALSE, 2, CKR_OK },
+		/* Omitted CKA_PRIVATE defaults to CK_FALSE. */
+		{ CK_TRUE, CK_FALSE, 1, CKR_TEMPLATE_INCONSISTENT },
+		/* Both attributes default to CK_FALSE. */
+		{ CK_FALSE, CK_FALSE, 0, CKR_OK },
+	};
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE copy = CK_INVALID_HANDLE;
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0 };
+	CK_BBOOL always_authenticate = CK_FALSE;
+	CK_BBOOL private = CK_FALSE;
+	CK_BBOOL changed = CK_FALSE;
+	CK_ULONG bits = 2048;
+	CK_ATTRIBUTE pub_attrs[] = {
+		{ CKA_MODULUS_BITS, &bits, sizeof(bits) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+	};
+	CK_ATTRIBUTE gen_attrs[] = {
+		{ CKA_ALWAYS_AUTHENTICATE, &always_authenticate,
+		  sizeof(always_authenticate) },
+		{ CKA_PRIVATE, &private, sizeof(private) },
+	};
+	CK_ATTRIBUTE attrs[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_PRIVATE_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_RSA },
+		  sizeof(CK_KEY_TYPE) },
+		{ CKA_MODULUS, (void *)ac_rsassa_vect2_modulus,
+		  sizeof(ac_rsassa_vect2_modulus) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+		{ CKA_PRIVATE_EXPONENT, (void *)ac_rsassa_vect2_priv_exp,
+		  sizeof(ac_rsassa_vect2_priv_exp) },
+		{ CKA_ALWAYS_AUTHENTICATE, &always_authenticate,
+		  sizeof(always_authenticate) },
+		{ CKA_PRIVATE, &private, sizeof(private) },
+	};
+	CK_ATTRIBUTE set_always = {
+		CKA_ALWAYS_AUTHENTICATE, &changed, sizeof(changed),
+	};
+	CK_ATTRIBUTE set_private = {
+		CKA_PRIVATE, &changed, sizeof(changed),
+	};
+	bool token_initialized = false;
+	size_t api = 0;
+	size_t n = 0;
+	CK_RV rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+	rv = init_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	token_initialized = true;
+	rv = init_user_test_token_pin_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+	rv = C_Login(session, CKU_USER, test_token_user_pin,
+		     sizeof(test_token_user_pin));
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out;
+
+	for (api = 0; api < 2; api++) {
+		Do_ADBG_BeginSubCase(c, api ? "C_GenerateKeyPair()" :
+					    "C_CreateObject()");
+		for (n = 0; n < ARRAY_SIZE(cases); n++) {
+			always_authenticate = cases[n].always_authenticate;
+			private = cases[n].private;
+			Do_ADBG_Log("always=%u private=%u attrs=%lu",
+				    always_authenticate, private,
+				    cases[n].count);
+			if (api)
+				rv = C_GenerateKeyPair(session, &mechanism,
+						       pub_attrs,
+						       ARRAY_SIZE(pub_attrs),
+						       gen_attrs,
+						       cases[n].count,
+						       &public_key, &key);
+			else
+				rv = C_CreateObject(session, attrs,
+						    ARRAY_SIZE(attrs) -
+						    ARRAY_SIZE(gen_attrs) +
+						    cases[n].count, &key);
+			if (!ADBG_EXPECT_CK_RESULT(c, cases[n].expected, rv))
+				goto out_subcase;
+			if (rv != CKR_OK)
+				continue;
+			if (!check_context_key_attributes(c, session, key,
+							  always_authenticate,
+							  private))
+				goto out_subcase;
+
+			/* Both attributes are read-only after creation. */
+			changed = !always_authenticate;
+			rv = C_SetAttributeValue(session, key, &set_always, 1);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+			rv = C_CopyObject(session, key, &set_always, 1, &copy);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+			changed = !private;
+			rv = C_SetAttributeValue(session, key, &set_private, 1);
+			if (!ADBG_EXPECT_CK_RESULT(c,
+						   CKR_ATTRIBUTE_READ_ONLY, rv))
+				goto out_subcase;
+
+			/* A copy preserves always-authenticate and privacy. */
+			rv = C_CopyObject(session, key, NULL, 0, &copy);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+			if (!check_context_key_attributes(c, session, copy,
+							  always_authenticate,
+							  private))
+				goto out_subcase;
+			rv = C_DestroyObject(session, copy);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+
+			if (always_authenticate) {
+				const CK_RV expect = CKR_TEMPLATE_INCONSISTENT;
+
+				changed = CK_FALSE;
+				rv = C_CopyObject(session, key, &set_private, 1,
+						  &copy);
+				if (!ADBG_EXPECT_CK_RESULT(c, expect, rv))
+					goto out_subcase;
+			}
+			rv = C_DestroyObject(session, key);
+			if (!ADBG_EXPECT_CK_OK(c, rv))
+				goto out_subcase;
+			if (api) {
+				rv = C_DestroyObject(session, public_key);
+				if (!ADBG_EXPECT_CK_OK(c, rv))
+					goto out_subcase;
+			}
+		}
+		Do_ADBG_EndSubCase(c, NULL);
+	}
+	goto out;
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out:
+	cleanup_context_auth_token(c, slot, token_initialized);
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1033, xtest_pkcs11_test_1033,
+		 "PKCS11: Always-authenticate requires a private object");
+
+static void xtest_pkcs11_test_1034(ADBG_Case_t *c)
+{
+#ifdef OPENSSL_FOUND
+	CK_SLOT_ID slot = 0;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE private_key = CK_INVALID_HANDLE;
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS_KEY_PAIR_GEN, NULL, 0 };
+	CK_ULONG bits = 2048;
+	CK_BYTE exponent[] = { 1, 0, 1 };
+	CK_BBOOL yes = CK_TRUE;
+	char gid_str[GID_STR_LEN] = { };
+	int len = 0;
+	CK_ATTRIBUTE pub_attrs[] = {
+		{ CKA_MODULUS_BITS, &bits, sizeof(bits) },
+		{ CKA_PUBLIC_EXPONENT, exponent, sizeof(exponent) },
+		{ CKA_VERIFY, &yes, sizeof(yes) },
+	};
+	/* Session keys are released even if a subcase fails. */
+	CK_ATTRIBUTE priv_attrs[] = {
+		{ CKA_PRIVATE, &yes, sizeof(yes) },
+		{ CKA_SIGN, &yes, sizeof(yes) },
+		{ CKA_ALWAYS_AUTHENTICATE, &yes, sizeof(yes) },
+	};
+	CK_RV rv = CKR_GENERAL_ERROR;
+
+	/* Initialize the ACL token as its user-identity security officer. */
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "user", 1)))
+		return;
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+	rv = init_test_token_acl_auth(slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = init_user_test_token_acl_auth(c, slot);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = close_lib();
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+
+	/* Reconnect using the group identity registered for CKU_USER. */
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_TYPE", "group", 1)))
+		goto out_unsetenv;
+	len = snprintf(gid_str, sizeof(gid_str), "%u",
+		       (unsigned int)getegid());
+	if (!ADBG_EXPECT_COMPARE_SIGNED(c, len, >=, 0) ||
+	    !ADBG_EXPECT_COMPARE_SIGNED(c, len, <, (int)sizeof(gid_str)))
+		goto out_unsetenv;
+	if (!ADBG_EXPECT_TRUE(c, !setenv("CKTEEC_LOGIN_GID", gid_str, 1)))
+		goto out_unsetenv;
+	rv = init_lib_and_find_token_slot(&slot, ACL_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_unsetenv;
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, NULL, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_lib;
+	rv = C_Login(session, CKU_USER, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_session;
+	rv = C_GenerateKeyPair(session, &mechanism, pub_attrs,
+			       ARRAY_SIZE(pub_attrs), priv_attrs,
+			       ARRAY_SIZE(priv_attrs), &public_key,
+			       &private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_session;
+
+	Do_ADBG_BeginSubCase(c, "Missing context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_rejected(c, session, CKR_USER_NOT_LOGGED_IN))
+		goto out_subcase;
+	Do_ADBG_EndSubCase(c, NULL);
+
+	Do_ADBG_BeginSubCase(c, "Context login");
+	rv = C_SignInit(session, &context_auth_sign_mechanism, private_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	rv = C_Login(session, CKU_CONTEXT_SPECIFIC, NULL, 0);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto out_subcase;
+	if (!context_auth_sign_and_verify(c, session, public_key))
+		goto out_subcase;
+	Do_ADBG_EndSubCase(c, NULL);
+	goto out_session;
+
+out_subcase:
+	Do_ADBG_EndSubCase(c, NULL);
+out_session:
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+out_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+out_unsetenv:
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_TYPE"));
+	ADBG_EXPECT_TRUE(c, !unsetenv("CKTEEC_LOGIN_GID"));
+#else /* !OPENSSL_FOUND */
+	UNUSED(c);
+	Do_ADBG_Log("OpenSSL not available, skipping test 1034");
+#endif /* OPENSSL_FOUND */
+}
+
+ADBG_CASE_DEFINE(pkcs11, 1034, xtest_pkcs11_test_1034,
+		 "PKCS11: Context authentication with ACL identity");
