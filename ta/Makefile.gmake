@@ -44,6 +44,11 @@ ifeq ($(CFG_TA_BTI),y)
 TA_DIRS += bti_test
 endif
 
+# This TA needs the optional core coverage PTA.
+ifeq ($(CFG_CORE_FUZZ_COVERAGE),y)
+TA_DIRS += core_fuzz_ta
+endif
+
 .PHONY: all
 all: ta
 
