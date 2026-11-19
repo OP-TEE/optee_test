@@ -792,7 +792,7 @@ static TEEC_Result ta_crypt_cmd_asymmetric_operate(ADBG_Case_t *c,
 	op.params[3].tmpref.size = *dst_len;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INOUT,
 					 TEEC_MEMREF_TEMP_INPUT,
 					 TEEC_MEMREF_TEMP_OUTPUT);
 
@@ -890,7 +890,7 @@ static TEEC_Result ta_crypt_cmd_asymmetric_verify(ADBG_Case_t *c,
 	op.params[3].tmpref.size = signature_len;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_INPUT,
+					 TEEC_MEMREF_TEMP_INOUT,
 					 TEEC_MEMREF_TEMP_INPUT,
 					 TEEC_MEMREF_TEMP_INPUT);
 
@@ -964,7 +964,7 @@ static TEEC_Result ta_crypt_cmd_generate_key(ADBG_Case_t *c,
 	op.params[1].tmpref.size = blen;
 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
-					 TEEC_MEMREF_TEMP_INPUT, TEEC_NONE,
+					 TEEC_MEMREF_TEMP_INOUT, TEEC_NONE,
 					 TEEC_NONE);
 
 	res = TEEC_InvokeCommand(s, TA_CRYPT_CMD_GENERATE_KEY, &op, &ret_orig);
