@@ -14,9 +14,12 @@
 #include <openssl/x509.h>
 #endif
 #include <pkcs11.h>
+#include <pthread.h>
+#include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <utee_defines.h>
 #include <util.h>
 
@@ -8761,6 +8764,265 @@ close_lib:
 }
 ADBG_CASE_DEFINE(pkcs11, 1026, xtest_pkcs11_test_1026,
 		 "PKCS11: RSA AES Key Wrap/Unwrap tests");
+
+#define RSA_AES_WRAP_RACE_OUTPUT_SIZE 1024
+#define RSA_AES_WRAP_RACE_KEY_SIZE 512
+#define RSA_AES_WRAP_RACE_MARKER_SIZE 16
+
+struct rsa_aes_wrap_race_ctx {
+	uint8_t *output;
+	const uint8_t *key;
+	size_t key_offset;
+	uint64_t snapshots;
+	uint64_t hits;
+	bool ready;
+	bool stop;
+};
+
+static void *rsa_aes_wrap_snapshot(void *arg)
+{
+	struct rsa_aes_wrap_race_ctx *ctx = arg;
+	uint8_t snapshot[RSA_AES_WRAP_RACE_MARKER_SIZE] = { };
+
+	while (!__atomic_load_n(&ctx->stop, __ATOMIC_ACQUIRE)) {
+		for (size_t n = 0; n < sizeof(snapshot); n++)
+			snapshot[n] = __atomic_load_n(ctx->output +
+						     ctx->key_offset + n,
+						     __ATOMIC_RELAXED);
+
+		ctx->snapshots++;
+		if (!memcmp(snapshot, ctx->key, sizeof(snapshot)))
+			ctx->hits++;
+		if (ctx->snapshots == 1)
+			__atomic_store_n(&ctx->ready, true, __ATOMIC_RELEASE);
+	}
+
+	return NULL;
+}
+
+static uint8_t *rsa_race_alloc_output(ADBG_Case_t *c)
+{
+	TEEC_SharedMemory shm = {
+		.size = RSA_AES_WRAP_RACE_OUTPUT_SIZE,
+		.flags = TEEC_MEM_OUTPUT,
+	};
+	TEEC_Context ctx = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	uint8_t *output = NULL;
+	bool direct = false;
+
+	if (!ADBG_EXPECT(c, 0, posix_memalign((void **)&output,
+					       sysconf(_SC_PAGESIZE), shm.size)))
+		return NULL;
+	memset(output, 0, shm.size);
+
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c, res))
+		goto out;
+	shm.buffer = output;
+	res = TEEC_RegisterSharedMemory(&ctx, &shm);
+	if (ADBG_EXPECT_TEEC_SUCCESS(c, res)) {
+		direct = !shm.imp.shadow_buffer;
+		TEEC_ReleaseSharedMemory(&shm);
+	}
+	TEEC_FinalizeContext(&ctx);
+	if (!ADBG_EXPECT_TRUE(c, direct))
+		goto out;
+
+	return output;
+out:
+	free(output);
+	return NULL;
+}
+
+static void xtest_pkcs11_test_1031(ADBG_Case_t *c)
+{
+	static const uint8_t key_value[RSA_AES_WRAP_RACE_KEY_SIZE] = {
+		[RSA_AES_WRAP_RACE_KEY_SIZE -
+		 RSA_AES_WRAP_RACE_MARKER_SIZE] =
+		0x7e, 0x91, 0x15, 0x5a, 0x43, 0xd6, 0x29, 0xb8,
+		0x04, 0xf3, 0x6c, 0xa1, 0x5d, 0xe2, 0x70, 0x9b,
+	};
+	CK_ATTRIBUTE wrapping_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_PUBLIC_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_RSA }, sizeof(CK_KEY_TYPE) },
+		{ CKA_WRAP, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_MODULUS, (void *)ac_rsassa_vect2_modulus,
+		  sizeof(ac_rsassa_vect2_modulus) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+	};
+	CK_ATTRIBUTE target_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_SECRET_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_GENERIC_SECRET },
+		  sizeof(CK_KEY_TYPE) },
+		{ CKA_VALUE, (void *)key_value, sizeof(key_value) },
+		{ CKA_EXTRACTABLE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_SENSITIVE, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+	};
+	CK_RSA_PKCS_OAEP_PARAMS oaep_params = {
+		CKM_SHA256, CKG_MGF1_SHA256, CKZ_DATA_SPECIFIED, NULL, 0,
+	};
+	CK_RSA_AES_KEY_WRAP_PARAMS rsa_aes_params = { 256, &oaep_params };
+	CK_MECHANISM mechanism = {
+		CKM_RSA_AES_KEY_WRAP, &rsa_aes_params, sizeof(rsa_aes_params),
+	};
+	struct rsa_aes_wrap_race_ctx race = {
+		.key = key_value + sizeof(key_value) -
+		       RSA_AES_WRAP_RACE_MARKER_SIZE,
+		.key_offset = sizeof(ac_rsassa_vect2_modulus) + 8 +
+			      sizeof(key_value) - RSA_AES_WRAP_RACE_MARKER_SIZE,
+	};
+	CK_OBJECT_HANDLE wrapping_key = CK_INVALID_HANDLE;
+	CK_OBJECT_HANDLE target_key = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG wrapped_len = 0;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	pthread_t thread = { };
+	uint8_t *output = NULL;
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_CreateObject(session, wrapping_key_template,
+			    ARRAY_SIZE(wrapping_key_template), &wrapping_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	rv = C_CreateObject(session, target_key_template,
+			    ARRAY_SIZE(target_key_template), &target_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	output = rsa_race_alloc_output(c);
+	if (!output)
+		goto close_session;
+	race.output = output;
+
+	if (!ADBG_EXPECT(c, 0, pthread_create(&thread, NULL,
+					   rsa_aes_wrap_snapshot, &race)))
+		goto free_output;
+	while (!__atomic_load_n(&race.ready, __ATOMIC_ACQUIRE))
+		sched_yield();
+
+	wrapped_len = RSA_AES_WRAP_RACE_OUTPUT_SIZE;
+	rv = C_WrapKey(session, &mechanism, wrapping_key, target_key,
+		       output, &wrapped_len);
+
+	__atomic_store_n(&race.stop, true, __ATOMIC_RELEASE);
+	pthread_join(thread, NULL);
+	Do_ADBG_Log("PKCS11 RSA-AES race: %" PRIu64
+		    " snapshots, %" PRIu64 " key hits",
+		    race.snapshots, race.hits);
+	ADBG_EXPECT_CK_OK(c, rv);
+	ADBG_EXPECT_TRUE(c, race.hits == 0);
+
+free_output:
+	free(output);
+close_session:
+	if (target_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, target_key));
+	if (wrapping_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, wrapping_key));
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
+			 "PKCS11: RSA-AES wrap output race");
+
+static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
+{
+	static const uint8_t plaintext[RSA_AES_WRAP_RACE_MARKER_SIZE] = {
+		0x63, 0x4d, 0xa2, 0x71, 0x9e, 0x08, 0xb5, 0x3c,
+		0xf0, 0x26, 0x87, 0xdb, 0x14, 0x5a, 0xc9, 0x32,
+	};
+	CK_ATTRIBUTE public_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_PUBLIC_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_RSA }, sizeof(CK_KEY_TYPE) },
+		{ CKA_ENCRYPT, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_MODULUS, (void *)ac_rsassa_vect2_modulus,
+		  sizeof(ac_rsassa_vect2_modulus) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+	};
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS, NULL, 0 };
+	struct rsa_aes_wrap_race_ctx race = {
+		.key = plaintext,
+		.key_offset = sizeof(ac_rsassa_vect2_modulus) -
+			      sizeof(plaintext),
+	};
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG output_len = 0;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	pthread_t thread = { };
+	uint8_t *output = NULL;
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_CreateObject(session, public_key_template,
+			    ARRAY_SIZE(public_key_template), &public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	output = rsa_race_alloc_output(c);
+	if (!output)
+		goto close_session;
+	race.output = output;
+
+	rv = C_EncryptInit(session, &mechanism, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto free_output;
+
+	if (!ADBG_EXPECT(c, 0, pthread_create(&thread, NULL,
+					   rsa_aes_wrap_snapshot, &race)))
+		goto free_output;
+	while (!__atomic_load_n(&race.ready, __ATOMIC_ACQUIRE))
+		sched_yield();
+
+	output_len = RSA_AES_WRAP_RACE_OUTPUT_SIZE;
+	rv = C_Encrypt(session, (void *)plaintext, sizeof(plaintext),
+		       output, &output_len);
+
+	__atomic_store_n(&race.stop, true, __ATOMIC_RELEASE);
+	pthread_join(thread, NULL);
+	Do_ADBG_Log("PKCS11 RSAES race: %" PRIu64
+		    " snapshots, %" PRIu64 " plaintext hits",
+		    race.snapshots, race.hits);
+	ADBG_EXPECT_CK_OK(c, rv);
+	ADBG_EXPECT_TRUE(c, output_len == sizeof(ac_rsassa_vect2_modulus));
+	ADBG_EXPECT_TRUE(c, race.hits == 0);
+
+free_output:
+	free(output);
+close_session:
+	if (public_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
+			 "PKCS11: RSAES C_Encrypt output race");
 
 #ifdef OPENSSL_FOUND
 static CK_RV test_login_logout_acl_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
