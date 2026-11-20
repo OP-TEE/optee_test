@@ -8940,6 +8940,90 @@ close_lib:
 ADBG_CASE_DEFINE(pkcs11, 1031, xtest_pkcs11_test_1031,
 			 "PKCS11: RSA-AES wrap output race");
 
+static void xtest_pkcs11_test_1032(ADBG_Case_t *c)
+{
+	static const uint8_t plaintext[RSA_AES_WRAP_RACE_MARKER_SIZE] = {
+		0x63, 0x4d, 0xa2, 0x71, 0x9e, 0x08, 0xb5, 0x3c,
+		0xf0, 0x26, 0x87, 0xdb, 0x14, 0x5a, 0xc9, 0x32,
+	};
+	CK_ATTRIBUTE public_key_template[] = {
+		{ CKA_CLASS, &(CK_OBJECT_CLASS) { CKO_PUBLIC_KEY },
+		  sizeof(CK_OBJECT_CLASS) },
+		{ CKA_KEY_TYPE, &(CK_KEY_TYPE) { CKK_RSA }, sizeof(CK_KEY_TYPE) },
+		{ CKA_ENCRYPT, &(CK_BBOOL) { CK_TRUE }, sizeof(CK_BBOOL) },
+		{ CKA_MODULUS, (void *)ac_rsassa_vect2_modulus,
+		  sizeof(ac_rsassa_vect2_modulus) },
+		{ CKA_PUBLIC_EXPONENT, (void *)ac_rsassa_vect2_pub_exp,
+		  sizeof(ac_rsassa_vect2_pub_exp) },
+	};
+	CK_MECHANISM mechanism = { CKM_RSA_PKCS, NULL, 0 };
+	struct rsa_aes_wrap_race_ctx race = {
+		.key = plaintext,
+		.key_offset = sizeof(ac_rsassa_vect2_modulus) -
+			      sizeof(plaintext),
+	};
+	CK_OBJECT_HANDLE public_key = CK_INVALID_HANDLE;
+	CK_SESSION_HANDLE session = CK_INVALID_HANDLE;
+	CK_SLOT_ID slot = 0;
+	CK_ULONG output_len = 0;
+	CK_RV rv = CKR_GENERAL_ERROR;
+	pthread_t thread = { };
+	uint8_t *output = NULL;
+
+	rv = init_lib_and_find_token_slot(&slot, PIN_AUTH);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		return;
+
+	rv = C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+			   NULL, 0, &session);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_lib;
+
+	rv = C_CreateObject(session, public_key_template,
+			    ARRAY_SIZE(public_key_template), &public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto close_session;
+
+	output = rsa_race_alloc_output(c);
+	if (!output)
+		goto close_session;
+	race.output = output;
+
+	rv = C_EncryptInit(session, &mechanism, public_key);
+	if (!ADBG_EXPECT_CK_OK(c, rv))
+		goto free_output;
+
+	if (!ADBG_EXPECT(c, 0, pthread_create(&thread, NULL,
+					   rsa_aes_wrap_snapshot, &race)))
+		goto free_output;
+	while (!__atomic_load_n(&race.ready, __ATOMIC_ACQUIRE))
+		sched_yield();
+
+	output_len = RSA_AES_WRAP_RACE_OUTPUT_SIZE;
+	rv = C_Encrypt(session, (void *)plaintext, sizeof(plaintext),
+		       output, &output_len);
+
+	__atomic_store_n(&race.stop, true, __ATOMIC_RELEASE);
+	pthread_join(thread, NULL);
+	Do_ADBG_Log("PKCS11 RSAES race: %" PRIu64
+		    " snapshots, %" PRIu64 " plaintext hits",
+		    race.snapshots, race.hits);
+	ADBG_EXPECT_CK_OK(c, rv);
+	ADBG_EXPECT_TRUE(c, output_len == sizeof(ac_rsassa_vect2_modulus));
+	ADBG_EXPECT_TRUE(c, race.hits == 0);
+
+free_output:
+	free(output);
+close_session:
+	if (public_key != CK_INVALID_HANDLE)
+		ADBG_EXPECT_CK_OK(c, C_DestroyObject(session, public_key));
+	ADBG_EXPECT_CK_OK(c, C_CloseSession(session));
+close_lib:
+	ADBG_EXPECT_CK_OK(c, close_lib());
+}
+ADBG_CASE_DEFINE(pkcs11, 1032, xtest_pkcs11_test_1032,
+			 "PKCS11: RSAES C_Encrypt output race");
+
 #ifdef OPENSSL_FOUND
 static CK_RV test_login_logout_acl_auth(ADBG_Case_t *c, CK_SLOT_ID slot)
 {
