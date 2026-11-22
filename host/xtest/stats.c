@@ -225,6 +225,10 @@ retry:
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT,
 					 TEEC_NONE, TEEC_NONE, TEEC_NONE);
 	res = TEEC_InvokeCommand(&sess, STATS_CMD_TA_STATS, &op, &eo);
+	if (res == TEEC_ERROR_ITEM_NOT_FOUND) {
+		printf("No loaded TA found\n");
+		goto out;
+	}
 	if (res != TEEC_ERROR_SHORT_BUFFER)
 		errx(EXIT_FAILURE,
 		     "TEEC_InvokeCommand: res %#"PRIx32" err_orig %#"PRIx32,
