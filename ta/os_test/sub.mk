@@ -32,6 +32,12 @@ srcs-y += riscv_fp_ctx.c
 srcs-y += riscv_fp_ctx_rv64.S
 srcs-y += riscv_vector_ctx.c
 srcs-y += riscv_vector_ctx_rv64.S
+# riscv_vector_ctx.c and riscv_vector_ctx_rv64.S are guarded by __riscv_v; opt
+# in to V (the core dev-kit no longer forces it) when the core supports vector
+# context switching. The vector asm uses '.option arch', so -march only serves
+# to define __riscv_v for the C and assembly preprocessors.
+cflags-$(CFG_RISCV_ISA_V) += -march=rv64imafdcv_zicsr_zifencei
+aflags-$(CFG_RISCV_ISA_V) += -march=rv64imafdcv_zicsr_zifencei
 endif
 srcs-y += attestation.c
 srcs-y += aslr.c
