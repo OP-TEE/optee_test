@@ -8339,7 +8339,7 @@ ADBG_CASE_DEFINE(pkcs11, 1025, xtest_pkcs11_test_1025,
 #define RSA_AES_WRAP_RSA(vect) \
 	{ .rsa = RSA_AES_WRAP_KEY(vect) }
 
-#define RSA_AES_WRAP_AES(_size) { .aes = { .size = (_size) } }
+#define RSA_AES_WRAP_SECRET(_size) { .secret_size = (_size) }
 
 static struct rsa_aes_wrap_test {
 	CK_KEY_TYPE target_type;
@@ -8359,9 +8359,7 @@ static struct rsa_aes_wrap_test {
 			const uint8_t *prime2;
 			size_t prime2_len;
 		} rsa;
-		struct {
-			CK_ULONG size;
-		} aes;
+		CK_ULONG secret_size;
 	} target;
 
 	struct {
@@ -8379,10 +8377,17 @@ static struct rsa_aes_wrap_test {
 		const uint8_t *prime2;
 		size_t prime2_len;
 	} key;
+	CK_ULONG wrapped_size;
 } rsa_aes_wrap_tests[] = {
-	{ CKK_AES, RSA_AES_WRAP_AES(128), RSA_AES_WRAP_KEY(ac_rsassa_vect2) },
-	{ CKK_AES, RSA_AES_WRAP_AES(256), RSA_AES_WRAP_KEY(ac_rsassa_vect18) },
-	{ CKK_AES, RSA_AES_WRAP_AES(192), RSA_AES_WRAP_KEY(ac_rsassa_vect19) },
+	{ CKK_AES, RSA_AES_WRAP_SECRET(16), RSA_AES_WRAP_KEY(ac_rsassa_vect2) },
+	{ CKK_AES, RSA_AES_WRAP_SECRET(32),
+		   RSA_AES_WRAP_KEY(ac_rsassa_vect18) },
+	{ CKK_AES, RSA_AES_WRAP_SECRET(24),
+		   RSA_AES_WRAP_KEY(ac_rsassa_vect19) },
+	{ CKK_GENERIC_SECRET, RSA_AES_WRAP_SECRET(20),
+			      RSA_AES_WRAP_KEY(ac_rsassa_vect2), 288 },
+	{ CKK_GENERIC_SECRET, RSA_AES_WRAP_SECRET(33),
+			      RSA_AES_WRAP_KEY(ac_rsassa_vect2), 304 },
 	{ CKK_RSA, RSA_AES_WRAP_RSA(ac_rsassa_vect1),
 		   RSA_AES_WRAP_KEY(ac_rsassa_vect2) },
 	{ CKK_RSA, RSA_AES_WRAP_RSA(ac_rsassa_vect1),
@@ -8407,10 +8412,12 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	CK_OBJECT_HANDLE unwrapping_key = CK_INVALID_HANDLE;
 	CK_OBJECT_HANDLE target_key = CK_INVALID_HANDLE;
 	CK_OBJECT_HANDLE unwrapped_key = CK_INVALID_HANDLE;
-	CK_ULONG target_size = t->target_type == CKK_AES ?
-			       t->target.aes.size / 8 :
-			       t->target.rsa.modulus_len;
+	bool is_secret = t->target_type != CKK_RSA;
+	CK_ULONG target_size = is_secret ? t->target.secret_size :
+					  t->target.rsa.modulus_len;
 	CK_ULONG target_bits = target_size * 8;
+	const char *target_name = "RSA";
+	CK_MECHANISM *keygen_mechanism = &cktest_aes_keygen_mechanism;
 
 	CK_ATTRIBUTE wrapping_key_template[] = {
 		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_PUBLIC_KEY },
@@ -8449,7 +8456,7 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		  t->key.prime2_len },
 	};
 
-	CK_ATTRIBUTE aes_key_template[] = {
+	CK_ATTRIBUTE secret_key_template[] = {
 		{ CKA_VALUE_LEN, &target_size, sizeof(CK_ULONG) },
 		{ CKA_ENCRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
 		{ CKA_DECRYPT, &(CK_BBOOL){ CK_TRUE }, sizeof(CK_BBOOL) },
@@ -8478,7 +8485,7 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		  t->target.rsa.prime2_len },
 	};
 
-	CK_ATTRIBUTE unwrapped_aes_key_template[] = {
+	CK_ATTRIBUTE unwrapped_secret_key_template[] = {
 		{ CKA_CLASS, &(CK_OBJECT_CLASS){ CKO_SECRET_KEY },
 		  sizeof(CK_OBJECT_CLASS) },
 		{ CKA_KEY_TYPE,	&(CK_KEY_TYPE){ CKK_GENERIC_SECRET },
@@ -8500,11 +8507,11 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		{ CKA_SENSITIVE, &(CK_BBOOL){ CK_FALSE}, sizeof(CK_BBOOL) },
 	};
 
-	CK_ATTRIBUTE *unwrapped_key_template = (t->target_type == CKK_AES) ?
-						unwrapped_aes_key_template :
+	CK_ATTRIBUTE *unwrapped_key_template = is_secret ?
+						unwrapped_secret_key_template :
 						unwrapped_rsa_key_template;
-	CK_ULONG unwrapped_key_template_size = t->target_type == CKK_AES ?
-				ARRAY_SIZE(unwrapped_aes_key_template) :
+	CK_ULONG unwrapped_key_template_size = is_secret ?
+				ARRAY_SIZE(unwrapped_secret_key_template) :
 				ARRAY_SIZE(unwrapped_rsa_key_template);
 
 	CK_RSA_PKCS_OAEP_PARAMS oaep_params = {
@@ -8517,16 +8524,16 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 		CKM_RSA_AES_KEY_WRAP, &rsa_aes_params, sizeof(rsa_aes_params),
 	};
 
-	CK_BYTE aes_val[RSA_AES_MAX_KEY_SIZE] = { 0 };
+	CK_BYTE secret_val[33] = { 0 };
 	CK_ULONG key_len = 0;
-	CK_ATTRIBUTE aes_get_template[] = {
+	CK_ATTRIBUTE secret_get_template[] = {
 		{ CKA_VALUE_LEN, &key_len, sizeof(key_len) },
-		{ CKA_VALUE, aes_val, sizeof(aes_val) },
+		{ CKA_VALUE, secret_val, sizeof(secret_val) },
 	};
 
-	CK_BYTE unwrapped_val[RSA_AES_MAX_KEY_SIZE] = { 0 };
+	CK_BYTE unwrapped_val[sizeof(secret_val)] = { 0 };
 	CK_ULONG unwrapped_key_len = 0;
-	CK_ATTRIBUTE aes_get_template_unwrapped[] = {
+	CK_ATTRIBUTE unwrapped_secret_attrs[] = {
 		{ CKA_VALUE_LEN, &unwrapped_key_len,
 		  sizeof(unwrapped_key_len) },
 		{ CKA_VALUE, unwrapped_val, sizeof(unwrapped_val) },
@@ -8544,14 +8551,22 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	};
 	CK_BYTE buf[5120] = { 0 };
 	CK_ULONG size = 0;
+	CK_ULONG expected_size = t->wrapped_size;
 
 	assert(t != NULL);
-	assert(t->target_type == CKK_RSA || t->target_type == CKK_AES);
+	assert(t->target_type == CKK_RSA || t->target_type == CKK_AES ||
+	       t->target_type == CKK_GENERIC_SECRET);
+
+	if (t->target_type == CKK_GENERIC_SECRET) {
+		target_name = "generic secret";
+		keygen_mechanism = &cktest_gensecret_keygen_mechanism;
+	} else if (t->target_type == CKK_AES) {
+		target_name = "AES";
+	}
 
 	Do_ADBG_BeginSubCase(c,
 			"Test RSA AES wrap/unwrap of %lu %s key with %zu RSA",
-			target_bits, (t->target_type == CKK_AES) ? "AES" : "RSA",
-			t->key.modulus_len * 8);
+			target_bits, target_name, t->key.modulus_len * 8);
 
 	rv = C_CreateObject(session, wrapping_key_template,
 			    ARRAY_SIZE(wrapping_key_template),
@@ -8565,10 +8580,10 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	if (t->target_type == CKK_AES) {
-		rv = C_GenerateKey(session, &cktest_aes_keygen_mechanism,
-				   aes_key_template,
-				   ARRAY_SIZE(aes_key_template),
+	if (is_secret) {
+		rv = C_GenerateKey(session, keygen_mechanism,
+				   secret_key_template,
+				   ARRAY_SIZE(secret_key_template),
 				   &target_key);
 	} else {
 		rv = C_CreateObject(session, target_key_template,
@@ -8579,20 +8594,44 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	size = sizeof(buf);
+	if (expected_size) {
+		rv = C_WrapKey(session, &rsa_aes_key_wrap_mechanism,
+			       wrapping_key, target_key, NULL, &size);
+		if (!ADBG_EXPECT_CK_OK(c, rv))
+			goto out;
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, expected_size)) {
+			rv = CKR_ENCRYPTED_DATA_INVALID;
+			goto out;
+		}
+
+		size--;
+		rv = C_WrapKey(session, &rsa_aes_key_wrap_mechanism,
+			       wrapping_key, target_key, buf, &size);
+		if (!ADBG_EXPECT_CK_RESULT(c, CKR_BUFFER_TOO_SMALL, rv) ||
+		    !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, expected_size)) {
+			rv = CKR_ENCRYPTED_DATA_INVALID;
+			goto out;
+		}
+	} else {
+		size = sizeof(buf);
+	}
+
 	rv = C_WrapKey(session, &rsa_aes_key_wrap_mechanism, wrapping_key,
 		       target_key, buf, &size);
 
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
-	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, size, <=, sizeof(buf))) {
+	if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, size, <=, sizeof(buf)) ||
+	    (expected_size &&
+	     !ADBG_EXPECT_COMPARE_UNSIGNED(c, size, ==, expected_size))) {
 		rv = CKR_ENCRYPTED_DATA_INVALID;
 		goto out;
 	}
 
-	if (t->target_type == CKK_AES) {
-		rv = C_GetAttributeValue(session, target_key, aes_get_template,
-					 ARRAY_SIZE(aes_get_template));
+	if (is_secret) {
+		rv = C_GetAttributeValue(session, target_key,
+					 secret_get_template,
+					 ARRAY_SIZE(secret_get_template));
 		if (!ADBG_EXPECT_CK_OK(c, rv))
 			goto out;
 	}
@@ -8603,14 +8642,16 @@ static CK_RV test_rsa_aes_wrap(ADBG_Case_t *c, CK_SESSION_HANDLE session,
 	if (!ADBG_EXPECT_CK_OK(c, rv))
 		goto out;
 
-	if (t->target_type == CKK_AES) {
+	if (is_secret) {
 		rv = C_GetAttributeValue(session, unwrapped_key,
-					 aes_get_template_unwrapped,
-					 ARRAY_SIZE(aes_get_template_unwrapped));
+					 unwrapped_secret_attrs,
+					 ARRAY_SIZE(unwrapped_secret_attrs));
 		if (!ADBG_EXPECT_CK_OK(c, rv))
 			goto out;
-		if (!ADBG_EXPECT_BUFFER(c, unwrapped_val, unwrapped_key_len,
-					aes_val, key_len)) {
+		if (!ADBG_EXPECT_COMPARE_UNSIGNED(c, key_len, ==,
+						  target_size) ||
+		    !ADBG_EXPECT_BUFFER(c, unwrapped_val, unwrapped_key_len,
+					secret_val, key_len)) {
 			rv = CKR_DATA_INVALID;
 			goto out;
 		}
