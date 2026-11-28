@@ -9,7 +9,9 @@
 #include <string.h>
 #include <inttypes.h>
 #include <malloc.h>
+#include <sched.h>
 #include <time.h>
+#include <stdatomic.h>
 
 #include "xtest_test.h"
 #include "xtest_helpers.h"
@@ -7818,3 +7820,132 @@ out:
 
 ADBG_CASE_DEFINE(regression, 4021, xtest_tee_test_4021,
 		 "TEE_CopyObjectAttributes1() intersects object usage");
+
+static const uint8_t rsassa_digest[32] = { 0x5a };
+
+struct rsa_output_race {
+	const atomic_uchar *output;
+	atomic_bool ready;
+	atomic_bool running;
+	unsigned int hits;
+};
+
+static void *rsa_race_snapshot(void *arg)
+{
+	struct rsa_output_race *race = arg;
+	uint8_t snapshot[sizeof(ac_rsassa_vect1_modulus)] = { };
+	bool ready = false;
+
+	while (atomic_load(&race->running)) {
+		snapshot[0] = atomic_load_explicit(&race->output[0],
+						 memory_order_relaxed);
+		if (!ready) {
+			atomic_store_explicit(&race->ready, true,
+					      memory_order_release);
+			ready = true;
+		}
+		if (snapshot[0])
+			continue;
+		for (size_t n = 1; n < sizeof(snapshot); n++)
+			snapshot[n] = atomic_load_explicit(&race->output[n],
+							 memory_order_relaxed);
+		if (snapshot[1] == 1 && snapshot[2] == 0xff &&
+		    !memcmp(snapshot + sizeof(snapshot) - sizeof(rsassa_digest),
+			    rsassa_digest, sizeof(rsassa_digest)))
+			race->hits++;
+	}
+	return NULL;
+}
+
+static void xtest_tee_test_4025(ADBG_Case_t *c)
+{
+	TEE_Attribute attrs[3] = { };
+	TEE_ObjectHandle key = TEE_HANDLE_NULL;
+	TEE_OperationHandle operation = TEE_HANDLE_NULL;
+	TEEC_SharedMemory shm = {
+		.size = sizeof(ac_rsassa_vect1_modulus),
+		.flags = TEEC_MEM_OUTPUT,
+	};
+	TEEC_Operation invoke = TEEC_OPERATION_INITIALIZER;
+	struct rsa_output_race race = { };
+	TEEC_Session session = { };
+	pthread_t thread = { };
+	TEEC_Result res = TEEC_ERROR_GENERIC;
+	size_t attr_count = 0;
+	uint32_t ret_orig = 0;
+	int rc = 0;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		xtest_teec_open_session(&session, &crypt_user_ta_uuid, NULL,
+				       &ret_orig)))
+		return;
+	if (!ta_crypt_cmd_is_algo_supported(c, &session,
+					    TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
+					    TEE_CRYPTO_ELEMENT_NONE)) {
+		Do_ADBG_Log("RSASSA SHA-256 not supported: skip test");
+		goto out;
+	}
+
+	xtest_add_attr(&attr_count, attrs, TEE_ATTR_RSA_MODULUS,
+		       ac_rsassa_vect1_modulus,
+		       sizeof(ac_rsassa_vect1_modulus));
+	xtest_add_attr(&attr_count, attrs, TEE_ATTR_RSA_PUBLIC_EXPONENT,
+		       ac_rsassa_vect1_pub_exp,
+		       sizeof(ac_rsassa_vect1_pub_exp));
+	xtest_add_attr(&attr_count, attrs, TEE_ATTR_RSA_PRIVATE_EXPONENT,
+		       ac_rsassa_vect1_priv_exp,
+		       sizeof(ac_rsassa_vect1_priv_exp));
+	if (!create_key(c, &session, 1024, TEE_TYPE_RSA_KEYPAIR,
+			attrs, attr_count, &key))
+		goto out;
+
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_allocate_operation(c, &session, &operation,
+					TEE_ALG_RSASSA_PKCS1_V1_5_SHA256,
+					TEE_MODE_SIGN, 1024)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		ta_crypt_cmd_set_operation_key(c, &session, operation, key)))
+		goto out;
+	if (!ADBG_EXPECT_TEEC_SUCCESS(c,
+		TEEC_AllocateSharedMemory(&xtest_teec_ctx, &shm)))
+		goto out;
+
+	memset(shm.buffer, 0xa5, shm.size);
+	race.output = shm.buffer;
+	atomic_init(&race.ready, false);
+	atomic_init(&race.running, true);
+	rc = pthread_create(&thread, NULL, rsa_race_snapshot, &race);
+	if (!ADBG_EXPECT(c, 0, rc))
+		goto out;
+	while (!atomic_load_explicit(&race.ready, memory_order_acquire))
+		sched_yield();
+
+	invoke.params[0].value.a = (uint32_t)(uintptr_t)operation;
+	invoke.params[2].tmpref.buffer = (void *)rsassa_digest;
+	invoke.params[2].tmpref.size = sizeof(rsassa_digest);
+	invoke.params[3].memref.parent = &shm;
+	invoke.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_INPUT,
+						TEEC_MEMREF_TEMP_INPUT,
+						TEEC_MEMREF_TEMP_INPUT,
+						TEEC_MEMREF_WHOLE);
+	res = TEEC_InvokeCommand(&session, TA_CRYPT_CMD_ASYMMETRIC_SIGN_DIGEST,
+				 &invoke, &ret_orig);
+	atomic_store(&race.running, false);
+	(void)ADBG_EXPECT(c, 0, pthread_join(thread, NULL));
+	(void)ADBG_EXPECT_TEEC_SUCCESS(c, res);
+	Do_ADBG_Log("RSASSA: 1 operation, %u encoded-input snapshots",
+		    race.hits);
+	(void)ADBG_EXPECT_COMPARE_UNSIGNED(c, race.hits, ==, 0);
+out:
+	if (shm.buffer)
+		TEEC_ReleaseSharedMemory(&shm);
+	if (operation != TEE_HANDLE_NULL)
+		(void)ta_crypt_cmd_free_operation(c, &session, operation);
+	if (key != TEE_HANDLE_NULL)
+		(void)ta_crypt_cmd_free_transient_object(c, &session, key);
+	TEEC_CloseSession(&session);
+}
+
+ADBG_CASE_DEFINE(regression, 4025, xtest_tee_test_4025,
+		 "RSASSA does not expose encoded digest in shared output");
